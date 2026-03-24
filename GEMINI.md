@@ -11,4 +11,6 @@ Before executing any task or writing a single line of code, you **MUST STRICTLY*
 4.  **`docs/SCHEMAS.md`**: Use the provided JSON structures exactly. Respect the mathematical logic (the `split` dictionary), the use of `slugs` for user identification, and the custom transaction ID formatting (GMT Timestamp + GUID).
 
 ## Workflow
-The project is divided into sequential tasks. I will provide you with the content of the files located in the `tasks/` folder one at a time. Every time you receive a new task, execute the requested code while strictly adhering to all the rules defined in the `docs/` folder.
+The project is divided into sequential tasks. I will provide you with the content of the files located in the `tasks/` folder one at a time. Every time you receive a new task, you must:
+1. Execute the requested code while strictly adhering to all the rules defined in the `docs/` folder.
+2. **Write the Tests:** Provide the corresponding narrow integration tests (and UI integration tests where applicable) for the feature you just built, using WireMock.Net for any external Google Drive API calls. Do not consider a task complete without its high-level tests.

@@ -14,3 +14,9 @@
 ## JSON Serialization
 - Use `System.Text.Json`.
 - Ensure options are set for human-readable output (`WriteIndented = true`).
+
+## Testing Strategy (CRITICAL)
+- **Narrow Integration Tests:** Focus testing efforts on high-level application features and user flows rather than granular unit tests for every single internal component. 
+- **Mocking External Services:** All external HTTP calls must be mocked. Specifically, use **WireMock.Net** to mock the Google Drive API responses (e.g., simulating 200 OK for uploads, or 403 Forbidden to test permission handling).
+- **UI Integration Tests:** UI integration testing (e.g., using `bUnit` for the Blazor components) is highly encouraged to ensure the interface correctly reflects the underlying state (e.g., verifying that the Dashboard balances update after saving a new transaction).
+- **Test-Driven Delivery:** Whenever you deliver a feature, you must also deliver the corresponding narrow integration tests that prove the high-level functionality works as expected.
