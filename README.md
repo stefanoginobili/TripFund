@@ -5,22 +5,25 @@
 [![Offline First](https://img.shields.io/badge/Architecture-Offline--First-success?style=for-the-badge)](#)
 [![Platform](https://img.shields.io/badge/Platform-iOS%20%7C%20Android-lightgrey?style=for-the-badge)](#)
 
-> **The ultimate, offline-first group travel fund manager.** <br>
-> Track shared expenses, manage multiple currencies, and split the bill with your friends—even in the middle of nowhere.
+> **The ultimate, offline-first Shared Wallet manager for group travels.** <br>
+> Collect predefined quotas, manage multi-currency funds, and track group expenses from a single shared pot—even in the middle of nowhere.
 
 ## 💡 The Problem
-Group trips are amazing, but managing the "shared fund" (la cassa comune) is usually a nightmare. People contribute in different currencies, at different times. You need to track who paid for dinner, who skipped the guided tour, and what the remaining balance is for each person. Oh, and you need to do all of this in remote locations **without internet access**.
+Most travel apps focus on "who owes who" (e.g., Alice paid for dinner, Bob paid for gas). But real group travels often rely on a **"Cassa Comune" (Shared Wallet)**: everyone is supposed to put a predefined amount of money into a shared pot *before* the trip starts, often in multiple currencies. 
+
+The nightmare isn't figuring out who paid the waiter; the nightmare is tracking who has fully paid their expected quota into the pot, and deducting the daily group expenses from that shared fund, especially when you are completely offline.
 
 ## 🚀 The Solution: TripFund
-TripFund is a modern, cross-platform mobile app built to solve exactly this. It's fully **offline-first**, meaning you can track every cent and snap photos of receipts completely offline. Once you're back at the hotel with Wi-Fi, the app seamlessly syncs everything using a unique **Google Drive** folder structure.
+TripFund flips the standard expense-splitter model. It is a pure **Shared Wallet Tracker**. 
+Participants pour money *into* the fund (Contributions), and money is taken *out* of the fund to pay for things (Expenses). You only need to track who registered the operation and whose balance the expense should be deducted from.
 
 ### ✨ Key Features
 * **📴 100% Offline-First:** Designed for real travelers. Everything works without a connection.
-* **💱 Multi-Currency Magic:** A single trip can have multiple currency sub-funds (e.g., EUR and ARS).
-* **⚖️ Smart Splitting:** Divide expenses equally among the group, or define custom amounts for that one friend who didn't drink wine.
+* **💱 Multi-Currency Magic:** A single trip can have multiple currency sub-funds (e.g., EUR and ARS) with predefined expected quotas for each participant.
+* **📥 Quota Tracking:** Easily see who has deposited their full expected quota into the shared fund and who is still lagging behind.
+* **📤 Fund-Based Expenses:** Log expenses paid *from* the shared wallet. No more "paid by" confusion. Just select who the expense applies to (to deduct it from their personal balance).
 * **☁️ Bring Your Own Backend (BYOB):** Zero servers, zero subscriptions. TripFund syncs data directly to a shared **Google Drive** folder owned by your group.
 * **📍 Location & Receipts:** Attach photos of receipts and save the GPS coordinates of where the expense happened.
-* **📊 Clear Dashboard:** Instantly see the total fund status and every member's remaining balance.
 
 
 ## 🛠️ Tech Stack & Architecture
@@ -29,10 +32,10 @@ TripFund is built with **.NET MAUI Blazor Hybrid**, allowing us to share web UI 
 
 **The "Exotic" Sync Engine:**
 Instead of a traditional database, TripFund relies on an **Append-Only File System** architecture. 
-* Transactions are saved locally as `.json` files inside unique versioned folders (e.g., `[Timestamp-GUID]/001_mario-rossi/data.json`).
+* Transactions are saved locally as `.json` files inside unique versioned folders.
 * Attachments are renamed with GUIDs to prevent collisions.
 * Deletions are handled via soft-delete `.deleted` files.
-* When online, the app syncs this folder tree with Google Drive, gracefully handling merge conflicts manually via UI if two people edit the same expense simultaneously.
+* When online, the app syncs this folder tree with Google Drive, gracefully handling merge conflicts manually via UI.
 
 
 ## 🚀 Getting Started
