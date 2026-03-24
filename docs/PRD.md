@@ -12,7 +12,11 @@ A cross-platform mobile app (Android/iOS) to manage a "Shared Wallet" (la "cassa
    - Must support attachments (receipt images/PDFs), location (GPS coordinates), and location name.
 4. **Dashboard:** Displays overall fund status, expected vs. paid quotas per member, remaining balance per member, and total expenses.
 5. **Offline-First:** The app must be fully functional without an internet connection.
-6. **Trip Management:** Support for multiple concurrent trips. Users can create a new trip or join an existing one.
+6. **Trip Management & Home Page:** The app opens on a Home Page listing all configured trips. 
+   - Trips are visually categorized into "Created by me" (I miei viaggi) and "Joined" (Viaggi condivisi con me).
+   - At the bottom of the list, two main actions are always available: "Crea nuovo viaggio" and "Aggiungi viaggio esistente".
+   - Users can edit trip details (name, description, dates, currencies, expected quotas).
+   - Trip members must have an email address (for receiving receipts) and a simple Emoji avatar (to visually identify them in the UI without needing heavy image uploads).
 
 ## Target Audience & Environment
 Groups of travelers using a centralized pool of money, often in remote locations with poor or no internet connectivity.

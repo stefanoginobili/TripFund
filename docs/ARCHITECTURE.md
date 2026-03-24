@@ -25,3 +25,6 @@ Transactions are **append-only** to minimize conflicts and preserve a history of
 - **Attachments Rule:** To prevent file name collisions, all uploaded files (JPEG, PDF, etc.) MUST be renamed using a GUID format: `attachment_[guid].[extension]`. The original file name is discarded.
 - **Soft Deletion Rule:** If a user deletes a transaction, the app must NOT delete the previous folders. Instead, it creates a new version folder (e.g., `003_luigi`) containing only an empty file named `.deleted`.
 - **Conflict Handling:** If the app detects multiple folders for the same version number (e.g., `003_mario` and `003_luigi`), a conflict is flagged. The UI prompts the user to pick the winning version. The app then creates a new folder (e.g., `004_mario`) with the resolved data.
+
+### Local Trip Registry
+To power the Home Page offline, the app maintains a master registry file (`known_trips.json`) in the root of the local application data folder. This file contains a lightweight reference to every trip the user has created or joined, including the trip's ID, name, whether the current user is the owner, and the linked Google Drive Folder ID.
