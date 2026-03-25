@@ -19,8 +19,8 @@ All data is stored locally. When online, the app syncs with Google Drive.
 
 ### Conflict Resolution & File System
 Transactions are **append-only** to minimize conflicts and preserve a history of changes.
-- **Structure:** `[TripFolder]/Transactions/[yyyyMMddTHHmmssZ-guidprefix]/[Version]_[UserSlug]/`
-- **Example:** `Patagonia2026/Transactions/20260325T143000Z-a1b2c3d4/001_luigi/`
+- **Structure:** `[TripFolder]/Transactions/[yyyyMMddTHHmmssZ-guidprefix]/[Version]_[authorSlug]/`
+- **Example:** `patagonia-2026/Transactions/20260325T143000Z-a1b2c3d4/001_mario-mobile/`
 - **Content:** Inside the version folder, there is a `data.json` and optional attachments.
 - **Attachments Rule:** To prevent file name collisions, all uploaded files (JPEG, PDF, etc.) MUST be renamed using a GUID format: `attachment_[guid].[extension]`. The original file name is discarded.
 - **Soft Deletion Rule:** If a user deletes a transaction, the app must NOT delete the previous folders. Instead, it creates a new version folder (e.g., `003_luigi`) containing only an empty file named `.deleted`.
