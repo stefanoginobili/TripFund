@@ -19,7 +19,7 @@ A cross-platform mobile app (Android/iOS) to manage a "Shared Wallet" (la "cassa
    - Trip members must have an email address (for receiving receipts) and a simple Emoji avatar (to visually identify them in the UI).
 7. **App User Identity & Settings:** The physical user of the app is completely decoupled from the "Trip Members". 
    - On the very first launch, the app asks the user for their Name (e.g., "Mario Mobile"). 
-   - This name is saved in a global app settings file and is used purely as an informational signature (`registeredBy`) on any transaction created from that device.
+   - This name is saved in a global app settings file and is used purely as an informational signature (`author`) on any transaction created from that device.
    - A global Settings page allows the user to change this name at any time.
 
 ## Target Audience & Environment
