@@ -1,4 +1,0 @@
-<Solution>
-  <Project Path="TripFund.App/TripFund.App.csproj" />
-  <Project Path="TripFund.Tests/TripFund.Tests.csproj" />
-</Solution>
