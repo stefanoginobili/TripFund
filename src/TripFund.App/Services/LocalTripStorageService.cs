@@ -35,7 +35,7 @@ public class LocalTripStorageService
         }
     }
 
-    public async Task<AppSettings?> GetAppSettingsAsync()
+    public virtual async Task<AppSettings?> GetAppSettingsAsync()
     {
         var path = Path.Combine(_rootPath, "app_settings.json");
         if (!File.Exists(path)) return null;
@@ -43,14 +43,14 @@ public class LocalTripStorageService
         return JsonSerializer.Deserialize<AppSettings>(json, _jsonOptions);
     }
 
-    public async Task SaveAppSettingsAsync(AppSettings settings)
+    public virtual async Task SaveAppSettingsAsync(AppSettings settings)
     {
         var path = Path.Combine(_rootPath, "app_settings.json");
         var json = JsonSerializer.Serialize(settings, _jsonOptions);
         await File.WriteAllTextAsync(path, json);
     }
 
-    public async Task<LocalTripRegistry> GetTripRegistryAsync()
+    public virtual async Task<LocalTripRegistry> GetTripRegistryAsync()
     {
         var path = Path.Combine(_rootPath, "known_trips.json");
         if (!File.Exists(path)) return new LocalTripRegistry();
@@ -58,14 +58,14 @@ public class LocalTripStorageService
         return JsonSerializer.Deserialize<LocalTripRegistry>(json, _jsonOptions) ?? new LocalTripRegistry();
     }
 
-    public async Task SaveTripRegistryAsync(LocalTripRegistry registry)
+    public virtual async Task SaveTripRegistryAsync(LocalTripRegistry registry)
     {
         var path = Path.Combine(_rootPath, "known_trips.json");
         var json = JsonSerializer.Serialize(registry, _jsonOptions);
         await File.WriteAllTextAsync(path, json);
     }
 
-    public async Task<TripConfig?> GetTripConfigAsync(string tripSlug)
+    public virtual async Task<TripConfig?> GetTripConfigAsync(string tripSlug)
     {
         var path = Path.Combine(_rootPath, tripSlug, "trip_config.json");
         if (!File.Exists(path)) return null;
@@ -73,7 +73,7 @@ public class LocalTripStorageService
         return JsonSerializer.Deserialize<TripConfig>(json, _jsonOptions);
     }
 
-    public async Task SaveTripConfigAsync(string tripSlug, TripConfig config)
+    public virtual async Task SaveTripConfigAsync(string tripSlug, TripConfig config)
     {
         var tripDir = Path.Combine(_rootPath, tripSlug);
         if (!Directory.Exists(tripDir)) Directory.CreateDirectory(tripDir);
@@ -82,7 +82,7 @@ public class LocalTripStorageService
         await File.WriteAllTextAsync(path, json);
     }
 
-    public async Task<List<Transaction>> GetTransactionsAsync(string tripSlug)
+    public virtual async Task<List<Transaction>> GetTransactionsAsync(string tripSlug)
     {
         var transactionsDir = Path.Combine(_rootPath, tripSlug, "Transactions");
         if (!Directory.Exists(transactionsDir)) return new List<Transaction>();
@@ -101,7 +101,7 @@ public class LocalTripStorageService
         return result;
     }
 
-    public async Task<Transaction?> GetLatestTransactionVersionAsync(string tripSlug, string transactionId)
+    public virtual async Task<Transaction?> GetLatestTransactionVersionAsync(string tripSlug, string transactionId)
     {
         var transDir = Path.Combine(_rootPath, tripSlug, "Transactions", transactionId);
         if (!Directory.Exists(transDir)) return null;
@@ -137,7 +137,7 @@ public class LocalTripStorageService
         return JsonSerializer.Deserialize<Transaction>(json, _jsonOptions);
     }
 
-    public async Task SaveTransactionAsync(string tripSlug, Transaction transaction, string authorSlug, bool isDelete = false)
+    public virtual async Task SaveTransactionAsync(string tripSlug, Transaction transaction, string authorSlug, bool isDelete = false)
     {
         var transDir = Path.Combine(_rootPath, tripSlug, "Transactions", transaction.Id);
         if (!Directory.Exists(transDir)) Directory.CreateDirectory(transDir);
@@ -164,7 +164,7 @@ public class LocalTripStorageService
         }
     }
 
-    public async Task<Dictionary<string, Transaction>> GetConflictingVersionsAsync(string tripSlug, string transactionId)
+    public virtual async Task<Dictionary<string, Transaction>> GetConflictingVersionsAsync(string tripSlug, string transactionId)
     {
         var transDir = Path.Combine(_rootPath, tripSlug, "Transactions", transactionId);
         var versionDirs = Directory.GetDirectories(transDir)
@@ -195,7 +195,7 @@ public class LocalTripStorageService
         return result;
     }
 
-    public async Task ResolveConflictAsync(string tripSlug, Transaction resolvedTransaction, string authorSlug)
+    public virtual async Task ResolveConflictAsync(string tripSlug, Transaction resolvedTransaction, string authorSlug)
     {
         var transDir = Path.Combine(_rootPath, tripSlug, "Transactions", resolvedTransaction.Id);
         

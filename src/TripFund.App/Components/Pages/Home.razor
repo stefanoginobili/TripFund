@@ -1,5 +1,131 @@
-﻿@page "/"
+@page "/"
+@using TripFund.App.Models
+@using TripFund.App.Services
+@inject LocalTripStorageService Storage
+@inject NavigationManager Nav
 
-<h1>Hello, world!</h1>
+<div class="header">
+    <h1 class="page-title">I miei viaggi</h1>
+    <button class="settings-btn" @onclick='() => Nav.NavigateTo("/settings")'>
+        ⚙️
+    </button>
+</div>
 
-Welcome to your new app.
+<div class="trips-list mt-3">
+    @if (trips == null)
+    {
+        <p>Caricamento...</p>
+    }
+    else if (trips.Count == 0)
+    {
+        <div class="empty-state">
+            <p>Nessun viaggio trovato.</p>
+            <p>Crea il tuo primo viaggio per iniziare!</p>
+        </div>
+    }
+    else
+    {
+        @foreach (var trip in trips)
+        {
+            <div class="trip-card mb-3" @onclick='() => Nav.NavigateTo($"/trip/{trip.Id}")'>
+                <div class="trip-info">
+                    <h3 class="trip-name">@trip.Name</h3>
+                    <p class="trip-dates">@trip.StartDate.ToShortDateString() - @trip.EndDate.ToShortDateString()</p>
+                </div>
+                <div class="trip-members">
+                    👤 @trip.Members.Count
+                </div>
+            </div>
+        }
+    }
+</div>
+
+<div class="bottom-actions">
+    <button class="btn btn-primary w-100 mb-2 py-3">
+        Crea nuovo viaggio
+    </button>
+    <button class="btn btn-outline-secondary w-100 py-3">
+        Aggiungi viaggio esistente
+    </button>
+</div>
+
+@code {
+    private List<TripConfig>? trips;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var registry = await Storage.GetTripRegistryAsync();
+        trips = new List<TripConfig>();
+
+        foreach (var entry in registry.Trips)
+        {
+            var config = await Storage.GetTripConfigAsync(entry.Key);
+            if (config != null)
+            {
+                trips.Add(config);
+            }
+        }
+    }
+}
+
+<style>
+    .header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding-top: 1rem;
+    }
+    .page-title {
+        font-weight: bold;
+        margin-bottom: 0;
+    }
+    .settings-btn {
+        background: none;
+        border: none;
+        font-size: 1.5rem;
+    }
+    .trips-list {
+        flex: 1;
+        overflow-y: auto;
+        padding-bottom: 120px; /* Space for bottom actions */
+    }
+    .trip-card {
+        background: #f8f9fa;
+        border-radius: 12px;
+        padding: 1.25rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        cursor: pointer;
+    }
+    .trip-name {
+        margin: 0;
+        font-size: 1.2rem;
+        font-weight: bold;
+    }
+    .trip-dates {
+        margin: 0;
+        color: #6c757d;
+        font-size: 0.9rem;
+    }
+    .trip-members {
+        background: #e9ecef;
+        padding: 0.25rem 0.75rem;
+        border-radius: 20px;
+        font-size: 0.9rem;
+    }
+    .empty-state {
+        text-align: center;
+        margin-top: 3rem;
+        color: #6c757d;
+    }
+    .bottom-actions {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        background: white;
+        padding: 1rem 1.5rem;
+        box-shadow: 0 -2px 10px rgba(0,0,0,0.05);
+    }
+</style>

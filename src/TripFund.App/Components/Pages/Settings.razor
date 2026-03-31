@@ -1,0 +1,79 @@
+@page "/settings"
+@using TripFund.App.Models
+@using TripFund.App.Services
+@using TripFund.App.Utilities
+@inject LocalTripStorageService Storage
+@inject NavigationManager Nav
+
+<div class="header mb-4">
+    <button class="back-btn" @onclick='() => Nav.NavigateTo("/")'>
+        ⬅️
+    </button>
+    <h1 class="page-title ms-2">Impostazioni</h1>
+</div>
+
+<div class="form-section">
+    <div class="mb-4">
+        <label for="authorName" class="form-label">Nome Autore</label>
+        <input type="text" id="authorName" class="form-control" 
+               @bind="authorName" @bind:event="oninput" 
+               placeholder="E.g. Mario Rossi" />
+    </div>
+
+    <div class="mb-4">
+        <label class="form-label">Slug Autore (Sola lettura)</label>
+        <input type="text" class="form-control bg-light" value="@Slug" readonly />
+    </div>
+
+    <button class="btn btn-primary w-100 py-3 mt-3" 
+            disabled="@(string.IsNullOrWhiteSpace(authorName))"
+            @onclick="SaveSettings">
+        Salva Modifiche
+    </button>
+</div>
+
+@code {
+    private string authorName = string.Empty;
+    private string Slug => SlugUtility.GenerateSlug(authorName);
+
+    protected override async Task OnInitializedAsync()
+    {
+        var settings = await Storage.GetAppSettingsAsync();
+        if (settings != null)
+        {
+            authorName = settings.AuthorName;
+        }
+    }
+
+    private async Task SaveSettings()
+    {
+        if (string.IsNullOrWhiteSpace(authorName)) return;
+
+        var settings = new AppSettings
+        {
+            AuthorName = authorName,
+            AuthorSlug = Slug
+        };
+
+        await Storage.SaveAppSettingsAsync(settings);
+        Nav.NavigateTo("/");
+    }
+}
+
+<style>
+    .header {
+        display: flex;
+        align-items: center;
+        padding-top: 1rem;
+    }
+    .back-btn {
+        background: none;
+        border: none;
+        font-size: 1.5rem;
+    }
+    .page-title {
+        font-weight: bold;
+        margin-bottom: 0;
+        font-size: 1.5rem;
+    }
+</style>

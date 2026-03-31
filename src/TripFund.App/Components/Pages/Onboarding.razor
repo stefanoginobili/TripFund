@@ -1,0 +1,81 @@
+@page "/onboarding"
+@using TripFund.App.Models
+@using TripFund.App.Services
+@using TripFund.App.Utilities
+@inject LocalTripStorageService Storage
+@inject NavigationManager Nav
+
+<div class="onboarding-container">
+    <div class="logo-section">
+        <h1 class="app-title">TripFund</h1>
+        <p class="app-subtitle">Gestisci la cassa comune dei tuoi viaggi</p>
+    </div>
+
+    <div class="form-section mt-5">
+        <h2 class="section-title">Benvenuto!</h2>
+        <p class="section-desc">Inserisci il tuo nome per iniziare.</p>
+
+        <div class="mb-4">
+            <label for="authorName" class="form-label">Nome Autore</label>
+            <input type="text" id="authorName" class="form-control" 
+                   @bind="authorName" @bind:event="oninput" 
+                   placeholder="E.g. Mario Rossi" />
+        </div>
+
+        <div class="mb-4">
+            <label class="form-label">Slug Autore (Sola lettura)</label>
+            <input type="text" class="form-control bg-light" value="@Slug" readonly />
+        </div>
+
+        <button class="btn btn-primary w-100 py-3 mt-3" 
+                disabled="@(string.IsNullOrWhiteSpace(authorName))"
+                @onclick="SaveSettings">
+            Inizia
+        </button>
+    </div>
+</div>
+
+@code {
+    private string authorName = string.Empty;
+    private string Slug => SlugUtility.GenerateSlug(authorName);
+
+    private async Task SaveSettings()
+    {
+        if (string.IsNullOrWhiteSpace(authorName)) return;
+
+        var settings = new AppSettings
+        {
+            AuthorName = authorName,
+            AuthorSlug = Slug
+        };
+
+        await Storage.SaveAppSettingsAsync(settings);
+        Nav.NavigateTo("/");
+    }
+}
+
+<style>
+    .onboarding-container {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        min-height: 80vh;
+    }
+    .logo-section {
+        text-align: center;
+    }
+    .app-title {
+        font-weight: bold;
+        color: #512BD4;
+        font-size: 3rem;
+    }
+    .app-subtitle {
+        color: #6c757d;
+    }
+    .section-title {
+        font-weight: bold;
+    }
+    .section-desc {
+        color: #6c757d;
+    }
+</style>
