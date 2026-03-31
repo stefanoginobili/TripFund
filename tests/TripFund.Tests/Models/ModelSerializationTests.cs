@@ -92,4 +92,55 @@ public class ModelSerializationTests
 
         deserializedAgain.Should().BeEquivalentTo(transaction);
     }
+
+    [Fact]
+    public void AppSettings_ShouldSerializeAndDeserializeCorrectly()
+    {
+        // Arrange
+        var json = @"{
+          ""authorName"": ""Mario Rossi"",
+          ""authorSlug"": ""mario-rossi""
+        }";
+
+        // Act
+        var settings = JsonSerializer.Deserialize<AppSettings>(json, _options);
+        var serializedJson = JsonSerializer.Serialize(settings, _options);
+        var deserializedAgain = JsonSerializer.Deserialize<AppSettings>(serializedJson, _options);
+
+        // Assert
+        settings.Should().NotBeNull();
+        settings!.AuthorName.Should().Be("Mario Rossi");
+        settings.AuthorSlug.Should().Be("mario-rossi");
+
+        deserializedAgain.Should().BeEquivalentTo(settings);
+    }
+
+    [Fact]
+    public void LocalTripRegistry_ShouldSerializeAndDeserializeCorrectly()
+    {
+        // Arrange
+        var json = @"{
+          ""trips"": {
+            ""patagonia-2026"": {
+              ""driveFolderId"": ""drive-folder-xyz""
+            },
+            ""giappone-2027"": {
+              ""driveFolderId"": ""drive-folder-abc""
+            }
+          }
+        }";
+
+        // Act
+        var registry = JsonSerializer.Deserialize<LocalTripRegistry>(json, _options);
+        var serializedJson = JsonSerializer.Serialize(registry, _options);
+        var deserializedAgain = JsonSerializer.Deserialize<LocalTripRegistry>(serializedJson, _options);
+
+        // Assert
+        registry.Should().NotBeNull();
+        registry!.Trips.Should().HaveCount(2);
+        registry.Trips.Should().ContainKey("patagonia-2026");
+        registry.Trips["patagonia-2026"].DriveFolderId.Should().Be("drive-folder-xyz");
+
+        deserializedAgain.Should().BeEquivalentTo(registry);
+    }
 }
