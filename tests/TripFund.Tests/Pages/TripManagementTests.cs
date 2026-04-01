@@ -41,7 +41,7 @@ public class TripManagementTests : BunitContext
 
         // Add a currency is already there by default (EUR)
         
-        await cut.Find("button.btn-primary.w-100").ClickAsync();
+        await cut.Find("button.btn-submit").ClickAsync();
 
         // Assert
         _storageMock.Verify(s => s.SaveTripConfigAsync("new-trip", It.Is<TripConfig>(c => c.Name == "New Trip")), Times.Once);

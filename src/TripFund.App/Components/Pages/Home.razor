@@ -6,49 +6,78 @@
 @inject IDriveService Drive
 @inject NavigationManager Nav
 
-<div class="header">
-    <h1 class="page-title">I miei viaggi</h1>
-    <button class="settings-btn" @onclick="NavigateToSettings">
-        ⚙️
-    </button>
-</div>
+<div class="home-page">
+    <header class="app-header">
+        <div class="spacer"></div>
+        <h1 class="brand-name">TripFund</h1>
+        <button class="settings-btn" @onclick="NavigateToSettings">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="3"></circle>
+                <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+            </svg>
+        </button>
+    </header>
 
-<div class="trips-list mt-3">
-    @if (trips == null)
-    {
-        <p>Caricamento...</p>
-    }
-    else if (trips.Count == 0)
-    {
-        <div class="empty-state">
-            <p>Nessun viaggio trovato.</p>
-            <p>Crea il tuo primo viaggio per iniziare!</p>
+    <main class="content">
+        <h2 class="page-title">I miei viaggi</h2>
+
+        <div class="trips-list">
+            @if (trips == null)
+            {
+                <p class="status-text">Caricamento...</p>
+            }
+            else if (trips.Count == 0)
+            {
+                <div class="empty-state">
+                    <p>Nessun viaggio trovato.</p>
+                    <p class="small">Crea il tuo primo viaggio per iniziare!</p>
+                </div>
+            }
+            else
+            {
+                @foreach (var item in trips)
+                {
+                    <div class="trip-card" @onclick="() => NavigateToTrip(item.Slug)">
+                        <div class="card-top">
+                            <div class="trip-icon-container">
+                                <span class="trip-icon">🏔️</span>
+                            </div>
+                            <div class="member-badge">
+                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                                    <circle cx="12" cy="7" r="4"></circle>
+                                </svg>
+                                <span>@item.Config.Members.Count Partecipanti</span>
+                            </div>
+                        </div>
+                        <div class="card-bottom">
+                            <h3 class="trip-name">@item.Config.Name</h3>
+                            <p class="trip-dates">@FormatDates(item.Config.StartDate, item.Config.EndDate)</p>
+                        </div>
+                    </div>
+                }
+            }
         </div>
-    }
-    else
-    {
-        @foreach (var item in trips)
-        {
-            <div class="trip-card mb-3" @onclick="() => NavigateToTrip(item.Slug)">
-                <div class="trip-info">
-                    <h3 class="trip-name">@item.Config.Name</h3>
-                    <p class="trip-dates">@item.Config.StartDate.ToShortDateString() - @item.Config.EndDate.ToShortDateString()</p>
-                </div>
-                <div class="trip-members">
-                    👤 @item.Config.Members.Count
-                </div>
-            </div>
-        }
-    }
-</div>
+    </main>
 
-<div class="bottom-actions">
-    <button class="btn btn-primary w-100 mb-2 py-3" @onclick="NavigateToCreate">
-        Crea nuovo viaggio
-    </button>
-    <button class="btn btn-outline-secondary w-100 py-3" @onclick="HandleJoinTrip">
-        Aggiungi viaggio esistente
-    </button>
+    <footer class="footer">
+        <button class="btn-create" @onclick="NavigateToCreate">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="12" y1="5" x2="12" y2="19"></line>
+                <line x1="5" y1="12" x2="19" y2="12"></line>
+            </svg>
+            Crea nuovo viaggio
+        </button>
+        <button class="btn-add" @onclick="HandleJoinTrip">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                <circle cx="8.5" cy="7" r="4"></circle>
+                <line x1="20" y1="8" x2="20" y2="14"></line>
+                <line x1="17" y1="11" x2="23" y2="11"></line>
+            </svg>
+            Aggiungi viaggio esistente
+        </button>
+    </footer>
 </div>
 
 @code {
@@ -59,20 +88,9 @@
         await LoadTrips();
     }
 
-    private void NavigateToSettings()
-    {
-        Nav.NavigateTo("/settings");
-    }
-
-    private void NavigateToCreate()
-    {
-        Nav.NavigateTo("/create-trip");
-    }
-
-    private void NavigateToTrip(string slug)
-    {
-        Nav.NavigateTo($"/trip/{slug}");
-    }
+    private void NavigateToSettings() => Nav.NavigateTo("/settings");
+    private void NavigateToCreate() => Nav.NavigateTo("/create-trip");
+    private void NavigateToTrip(string slug) => Nav.NavigateTo($"/trip/{slug}");
 
     private async Task LoadTrips()
     {
@@ -121,6 +139,16 @@
         NavigateToTrip(slug);
     }
 
+    private string FormatDates(DateTime start, DateTime end)
+    {
+        // Example: 1 Nov - 20 Nov 2026
+        if (start.Year == end.Year)
+        {
+            return $"{start:d MMM} - {end:d MMM yyyy}";
+        }
+        return $"{start:d MMM yyyy} - {end:d MMM yyyy}";
+    }
+
     private class TripListItem
     {
         public string Slug { get; set; } = "";
@@ -129,63 +157,162 @@
 }
 
 <style>
-    .header {
+    .home-page {
+        background-color: #F8FBF9;
+        min-height: 100vh;
         display: flex;
-        justify-content: space-between;
+        flex-direction: column;
+        margin: -1.5rem;
+    }
+
+    .app-header {
+        display: flex;
         align-items: center;
+        justify-content: space-between;
+        padding: 1rem 1.5rem;
+        background-color: #FFFFFF;
+        border-bottom: 1px solid #F0F0F0;
     }
-    .page-title {
-        font-weight: bold;
-        margin-bottom: 0;
+
+    .brand-name {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: #1A3C2F;
+        margin: 0;
     }
+
+    .spacer { width: 40px; }
+
     .settings-btn {
         background: none;
         border: none;
-        font-size: 1.5rem;
+        color: #495057;
+        padding: 0.5rem;
+        display: flex;
     }
-    .trips-list {
+
+    .content {
         flex: 1;
-        overflow-y: auto;
-        padding-bottom: 120px; /* Space for bottom actions */
+        padding: 2rem 1.5rem;
+        padding-bottom: 10rem;
     }
+
+    .page-title {
+        font-size: 2.2rem;
+        font-weight: 700;
+        color: #1A3C2F;
+        margin-bottom: 2rem;
+    }
+
+    .trips-list {
+        display: flex;
+        flex-direction: column;
+        gap: 1.5rem;
+    }
+
     .trip-card {
-        background: #f8f9fa;
-        border-radius: 12px;
-        padding: 1.25rem;
+        background-color: #FFFFFF;
+        border-radius: 28px;
+        padding: 1.5rem;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.04);
+        cursor: pointer;
+        transition: transform 0.1s;
+    }
+
+    .trip-card:active {
+        transform: scale(0.98);
+    }
+
+    .card-top {
         display: flex;
         justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: 1.5rem;
+    }
+
+    .trip-icon-container {
+        width: 56px;
+        height: 56px;
+        background-color: #D6EDE2;
+        border-radius: 50%;
+        display: flex;
         align-items: center;
-        cursor: pointer;
+        justify-content: center;
+        font-size: 1.8rem;
     }
-    .trip-name {
-        margin: 0;
-        font-size: 1.2rem;
-        font-weight: bold;
-    }
-    .trip-dates {
-        margin: 0;
-        color: #6c757d;
-        font-size: 0.9rem;
-    }
-    .trip-members {
-        background: #e9ecef;
-        padding: 0.25rem 0.75rem;
+
+    .member-badge {
+        background-color: #E9F2EE;
+        color: #20563C;
+        padding: 0.4rem 0.8rem;
         border-radius: 20px;
-        font-size: 0.9rem;
+        font-size: 0.85rem;
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        gap: 0.4rem;
     }
-    .empty-state {
-        text-align: center;
-        margin-top: 3rem;
-        color: #6c757d;
+
+    .trip-name {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: #1A3C2F;
+        margin: 0 0 0.4rem 0;
     }
-    .bottom-actions {
+
+    .trip-dates {
+        font-size: 0.95rem;
+        color: #6C757D;
+        margin: 0;
+    }
+
+    .footer {
         position: fixed;
         bottom: 0;
         left: 0;
         right: 0;
-        background: white;
-        padding: 1rem 1.5rem;
-        box-shadow: 0 -2px 10px rgba(0,0,0,0.05);
-        z-index: 1000;
+        padding: 1.5rem;
+        background: linear-gradient(0deg, rgba(248,251,249,1) 60%, rgba(248,251,249,0) 100%);
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
     }
+
+    .btn-create {
+        background-color: #20563C;
+        color: #FFFFFF;
+        border: none;
+        border-radius: 20px;
+        padding: 1.1rem;
+        font-size: 1.1rem;
+        font-weight: 700;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.75rem;
+        box-shadow: 0 4px 12px rgba(32, 86, 60, 0.2);
+    }
+
+    .btn-add {
+        background-color: #FFFFFF;
+        color: #1A3C2F;
+        border: 1px solid #E9ECEF;
+        border-radius: 20px;
+        padding: 1.1rem;
+        font-size: 1.1rem;
+        font-weight: 700;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.75rem;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.02);
+    }
+
+    .status-text, .empty-state {
+        text-align: center;
+        color: #6C757D;
+        margin-top: 3rem;
+    }
+
+    .small { font-size: 0.9rem; }
 </style>
