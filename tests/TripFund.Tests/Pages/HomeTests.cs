@@ -53,6 +53,6 @@ public class HomeTests : BunitContext
 
         // Assert
         cut.Find(".trip-name").TextContent.Should().Be("Patagonia");
-        cut.Find(".trip-members").TextContent.Should().Contain("1");
+        cut.Find(".member-badge").TextContent.Should().Contain("1");
     }
 }

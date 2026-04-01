@@ -1,0 +1,441 @@
+@page "/trip/{tripSlug}/member/{memberSlug}"
+@using TripFund.App.Models
+@using TripFund.App.Services
+@inject LocalTripStorageService Storage
+@inject NavigationManager Nav
+
+<div class="dashboard-page">
+    <header class="app-header">
+        <button class="icon-btn" @onclick='() => Nav.NavigateTo($"/trip/{tripSlug}")'>
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="19" y1="12" x2="5" y2="12"></line>
+                <polyline points="12 19 5 12 12 5"></polyline>
+            </svg>
+        </button>
+        <h1 class="header-title">Dettaglio Partecipante</h1>
+        <div class="spacer"></div>
+    </header>
+
+    @if (config == null || member == null)
+    {
+        <p class="status-text">Caricamento...</p>
+    }
+    else
+    {
+        <div class="member-profile">
+            <div class="profile-avatar">@member.Avatar</div>
+            <h2 class="profile-name">@member.Name</h2>
+            <p class="profile-email">@member.Email</p>
+        </div>
+
+        <div class="currency-selector">
+            @foreach (var curr in config.Currencies.Keys)
+            {
+                <button class="currency-pill @(selectedCurrency == curr ? "active" : "")" @onclick="() => SelectCurrency(curr)">
+                    @curr
+                </button>
+            }
+        </div>
+
+        <main class="content">
+            <div class="summary-card">
+                <p class="summary-label">Totale versato</p>
+                <h2 class="summary-total">@FormatCurrency(totalContributed, selectedCurrency)</h2>
+                <p class="summary-sub">Totale rimasto: <strong>@FormatCurrency(remainingBalance, selectedCurrency)</strong></p>
+                
+                <div class="progress-container">
+                    <div class="progress-bar-bg">
+                        <div class="progress-bar-fill" style="width: @(progressPercentage)%"></div>
+                    </div>
+                    <div class="progress-labels">
+                        <span>@FormatCurrency(totalContributed, selectedCurrency)</span>
+                        <span>Quota prevista: @FormatCurrency(targetAmount, selectedCurrency)</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="quick-actions">
+                <button class="action-btn contribute-btn" @onclick='() => Nav.NavigateTo($"/trip/{tripSlug}/add-contribution?member={memberSlug}&currency={selectedCurrency}")'>
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="12" y1="5" x2="12" y2="19"></line>
+                        <line x1="5" y1="12" x2="19" y2="12"></line>
+                    </svg>
+                    Registra Versamento
+                </button>
+            </div>
+
+            <div class="section-container">
+                <h3 class="section-title">Transazioni utente</h3>
+                <div class="transactions-list">
+                    @if (!userTransactions.Any())
+                    {
+                        <p class="empty-text">Nessuna transazione per questo utente.</p>
+                    }
+                    @foreach (var t in userTransactions.OrderByDescending(x => x.OriginalTx.Date))
+                    {
+                        <div class="transaction-row" @onclick='() => Nav.NavigateTo($"/trip/{tripSlug}/transaction/{t.OriginalTx.Id}")'>
+                            <div class="transaction-icon @(t.OriginalTx.Type == "expense" ? "expense-icon" : "contrib-icon")">
+                                @if(t.OriginalTx.Type == "expense")
+                                {
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 18 13.5 8.5 8.5 13.5 1 6"></polyline><polyline points="17 18 23 18 23 12"></polyline></svg>
+                                }
+                                else
+                                {
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline><polyline points="17 6 23 6 23 12"></polyline></svg>
+                                }
+                            </div>
+                            <div class="transaction-info">
+                                <div class="transaction-desc">@(string.IsNullOrWhiteSpace(t.OriginalTx.Description) ? (t.OriginalTx.Type == "expense" ? "Spesa" : "Versamento") : t.OriginalTx.Description)</div>
+                                <div class="transaction-date">@t.OriginalTx.Date.ToString("g") • @t.OriginalTx.Author</div>
+                            </div>
+                            <div class="transaction-amount @(t.OriginalTx.Type == "expense" ? "negative" : "positive")">
+                                @(t.OriginalTx.Type == "expense" ? "-" : "+")@FormatCurrency(t.UserAmount, t.OriginalTx.Currency)
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+        </main>
+    }
+</div>
+
+@code {
+    [Parameter] public string tripSlug { get; set; } = "";
+    [Parameter] public string memberSlug { get; set; } = "";
+    
+    private TripConfig? config;
+    private User? member;
+    private List<Transaction> allTransactions = new();
+    private List<UserTransactionItem> userTransactions = new();
+    
+    private string selectedCurrency = "";
+    
+    private decimal totalContributed = 0;
+    private decimal remainingBalance = 0;
+    private decimal targetAmount = 0;
+    private double progressPercentage = 0;
+
+    protected override async Task OnInitializedAsync()
+    {
+        config = await Storage.GetTripConfigAsync(tripSlug);
+        if (config != null)
+        {
+            if (config.Members.TryGetValue(memberSlug, out var m))
+            {
+                member = m;
+            }
+            if (config.Currencies.Any())
+            {
+                selectedCurrency = config.Currencies.Keys.First();
+            }
+            allTransactions = await Storage.GetTransactionsAsync(tripSlug);
+            CalculateStats();
+        }
+    }
+
+    private void SelectCurrency(string currencyCode)
+    {
+        selectedCurrency = currencyCode;
+        CalculateStats();
+    }
+
+    private void CalculateStats()
+    {
+        if (config == null || member == null || string.IsNullOrEmpty(selectedCurrency)) return;
+
+        var currencyConfig = config.Currencies.ContainsKey(selectedCurrency) ? config.Currencies[selectedCurrency] : null;
+        if (currencyConfig == null) return;
+
+        targetAmount = currencyConfig.ExpectedQuotaPerMember;
+
+        var currentCurrencyTx = allTransactions.Where(t => t.Currency == selectedCurrency).ToList();
+        
+        userTransactions.Clear();
+        totalContributed = 0;
+        decimal mExpenses = 0;
+
+        foreach (var t in currentCurrencyTx)
+        {
+            if (t.Split.TryGetValue(memberSlug, out decimal amount) && amount > 0)
+            {
+                userTransactions.Add(new UserTransactionItem { OriginalTx = t, UserAmount = amount });
+                
+                if (t.Type == "contribution") totalContributed += amount;
+                else if (t.Type == "expense") mExpenses += amount;
+            }
+        }
+
+        remainingBalance = totalContributed - mExpenses;
+        progressPercentage = targetAmount > 0 ? Math.Min(100, (double)(totalContributed / targetAmount * 100)) : 0;
+    }
+
+    private string FormatCurrency(decimal amount, string currencyCode)
+    {
+        if (config != null && config.Currencies.TryGetValue(currencyCode, out var c))
+        {
+            return $"{c.Symbol} {amount:N2}";
+        }
+        return $"{amount:N2} {currencyCode}";
+    }
+
+    private class UserTransactionItem
+    {
+        public Transaction OriginalTx { get; set; } = new();
+        public decimal UserAmount { get; set; }
+    }
+}
+
+<style>
+    .dashboard-page {
+        background-color: #F8FBF9;
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+        margin: -1.5rem;
+    }
+
+    .app-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 1rem 1.5rem;
+        background-color: #FFFFFF;
+        border-bottom: 1px solid #F0F0F0;
+    }
+
+    .header-title {
+        font-size: 1.25rem;
+        font-weight: 700;
+        color: #1A3C2F;
+        margin: 0;
+    }
+
+    .icon-btn {
+        background: none;
+        border: none;
+        color: #1A3C2F;
+        padding: 0.5rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .spacer { width: 36px; }
+
+    .member-profile {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        padding: 2rem 1.5rem 1rem;
+        background-color: #FFFFFF;
+    }
+
+    .profile-avatar {
+        font-size: 3rem;
+        width: 80px;
+        height: 80px;
+        background-color: #F8FBF9;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: 1rem;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+    }
+
+    .profile-name {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: #1A3C2F;
+        margin-bottom: 0.2rem;
+    }
+
+    .profile-email {
+        font-size: 0.9rem;
+        color: #6C757D;
+        margin: 0;
+    }
+
+    .currency-selector {
+        display: flex;
+        gap: 0.5rem;
+        padding: 1rem 1.5rem;
+        background-color: #FFFFFF;
+        overflow-x: auto;
+    }
+
+    .currency-pill {
+        padding: 0.5rem 1rem;
+        border-radius: 20px;
+        background-color: #F0F0F0;
+        color: #6C757D;
+        border: none;
+        font-weight: 600;
+        font-size: 0.9rem;
+        white-space: nowrap;
+    }
+
+    .currency-pill.active {
+        background-color: #20563C;
+        color: #FFFFFF;
+    }
+
+    .content {
+        padding: 1.5rem;
+        padding-bottom: 3rem;
+    }
+
+    .summary-card {
+        background: linear-gradient(135deg, #20563C 0%, #1A3C2F 100%);
+        border-radius: 24px;
+        padding: 1.5rem;
+        color: #FFFFFF;
+        margin-bottom: 1.5rem;
+        box-shadow: 0 8px 24px rgba(32, 86, 60, 0.2);
+    }
+
+    .summary-label {
+        font-size: 0.9rem;
+        opacity: 0.8;
+        margin-bottom: 0.2rem;
+    }
+
+    .summary-total {
+        font-size: 2.5rem;
+        font-weight: 700;
+        margin-bottom: 0.5rem;
+    }
+
+    .summary-sub {
+        font-size: 0.95rem;
+        opacity: 0.9;
+        margin-bottom: 1.5rem;
+    }
+
+    .progress-container {
+        margin-top: 1rem;
+    }
+
+    .progress-bar-bg {
+        height: 8px;
+        background-color: rgba(255,255,255,0.2);
+        border-radius: 4px;
+        overflow: hidden;
+        margin-bottom: 0.5rem;
+    }
+
+    .progress-bar-fill {
+        height: 100%;
+        background-color: #FFFFFF;
+        border-radius: 4px;
+    }
+
+    .progress-labels {
+        display: flex;
+        justify-content: space-between;
+        font-size: 0.8rem;
+        opacity: 0.8;
+    }
+
+    .quick-actions {
+        display: flex;
+        gap: 1rem;
+        margin-bottom: 2rem;
+    }
+
+    .action-btn {
+        flex: 1;
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+        padding: 1rem;
+        border-radius: 20px;
+        border: none;
+        font-weight: 600;
+        font-size: 0.9rem;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+    }
+
+    .contribute-btn {
+        background-color: #20563C;
+        color: #FFFFFF;
+    }
+
+    .section-container {
+        margin-bottom: 2rem;
+    }
+
+    .section-title {
+        font-size: 1.25rem;
+        font-weight: 700;
+        color: #1A3C2F;
+        margin-bottom: 1rem;
+    }
+
+    .transactions-list {
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+    }
+
+    .transaction-row {
+        background-color: #FFFFFF;
+        padding: 1rem;
+        border-radius: 16px;
+        display: flex;
+        align-items: center;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.02);
+        cursor: pointer;
+    }
+
+    .transaction-icon {
+        width: 40px;
+        height: 40px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-right: 1rem;
+    }
+
+    .contrib-icon {
+        background-color: #D6EDE2;
+        color: #20563C;
+    }
+
+    .expense-icon {
+        background-color: #FCE8E8;
+        color: #DC3545;
+    }
+
+    .transaction-info {
+        flex: 1;
+    }
+
+    .transaction-desc {
+        font-weight: 600;
+        color: #1A3C2F;
+        margin-bottom: 0.2rem;
+    }
+
+    .transaction-date {
+        font-size: 0.8rem;
+        color: #6C757D;
+    }
+
+    .transaction-amount {
+        font-weight: 700;
+    }
+
+    .positive { color: #20563C; }
+    .negative { color: #DC3545; }
+
+    .empty-text {
+        color: #6C757D;
+        font-style: italic;
+        text-align: center;
+        padding: 1rem;
+    }
+</style>

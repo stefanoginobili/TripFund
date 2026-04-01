@@ -87,7 +87,7 @@ public class TripManagementTests : BunitContext
         var cut = Render<Home>();
 
         // Act
-        await cut.Find("button.btn-outline-secondary").ClickAsync();
+        await cut.Find("button.btn-add").ClickAsync();
 
         // Assert
         _storageMock.Verify(s => s.SaveTripConfigAsync("existing-trip", It.IsAny<TripConfig>()), Times.Once);
