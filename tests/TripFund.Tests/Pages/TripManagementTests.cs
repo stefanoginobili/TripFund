@@ -12,14 +12,17 @@ public class TripManagementTests : BunitContext
 {
     private readonly Mock<LocalTripStorageService> _storageMock;
     private readonly Mock<IDriveService> _driveMock;
+    private readonly Mock<IAlertService> _alertMock;
 
     public TripManagementTests()
     {
         _storageMock = new Mock<LocalTripStorageService>("dummy_path");
         _driveMock = new Mock<IDriveService>();
+        _alertMock = new Mock<IAlertService>();
         
         Services.AddSingleton(_storageMock.Object);
         Services.AddSingleton(_driveMock.Object);
+        Services.AddSingleton(_alertMock.Object);
     }
 
     [Fact]
@@ -41,7 +44,7 @@ public class TripManagementTests : BunitContext
 
         // Add a currency is already there by default (EUR)
         
-        await cut.Find("button.btn-submit").ClickAsync();
+        await cut.Find(".btn-submit").ClickAsync();
 
         // Assert
         _storageMock.Verify(s => s.SaveTripConfigAsync("new-trip", It.Is<TripConfig>(c => c.Name == "New Trip")), Times.Once);
@@ -67,10 +70,10 @@ public class TripManagementTests : BunitContext
         var cut = Render<EditTrip>(parameters => parameters.Add(p => p.tripSlug, tripSlug));
 
         // Act
-        var nameInput = cut.FindAll("input").First(i => i.GetAttribute("value") == "Old Name");
+        var nameInput = cut.FindAll("input").First(i => i.GetAttribute("placeholder") == "es. Patagonia 2026");
         nameInput.Change("Updated Name");
 
-        await cut.Find("button.btn-success").ClickAsync();
+        await cut.Find(".save-btn-large").ClickAsync();
 
         // Assert
         _storageMock.Verify(s => s.SaveTripConfigAsync(tripSlug, It.Is<TripConfig>(c => c.Name == "Updated Name")), Times.Once);

@@ -109,7 +109,7 @@ public class LocalTripStorageService
         return result;
     }
 
-    public virtual async Task<Transaction?> GetLatestTransactionVersionAsync(string tripSlug, string transactionId)
+    public virtual async Task<TransactionVersionInfo?> GetLatestTransactionVersionWithMetadataAsync(string tripSlug, string transactionId)
     {
         var transDir = Path.Combine(_tripsPath, tripSlug, "Transactions", transactionId);
         if (!Directory.Exists(transDir)) return null;
@@ -135,17 +135,38 @@ public class LocalTripStorageService
 
         if (File.Exists(Path.Combine(latestDirPath, ".deleted")))
         {
-            return null;
+            return new TransactionVersionInfo { VersionFolderName = latest.FolderName, IsDeleted = true };
         }
 
         var dataPath = Path.Combine(latestDirPath, "data.json");
         if (!File.Exists(dataPath)) return null;
 
         var json = await File.ReadAllTextAsync(dataPath);
-        return JsonSerializer.Deserialize<Transaction>(json, _jsonOptions);
+        var transaction = JsonSerializer.Deserialize<Transaction>(json, _jsonOptions);
+        if (transaction == null) return null;
+
+        return new TransactionVersionInfo
+        {
+            Transaction = transaction,
+            VersionFolderName = latest.FolderName
+        };
     }
 
-    public virtual async Task SaveTransactionAsync(string tripSlug, Transaction transaction, string authorSlug, bool isDelete = false)
+    public virtual async Task<Transaction?> GetLatestTransactionVersionAsync(string tripSlug, string transactionId)
+    {
+        var info = await GetLatestTransactionVersionWithMetadataAsync(tripSlug, transactionId);
+        if (info == null || info.IsDeleted) return null;
+        return info.Transaction;
+    }
+
+    public class TransactionVersionInfo
+    {
+        public Transaction? Transaction { get; set; }
+        public string VersionFolderName { get; set; } = string.Empty;
+        public bool IsDeleted { get; set; }
+    }
+
+    public virtual async Task SaveTransactionAsync(string tripSlug, Transaction transaction, string authorSlug, bool isDelete = false, Dictionary<string, Stream>? attachments = null, string? baseVersionFolderName = null)
     {
         var transDir = Path.Combine(_tripsPath, tripSlug, "Transactions", transaction.Id);
         if (!Directory.Exists(transDir)) Directory.CreateDirectory(transDir);
@@ -167,8 +188,37 @@ public class LocalTripStorageService
         }
         else
         {
+            // Copy existing attachments from base version if requested
+            if (!string.IsNullOrEmpty(baseVersionFolderName))
+            {
+                var baseDirPath = Path.Combine(transDir, baseVersionFolderName);
+                if (Directory.Exists(baseDirPath))
+                {
+                    foreach (var filename in transaction.Attachments)
+                    {
+                        var sourceFile = Path.Combine(baseDirPath, filename);
+                        if (File.Exists(sourceFile))
+                        {
+                            var destFile = Path.Combine(nextDirPath, filename);
+                            File.Copy(sourceFile, destFile, true);
+                        }
+                    }
+                }
+            }
+
             var json = JsonSerializer.Serialize(transaction, _jsonOptions);
             await File.WriteAllTextAsync(Path.Combine(nextDirPath, "data.json"), json);
+
+            if (attachments != null)
+            {
+                foreach (var attachment in attachments)
+                {
+                    var filePath = Path.Combine(nextDirPath, attachment.Key);
+                    using var fileStream = File.Create(filePath);
+                    await attachment.Value.CopyToAsync(fileStream);
+                    attachment.Value.Position = 0; // Reset position if reused
+                }
+            }
         }
     }
 

@@ -1,0 +1,487 @@
+@page "/trip/{tripSlug}/add-expense"
+@using TripFund.App.Models
+@using TripFund.App.Services
+@using TripFund.App.Utilities
+@inject LocalTripStorageService Storage
+@inject NavigationManager Nav
+
+<div class="add-transaction-page">
+    <header class="app-header">
+        <button class="icon-btn" @onclick='() => Nav.NavigateTo($"/trip/{tripSlug}")'>
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="19" y1="12" x2="5" y2="12"></line>
+                <polyline points="12 19 5 12 12 5"></polyline>
+            </svg>
+        </button>
+        <h1 class="header-title">Registra Spesa</h1>
+        <div class="spacer"></div>
+    </header>
+
+    @if (config == null)
+    {
+        <p class="status-text">Caricamento...</p>
+    }
+    else
+    {
+        <div class="currency-selector">
+            @foreach (var curr in config.Currencies.Keys)
+            {
+                <button class="currency-pill @(selectedCurrency == curr ? "active" : "")" @onclick="() => SelectCurrency(curr)">
+                    @curr
+                </button>
+            }
+        </div>
+
+        <main class="content">
+            <div class="form-container">
+                <div class="amount-section">
+                    <span class="currency-symbol">@GetCurrencySymbol()</span>
+                    <input type="number" step="0.01" class="amount-input" value="@totalAmount" @oninput="OnAmountInput" placeholder="0.00" />
+                </div>
+
+                <div class="form-group">
+                    <label>Descrizione</label>
+                    <input type="text" class="form-control" @bind="description" placeholder="es. Cena a Buenos Aires" />
+                </div>
+
+                <div class="form-group">
+                    <label>Data e ora</label>
+                    <input type="datetime-local" class="form-control" @bind="transactionDate" />
+                </div>
+
+                <div class="section-container">
+                    <h3 class="section-title">Divisione</h3>
+                    <div class="members-split-list">
+                        @foreach (var member in memberSplits)
+                        {
+                            <div class="member-split-row">
+                                <div class="member-basic-info">
+                                    <div class="member-avatar">@member.Avatar</div>
+                                    <div class="member-name">@member.Name</div>
+                                    <div class="switch @(member.IsIncluded ? "on" : "off")" @onclick="() => ToggleMember(member)">
+                                        <div class="switch-handle"></div>
+                                    </div>
+                                </div>
+                                
+                                @if (member.IsIncluded)
+                                {
+                                    <div class="split-controls">
+                                        <div class="split-mode-toggle" @onclick="() => ToggleAuto(member)">
+                                            @(member.IsAuto ? "Auto" : "Manuale")
+                                        </div>
+                                        <input type="number" step="0.01" class="split-amount-input @(member.IsAuto ? "readonly" : "")" 
+                                               value="@(member.IsAuto ? member.CalculatedAmount : member.ManualAmount)"
+                                               @oninput="(e) => OnManualAmountInput(member, e)"
+                                               readonly="@member.IsAuto" />
+                                    </div>
+                                }
+                            </div>
+                        }
+                    </div>
+                </div>
+
+                <div class="section-container">
+                    <h3 class="section-title">Allegati</h3>
+                    <div class="attachments-row">
+                        @foreach (var att in attachments)
+                        {
+                            <div class="attachment-pill">
+                                <span>@att.FileName</span>
+                                <button class="remove-btn" @onclick="() => RemoveAttachment(att)">×</button>
+                            </div>
+                        }
+                        <div class="attachment-actions">
+                            <button class="action-btn-small" @onclick="CapturePhoto">
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path><circle cx="12" cy="13" r="4"></circle></svg>
+                                Foto
+                            </button>
+                            <button class="action-btn-small" @onclick="PickFile">
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"></path><polyline points="13 2 13 9 20 9"></polyline></svg>
+                                File
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="section-container">
+                    <h3 class="section-title">Luogo</h3>
+                    @if (locationInfo != null)
+                    {
+                        <div class="location-card">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>
+                            <div class="location-details">
+                                <div class="location-name">@locationInfo.Name</div>
+                                <div class="location-coords">@locationInfo.Latitude, @locationInfo.Longitude</div>
+                            </div>
+                            <button class="remove-btn" @onclick="() => locationInfo = null">×</button>
+                        </div>
+                    }
+                    else
+                    {
+                        <button class="action-btn-outline" @onclick="FetchLocation">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>
+                            Aggiungi posizione GPS
+                        </button>
+                    }
+                </div>
+
+                @if (!string.IsNullOrEmpty(errorMessage))
+                {
+                    <p class="error-message">@errorMessage</p>
+                }
+
+                <button class="submit-btn" @onclick="HandleSubmit" disabled="@isSubmitting">
+                    @(isSubmitting ? "Salvataggio..." : "Registra Spesa")
+                </button>
+            </div>
+        </main>
+    }
+</div>
+
+@code {
+    [Parameter] public string tripSlug { get; set; } = "";
+    [SupplyParameterFromQuery] public string? currency { get; set; }
+    [SupplyParameterFromQuery] public string? edit { get; set; }
+
+    private TripConfig? config;
+    private LocalTripStorageService.TransactionVersionInfo? editingInfo;
+    private string selectedCurrency = "";
+    private decimal totalAmount;
+    private string description = "";
+    private DateTime transactionDate = DateTime.Now;
+    private List<MemberSplitInfo> memberSplits = new();
+    private List<AttachmentInfo> attachments = new();
+    private LocationInfo? locationInfo;
+    private string errorMessage = "";
+    private bool isSubmitting = false;
+    private string authorSlug = "";
+
+    protected override async Task OnInitializedAsync()
+    {
+        config = await Storage.GetTripConfigAsync(tripSlug);
+        var settings = await Storage.GetAppSettingsAsync();
+        authorSlug = settings?.AuthorSlug ?? "unknown";
+
+        if (config != null)
+        {
+            memberSplits = config.Members.Select(m => new MemberSplitInfo
+            {
+                Slug = m.Key,
+                Name = m.Value.Name,
+                Avatar = m.Value.Avatar,
+                IsIncluded = false // Default to false if editing
+            }).ToList();
+
+            if (!string.IsNullOrEmpty(edit))
+            {
+                editingInfo = await Storage.GetLatestTransactionVersionWithMetadataAsync(tripSlug, edit);
+                if (editingInfo != null && editingInfo.Transaction != null && editingInfo.Transaction.Type == "expense")
+                {
+                    var tx = editingInfo.Transaction;
+                    selectedCurrency = tx.Currency;
+                    totalAmount = tx.Amount;
+                    description = tx.Description;
+                    transactionDate = tx.Date.ToLocalTime();
+                    locationInfo = tx.Location;
+                    
+                    foreach (var m in memberSplits)
+                    {
+                        if (tx.Split.TryGetValue(m.Slug, out decimal val))
+                        {
+                            m.IsIncluded = true;
+                            m.ManualAmount = val;
+                            m.IsAuto = false; // Set to manual to preserve exact values initially
+                        }
+                    }
+
+                    foreach (var att in tx.Attachments)
+                    {
+                        attachments.Add(new AttachmentInfo { FileName = att, IsExisting = true });
+                    }
+                }
+            }
+
+            if (editingInfo == null)
+            {
+                if (!string.IsNullOrEmpty(currency) && config.Currencies.ContainsKey(currency))
+                {
+                    selectedCurrency = currency;
+                }
+                else if (config.Currencies.Any())
+                {
+                    selectedCurrency = config.Currencies.Keys.First();
+                }
+                
+                // Default all to included/auto if new
+                foreach (var m in memberSplits) m.IsIncluded = true;
+                RecalculateSplit();
+            }
+        }
+    }
+
+    private void SelectCurrency(string currencyCode)
+    {
+        if (editingInfo == null) selectedCurrency = currencyCode;
+    }
+
+    private string GetCurrencySymbol()
+    {
+        if (config != null && config.Currencies.TryGetValue(selectedCurrency, out var c))
+        {
+            return c.Symbol;
+        }
+        return "";
+    }
+
+    private void OnAmountInput(ChangeEventArgs e)
+    {
+        if (decimal.TryParse(e.Value?.ToString(), System.Globalization.CultureInfo.InvariantCulture, out decimal val))
+        {
+            totalAmount = val;
+            RecalculateSplit();
+        }
+    }
+
+    private void ToggleMember(MemberSplitInfo member)
+    {
+        member.IsIncluded = !member.IsIncluded;
+        RecalculateSplit();
+    }
+
+    private void ToggleAuto(MemberSplitInfo member)
+    {
+        member.IsAuto = !member.IsAuto;
+        if (!member.IsAuto) member.ManualAmount = member.CalculatedAmount;
+        RecalculateSplit();
+    }
+
+    private void OnManualAmountInput(MemberSplitInfo member, ChangeEventArgs e)
+    {
+        if (decimal.TryParse(e.Value?.ToString(), System.Globalization.CultureInfo.InvariantCulture, out decimal val))
+        {
+            member.ManualAmount = val;
+            RecalculateSplit();
+        }
+    }
+
+    private void RecalculateSplit()
+    {
+        var included = memberSplits.Where(m => m.IsIncluded).ToList();
+        if (!included.Any()) return;
+
+        var manual = included.Where(m => !m.IsAuto).ToList();
+        var autos = included.Where(m => m.IsAuto).ToList();
+
+        decimal manualSum = manual.Sum(m => m.ManualAmount);
+        decimal toDistribute = totalAmount - manualSum;
+
+        if (autos.Any())
+        {
+            decimal autoShare = Math.Floor((toDistribute / autos.Count) * 100) / 100;
+            foreach (var m in autos) m.CalculatedAmount = autoShare;
+
+            // Remainder handling
+            decimal currentTotal = manualSum + (autoShare * autos.Count);
+            decimal remainder = totalAmount - currentTotal;
+            if (remainder != 0)
+            {
+                autos.First().CalculatedAmount += remainder;
+            }
+        }
+    }
+
+    private async Task CapturePhoto()
+    {
+        try
+        {
+            var photo = await MediaPicker.Default.CapturePhotoAsync();
+            if (photo != null)
+            {
+                attachments.Add(new AttachmentInfo { FileName = photo.FileName, Stream = await photo.OpenReadAsync(), Extension = Path.GetExtension(photo.FileName) });
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = "Errore durante lo scatto della foto: " + ex.Message;
+        }
+    }
+
+    private async Task PickFile()
+    {
+        try
+        {
+            var result = await FilePicker.Default.PickAsync();
+            if (result != null)
+            {
+                attachments.Add(new AttachmentInfo { FileName = result.FileName, Stream = await result.OpenReadAsync(), Extension = Path.GetExtension(result.FileName) });
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = "Errore durante la selezione del file: " + ex.Message;
+        }
+    }
+
+    private void RemoveAttachment(AttachmentInfo att)
+    {
+        attachments.Remove(att);
+    }
+
+    private async Task FetchLocation()
+    {
+        try
+        {
+            var location = await Geolocation.Default.GetLocationAsync(new GeolocationRequest(GeolocationAccuracy.Medium));
+            if (location != null)
+            {
+                locationInfo = new LocationInfo
+                {
+                    Latitude = location.Latitude,
+                    Longitude = location.Longitude,
+                    Name = "Posizione acquisita" 
+                };
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = "Impossibile acquisire la posizione: " + ex.Message;
+        }
+    }
+
+    private async Task HandleSubmit()
+    {
+        errorMessage = "";
+        
+        if (totalAmount <= 0) { errorMessage = "Importo non valido."; return; }
+        if (string.IsNullOrWhiteSpace(description)) { errorMessage = "Inserire una descrizione."; return; }
+        
+        var included = memberSplits.Where(m => m.IsIncluded).ToList();
+        if (!included.Any()) { errorMessage = "Selezionare almeno un partecipante."; return; }
+
+        isSubmitting = true;
+
+        var splitDict = new Dictionary<string, decimal>();
+        foreach (var m in included)
+        {
+            splitDict[m.Slug] = m.IsAuto ? m.CalculatedAmount : m.ManualAmount;
+        }
+
+        // Verify split sum
+        if (splitDict.Values.Sum() != totalAmount)
+        {
+            errorMessage = "La somma delle quote non corrisponde al totale.";
+            isSubmitting = false;
+            return;
+        }
+
+        var newAttachments = attachments.Where(a => !a.IsExisting).Select(a => new { info = a, newName = $"attachment_{Guid.NewGuid():n}{a.Extension}" }).ToList();
+        var existingAttachments = attachments.Where(a => a.IsExisting).Select(a => a.FileName).ToList();
+
+        var transaction = new Transaction
+        {
+            Id = editingInfo?.Transaction?.Id ?? TransactionIdGenerator.GenerateId(),
+            Type = "expense",
+            Date = transactionDate.ToUniversalTime(),
+            Currency = selectedCurrency,
+            Amount = totalAmount,
+            Description = description,
+            Author = authorSlug,
+            Split = splitDict,
+            Location = locationInfo,
+            Attachments = existingAttachments.Concat(newAttachments.Select(na => na.newName)).ToList()
+        };
+
+        var attachmentsDict = new Dictionary<string, Stream>();
+        foreach (var na in newAttachments)
+        {
+            attachmentsDict[na.newName] = na.info.Stream;
+        }
+
+        try
+        {
+            await Storage.SaveTransactionAsync(tripSlug, transaction, authorSlug, attachments: attachmentsDict, baseVersionFolderName: editingInfo?.VersionFolderName);
+            Nav.NavigateTo($"/trip/{tripSlug}");
+        }
+        catch (Exception ex)
+        {
+            errorMessage = "Errore durante il salvataggio: " + ex.Message;
+            isSubmitting = false;
+        }
+    }
+
+    private class MemberSplitInfo
+    {
+        public string Slug { get; set; } = "";
+        public string Name { get; set; } = "";
+        public string Avatar { get; set; } = "";
+        public bool IsIncluded { get; set; } = true;
+        public bool IsAuto { get; set; } = true;
+        public decimal ManualAmount { get; set; }
+        public decimal CalculatedAmount { get; set; }
+    }
+
+    private class AttachmentInfo
+    {
+        public string FileName { get; set; } = "";
+        public string Extension { get; set; } = "";
+        public Stream Stream { get; set; } = Stream.Null;
+        public bool IsExisting { get; set; }
+    }
+}
+
+<style>
+    /* Reuse some styles from AddContribution */
+    .add-transaction-page { background-color: #F8FBF9; min-height: 100vh; display: flex; flex-direction: column; margin: -1.5rem; }
+    .app-header { display: flex; align-items: center; justify-content: space-between; padding: 1rem 1.5rem; background-color: #FFFFFF; border-bottom: 1px solid #F0F0F0; }
+    .header-title { font-size: 1.25rem; font-weight: 700; color: #1A3C2F; margin: 0; }
+    .icon-btn { background: none; border: none; color: #1A3C2F; padding: 0.5rem; display: flex; align-items: center; justify-content: center; }
+    .spacer { width: 36px; }
+    .currency-selector { display: flex; gap: 0.5rem; padding: 1rem 1.5rem; background-color: #FFFFFF; overflow-x: auto; }
+    .currency-pill { padding: 0.5rem 1rem; border-radius: 20px; background-color: #F0F0F0; color: #6C757D; border: none; font-weight: 600; font-size: 0.9rem; white-space: nowrap; }
+    .currency-pill.active { background-color: #20563C; color: #FFFFFF; }
+    .content { padding: 1.5rem; flex: 1; padding-bottom: 3rem; }
+    .form-container { display: flex; flex-direction: column; gap: 1.5rem; }
+    .amount-section { display: flex; align-items: center; justify-content: center; gap: 0.5rem; padding: 1rem 0; }
+    .currency-symbol { font-size: 2rem; font-weight: 700; color: #20563C; }
+    .amount-input { border: none; background: none; font-size: 3rem; font-weight: 700; color: #1A3C2F; width: 200px; text-align: center; outline: none; }
+    .form-group { display: flex; flex-direction: column; gap: 0.5rem; }
+    .form-group label { font-size: 0.9rem; font-weight: 600; color: #6C757D; }
+    .form-control { padding: 0.8rem 1rem; border-radius: 12px; border: 1px solid #E0E0E0; background-color: #FFFFFF; font-size: 1rem; outline: none; }
+    
+    .section-container { display: flex; flex-direction: column; gap: 0.75rem; }
+    .section-title { font-size: 1.1rem; font-weight: 700; color: #1A3C2F; margin-top: 0.5rem; }
+
+    .members-split-list { display: flex; flex-direction: column; gap: 0.5rem; }
+    .member-split-row { background-color: #FFFFFF; padding: 0.75rem 1rem; border-radius: 16px; display: flex; flex-direction: column; gap: 0.75rem; box-shadow: 0 2px 8px rgba(0,0,0,0.02); }
+    .member-basic-info { display: flex; align-items: center; gap: 0.75rem; }
+    .member-avatar { font-size: 1.5rem; width: 36px; height: 36px; background-color: #F8FBF9; border-radius: 50%; display: flex; align-items: center; justify-content: center; }
+    .member-name { flex: 1; font-weight: 600; color: #1A3C2F; }
+
+    .split-controls { display: flex; align-items: center; gap: 1rem; padding-top: 0.5rem; border-top: 1px solid #F8FBF9; }
+    .split-mode-toggle { font-size: 0.8rem; font-weight: 700; color: #20563C; background-color: #D6EDE2; padding: 0.2rem 0.6rem; border-radius: 8px; cursor: pointer; }
+    .split-amount-input { flex: 1; border: 1px solid #E0E0E0; border-radius: 8px; padding: 0.4rem 0.6rem; text-align: right; font-weight: 700; font-size: 1rem; color: #1A3C2F; outline: none; }
+    .split-amount-input.readonly { background-color: #F8FBF9; border-color: transparent; }
+
+    .switch { width: 40px; height: 22px; border-radius: 11px; padding: 2px; cursor: pointer; transition: background-color 0.2s; }
+    .switch.on { background-color: #20563C; }
+    .switch.off { background-color: #E0E0E0; }
+    .switch-handle { width: 18px; height: 18px; background-color: #FFFFFF; border-radius: 50%; transition: transform 0.2s; }
+    .switch.on .switch-handle { transform: translateX(18px); }
+
+    .attachments-row { display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center; }
+    .attachment-pill { background-color: #D6EDE2; color: #20563C; padding: 0.4rem 0.8rem; border-radius: 20px; font-size: 0.85rem; font-weight: 600; display: flex; align-items: center; gap: 0.5rem; }
+    .remove-btn { background: none; border: none; font-size: 1.2rem; line-height: 1; color: inherit; padding: 0; }
+    
+    .attachment-actions { display: flex; gap: 0.5rem; }
+    .action-btn-small { background-color: #FFFFFF; border: 1px solid #E0E0E0; border-radius: 12px; padding: 0.5rem 0.75rem; font-size: 0.85rem; font-weight: 600; color: #6C757D; display: flex; align-items: center; gap: 0.4rem; }
+
+    .action-btn-outline { background: none; border: 1px dashed #ADB5BD; border-radius: 12px; padding: 1rem; color: #6C757D; font-weight: 600; display: flex; align-items: center; justify-content: center; gap: 0.5rem; }
+    .location-card { background-color: #FFFFFF; padding: 0.75rem 1rem; border-radius: 16px; display: flex; align-items: center; gap: 0.75rem; box-shadow: 0 2px 8px rgba(0,0,0,0.02); }
+    .location-details { flex: 1; }
+    .location-name { font-weight: 600; color: #1A3C2F; }
+    .location-coords { font-size: 0.75rem; color: #6C757D; }
+
+    .submit-btn { background-color: #20563C; color: #FFFFFF; border: none; padding: 1rem; border-radius: 16px; font-weight: 700; font-size: 1.1rem; margin-top: 1rem; box-shadow: 0 4px 12px rgba(32, 86, 60, 0.2); }
+    .submit-btn:disabled { opacity: 0.6; }
+    .error-message { color: #DC3545; font-size: 0.9rem; text-align: center; }
+</style>

@@ -1,0 +1,347 @@
+@page "/trip/{tripSlug}/add-contribution"
+@using TripFund.App.Models
+@using TripFund.App.Services
+@using TripFund.App.Utilities
+@inject LocalTripStorageService Storage
+@inject NavigationManager Nav
+
+<div class="add-transaction-page">
+    <header class="app-header">
+        <button class="icon-btn" @onclick='() => Nav.NavigateTo($"/trip/{tripSlug}")'>
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="19" y1="12" x2="5" y2="12"></line>
+                <polyline points="12 19 5 12 12 5"></polyline>
+            </svg>
+        </button>
+        <h1 class="header-title">Registra Versamento</h1>
+        <div class="spacer"></div>
+    </header>
+
+    @if (config == null)
+    {
+        <p class="status-text">Caricamento...</p>
+    }
+    else
+    {
+        <div class="currency-selector">
+            @foreach (var curr in config.Currencies.Keys)
+            {
+                <button class="currency-pill @(selectedCurrency == curr ? "active" : "")" @onclick="() => SelectCurrency(curr)">
+                    @curr
+                </button>
+            }
+        </div>
+
+        <main class="content">
+            <div class="form-container">
+                <div class="amount-section">
+                    <span class="currency-symbol">@GetCurrencySymbol()</span>
+                    <input type="number" step="0.01" class="amount-input" @bind="amount" placeholder="0.00" />
+                </div>
+
+                <div class="form-group">
+                    <label>Data e ora</label>
+                    <input type="datetime-local" class="form-control" @bind="transactionDate" />
+                </div>
+
+                <div class="form-group">
+                    <label>Membro che versa</label>
+                    <select class="form-control" @bind="selectedMemberSlug">
+                        <option value="">Seleziona membro...</option>
+                        @foreach (var member in config.Members)
+                        {
+                            <option value="@member.Key">@member.Value.Avatar @member.Value.Name</option>
+                        }
+                    </select>
+                </div>
+
+                <div class="form-group switch-group">
+                    <label>Invia ricevuta via email</label>
+                    <div class="switch @(sendReceipt ? "on" : "off")" @onclick="() => sendReceipt = !sendReceipt">
+                        <div class="switch-handle"></div>
+                    </div>
+                </div>
+
+                @if (!string.IsNullOrEmpty(errorMessage))
+                {
+                    <p class="error-message">@errorMessage</p>
+                }
+
+                <button class="submit-btn" @onclick="HandleSubmit">
+                    Registra Versamento
+                </button>
+            </div>
+        </main>
+    }
+</div>
+
+@code {
+    [Parameter] public string tripSlug { get; set; } = "";
+    
+    [SupplyParameterFromQuery] public string? member { get; set; }
+    [SupplyParameterFromQuery] public string? currency { get; set; }
+    [SupplyParameterFromQuery] public string? edit { get; set; }
+
+    private TripConfig? config;
+    private Transaction? editingTransaction;
+    private string selectedCurrency = "";
+    private string selectedMemberSlug = "";
+    private decimal amount;
+    private DateTime transactionDate = DateTime.Now;
+    private bool sendReceipt = false;
+    private string errorMessage = "";
+    private string authorSlug = "";
+
+    protected override async Task OnInitializedAsync()
+    {
+        config = await Storage.GetTripConfigAsync(tripSlug);
+        var settings = await Storage.GetAppSettingsAsync();
+        authorSlug = settings?.AuthorSlug ?? "unknown";
+
+        if (config != null)
+        {
+            if (!string.IsNullOrEmpty(edit))
+            {
+                editingTransaction = await Storage.GetLatestTransactionVersionAsync(tripSlug, edit);
+                if (editingTransaction != null && editingTransaction.Type == "contribution")
+                {
+                    selectedCurrency = editingTransaction.Currency;
+                    amount = editingTransaction.Amount;
+                    transactionDate = editingTransaction.Date.ToLocalTime();
+                    selectedMemberSlug = editingTransaction.Split.Keys.FirstOrDefault() ?? "";
+                }
+            }
+
+            if (editingTransaction == null)
+            {
+                if (!string.IsNullOrEmpty(currency) && config.Currencies.ContainsKey(currency))
+                {
+                    selectedCurrency = currency;
+                }
+                else if (config.Currencies.Any())
+                {
+                    selectedCurrency = config.Currencies.Keys.First();
+                }
+
+                if (!string.IsNullOrEmpty(member) && config.Members.ContainsKey(member))
+                {
+                    selectedMemberSlug = member;
+                }
+            }
+        }
+    }
+
+    private void SelectCurrency(string currencyCode)
+    {
+        if (editingTransaction == null) selectedCurrency = currencyCode;
+    }
+
+    private string GetCurrencySymbol()
+    {
+        if (config != null && config.Currencies.TryGetValue(selectedCurrency, out var c))
+        {
+            return c.Symbol;
+        }
+        return "";
+    }
+
+    private async Task HandleSubmit()
+    {
+        errorMessage = "";
+
+        if (amount <= 0)
+        {
+            errorMessage = "Inserire un importo valido.";
+            return;
+        }
+
+        if (string.IsNullOrEmpty(selectedMemberSlug))
+        {
+            errorMessage = "Selezionare un membro.";
+            return;
+        }
+
+        var transaction = new Transaction
+        {
+            Id = editingTransaction?.Id ?? TransactionIdGenerator.GenerateId(),
+            Type = "contribution",
+            Date = transactionDate.ToUniversalTime(),
+            Currency = selectedCurrency,
+            Amount = amount,
+            Description = "Versamento in cassa",
+            Author = authorSlug,
+            Split = new Dictionary<string, decimal> { { selectedMemberSlug, amount } }
+        };
+
+        await Storage.SaveTransactionAsync(tripSlug, transaction, authorSlug);
+        
+        // TODO: Invia ricevuta via email se sendReceipt è true (Task 10)
+        
+        Nav.NavigateTo($"/trip/{tripSlug}");
+    }
+}
+
+<style>
+    .add-transaction-page {
+        background-color: #F8FBF9;
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+        margin: -1.5rem;
+    }
+
+    .app-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 1rem 1.5rem;
+        background-color: #FFFFFF;
+        border-bottom: 1px solid #F0F0F0;
+    }
+
+    .header-title {
+        font-size: 1.25rem;
+        font-weight: 700;
+        color: #1A3C2F;
+        margin: 0;
+    }
+
+    .icon-btn {
+        background: none;
+        border: none;
+        color: #1A3C2F;
+        padding: 0.5rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .spacer { width: 36px; }
+
+    .currency-selector {
+        display: flex;
+        gap: 0.5rem;
+        padding: 1rem 1.5rem;
+        background-color: #FFFFFF;
+        overflow-x: auto;
+    }
+
+    .currency-pill {
+        padding: 0.5rem 1rem;
+        border-radius: 20px;
+        background-color: #F0F0F0;
+        color: #6C757D;
+        border: none;
+        font-weight: 600;
+        font-size: 0.9rem;
+        white-space: nowrap;
+    }
+
+    .currency-pill.active {
+        background-color: #20563C;
+        color: #FFFFFF;
+    }
+
+    .content {
+        padding: 1.5rem;
+        flex: 1;
+    }
+
+    .form-container {
+        display: flex;
+        flex-direction: column;
+        gap: 1.5rem;
+    }
+
+    .amount-section {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+        padding: 2rem 0;
+    }
+
+    .currency-symbol {
+        font-size: 2rem;
+        font-weight: 700;
+        color: #20563C;
+    }
+
+    .amount-input {
+        border: none;
+        background: none;
+        font-size: 3rem;
+        font-weight: 700;
+        color: #1A3C2F;
+        width: 200px;
+        text-align: center;
+        outline: none;
+    }
+
+    .form-group {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+
+    .form-group label {
+        font-size: 0.9rem;
+        font-weight: 600;
+        color: #6C757D;
+    }
+
+    .form-control {
+        padding: 0.8rem 1rem;
+        border-radius: 12px;
+        border: 1px solid #E0E0E0;
+        background-color: #FFFFFF;
+        font-size: 1rem;
+        outline: none;
+    }
+
+    .switch-group {
+        flex-direction: row;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .switch {
+        width: 50px;
+        height: 26px;
+        border-radius: 13px;
+        padding: 3px;
+        cursor: pointer;
+        transition: background-color 0.2s;
+    }
+
+    .switch.on { background-color: #20563C; }
+    .switch.off { background-color: #E0E0E0; }
+
+    .switch-handle {
+        width: 20px;
+        height: 20px;
+        background-color: #FFFFFF;
+        border-radius: 50%;
+        transition: transform 0.2s;
+    }
+
+    .switch.on .switch-handle { transform: translateX(24px); }
+
+    .error-message {
+        color: #DC3545;
+        font-size: 0.9rem;
+        text-align: center;
+    }
+
+    .submit-btn {
+        background-color: #20563C;
+        color: #FFFFFF;
+        border: none;
+        padding: 1rem;
+        border-radius: 16px;
+        font-weight: 700;
+        font-size: 1.1rem;
+        margin-top: 1rem;
+        box-shadow: 0 4px 12px rgba(32, 86, 60, 0.2);
+    }
+</style>
