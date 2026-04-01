@@ -11,11 +11,14 @@ namespace TripFund.Tests.Pages;
 public class HomeTests : BunitContext
 {
     private readonly Mock<LocalTripStorageService> _storageMock;
+    private readonly Mock<IDriveService> _driveMock;
 
     public HomeTests()
     {
         _storageMock = new Mock<LocalTripStorageService>("dummy_path");
+        _driveMock = new Mock<IDriveService>();
         Services.AddSingleton(_storageMock.Object);
+        Services.AddSingleton(_driveMock.Object);
     }
 
     [Fact]

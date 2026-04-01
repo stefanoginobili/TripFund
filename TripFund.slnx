@@ -1,4 +1,8 @@
 <Solution>
-  <Project Path="src/TripFund.App/TripFund.App.csproj" />
-  <Project Path="tests/TripFund.Tests/TripFund.Tests.csproj" />
+  <Folder Name="/src/">
+    <Project Path="src/TripFund.App/TripFund.App.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/TripFund.Tests/TripFund.Tests.csproj" />
+  </Folder>
 </Solution>

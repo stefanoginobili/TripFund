@@ -1,0 +1,215 @@
+@page "/create-trip"
+@using TripFund.App.Models
+@using TripFund.App.Services
+@using TripFund.App.Utilities
+@inject LocalTripStorageService Storage
+@inject IDriveService Drive
+@inject NavigationManager Nav
+
+<div class="header">
+    <button class="back-btn" @onclick='() => Nav.NavigateTo("/")'>←</button>
+    <h1 class="page-title">Crea nuovo viaggio</h1>
+</div>
+
+<div class="form-container p-3">
+    <div class="mb-3">
+        <label class="form-label">Nome Viaggio</label>
+        <input type="text" class="form-control" @bind="tripName" @oninput="OnNameInput" />
+    </div>
+
+    <div class="mb-3">
+        <label class="form-label">Slug (URL-safe)</label>
+        <input type="text" class="form-control" @bind="tripSlug" />
+        <div class="form-text">Il nome della cartella su Drive e locale.</div>
+    </div>
+
+    <div class="mb-3">
+        <label class="form-label">Descrizione</label>
+        <textarea class="form-control" @bind="description"></textarea>
+    </div>
+
+    <div class="row mb-3">
+        <div class="col">
+            <label class="form-label">Data Inizio</label>
+            <input type="date" class="form-control" @bind="startDate" />
+        </div>
+        <div class="col">
+            <label class="form-label">Data Fine</label>
+            <input type="date" class="form-control" @bind="endDate" />
+        </div>
+    </div>
+
+    <hr />
+
+    <div class="section-title">Valute</div>
+    @foreach (var curr in currencies)
+    {
+        <div class="currency-row mb-2 p-2 border rounded">
+            <div class="d-flex justify-content-between align-items-center mb-1">
+                <strong>@curr.Code (@curr.Symbol)</strong>
+                <button class="btn btn-sm btn-outline-danger" @onclick="() => RemoveCurrency(curr)">Rimuovi</button>
+            </div>
+            <div class="row">
+                <div class="col">
+                    <label class="small">Quota prevista a persona</label>
+                    <input type="number" class="form-control form-control-sm" @bind="curr.ExpectedQuota" />
+                </div>
+            </div>
+        </div>
+    }
+
+    <div class="add-currency border rounded p-2 mb-4 bg-light">
+        <div class="row g-2">
+            <div class="col-3">
+                <input type="text" class="form-control form-control-sm" placeholder="Codice (EUR)" @bind="newCurrCode" />
+            </div>
+            <div class="col-2">
+                <input type="text" class="form-control form-control-sm" placeholder="Simbolo (€)" @bind="newCurrSymbol" />
+            </div>
+            <div class="col">
+                <input type="number" class="form-control form-control-sm" placeholder="Quota prevista" @bind="newCurrQuota" />
+            </div>
+            <div class="col-auto">
+                <button class="btn btn-sm btn-primary" @onclick="AddCurrency">Aggiungi</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="error-message mb-3 text-danger">@error</div>
+
+    <button class="btn btn-primary w-100 py-3" @onclick="HandleCreate">
+        Crea e seleziona cartella Drive
+    </button>
+</div>
+
+@code {
+    private string tripName = "";
+    private string tripSlug = "";
+    private string description = "";
+    private DateTime startDate = DateTime.Today;
+    private DateTime endDate = DateTime.Today.AddDays(7);
+    private string error = "";
+
+    private string newCurrCode = "";
+    private string newCurrSymbol = "";
+    private decimal newCurrQuota = 0;
+
+    private List<CurrencyViewModel> currencies = new()
+    {
+        new CurrencyViewModel { Code = "EUR", Symbol = "€", ExpectedQuota = 500 }
+    };
+
+    private void OnNameInput(ChangeEventArgs e)
+    {
+        tripName = e.Value?.ToString() ?? "";
+        tripSlug = SlugUtility.GenerateSlug(tripName);
+    }
+
+    private void AddCurrency()
+    {
+        if (string.IsNullOrWhiteSpace(newCurrCode)) return;
+        if (currencies.Any(c => c.Code.Equals(newCurrCode, StringComparison.OrdinalIgnoreCase)))
+        {
+            error = "Valuta già presente.";
+            return;
+        }
+        currencies.Add(new CurrencyViewModel
+        {
+            Code = newCurrCode.ToUpperInvariant(),
+            Symbol = string.IsNullOrWhiteSpace(newCurrSymbol) ? newCurrCode : newCurrSymbol,
+            ExpectedQuota = newCurrQuota
+        });
+        newCurrCode = "";
+        newCurrSymbol = "";
+        newCurrQuota = 0;
+        error = "";
+    }
+
+    private void RemoveCurrency(CurrencyViewModel curr)
+    {
+        currencies.Remove(curr);
+    }
+
+    private async Task HandleCreate()
+    {
+        if (string.IsNullOrWhiteSpace(tripName)) { error = "Il nome è obbligatorio."; return; }
+        if (string.IsNullOrWhiteSpace(tripSlug)) { error = "Lo slug è obbligatorio."; return; }
+        if (currencies.Count == 0) { error = "Aggiungi almeno una valuta."; return; }
+
+        var registry = await Storage.GetTripRegistryAsync();
+        if (registry.Trips.ContainsKey(tripSlug))
+        {
+            error = "Esiste già un viaggio con questo slug locale.";
+            return;
+        }
+
+        var folder = await Drive.PickFolderAsync();
+        if (folder == null) return;
+
+        var tripConfig = new TripConfig
+        {
+            Id = Guid.NewGuid().ToString(),
+            Name = tripName,
+            Description = description,
+            StartDate = startDate,
+            EndDate = endDate,
+            CreatedAt = DateTime.UtcNow,
+            Currencies = currencies.ToDictionary(c => c.Code, c => new Currency
+            {
+                Symbol = c.Symbol,
+                Name = c.Code, // Simplified for now
+                ExpectedQuotaPerMember = c.ExpectedQuota
+            })
+        };
+
+        // Add creator as first member automatically?
+        var settings = await Storage.GetAppSettingsAsync();
+        if (settings != null)
+        {
+            tripConfig.Members[settings.AuthorSlug] = new User
+            {
+                Name = settings.AuthorName,
+                Email = "", // Optional
+                Avatar = "👤"
+            };
+        }
+
+        await Storage.SaveTripConfigAsync(tripSlug, tripConfig);
+        
+        registry.Trips[tripSlug] = new TripRegistryEntry { DriveFolderId = folder.Id };
+        await Storage.SaveTripRegistryAsync(registry);
+
+        Nav.NavigateTo($"/trip/{tripSlug}");
+    }
+
+    private class CurrencyViewModel
+    {
+        public string Code { get; set; } = "";
+        public string Symbol { get; set; } = "";
+        public decimal ExpectedQuota { get; set; }
+    }
+}
+
+<style>
+    .header {
+        display: flex;
+        align-items: center;
+        padding: 1rem;
+        border-bottom: 1px solid #eee;
+    }
+    .back-btn {
+        background: none;
+        border: none;
+        font-size: 1.5rem;
+        margin-right: 1rem;
+    }
+    .page-title {
+        font-size: 1.25rem;
+        font-weight: bold;
+        margin: 0;
+    }
+    .section-title {
+        font-weight: bold;
+        margin-bottom: 0.5rem;
+    }
+</style>

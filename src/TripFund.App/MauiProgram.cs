@@ -16,6 +16,7 @@ public static class MauiProgram
 
 		builder.Services.AddMauiBlazorWebView();
 		builder.Services.AddSingleton<Services.LocalTripStorageService>();
+		builder.Services.AddSingleton<Services.IDriveService, Services.MockDriveService>();
 
 #if DEBUG
 		builder.Services.AddBlazorWebViewDeveloperTools();

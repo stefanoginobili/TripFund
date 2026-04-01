@@ -1,7 +1,9 @@
 @page "/"
 @using TripFund.App.Models
 @using TripFund.App.Services
+@using TripFund.App.Utilities
 @inject LocalTripStorageService Storage
+@inject IDriveService Drive
 @inject NavigationManager Nav
 
 <div class="header">
@@ -25,15 +27,15 @@
     }
     else
     {
-        @foreach (var trip in trips)
+        @foreach (var item in trips)
         {
-            <div class="trip-card mb-3" @onclick='() => Nav.NavigateTo($"/trip/{trip.Id}")'>
+            <div class="trip-card mb-3" @onclick='() => Nav.NavigateTo($"/trip/{item.Slug}")'>
                 <div class="trip-info">
-                    <h3 class="trip-name">@trip.Name</h3>
-                    <p class="trip-dates">@trip.StartDate.ToShortDateString() - @trip.EndDate.ToShortDateString()</p>
+                    <h3 class="trip-name">@item.Config.Name</h3>
+                    <p class="trip-dates">@item.Config.StartDate.ToShortDateString() - @item.Config.EndDate.ToShortDateString()</p>
                 </div>
                 <div class="trip-members">
-                    👤 @trip.Members.Count
+                    👤 @item.Config.Members.Count
                 </div>
             </div>
         }
@@ -41,30 +43,79 @@
 </div>
 
 <div class="bottom-actions">
-    <button class="btn btn-primary w-100 mb-2 py-3">
+    <button class="btn btn-primary w-100 mb-2 py-3" @onclick='() => Nav.NavigateTo("/create-trip")'>
         Crea nuovo viaggio
     </button>
-    <button class="btn btn-outline-secondary w-100 py-3">
+    <button class="btn btn-outline-secondary w-100 py-3" @onclick="HandleJoinTrip">
         Aggiungi viaggio esistente
     </button>
 </div>
 
 @code {
-    private List<TripConfig>? trips;
+    private List<TripListItem>? trips;
 
     protected override async Task OnInitializedAsync()
     {
+        await LoadTrips();
+    }
+
+    private async Task LoadTrips()
+    {
         var registry = await Storage.GetTripRegistryAsync();
-        trips = new List<TripConfig>();
+        var loadedTrips = new List<TripListItem>();
 
         foreach (var entry in registry.Trips)
         {
             var config = await Storage.GetTripConfigAsync(entry.Key);
             if (config != null)
             {
-                trips.Add(config);
+                loadedTrips.Add(new TripListItem { Slug = entry.Key, Config = config });
             }
         }
+        trips = loadedTrips.OrderByDescending(t => t.Config.StartDate).ToList();
+    }
+
+    private async Task HandleJoinTrip()
+    {
+        var folder = await Drive.PickFolderAsync();
+        if (folder == null) return;
+
+        // In a real app, we would download trip_config.json from Drive here.
+        // For this task, we'll assume the folder name is the slug and it might already exist or we need to "mock" its presence.
+        // But the PRD says: "Upon selecting a valid folder, the app registers the trip in known_trips.json and navigates to the Trip Dashboard"
+        
+        // Let's mock the download of a trip config if it doesn't exist locally
+        string slug = SlugUtility.GenerateSlug(folder.Name);
+        var existingConfig = await Storage.GetTripConfigAsync(slug);
+        
+        if (existingConfig == null)
+        {
+            // Mocking a downloaded config
+            existingConfig = new TripConfig
+            {
+                Id = Guid.NewGuid().ToString(),
+                Name = folder.Name,
+                StartDate = DateTime.Today,
+                EndDate = DateTime.Today.AddDays(7),
+                CreatedAt = DateTime.UtcNow,
+                Currencies = new Dictionary<string, Currency> { 
+                    { "EUR", new Currency { Symbol = "€", Name = "Euro", ExpectedQuotaPerMember = 500 } } 
+                }
+            };
+            await Storage.SaveTripConfigAsync(slug, existingConfig);
+        }
+
+        var registry = await Storage.GetTripRegistryAsync();
+        registry.Trips[slug] = new TripRegistryEntry { DriveFolderId = folder.Id };
+        await Storage.SaveTripRegistryAsync(registry);
+
+        Nav.NavigateTo($"/trip/{slug}");
+    }
+
+    private class TripListItem
+    {
+        public string Slug { get; set; } = "";
+        public TripConfig Config { get; set; } = new();
     }
 }
 
