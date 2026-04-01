@@ -73,7 +73,7 @@ public class LocalTripStorageTests : IDisposable
         transactions.Should().ContainSingle();
         transactions[0].Description.Should().Be("Lunch V2");
         
-        var transDir = Path.Combine(_tempPath, tripSlug, "Transactions", "trans-1");
+        var transDir = Path.Combine(_tempPath, "trips", tripSlug, "Transactions", "trans-1");
         Directory.GetDirectories(transDir).Should().HaveCount(2);
     }
 
@@ -103,7 +103,7 @@ public class LocalTripStorageTests : IDisposable
 
         // Act
         // Manual setup to create conflict (same version number for different users)
-        var transDir = Path.Combine(_tempPath, tripSlug, "Transactions", "trans-1");
+        var transDir = Path.Combine(_tempPath, "trips", tripSlug, "Transactions", "trans-1");
         Directory.CreateDirectory(Path.Combine(transDir, "001_mario"));
         Directory.CreateDirectory(Path.Combine(transDir, "001_luigi"));
 
@@ -119,7 +119,7 @@ public class LocalTripStorageTests : IDisposable
         // Arrange
         var tripSlug = "test-trip";
         var transId = "trans-1";
-        var transDir = Path.Combine(_tempPath, tripSlug, "Transactions", transId);
+        var transDir = Path.Combine(_tempPath, "trips", tripSlug, "Transactions", transId);
         
         // Setup: 001_mario, 001_luigi, 002_mario (mario is ahead)
         Directory.CreateDirectory(Path.Combine(transDir, "001_mario"));

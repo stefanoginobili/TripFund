@@ -226,20 +226,7 @@ else
 
     private async Task HandleDelete()
     {
-        // Simple confirmation would be better but for now we just delete as requested
-        var registry = await Storage.GetTripRegistryAsync();
-        if (registry.Trips.ContainsKey(tripSlug))
-        {
-            registry.Trips.Remove(tripSlug);
-            await Storage.SaveTripRegistryAsync(registry);
-        }
-
-        var tripDir = Path.Combine(FileSystem.AppDataDirectory, tripSlug);
-        if (Directory.Exists(tripDir))
-        {
-            Directory.Delete(tripDir, true);
-        }
-
+        await Storage.DeleteTripAsync(tripSlug);
         Nav.NavigateTo("/");
     }
 }
