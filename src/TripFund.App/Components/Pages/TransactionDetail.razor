@@ -1,0 +1,385 @@
+@page "/trip/{tripSlug}/transaction/{transactionId}"
+@using TripFund.App.Models
+@using TripFund.App.Services
+@inject LocalTripStorageService Storage
+@inject NavigationManager Nav
+@inject IAlertService Alerts
+
+<div class="transaction-detail-page">
+    <header class="app-header">
+        <button class="icon-btn" @onclick='() => Nav.NavigateTo($"/trip/{tripSlug}")'>
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="19" y1="12" x2="5" y2="12"></line>
+                <polyline points="12 19 5 12 12 5"></polyline>
+            </svg>
+        </button>
+        <h1 class="header-title">Dettaglio Transazione</h1>
+        <div class="header-actions">
+            <div class="dropdown">
+                <button class="icon-btn" @onclick="ToggleMenu">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="1"></circle>
+                        <circle cx="12" cy="5" r="1"></circle>
+                        <circle cx="12" cy="19" r="1"></circle>
+                    </svg>
+                </button>
+                @if (isMenuOpen)
+                {
+                    <div class="dropdown-menu-custom">
+                        <button class="dropdown-item" disabled>
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="me-2">
+                                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                            </svg>
+                            Modifica
+                        </button>
+                        <button class="dropdown-item text-danger" @onclick="DeleteTransaction">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="me-2">
+                                <polyline points="3 6 5 6 21 6"></polyline>
+                                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                            </svg>
+                            Elimina
+                        </button>
+                    </div>
+                }
+            </div>
+        </div>
+    </header>
+
+    @if (transaction == null || config == null)
+    {
+        <p class="status-text">Caricamento...</p>
+    }
+    else
+    {
+        <main class="content">
+            <div class="summary-card">
+                <div class="transaction-icon @(transaction.Type == "expense" ? "expense-icon" : "contrib-icon")">
+                    @if(transaction.Type == "expense")
+                    {
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 18 13.5 8.5 8.5 13.5 1 6"></polyline><polyline points="17 18 23 18 23 12"></polyline></svg>
+                    }
+                    else
+                    {
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline><polyline points="17 6 23 6 23 12"></polyline></svg>
+                    }
+                </div>
+                <h2 class="amount-title @(transaction.Type == "expense" ? "negative" : "positive")">
+                    @(transaction.Type == "expense" ? "-" : "+")@FormatCurrency(transaction.Amount, transaction.Currency)
+                </h2>
+                <p class="transaction-desc">@(string.IsNullOrWhiteSpace(transaction.Description) ? (transaction.Type == "expense" ? "Spesa" : "Versamento") : transaction.Description)</p>
+                <p class="transaction-meta">@transaction.Date.ToString("g") • Creato da @transaction.Author</p>
+            </div>
+
+            <div class="section-container">
+                <h3 class="section-title">Divisione</h3>
+                <div class="split-list">
+                    @foreach (var split in transaction.Split)
+                    {
+                        var memberName = config.Members.TryGetValue(split.Key, out var member) ? member.Name : split.Key;
+                        var memberAvatar = config.Members.TryGetValue(split.Key, out var m2) ? m2.Avatar : "👤";
+
+                        <div class="split-row">
+                            <div class="member-avatar">@memberAvatar</div>
+                            <div class="member-name">@memberName</div>
+                            <div class="split-amount">@FormatCurrency(split.Value, transaction.Currency)</div>
+                        </div>
+                    }
+                </div>
+            </div>
+
+            @if (transaction.Location != null)
+            {
+                <div class="section-container">
+                    <h3 class="section-title">Luogo</h3>
+                    <div class="info-card">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="me-2 text-muted">
+                            <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+                            <circle cx="12" cy="10" r="3"></circle>
+                        </svg>
+                        <span>@transaction.Location.Name</span>
+                    </div>
+                </div>
+            }
+
+            @if (transaction.Attachments.Any())
+            {
+                <div class="section-container">
+                    <h3 class="section-title">Allegati</h3>
+                    <div class="attachments-list">
+                        @foreach (var attachment in transaction.Attachments)
+                        {
+                            <div class="info-card">
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="me-2 text-muted">
+                                    <path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"></path>
+                                    <polyline points="13 2 13 9 20 9"></polyline>
+                                </svg>
+                                <span>@attachment</span>
+                            </div>
+                        }
+                    </div>
+                </div>
+            }
+        </main>
+    }
+</div>
+
+@code {
+    [Parameter] public string tripSlug { get; set; } = "";
+    [Parameter] public string transactionId { get; set; } = "";
+
+    private TripConfig? config;
+    private Transaction? transaction;
+    private string authorSlug = "";
+    private bool isMenuOpen = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        config = await Storage.GetTripConfigAsync(tripSlug);
+        transaction = await Storage.GetLatestTransactionVersionAsync(tripSlug, transactionId);
+
+        var settings = await Storage.GetAppSettingsAsync();
+        if (settings != null)
+        {
+            authorSlug = settings.AuthorSlug;
+        }
+    }
+
+    private void ToggleMenu() => isMenuOpen = !isMenuOpen;
+
+    private async Task DeleteTransaction()
+    {
+        isMenuOpen = false;
+        if (transaction == null) return;
+
+        bool confirm = await Alerts.ConfirmAsync(
+            "Elimina Transazione",
+            "Sei sicuro di voler eliminare questa transazione? L'operazione non può essere annullata.",
+            "Elimina",
+            "Annulla");
+
+        if (!confirm) return;
+        
+        await Storage.SaveTransactionAsync(tripSlug, transaction, authorSlug, isDelete: true);
+        Nav.NavigateTo($"/trip/{tripSlug}");
+    }
+
+    private string FormatCurrency(decimal amount, string currencyCode)
+    {
+        if (config != null && config.Currencies.TryGetValue(currencyCode, out var c))
+        {
+            return $"{c.Symbol} {amount:N2}";
+        }
+        return $"{amount:N2} {currencyCode}";
+    }
+}
+
+<style>
+    .transaction-detail-page {
+        background-color: #F8FBF9;
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+        margin: -1.5rem;
+    }
+
+    .app-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 1rem 1.5rem;
+        background-color: #FFFFFF;
+        border-bottom: 1px solid #F0F0F0;
+    }
+
+    .header-title {
+        font-size: 1.25rem;
+        font-weight: 700;
+        color: #1A3C2F;
+        margin: 0;
+    }
+
+    .icon-btn {
+        background: none;
+        border: none;
+        color: #1A3C2F;
+        padding: 0.5rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .header-actions {
+        display: flex;
+        align-items: center;
+        position: relative;
+    }
+
+    .dropdown-menu-custom {
+        position: absolute;
+        top: 100%;
+        right: 0;
+        background-color: #FFFFFF;
+        border-radius: 12px;
+        box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+        padding: 0.5rem;
+        z-index: 1000;
+        min-width: 150px;
+        display: flex;
+        flex-direction: column;
+        border: 1px solid #F0F0F0;
+    }
+
+    .dropdown-item {
+        background: none;
+        border: none;
+        padding: 0.75rem 1rem;
+        text-align: left;
+        font-weight: 600;
+        font-size: 0.95rem;
+        color: #1A3C2F;
+        display: flex;
+        align-items: center;
+        border-radius: 8px;
+        width: 100%;
+    }
+
+    .dropdown-item:hover:not(:disabled) {
+        background-color: #F8FBF9;
+    }
+
+    .dropdown-item:disabled {
+        opacity: 0.5;
+    }
+
+    .text-danger {
+        color: #DC3545 !important;
+    }
+
+    .content {
+        flex: 1;
+        padding: 2rem 1.5rem;
+    }
+
+    .summary-card {
+        background-color: #FFFFFF;
+        border-radius: 24px;
+        padding: 2rem 1.5rem;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.04);
+        margin-bottom: 2rem;
+    }
+
+    .transaction-icon {
+        width: 64px;
+        height: 64px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: 1rem;
+    }
+
+    .contrib-icon {
+        background-color: #D6EDE2;
+        color: #20563C;
+    }
+
+    .expense-icon {
+        background-color: #FCE8E8;
+        color: #DC3545;
+    }
+
+    .amount-title {
+        font-size: 2.5rem;
+        font-weight: 700;
+        margin-bottom: 0.5rem;
+    }
+
+    .positive { color: #20563C; }
+    .negative { color: #1A3C2F; /* Blackish color for details instead of pure red usually */ }
+
+    .transaction-desc {
+        font-size: 1.1rem;
+        font-weight: 600;
+        color: #1A3C2F;
+        margin-bottom: 0.25rem;
+        text-align: center;
+    }
+
+    .transaction-meta {
+        font-size: 0.9rem;
+        color: #6C757D;
+        margin: 0;
+    }
+
+    .section-container {
+        margin-bottom: 2rem;
+    }
+
+    .section-title {
+        font-size: 1.1rem;
+        font-weight: 700;
+        color: #6C757D;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        margin-bottom: 1rem;
+    }
+
+    .split-list {
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+    }
+
+    .split-row {
+        background-color: #FFFFFF;
+        padding: 1rem;
+        border-radius: 16px;
+        display: flex;
+        align-items: center;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.02);
+    }
+
+    .member-avatar {
+        font-size: 1.5rem;
+        margin-right: 1rem;
+        width: 40px;
+        height: 40px;
+        background-color: #F8FBF9;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .member-name {
+        flex: 1;
+        font-weight: 600;
+        color: #1A3C2F;
+    }
+
+    .split-amount {
+        font-weight: 700;
+        color: #1A3C2F;
+    }
+
+    .info-card {
+        background-color: #FFFFFF;
+        padding: 1rem;
+        border-radius: 16px;
+        display: flex;
+        align-items: center;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.02);
+        font-weight: 500;
+        color: #1A3C2F;
+    }
+
+    .attachments-list {
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+    }
+</style>
