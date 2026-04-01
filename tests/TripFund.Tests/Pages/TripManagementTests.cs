@@ -80,6 +80,47 @@ public class TripManagementTests : BunitContext
     }
 
     [Fact]
+    public async Task EditTrip_AddMemberWithEmoji_ShouldUpdateConfig()
+    {
+        // Arrange
+        var tripSlug = "test-trip";
+        var config = new TripConfig 
+        { 
+            Id = "guid-1", 
+            Name = "Test Trip", 
+            Members = new Dictionary<string, User> { { "mario", new User { Name = "Mario", Avatar = "👨" } } },
+            Currencies = new Dictionary<string, Currency> { { "EUR", new Currency { Symbol = "€", ExpectedQuotaPerMember = 100 } } }
+        };
+        _storageMock.Setup(s => s.GetTripConfigAsync(tripSlug)).ReturnsAsync(config);
+        _storageMock.Setup(s => s.GetAppSettingsAsync()).ReturnsAsync(new AppSettings { AuthorName = "Mario", AuthorSlug = "mario" });
+
+        var cut = Render<EditTrip>(parameters => parameters.Add(p => p.tripSlug, tripSlug));
+
+        // Act
+        // Open emoji picker
+        await cut.Find(".avatar-selector").ClickAsync();
+        
+        // Select an emoji (e.g., the second one)
+        var emojiButtons = cut.FindAll(".emoji-btn");
+        await emojiButtons[1].ClickAsync();
+
+        // Fill name
+        cut.Find("input[placeholder='Nome']").Input("Luigi");
+        
+        // Click add
+        await cut.Find(".add-btn-small").ClickAsync();
+
+        // Save
+        await cut.Find(".save-btn-large").ClickAsync();
+
+        // Assert
+        _storageMock.Verify(s => s.SaveTripConfigAsync(tripSlug, It.Is<TripConfig>(c => 
+            c.Members.ContainsKey("luigi") && 
+            c.Members["luigi"].Name == "Luigi" &&
+            c.Members["luigi"].Avatar != "👤"), It.IsAny<string>(), It.IsAny<bool>()), Times.Once);
+    }
+
+    [Fact]
     public async Task EditTrip_Delete_ShouldConfirmAndCallStorage()
     {
         // Arrange
