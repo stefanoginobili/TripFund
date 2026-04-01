@@ -391,15 +391,17 @@
             Attachments = existingAttachments.Concat(newAttachments.Select(na => na.newName)).ToList()
         };
 
-        var attachmentsDict = new Dictionary<string, Stream>();
+        var attachmentsDict = new Dictionary<string, byte[]>();
         foreach (var na in newAttachments)
         {
-            attachmentsDict[na.newName] = na.info.Stream;
+            using var ms = new MemoryStream();
+            await na.info.Stream.CopyToAsync(ms);
+            attachmentsDict[na.newName] = ms.ToArray();
         }
 
         try
         {
-            await Storage.SaveTransactionAsync(tripSlug, transaction, authorSlug, attachments: attachmentsDict, baseVersionFolderName: editingInfo?.VersionFolderName);
+            await Storage.SaveTransactionAsync(tripSlug, transaction, authorSlug, attachments: attachmentsDict);
             Nav.NavigateTo($"/trip/{tripSlug}");
         }
         catch (Exception ex)

@@ -212,8 +212,8 @@
             };
         }
 
-        await Storage.SaveTripConfigAsync(tripSlug, tripConfig);
-        
+        await Storage.SaveTripConfigAsync(tripSlug, tripConfig, settings?.AuthorSlug ?? "unknown");
+
         registry.Trips[tripSlug] = new TripRegistryEntry { DriveFolderId = folder.Id };
         await Storage.SaveTripRegistryAsync(registry);
 

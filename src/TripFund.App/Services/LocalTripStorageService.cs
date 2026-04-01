@@ -21,6 +21,7 @@ public class LocalTripStorageService
 {
     private readonly string _rootPath;
     private readonly string _tripsPath;
+    private readonly VersionedStorageEngine _engine = new();
     private readonly JsonSerializerOptions _jsonOptions = new()
     {
         WriteIndented = true,
@@ -75,30 +76,46 @@ public class LocalTripStorageService
 
     public virtual async Task<TripConfig?> GetTripConfigAsync(string tripSlug)
     {
-        var path = Path.Combine(_tripsPath, tripSlug, "trip_config.json");
-        if (!File.Exists(path)) return null;
-        var json = await File.ReadAllTextAsync(path);
+        var metadataPath = Path.Combine(_tripsPath, tripSlug, "metadata");
+        if (!Directory.Exists(metadataPath)) return null;
+
+        var latestVersions = _engine.GetLatestVersionFolders(metadataPath);
+        if (latestVersions.Count == 0) return null;
+
+        var latest = latestVersions[0]; // In case of conflict, we'll return the first for now or handle later
+        var configFilePath = Path.Combine(metadataPath, latest.FolderName, "trip_config.json");
+        
+        if (!File.Exists(configFilePath)) return null;
+        
+        var json = await File.ReadAllTextAsync(configFilePath);
         return JsonSerializer.Deserialize<TripConfig>(json, _jsonOptions);
     }
 
-    public virtual async Task SaveTripConfigAsync(string tripSlug, TripConfig config)
+    public virtual async Task SaveTripConfigAsync(string tripSlug, TripConfig config, string userSlug, bool isResolve = false)
     {
-        var tripDir = Path.Combine(_tripsPath, tripSlug);
-        if (!Directory.Exists(tripDir)) Directory.CreateDirectory(tripDir);
-        var path = Path.Combine(tripDir, "trip_config.json");
+        var metadataPath = Path.Combine(_tripsPath, tripSlug, "metadata");
+        if (!Directory.Exists(metadataPath)) Directory.CreateDirectory(metadataPath);
+
+        config.UpdatedAt = DateTime.UtcNow;
         var json = JsonSerializer.Serialize(config, _jsonOptions);
-        await File.WriteAllTextAsync(path, json);
+        var bytes = System.Text.Encoding.UTF8.GetBytes(json);
+
+        var changedFiles = new Dictionary<string, byte[]> { { "trip_config.json", bytes } };
+        
+        var kind = isResolve ? CommitKind.Res : ( _engine.GetVersionFolders(metadataPath).Count == 0 ? CommitKind.New : CommitKind.Upd);
+
+        await _engine.CommitAsync(metadataPath, userSlug, kind, changedFiles);
     }
 
     public virtual async Task<List<Transaction>> GetTransactionsAsync(string tripSlug)
     {
-        var transactionsDir = Path.Combine(_tripsPath, tripSlug, "Transactions");
+        var transactionsDir = Path.Combine(_tripsPath, tripSlug, "transactions");
         if (!Directory.Exists(transactionsDir)) return new List<Transaction>();
 
         var result = new List<Transaction>();
-        foreach (var transDir in Directory.GetDirectories(transactionsDir))
+        foreach (var transRoot in Directory.GetDirectories(transactionsDir))
         {
-            var transactionId = Path.GetFileName(transDir);
+            var transactionId = Path.GetFileName(transRoot);
             var transaction = await GetLatestTransactionVersionAsync(tripSlug, transactionId);
             if (transaction != null)
             {
@@ -111,27 +128,19 @@ public class LocalTripStorageService
 
     public virtual async Task<TransactionVersionInfo?> GetLatestTransactionVersionWithMetadataAsync(string tripSlug, string transactionId)
     {
-        var transDir = Path.Combine(_tripsPath, tripSlug, "Transactions", transactionId);
-        if (!Directory.Exists(transDir)) return null;
+        var transRoot = Path.Combine(_tripsPath, tripSlug, "transactions", transactionId);
+        if (!Directory.Exists(transRoot)) return null;
 
-        var versionDirs = Directory.GetDirectories(transDir)
-            .Select(Path.GetFileName)
-            .Where(n => n != null && !n.StartsWith("_"))
-            .Select(n => ParseVersionFolderName(n!))
-            .ToList();
+        var latestVersions = _engine.GetLatestVersionFolders(transRoot);
+        if (latestVersions.Count == 0) return null;
 
-        if (versionDirs.Count == 0) return null;
-
-        var maxVersionNum = versionDirs.Max(v => v.Version);
-        var topVersions = versionDirs.Where(v => v.Version == maxVersionNum).ToList();
-
-        if (topVersions.Count > 1)
+        if (latestVersions.Count > 1)
         {
-            throw new TransactionConflictException(transactionId, topVersions.Select(v => v.UserSlug).ToList());
+            throw new TransactionConflictException(transactionId, latestVersions.Select(v => v.UserSlug).ToList());
         }
 
-        var latest = topVersions[0];
-        var latestDirPath = Path.Combine(transDir, latest.FolderName);
+        var latest = latestVersions[0];
+        var latestDirPath = Path.Combine(transRoot, latest.FolderName);
 
         if (File.Exists(Path.Combine(latestDirPath, ".deleted")))
         {
@@ -166,80 +175,40 @@ public class LocalTripStorageService
         public bool IsDeleted { get; set; }
     }
 
-    public virtual async Task SaveTransactionAsync(string tripSlug, Transaction transaction, string authorSlug, bool isDelete = false, Dictionary<string, Stream>? attachments = null, string? baseVersionFolderName = null)
+    public virtual async Task SaveTransactionAsync(string tripSlug, Transaction transaction, string authorSlug, bool isDelete = false, Dictionary<string, byte[]>? attachments = null)
     {
-        var transDir = Path.Combine(_tripsPath, tripSlug, "Transactions", transaction.Id);
-        if (!Directory.Exists(transDir)) Directory.CreateDirectory(transDir);
+        var transRoot = Path.Combine(_tripsPath, tripSlug, "transactions", transaction.Id);
+        if (!Directory.Exists(transRoot)) Directory.CreateDirectory(transRoot);
 
-        var existingVersions = Directory.GetDirectories(transDir)
-            .Select(Path.GetFileName)
-            .Where(n => n != null && !n.StartsWith("_"))
-            .Select(n => ParseVersionFolderName(n!))
-            .ToList();
+        CommitKind kind = _engine.GetVersionFolders(transRoot).Count == 0 ? CommitKind.New : (isDelete ? CommitKind.Del : CommitKind.Upd);
 
-        int nextVersionNum = existingVersions.Count == 0 ? 1 : existingVersions.Max(v => v.Version) + 1;
-        var nextFolderName = $"{nextVersionNum:D3}_{authorSlug}";
-        var nextDirPath = Path.Combine(transDir, nextFolderName);
-        Directory.CreateDirectory(nextDirPath);
-
-        if (isDelete)
+        var changedFiles = new Dictionary<string, byte[]>();
+        if (!isDelete)
         {
-            await File.WriteAllTextAsync(Path.Combine(nextDirPath, ".deleted"), "");
-        }
-        else
-        {
-            // Copy existing attachments from base version if requested
-            if (!string.IsNullOrEmpty(baseVersionFolderName))
-            {
-                var baseDirPath = Path.Combine(transDir, baseVersionFolderName);
-                if (Directory.Exists(baseDirPath))
-                {
-                    foreach (var filename in transaction.Attachments)
-                    {
-                        var sourceFile = Path.Combine(baseDirPath, filename);
-                        if (File.Exists(sourceFile))
-                        {
-                            var destFile = Path.Combine(nextDirPath, filename);
-                            File.Copy(sourceFile, destFile, true);
-                        }
-                    }
-                }
-            }
-
             var json = JsonSerializer.Serialize(transaction, _jsonOptions);
-            await File.WriteAllTextAsync(Path.Combine(nextDirPath, "data.json"), json);
-
+            changedFiles["data.json"] = System.Text.Encoding.UTF8.GetBytes(json);
+            
             if (attachments != null)
             {
                 foreach (var attachment in attachments)
                 {
-                    var filePath = Path.Combine(nextDirPath, attachment.Key);
-                    using var fileStream = File.Create(filePath);
-                    await attachment.Value.CopyToAsync(fileStream);
-                    attachment.Value.Position = 0; // Reset position if reused
+                    changedFiles[attachment.Key] = attachment.Value;
                 }
             }
         }
+
+        await _engine.CommitAsync(transRoot, authorSlug, kind, changedFiles);
     }
 
     public virtual async Task<Dictionary<string, Transaction>> GetConflictingVersionsAsync(string tripSlug, string transactionId)
     {
-        var transDir = Path.Combine(_tripsPath, tripSlug, "Transactions", transactionId);
-        var versionDirs = Directory.GetDirectories(transDir)
-            .Select(Path.GetFileName)
-            .Where(n => n != null && !n.StartsWith("_"))
-            .Select(n => ParseVersionFolderName(n!))
-            .ToList();
-
-        var latestByUser = versionDirs
-            .GroupBy(v => v.UserSlug)
-            .Select(g => g.OrderByDescending(v => v.Version).First())
-            .ToList();
+        var transRoot = Path.Combine(_tripsPath, tripSlug, "transactions", transactionId);
+        var latestVersions = _engine.GetLatestVersionFolders(transRoot);
 
         var result = new Dictionary<string, Transaction>();
-        foreach (var v in latestByUser)
+        foreach (var v in latestVersions)
         {
-            var latestDirPath = Path.Combine(transDir, v.FolderName);
+            var latestDirPath = Path.Combine(transRoot, v.FolderName);
             if (File.Exists(Path.Combine(latestDirPath, ".deleted"))) continue;
 
             var dataPath = Path.Combine(latestDirPath, "data.json");
@@ -255,32 +224,12 @@ public class LocalTripStorageService
 
     public virtual async Task ResolveConflictAsync(string tripSlug, Transaction resolvedTransaction, string authorSlug)
     {
-        var transDir = Path.Combine(_tripsPath, tripSlug, "Transactions", resolvedTransaction.Id);
+        var transRoot = Path.Combine(_tripsPath, tripSlug, "transactions", resolvedTransaction.Id);
         
-        var allActiveVersionDirs = Directory.GetDirectories(transDir)
-            .Select(Path.GetFileName)
-            .Where(n => n != null && !n.StartsWith("_"))
-            .Select(n => ParseVersionFolderName(n!))
-            .ToList();
-
-        int maxVersionAcrossThreads = allActiveVersionDirs.Max(v => v.Version);
-
-        // Archive all active folders
-        foreach (var v in allActiveVersionDirs)
-        {
-            var oldPath = Path.Combine(transDir, v.FolderName);
-            var newPath = Path.Combine(transDir, "_" + v.FolderName);
-            Directory.Move(oldPath, newPath);
-        }
-
-        // Create new resolved version
-        int nextVersionNum = maxVersionAcrossThreads + 1;
-        var nextFolderName = $"{nextVersionNum:D3}_{authorSlug}";
-        var nextDirPath = Path.Combine(transDir, nextFolderName);
-        Directory.CreateDirectory(nextDirPath);
-
         var json = JsonSerializer.Serialize(resolvedTransaction, _jsonOptions);
-        await File.WriteAllTextAsync(Path.Combine(nextDirPath, "data.json"), json);
+        var changedFiles = new Dictionary<string, byte[]> { { "data.json", System.Text.Encoding.UTF8.GetBytes(json) } };
+
+        await _engine.CommitAsync(transRoot, authorSlug, CommitKind.Res, changedFiles);
     }
 
     public virtual async Task DeleteTripAsync(string tripSlug)
@@ -300,14 +249,5 @@ public class LocalTripStorageService
             Directory.Delete(tripDir, true);
         }
     }
-
-    private (int Version, string UserSlug, string FolderName) ParseVersionFolderName(string folderName)
-    {
-        var parts = folderName.Split('_');
-        if (parts.Length < 2 || !int.TryParse(parts[0], out int version))
-        {
-            return (0, folderName, folderName);
-        }
-        return (version, folderName.Substring(parts[0].Length + 1), folderName);
-    }
 }
+

@@ -305,7 +305,8 @@
         if (string.IsNullOrWhiteSpace(config.Name)) { error = "Il nome è obbligatorio."; return; }
         if (config.Currencies.Count == 0) { error = "Aggiungi almeno una valuta."; return; }
 
-        await Storage.SaveTripConfigAsync(tripSlug, config);
+        var settings = await Storage.GetAppSettingsAsync();
+        await Storage.SaveTripConfigAsync(tripSlug, config, settings?.AuthorSlug ?? "unknown");
         Nav.NavigateTo($"/trip/{tripSlug}");
     }
 

@@ -47,7 +47,7 @@ public class TripManagementTests : BunitContext
         await cut.Find(".btn-submit").ClickAsync();
 
         // Assert
-        _storageMock.Verify(s => s.SaveTripConfigAsync("new-trip", It.Is<TripConfig>(c => c.Name == "New Trip")), Times.Once);
+        _storageMock.Verify(s => s.SaveTripConfigAsync("new-trip", It.Is<TripConfig>(c => c.Name == "New Trip"), It.IsAny<string>(), It.IsAny<bool>()), Times.Once);
         _storageMock.Verify(s => s.SaveTripRegistryAsync(It.Is<LocalTripRegistry>(r => r.Trips.ContainsKey("new-trip"))), Times.Once);
     }
 
@@ -76,7 +76,7 @@ public class TripManagementTests : BunitContext
         await cut.Find(".save-btn-large").ClickAsync();
 
         // Assert
-        _storageMock.Verify(s => s.SaveTripConfigAsync(tripSlug, It.Is<TripConfig>(c => c.Name == "Updated Name")), Times.Once);
+        _storageMock.Verify(s => s.SaveTripConfigAsync(tripSlug, It.Is<TripConfig>(c => c.Name == "Updated Name"), It.IsAny<string>(), It.IsAny<bool>()), Times.Once);
     }
 
     [Fact]
@@ -114,7 +114,7 @@ public class TripManagementTests : BunitContext
         await cut.Find("button.btn-add").ClickAsync();
 
         // Assert
-        _storageMock.Verify(s => s.SaveTripConfigAsync("existing-trip", It.IsAny<TripConfig>()), Times.Once);
+        _storageMock.Verify(s => s.SaveTripConfigAsync("existing-trip", It.IsAny<TripConfig>(), It.IsAny<string>(), It.IsAny<bool>()), Times.Once);
         _storageMock.Verify(s => s.SaveTripRegistryAsync(It.Is<LocalTripRegistry>(r => r.Trips.ContainsKey("existing-trip"))), Times.Once);
     }
 }

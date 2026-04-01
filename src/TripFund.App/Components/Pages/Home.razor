@@ -129,7 +129,9 @@
                     { "EUR", new Currency { Symbol = "€", Name = "Euro", ExpectedQuotaPerMember = 500 } } 
                 }
             };
-            await Storage.SaveTripConfigAsync(slug, existingConfig);
+            var settings = await Storage.GetAppSettingsAsync();
+            var authorSlug = settings?.AuthorSlug ?? "unknown";
+            await Storage.SaveTripConfigAsync(slug, existingConfig, authorSlug);
         }
 
         var registry = await Storage.GetTripRegistryAsync();
