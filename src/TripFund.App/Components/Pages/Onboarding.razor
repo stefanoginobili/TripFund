@@ -5,34 +5,59 @@
 @inject LocalTripStorageService Storage
 @inject NavigationManager Nav
 
-<div class="onboarding-container">
-    <div class="logo-section">
-        <h1 class="app-title">TripFund</h1>
-        <p class="app-subtitle">Gestisci la cassa comune dei tuoi viaggi</p>
-    </div>
+<div class="onboarding-page">
+    <header class="app-header">
+        <h1 class="brand-name">TripFund</h1>
+    </header>
 
-    <div class="form-section mt-5">
-        <h2 class="section-title">Benvenuto!</h2>
-        <p class="section-desc">Inserisci il tuo nome per iniziare.</p>
-
-        <div class="mb-4">
-            <label for="authorName" class="form-label">Nome Autore</label>
-            <input type="text" id="authorName" class="form-control" 
-                   @bind="authorName" @bind:event="oninput" 
-                   placeholder="E.g. Mario Rossi" />
+    <main class="onboarding-content">
+        <div class="icon-container">
+            <div class="app-icon">
+                <div class="inner-square"></div>
+            </div>
         </div>
 
-        <div class="mb-4">
-            <label class="form-label">Slug Autore (Sola lettura)</label>
-            <input type="text" class="form-control bg-light" value="@Slug" readonly />
+        <div class="welcome-text">
+            <h2 class="main-title">Benvenuto in TripFund</h2>
+            <p class="subtitle">Configura il tuo profilo per iniziare</p>
         </div>
 
-        <button class="btn btn-primary w-100 py-3 mt-3" 
-                disabled="@(string.IsNullOrWhiteSpace(authorName))"
-                @onclick="SaveSettings">
-            Inizia
-        </button>
-    </div>
+        <div class="form-card">
+            <div class="form-group mb-4">
+                <label for="authorName" class="form-label">Nome Autore</label>
+                <input type="text" id="authorName" class="form-control custom-input" 
+                       @bind="authorName" @bind:event="oninput" 
+                       placeholder="es. Mario Rossi" />
+            </div>
+
+            <div class="form-group mb-2">
+                <label class="form-label">Slug Autore</label>
+                <div class="input-with-icon">
+                    <input type="text" class="form-control custom-input readonly-input" 
+                           value="@Slug" readonly placeholder="mario-rossi" />
+                    <span class="lock-icon">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                            <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                        </svg>
+                    </span>
+                </div>
+            </div>
+            <p class="help-text">Questo sarà il tuo indirizzo pubblico unico.</p>
+
+            <button class="btn start-btn mt-4" 
+                    disabled="@(string.IsNullOrWhiteSpace(authorName))"
+                    @onclick="SaveSettings">
+                Inizia
+                <span class="arrow-icon">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="9 18 15 12 9 6"></polyline>
+                    </svg>
+                </span>
+            </button>
+        </div>
+    </main>
+
 </div>
 
 @code {
@@ -55,27 +80,151 @@
 }
 
 <style>
-    .onboarding-container {
+    .onboarding-page {
+        background-color: #F9F9F9;
+        min-height: 100vh;
         display: flex;
         flex-direction: column;
-        justify-content: center;
-        min-height: 80vh;
+        align-items: center;
+        margin: -1.5rem;
+        padding: 1.5rem;
     }
-    .logo-section {
+
+    .app-header {
+        margin-bottom: 2rem;
+    }
+
+    .brand-name {
+        color: #20563C;
+        font-weight: 700;
+        font-size: 1.5rem;
+        margin: 0;
+    }
+
+    .onboarding-content {
+        flex: 1;
+        width: 100%;
+        max-width: 400px;
         text-align: center;
     }
-    .app-title {
-        font-weight: bold;
-        color: #512BD4;
-        font-size: 3rem;
+
+    .icon-container {
+        display: flex;
+        justify-content: center;
+        margin-bottom: 1.5rem;
     }
-    .app-subtitle {
-        color: #6c757d;
+
+    .app-icon {
+        width: 80px;
+        height: 80px;
+        background-color: #20563C;
+        border-radius: 20px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
     }
-    .section-title {
-        font-weight: bold;
+
+    .inner-square {
+        width: 32px;
+        height: 32px;
+        border: 4px solid #FFFFFF;
+        border-radius: 4px;
     }
-    .section-desc {
-        color: #6c757d;
+
+    .welcome-text {
+        margin-bottom: 2rem;
+    }
+
+    .main-title {
+        font-weight: 700;
+        font-size: 1.8rem;
+        color: #212529;
+        margin-bottom: 0.5rem;
+    }
+
+    .subtitle {
+        color: #6C757D;
+        font-size: 1rem;
+    }
+
+    .form-card {
+        background: #FFFFFF;
+        border-radius: 24px;
+        padding: 2rem;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+        text-align: left;
+    }
+
+    .form-label {
+        font-weight: 700;
+        color: #212529;
+        margin-bottom: 0.75rem;
+        font-size: 0.9rem;
+    }
+
+    .custom-input {
+        border: 1px solid #F0F0F0;
+        border-radius: 12px;
+        padding: 0.75rem 1rem;
+        font-size: 1rem;
+    }
+
+    .custom-input:focus {
+        border-color: #20563C;
+        box-shadow: none;
+    }
+
+    .readonly-input {
+        background-color: #FFFFFF !important;
+        color: #ADB5BD;
+    }
+
+    .input-with-icon {
+        position: relative;
+    }
+
+    .lock-icon {
+        position: absolute;
+        right: 1rem;
+        top: 50%;
+        transform: translateY(-50%);
+        color: #ADB5BD;
+    }
+
+    .help-text {
+        font-size: 0.75rem;
+        color: #6C757D;
+        margin-top: 0.5rem;
+    }
+
+    .start-btn {
+        background-color: #20563C;
+        color: #FFFFFF;
+        border-radius: 50px;
+        width: 100%;
+        padding: 0.75rem;
+        font-weight: 700;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+        transition: opacity 0.2s;
+        border: none;
+    }
+
+    .start-btn:hover:not(:disabled) {
+        opacity: 0.9;
+        color: #FFFFFF;
+    }
+
+    .start-btn:disabled {
+        background-color: #A0B9AD;
+        color: #FFFFFF;
+    }
+
+    .arrow-icon {
+        display: flex;
+        align-items: center;
     }
 </style>
