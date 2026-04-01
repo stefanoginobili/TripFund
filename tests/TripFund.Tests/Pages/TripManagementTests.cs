@@ -80,6 +80,27 @@ public class TripManagementTests : BunitContext
     }
 
     [Fact]
+    public async Task EditTrip_Delete_ShouldConfirmAndCallStorage()
+    {
+        // Arrange
+        var tripSlug = "test-trip";
+        var config = new TripConfig { Id = "1", Name = "Test" };
+        _storageMock.Setup(s => s.GetTripConfigAsync(tripSlug)).ReturnsAsync(config);
+        _storageMock.Setup(s => s.GetAppSettingsAsync()).ReturnsAsync(new AppSettings { AuthorName = "M", AuthorSlug = "m" });
+        _alertMock.Setup(a => a.ConfirmAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>()))
+            .ReturnsAsync(true);
+
+        var cut = Render<EditTrip>(parameters => parameters.Add(p => p.tripSlug, tripSlug));
+
+        // Act
+        await cut.Find(".delete-trip-btn").ClickAsync();
+
+        // Assert
+        _alertMock.Verify(a => a.ConfirmAsync("Elimina Viaggio", It.IsAny<string>(), "Elimina", "Annulla"), Times.Once);
+        _storageMock.Verify(s => s.DeleteTripAsync(tripSlug), Times.Once);
+    }
+
+    [Fact]
     public async Task JoinTrip_Home_ShouldRegisterAndMockConfig()
     {
         // Arrange
