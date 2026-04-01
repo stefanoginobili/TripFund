@@ -4,129 +4,212 @@
 @using TripFund.App.Utilities
 @inject LocalTripStorageService Storage
 @inject NavigationManager Nav
+@inject IAlertService Alerts
 
-<div class="header">
-    <button class="back-btn" @onclick='() => Nav.NavigateTo($"/trip/{tripSlug}")'>←</button>
-    <h1 class="page-title">Modifica Viaggio</h1>
-</div>
+<div class="edit-trip-page">
+    <header class="app-header">
+        <button class="icon-btn" @onclick='() => Nav.NavigateTo($"/trip/{tripSlug}")'>
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#20563C" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="19" y1="12" x2="5" y2="12"></line>
+                <polyline points="12 19 5 12 12 5"></polyline>
+            </svg>
+        </button>
+        <h1 class="header-title">Modifica Viaggio</h1>
+        <button class="icon-btn" @onclick="HandleSave">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#20563C" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="20 6 9 17 4 12"></polyline>
+            </svg>
+        </button>
+    </header>
 
-@if (config == null)
-{
-    <p class="p-3">Caricamento...</p>
-}
-else
-{
-    <div class="form-container p-3">
-        <div class="mb-3">
-            <label class="form-label">Slug (Sola lettura)</label>
-            <input type="text" class="form-control" value="@tripSlug" readonly />
+    @if (config == null)
+    {
+        <div class="loading-container">
+            <p>Caricamento...</p>
         </div>
-
-        <div class="mb-3">
-            <label class="form-label">Nome Viaggio</label>
-            <input type="text" class="form-control" @bind="config.Name" />
-        </div>
-
-        <div class="mb-3">
-            <label class="form-label">Descrizione</label>
-            <textarea class="form-control" @bind="config.Description"></textarea>
-        </div>
-
-        <div class="row mb-3">
-            <div class="col">
-                <label class="form-label">Data Inizio</label>
-                <input type="date" class="form-control" @bind="config.StartDate" />
-            </div>
-            <div class="col">
-                <label class="form-label">Data Fine</label>
-                <input type="date" class="form-control" @bind="config.EndDate" />
-            </div>
-        </div>
-
-        <hr />
-
-        <div class="section-title">Partecipanti</div>
-        @foreach (var member in config.Members)
-        {
-            <div class="member-row mb-2 p-2 border rounded">
-                <div class="d-flex align-items-center gap-2">
-                    <input type="text" class="form-control form-control-sm avatar-input" @bind="member.Value.Avatar" style="width: 50px;" />
-                    <div class="flex-grow-1">
-                        <input type="text" class="form-control form-control-sm mb-1" @bind="member.Value.Name" placeholder="Nome" />
-                        <input type="text" class="form-control form-control-sm mb-1" value="@member.Key" readonly placeholder="Slug" />
-                        <input type="email" class="form-control form-control-sm" @bind="member.Value.Email" placeholder="Email" />
+    }
+    else
+    {
+        <main class="content">
+            <!-- GENERAL INFO SECTION -->
+            <section class="info-section">
+                <h3 class="section-header">INFORMAZIONI GENERALI</h3>
+                
+                <div class="form-group">
+                    <label>Nome Viaggio</label>
+                    <div class="input-wrapper">
+                        <input type="text" @bind="config.Name" placeholder="es. Patagonia 2026" />
                     </div>
-                    @if (member.Key != authorSlug)
+                </div>
+
+                <div class="form-group">
+                    <label>Slug Identificativo</label>
+                    <div class="input-wrapper read-only">
+                        <input type="text" value="@tripSlug" readonly />
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="lock-icon">
+                            <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                            <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                        </svg>
+                    </div>
+                </div>
+
+                <div class="row-group">
+                    <div class="form-group flex-1">
+                        <label>Data Inizio</label>
+                        <div class="input-wrapper icon-right">
+                            <input type="date" @bind="config.StartDate" />
+                        </div>
+                    </div>
+                    <div class="form-group flex-1">
+                        <label>Data Fine</label>
+                        <div class="input-wrapper icon-right">
+                            <input type="date" @bind="config.EndDate" />
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Descrizione</label>
+                    <div class="input-wrapper">
+                        <textarea @bind="config.Description" placeholder="Aggiungi una descrizione..." rows="3"></textarea>
+                    </div>
+                </div>
+            </section>
+
+            <!-- PARTICIPANTS SECTION -->
+            <section class="info-section">
+                <div class="section-header-row">
+                    <h3 class="section-header">PARTECIPANTI</h3>
+                    <span class="status-badge">@config.Members.Count ATTIVI</span>
+                </div>
+
+                <div class="members-list">
+                    @foreach (var member in config.Members)
                     {
-                        <button class="btn btn-sm btn-outline-danger" @onclick="() => RemoveMember(member.Key)">🗑️</button>
+                        <div class="member-item">
+                            <div class="member-avatar-display">@member.Value.Avatar</div>
+                            <div class="member-details">
+                                <span class="member-name-text">@member.Value.Name</span>
+                                <span class="member-slug-text">@member.Key</span>
+                            </div>
+                            @if (member.Key != authorSlug)
+                            {
+                                <button class="delete-member-btn" @onclick="() => RemoveMember(member.Key)">
+                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                                    </svg>
+                                </button>
+                            }
+                        </div>
                     }
                 </div>
-            </div>
-        }
 
-        <div class="add-member border rounded p-2 mb-4 bg-light">
-            <div class="d-flex align-items-center gap-2">
-                <input type="text" class="form-control form-control-sm avatar-input" @bind="newMemberAvatar" style="width: 50px;" placeholder="👤" />
-                <div class="flex-grow-1">
-                    <input type="text" class="form-control form-control-sm mb-1" placeholder="Nome" @bind="newMemberName" @oninput="OnNewMemberNameInput" />
-                    <input type="text" class="form-control form-control-sm mb-1" placeholder="Slug (modificabile)" @bind="newMemberSlug" />
-                    <input type="email" class="form-control form-control-sm" placeholder="Email" @bind="newMemberEmail" />
-                </div>
-                <button class="btn btn-sm btn-primary" @onclick="AddMember">Aggiungi</button>
-            </div>
-        </div>
+                <button class="save-btn-large" @onclick="HandleSave">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="me-2">
+                        <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
+                        <polyline points="17 21 17 13 7 13 7 21"></polyline>
+                        <polyline points="7 3 7 8 15 8"></polyline>
+                    </svg>
+                    Salva Modifiche
+                </button>
 
-        <hr />
-
-        <div class="section-title">Valute</div>
-        @foreach (var curr in config.Currencies)
-        {
-            <div class="currency-row mb-2 p-2 border rounded">
-                <div class="d-flex justify-content-between align-items-center mb-1">
-                    <strong>@curr.Key (@curr.Value.Symbol)</strong>
-                    <button class="btn btn-sm btn-outline-danger" @onclick="() => RemoveCurrency(curr.Key)">Rimuovi</button>
-                </div>
-                <div class="row">
-                    <div class="col">
-                        <label class="small">Quota prevista a persona</label>
-                        <input type="number" class="form-control form-control-sm" @bind="curr.Value.ExpectedQuotaPerMember" />
+                <div class="add-member-section">
+                    <h4 class="sub-header">AGGIUNGI NUOVO MEMBRO</h4>
+                    <div class="add-member-grid">
+                        <div class="avatar-selector">
+                            <input type="text" @bind="newMemberAvatar" maxlength="2" />
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="plus-icon">
+                                <line x1="12" y1="5" x2="12" y2="19"></line>
+                                <line x1="5" y1="12" x2="19" y2="12"></line>
+                            </svg>
+                        </div>
+                        <div class="name-input-container">
+                            <input type="text" placeholder="Nome" @bind="newMemberName" @oninput="OnNewMemberNameInput" />
+                        </div>
+                        <div class="slug-input-container">
+                            <input type="text" placeholder="Slug (auto)" @bind="newMemberSlug" />
+                        </div>
+                        <div class="email-input-container">
+                            <input type="email" placeholder="Email invito" @bind="newMemberEmail" />
+                        </div>
+                        <button class="add-btn-small" @onclick="AddMember">
+                            Aggiungi
+                        </button>
                     </div>
                 </div>
+            </section>
+
+            <!-- CURRENCIES SECTION -->
+            <section class="info-section">
+                <h3 class="section-header">CASSE DEL VIAGGIO</h3>
+                <div class="currencies-list">
+                    @foreach (var curr in config.Currencies)
+                    {
+                        <div class="currency-pill @(curr.Value.ExpectedQuotaPerMember > 0 ? "active" : "")">
+                            <div class="pill-content">
+                                <span class="currency-label">@curr.Key (@curr.Value.Symbol) - Quota: @curr.Value.ExpectedQuotaPerMember.ToString("N0")</span>
+                                @if(curr.Value.ExpectedQuotaPerMember > 0)
+                                {
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" class="star-icon">
+                                        <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+                                    </svg>
+                                }
+                            </div>
+                            <button class="remove-curr-btn" @onclick="() => RemoveCurrency(curr.Key)">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                                </svg>
+                            </button>
+                        </div>
+                    }
+                </div>
+
+                <div class="add-currency-dashed" @onclick="() => isAddingCurrency = true">
+                    @if (!isAddingCurrency)
+                    {
+                        <div class="dashed-btn-content">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="me-2">
+                                <line x1="12" y1="5" x2="12" y2="19"></line>
+                                <line x1="5" y1="12" x2="19" y2="12"></line>
+                            </svg>
+                            <span>Aggiungi Cassa</span>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="add-currency-form" @onclick:stopPropagation>
+                            <input type="text" placeholder="Codice (EUR)" @bind="newCurrCode" class="small-input" />
+                            <input type="text" placeholder="Simbolo (€)" @bind="newCurrSymbol" class="small-input" />
+                            <input type="number" placeholder="Quota" @bind="newCurrQuota" class="small-input" />
+                            <button class="confirm-add-btn" @onclick="AddCurrency">OK</button>
+                            <button class="cancel-add-btn" @onclick="() => isAddingCurrency = false">X</button>
+                        </div>
+                    }
+                </div>
+            </section>
+
+            <div class="error-container">
+                @if (!string.IsNullOrEmpty(error))
+                {
+                    <p class="error-text">@error</p>
+                }
             </div>
-        }
 
-        <div class="add-currency border rounded p-2 mb-4 bg-light">
-            <div class="row g-2">
-                <div class="col-3">
-                    <input type="text" class="form-control form-control-sm" placeholder="Codice" @bind="newCurrCode" />
-                </div>
-                <div class="col-2">
-                    <input type="text" class="form-control form-control-sm" placeholder="Simbolo" @bind="newCurrSymbol" />
-                </div>
-                <div class="col">
-                    <input type="number" class="form-control form-control-sm" placeholder="Quota" @bind="newCurrQuota" />
-                </div>
-                <div class="col-auto">
-                    <button class="btn btn-sm btn-primary" @onclick="AddCurrency">Aggiungi</button>
-                </div>
-            </div>
-        </div>
-
-        <div class="error-message mb-3 text-danger">@error</div>
-
-        <button class="btn btn-success w-100 py-3 mb-4" @onclick="HandleSave">
-            Salva Modifiche
-        </button>
-
-        <div class="danger-zone border border-danger rounded p-3 mb-5">
-            <h5 class="text-danger">Zona Pericolosa</h5>
-            <p class="small text-muted">L'eliminazione rimuoverà il viaggio solo da questo dispositivo. I dati su Google Drive rimarranno intatti.</p>
-            <button class="btn btn-danger w-100" @onclick="HandleDelete">
-                Elimina Viaggio
+            <button class="delete-trip-btn" @onclick="HandleDelete">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="me-2">
+                    <polyline points="3 6 5 6 21 6"></polyline>
+                    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                </svg>
+                Elimina Viaggio dal dispositivo
             </button>
-        </div>
-    </div>
-}
+            <p class="delete-info">
+                Questa azione rimuoverà i dati locali. Se il viaggio è sincronizzato, potrai recuperarlo effettuando nuovamente l'accesso.
+            </p>
+        </main>
+    }
+</div>
 
 @code {
     [Parameter] public string tripSlug { get; set; } = "";
@@ -143,6 +226,7 @@ else
     private string newCurrCode = "";
     private string newCurrSymbol = "";
     private decimal newCurrQuota = 0;
+    private bool isAddingCurrency = false;
 
     protected override async Task OnInitializedAsync()
     {
@@ -160,7 +244,7 @@ else
     private void AddMember()
     {
         if (config == null) return;
-        if (string.IsNullOrWhiteSpace(newMemberSlug)) return;
+        if (string.IsNullOrWhiteSpace(newMemberSlug)) { error = "Lo slug è obbligatorio."; return; }
         if (config.Members.ContainsKey(newMemberSlug))
         {
             error = "Partecipante già presente.";
@@ -207,6 +291,7 @@ else
         newCurrSymbol = "";
         newCurrQuota = 0;
         error = "";
+        isAddingCurrency = false;
     }
 
     private void RemoveCurrency(string code)
@@ -226,35 +311,377 @@ else
 
     private async Task HandleDelete()
     {
-        await Storage.DeleteTripAsync(tripSlug);
-        Nav.NavigateTo("/");
+        bool confirm = await Alerts.ConfirmAsync(
+            "Elimina Viaggio",
+            "Sei sicuro di voler eliminare questo viaggio dal dispositivo? I dati su Google Drive rimarranno intatti.",
+            "Elimina",
+            "Annulla");
+
+        if (confirm)
+        {
+            await Storage.DeleteTripAsync(tripSlug);
+            Nav.NavigateTo("/");
+        }
     }
 }
 
 <style>
-    .header {
+    .edit-trip-page {
+        background-color: #F8FBF9;
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+        margin: -1.5rem;
+        font-family: 'Open Sans', sans-serif;
+    }
+
+    .app-header {
         display: flex;
         align-items: center;
-        padding: 1rem;
-        border-bottom: 1px solid #eee;
+        justify-content: space-between;
+        padding: 1rem 1.5rem;
+        background-color: #FFFFFF;
+        border-bottom: 1px solid #F0F0F0;
     }
-    .back-btn {
-        background: none;
-        border: none;
-        font-size: 1.5rem;
-        margin-right: 1rem;
-    }
-    .page-title {
+
+    .header-title {
         font-size: 1.25rem;
-        font-weight: bold;
+        font-weight: 700;
+        color: #1A3C2F;
         margin: 0;
     }
-    .section-title {
-        font-weight: bold;
+
+    .icon-btn {
+        background: none;
+        border: none;
+        padding: 0.5rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .content {
+        padding: 1.5rem;
+        display: flex;
+        flex-direction: column;
+        gap: 1.5rem;
+    }
+
+    .info-section {
+        background-color: #FFFFFF;
+        border-radius: 24px;
+        padding: 1.5rem;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03);
+    }
+
+    .section-header {
+        font-size: 0.9rem;
+        font-weight: 700;
+        color: #6C757D;
+        letter-spacing: 0.05em;
+        margin-bottom: 1.5rem;
+    }
+
+    .section-header-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1.5rem;
+    }
+
+    .status-badge {
+        background-color: #D6EDE2;
+        color: #20563C;
+        font-size: 0.75rem;
+        font-weight: 700;
+        padding: 0.25rem 0.75rem;
+        border-radius: 20px;
+    }
+
+    .form-group {
+        margin-bottom: 1.25rem;
+    }
+
+    .form-group label {
+        display: block;
+        font-size: 0.85rem;
+        font-weight: 600;
+        color: #1A3C2F;
         margin-bottom: 0.5rem;
     }
-    .avatar-input {
+
+    .input-wrapper {
+        background-color: #F0F2F5;
+        border-radius: 12px;
+        padding: 0.75rem 1rem;
+        display: flex;
+        align-items: center;
+    }
+
+    .input-wrapper input, .input-wrapper textarea {
+        background: none;
+        border: none;
+        width: 100%;
+        font-size: 1rem;
+        color: #1A3C2F;
+        outline: none;
+    }
+
+    .input-wrapper.read-only {
+        background-color: #E9ECEF;
+        color: #6C757D;
+    }
+
+    .input-wrapper.read-only input {
+        color: #6C757D;
+        font-style: italic;
+    }
+
+    .lock-icon {
+        color: #ADB5BD;
+        margin-left: 0.5rem;
+    }
+
+    .row-group {
+        display: flex;
+        gap: 1rem;
+    }
+
+    .flex-1 { flex: 1; }
+
+    .members-list {
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .member-item {
+        background-color: #F8FBF9;
+        padding: 0.75rem 1rem;
+        border-radius: 16px;
+        display: flex;
+        align-items: center;
+    }
+
+    .member-avatar-display {
+        width: 40px;
+        height: 40px;
+        background-color: #FFFFFF;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.5rem;
+        margin-right: 1rem;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    }
+
+    .member-details {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .member-name-text {
+        font-weight: 700;
+        color: #1A3C2F;
+    }
+
+    .member-slug-text {
+        font-size: 0.75rem;
+        color: #6C757D;
+        font-family: monospace;
+    }
+
+    .delete-member-btn {
+        background: none;
+        border: none;
+        color: #DC3545;
+        padding: 0.5rem;
+    }
+
+    .save-btn-large {
+        width: 100%;
+        background-color: #20563C;
+        color: #FFFFFF;
+        border: none;
+        border-radius: 16px;
+        padding: 1rem;
+        font-weight: 700;
+        font-size: 1.1rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: 2rem;
+        box-shadow: 0 8px 24px rgba(32, 86, 60, 0.2);
+    }
+
+    .sub-header {
+        font-size: 0.75rem;
+        font-weight: 700;
+        color: #20563C;
+        margin-bottom: 1rem;
+    }
+
+    .add-member-grid {
+        display: grid;
+        grid-template-columns: 60px 1fr 1fr;
+        gap: 0.75rem;
+    }
+
+    .avatar-selector {
+        grid-row: span 2;
+        background-color: #F8FBF9;
+        border: 2px dashed #D6EDE2;
+        border-radius: 12px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        position: relative;
+    }
+
+    .avatar-selector input {
+        width: 100%;
+        height: 100%;
+        background: none;
+        border: none;
         text-align: center;
-        font-size: 1.2rem;
+        font-size: 1.5rem;
+        position: absolute;
+        z-index: 2;
+    }
+
+    .plus-icon {
+        color: #20563C;
+        opacity: 0.5;
+    }
+
+    .name-input-container, .slug-input-container, .email-input-container {
+        background-color: #F0F2F5;
+        border-radius: 12px;
+        padding: 0.5rem 0.75rem;
+    }
+
+    .add-member-grid input {
+        background: none;
+        border: none;
+        width: 100%;
+        font-size: 0.9rem;
+        outline: none;
+    }
+
+    .email-input-container { grid-column: span 2; }
+
+    .add-btn-small {
+        grid-column: span 3;
+        background-color: #D6EDE2;
+        color: #20563C;
+        border: none;
+        border-radius: 10px;
+        padding: 0.5rem;
+        font-weight: 700;
+        font-size: 0.9rem;
+    }
+
+    .currencies-list {
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+        margin-bottom: 1rem;
+    }
+
+    .currency-pill {
+        background-color: #F0F2F5;
+        padding: 1rem;
+        border-radius: 16px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .currency-pill.active {
+        background-color: #D6EDE2;
+    }
+
+    .pill-content {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .currency-label {
+        font-weight: 600;
+        color: #1A3C2F;
+    }
+
+    .star-icon {
+        color: #6C757D;
+    }
+
+    .remove-curr-btn {
+        background: none;
+        border: none;
+        color: #6C757D;
+    }
+
+    .add-currency-dashed {
+        border: 2px dashed #D1D9E0;
+        border-radius: 16px;
+        padding: 1rem;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        cursor: pointer;
+    }
+
+    .dashed-btn-content {
+        display: flex;
+        align-items: center;
+        color: #6C757D;
+        font-weight: 600;
+    }
+
+    .add-currency-form {
+        display: flex;
+        gap: 0.5rem;
+        width: 100%;
+    }
+
+    .small-input {
+        flex: 1;
+        background-color: #F0F2F5;
+        border: none;
+        border-radius: 8px;
+        padding: 0.4rem 0.6rem;
+        font-size: 0.85rem;
+    }
+
+    .confirm-add-btn { background-color: #20563C; color: #FFF; border: none; border-radius: 8px; padding: 0 0.75rem; }
+    .cancel-add-btn { background-color: #6C757D; color: #FFF; border: none; border-radius: 8px; padding: 0 0.75rem; }
+
+    .error-container { min-height: 1.5rem; text-align: center; }
+    .error-text { color: #DC3545; font-size: 0.85rem; font-weight: 600; }
+
+    .delete-trip-btn {
+        background-color: #FCE8E8;
+        color: #DC3545;
+        border: none;
+        border-radius: 16px;
+        padding: 1rem;
+        font-weight: 700;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-top: 1rem;
+    }
+
+    .delete-info {
+        font-size: 0.8rem;
+        color: #6C757D;
+        text-align: center;
+        margin-top: 1rem;
+        padding: 0 1rem;
     }
 </style>
