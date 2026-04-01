@@ -3,8 +3,8 @@
 This document defines the exact JSON structures to be used in the application. As per architecture guidelines, we heavily rely on Dictionaries (Key-Value objects).
 
 ## 1. Trip Configuration (`trip_config.json`)
-This file is stored at the root of the Trip folder. 
-**Crucial:** Users are identified by unique, human-readable slugs (e.g., `alice`, `mario-rossi`), NOT GUIDs.
+This file is stored inside the specific version folder of the trip's `metadata` folder (see `ARCHITECTURE.md` for folders' structure).
+**Crucial:** Members are identified by unique, human-readable slugs (e.g., `alice`, `mario-rossi`), NOT GUIDs.
 
 ```json
 {
@@ -14,6 +14,7 @@ This file is stored at the root of the Trip folder.
   "startDate": "2026-11-01",
   "endDate": "2026-11-20",
   "createdAt": "2026-03-24T12:00:00Z",
+  "updatedAt": "2026-03-27T13:40:00Z",
   "currencies": {
     "EUR": { "symbol": "€", "name": "Euro", "expectedQuotaPerMember": 500.00 },
     "ARS": { "symbol": "$", "name": "Argentine Peso", "expectedQuotaPerMember": 150000.00 }
@@ -28,7 +29,7 @@ This file is stored at the root of the Trip folder.
 Note: `expectedQuotaPerMember` defines the target contribution amount that EACH member is expected to deposit into the shared fund for that specific currency.
 
 ## 2. Transaction (`data.json`)
-This file is stored inside the specific version folder of a transaction (e.g., `Transactions/[TransactionID]/001_userid/data.json`).
+This file is stored inside the specific version folder of the trip's `transactions` (see `ARCHITECTURE.md` for folders' structure).
 
 ```json
 {
