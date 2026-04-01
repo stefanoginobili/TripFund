@@ -93,11 +93,14 @@
             <div class="section-container">
                 <h3 class="section-title">Transazioni recenti</h3>
                 <div class="transactions-list">
-                    @if (!transactions.Any())
-                    {
-                        <p class="empty-text">Nessuna transazione.</p>
+                    @{
+                        var displayTx = transactions.Where(x => x.Currency == selectedCurrency).OrderByDescending(x => x.Date).Take(5).ToList();
                     }
-                    @foreach (var t in transactions.OrderByDescending(x => x.Date).Take(5))
+                    @if (!displayTx.Any())
+                    {
+                        <p class="empty-text">Nessuna transazione in @selectedCurrency.</p>
+                    }
+                    @foreach (var t in displayTx)
                     {
                         <div class="transaction-row" @onclick='() => Nav.NavigateTo($"/trip/{tripSlug}/transaction/{t.Id}")'>
                             <div class="transaction-icon @(t.Type == "expense" ? "expense-icon" : "contrib-icon")">

@@ -118,6 +118,55 @@ public class DashboardTests : BunitContext
     }
 
     [Fact]
+    public void TripDashboard_TransactionsList_ShouldFilterByCurrencyAndSortByDate()
+    {
+        // Arrange
+        var tripSlug = "test-trip";
+        var config = new TripConfig
+        {
+            Id = "123",
+            Name = "Test Trip",
+            Currencies = new Dictionary<string, Currency>
+            {
+                { "EUR", new Currency { Symbol = "€" } },
+                { "USD", new Currency { Symbol = "$" } }
+            },
+            Members = new Dictionary<string, User> { { "mario", new User { Name = "Mario" } } }
+        };
+
+        var now = DateTime.UtcNow;
+        var transactions = new List<Transaction>
+        {
+            new Transaction { Id = "old-eur", Currency = "EUR", Date = now.AddHours(-2), Amount = 10, Description = "Old EUR", Split = new Dictionary<string, decimal>() },
+            new Transaction { Id = "new-eur", Currency = "EUR", Date = now.AddHours(-1), Amount = 20, Description = "New EUR", Split = new Dictionary<string, decimal>() },
+            new Transaction { Id = "usd-tx", Currency = "USD", Date = now, Amount = 30, Description = "USD TX", Split = new Dictionary<string, decimal>() }
+        };
+
+        _storageMock.Setup(s => s.GetTripConfigAsync(tripSlug)).ReturnsAsync(config);
+        _storageMock.Setup(s => s.GetTransactionsAsync(tripSlug)).ReturnsAsync(transactions);
+
+        // Act
+        var cut = Render<TripDashboard>(parameters => parameters.Add(p => p.tripSlug, tripSlug));
+
+        // Assert - Default EUR
+        var eurTxRows = cut.FindAll(".transaction-row");
+        eurTxRows.Should().HaveCount(2);
+        eurTxRows[0].InnerHtml.Should().Contain("New EUR"); // Sorted DESC
+        eurTxRows[1].InnerHtml.Should().Contain("Old EUR");
+        eurTxRows.Any(r => r.InnerHtml.Contains("USD TX")).Should().BeFalse();
+
+        // Act - Switch to USD
+        var usdBtn = cut.FindAll(".currency-pill").First(b => b.TextContent.Contains("USD"));
+        usdBtn.Click();
+
+        // Assert - USD
+        var usdTxRows = cut.FindAll(".transaction-row");
+        usdTxRows.Should().HaveCount(1);
+        usdTxRows[0].InnerHtml.Should().Contain("USD TX");
+        usdTxRows.Any(r => r.InnerHtml.Contains("EUR")).Should().BeFalse();
+    }
+
+    [Fact]
     public void MemberDashboard_ShouldCalculateAndDisplayMathCorrectly()
     {
         // Arrange
