@@ -422,3 +422,6 @@ FodyWeavers.xsd
 
 # GitHub App credentials
 gha-creds-*.json
+
+# JetBrains Rider
+.idea/
