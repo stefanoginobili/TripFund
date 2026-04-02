@@ -121,7 +121,8 @@ public class LocalTripStorageTests : IDisposable
         // Assert
         Func<Task> act = () => _service.GetTransactionsAsync(tripSlug);
         await act.Should().ThrowAsync<TransactionConflictException>()
-            .Where(e => e.TransactionId == transId && e.ConflictingUserSlugs.Contains("mario") && e.ConflictingUserSlugs.Contains("luigi"));
+            .Where(e => e.TransactionId == transId && e.ConflictingDeviceIds.Contains("mario") && e.ConflictingDeviceIds.Contains("luigi"));
+
     }
 
     [Fact]

@@ -31,10 +31,10 @@
             </div>
 
             <div class="form-group mb-2">
-                <label class="form-label">Slug Autore</label>
+                <label class="form-label">Device ID</label>
                 <div class="input-with-icon">
                     <input type="text" class="form-control custom-input readonly-input" 
-                           value="@Slug" readonly placeholder="mario-rossi" />
+                           value="@DeviceId" readonly placeholder="mario-rossi" />
                     <span class="lock-icon">
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                             <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
@@ -43,7 +43,7 @@
                     </span>
                 </div>
             </div>
-            <p class="help-text">Questo sarà il tuo indirizzo pubblico unico.</p>
+            <p class="help-text">Identificativo univoco del dispositivo per il versionamento.</p>
 
             <button class="btn start-btn mt-4" 
                     disabled="@(string.IsNullOrWhiteSpace(authorName))"
@@ -62,7 +62,8 @@
 
 @code {
     private string authorName = string.Empty;
-    private string Slug => SlugUtility.GenerateSlug(authorName);
+    private string deviceIdSuffix = Guid.NewGuid().ToString("n").Substring(0, 8);
+    private string DeviceId => $"{SlugUtility.GenerateSlug(authorName).Trim('-')}-{deviceIdSuffix}".Trim('-');
 
     private async Task SaveSettings()
     {
@@ -71,7 +72,7 @@
         var settings = new AppSettings
         {
             AuthorName = authorName,
-            AuthorSlug = Slug
+            DeviceId = DeviceId
         };
 
         await Storage.SaveAppSettingsAsync(settings);

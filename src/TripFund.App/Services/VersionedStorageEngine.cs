@@ -15,12 +15,12 @@ public class VersionFolderInfo
     public string FolderName { get; set; } = string.Empty;
     public int Sequence { get; set; }
     public CommitKind Kind { get; set; }
-    public string UserSlug { get; set; } = string.Empty;
+    public string DeviceId { get; set; } = string.Empty;
 }
 
 public class VersionedStorageEngine
 {
-    private static readonly Regex VersionRegex = new(@"^(?<nnn>\d{3})_(?<kind>new|upd|res|del)_(?<user>[a-z0-9\-]+)$", RegexOptions.Compiled);
+    private static readonly Regex VersionRegex = new(@"^(?<nnn>\d{3})_(?<kind>new|upd|res|del)_(?<deviceId>[a-z0-9\-]+)$", RegexOptions.Compiled);
 
     public List<VersionFolderInfo> GetVersionFolders(string rootPath)
     {
@@ -45,7 +45,7 @@ public class VersionedStorageEngine
             FolderName = folderName,
             Sequence = int.Parse(match.Groups["nnn"].Value),
             Kind = Enum.Parse<CommitKind>(match.Groups["kind"].Value, true),
-            UserSlug = match.Groups["user"].Value
+            DeviceId = match.Groups["deviceId"].Value
         };
     }
 
@@ -70,7 +70,7 @@ public class VersionedStorageEngine
 
     public async Task<string> CommitAsync(
         string rootPath, 
-        string userSlug, 
+        string deviceId, 
         CommitKind kind, 
         Dictionary<string, byte[]> changedFiles, 
         List<string>? deletedFiles = null)
@@ -78,7 +78,7 @@ public class VersionedStorageEngine
         var versions = GetVersionFolders(rootPath);
         int nextSeq = (versions.Count == 0) ? 1 : versions.Max(v => v.Sequence) + 1;
         
-        string folderName = $"{nextSeq:D3}_{kind.ToString().ToLower()}_{userSlug}";
+        string folderName = $"{nextSeq:D3}_{kind.ToString().ToLower()}_{deviceId}";
         string newDirPath = Path.Combine(rootPath, folderName);
         Directory.CreateDirectory(newDirPath);
 

@@ -99,7 +99,7 @@ public class ModelSerializationTests
         // Arrange
         var json = @"{
           ""authorName"": ""Mario Rossi"",
-          ""authorSlug"": ""mario-rossi""
+          ""deviceId"": ""mario-rossi""
         }";
 
         // Act
@@ -110,7 +110,7 @@ public class ModelSerializationTests
         // Assert
         settings.Should().NotBeNull();
         settings!.AuthorName.Should().Be("Mario Rossi");
-        settings.AuthorSlug.Should().Be("mario-rossi");
+        settings.DeviceId.Should().Be("mario-rossi");
 
         deserializedAgain.Should().BeEquivalentTo(settings);
     }

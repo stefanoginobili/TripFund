@@ -130,7 +130,7 @@
 
     private TripConfig? config;
     private Transaction? transaction;
-    private string authorSlug = "";
+    private string deviceId = "";
     private bool isMenuOpen = false;
 
     protected override async Task OnInitializedAsync()
@@ -141,7 +141,7 @@
         var settings = await Storage.GetAppSettingsAsync();
         if (settings != null)
         {
-            authorSlug = settings.AuthorSlug;
+            deviceId = settings.DeviceId;
         }
     }
 
@@ -169,7 +169,7 @@
 
         if (!confirm) return;
         
-        await Storage.SaveTransactionAsync(tripSlug, transaction, authorSlug, isDelete: true);
+        await Storage.SaveTransactionAsync(tripSlug, transaction, deviceId, isDelete: true);
         Nav.NavigateTo($"/trip/{tripSlug}");
     }
 

@@ -130,8 +130,8 @@
                 }
             };
             var settings = await Storage.GetAppSettingsAsync();
-            var authorSlug = settings?.AuthorSlug ?? "unknown";
-            await Storage.SaveTripConfigAsync(slug, existingConfig, authorSlug);
+            var deviceId = settings?.DeviceId ?? "unknown";
+            await Storage.SaveTripConfigAsync(slug, existingConfig, deviceId);
         }
 
         var registry = await Storage.GetTripRegistryAsync();

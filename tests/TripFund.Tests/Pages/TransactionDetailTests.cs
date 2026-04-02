@@ -32,7 +32,7 @@ public class TransactionDetailTests : BunitContext
         
         var config = new TripConfig { Id = "1", Name = "Test Trip" };
         var transaction = new Transaction { Id = transactionId, Amount = 100, Currency = "EUR", Description = "Test" };
-        var settings = new AppSettings { AuthorName = "Mario", AuthorSlug = "mario" };
+        var settings = new AppSettings { AuthorName = "Mario", DeviceId = "mario" };
 
         _storageMock.Setup(s => s.GetTripConfigAsync(tripSlug)).ReturnsAsync(config);
         _storageMock.Setup(s => s.GetLatestTransactionVersionAsync(tripSlug, transactionId)).ReturnsAsync(transaction);
@@ -56,7 +56,7 @@ public class TransactionDetailTests : BunitContext
 
         // Assert
         _alertMock.Verify(a => a.ConfirmAsync("Elimina Transazione", It.IsAny<string>(), "Elimina", "Annulla"), Times.Once);
-        _storageMock.Verify(s => s.SaveTransactionAsync(tripSlug, transaction, "mario", true), Times.Once);
+        _storageMock.Verify(s => s.SaveTransactionAsync(tripSlug, transaction, "mario", true, It.IsAny<Dictionary<string, byte[]>>()), Times.Once);
         nav.Uri.Should().EndWith($"/trip/{tripSlug}");
     }
 }

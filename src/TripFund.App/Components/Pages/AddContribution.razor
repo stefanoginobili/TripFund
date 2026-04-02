@@ -90,13 +90,15 @@
     private DateTime transactionDate = DateTime.Now;
     private bool sendReceipt = false;
     private string errorMessage = "";
-    private string authorSlug = "";
+    private string deviceId = "";
+    private string authorName = "";
 
     protected override async Task OnInitializedAsync()
     {
         config = await Storage.GetTripConfigAsync(tripSlug);
         var settings = await Storage.GetAppSettingsAsync();
-        authorSlug = settings?.AuthorSlug ?? "unknown";
+        deviceId = settings?.DeviceId ?? "unknown";
+        authorName = settings?.AuthorName ?? "Unknown";
 
         if (config != null)
         {
@@ -169,11 +171,11 @@
             Currency = selectedCurrency,
             Amount = amount,
             Description = "Versamento in cassa",
-            Author = authorSlug,
+            Author = authorName,
             Split = new Dictionary<string, decimal> { { selectedMemberSlug, amount } }
         };
 
-        await Storage.SaveTransactionAsync(tripSlug, transaction, authorSlug);
+        await Storage.SaveTransactionAsync(tripSlug, transaction, deviceId);
         
         // TODO: Invia ricevuta via email se sendReceipt è true (Task 10)
         

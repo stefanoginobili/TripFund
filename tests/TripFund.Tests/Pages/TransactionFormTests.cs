@@ -25,7 +25,7 @@ public class TransactionFormTests : BunitContext
         Services.AddSingleton(_storageMock.Object);
         
         // Mock AppSettings
-        var settings = new AppSettings { AuthorName = "Test Author", AuthorSlug = "test-author" };
+        var settings = new AppSettings { AuthorName = "Test Author", DeviceId = "test-author" };
         _storageMock.Setup(s => s.GetAppSettingsAsync()).ReturnsAsync(settings);
     }
 

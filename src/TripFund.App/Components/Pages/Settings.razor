@@ -47,10 +47,10 @@
             </div>
 
             <div class="form-group">
-                <label class="form-label">SLUG AUTORE</label>
+                <label class="form-label">DEVICE ID</label>
                 <div class="input-wrapper">
                     <input type="text" class="form-control custom-input readonly-input" 
-                           value="@DisplaySlug" readonly />
+                           value="@DisplayDeviceId" readonly />
                     <span class="input-icon">
                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                             <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
@@ -58,7 +58,7 @@
                         </svg>
                     </span>
                 </div>
-                <p class="help-text">L'identificativo univoco non può essere modificato.</p>
+                <p class="help-text">L'identificativo univoco del dispositivo non può essere modificato.</p>
             </div>
         </div>
     </main>
@@ -77,11 +77,9 @@
 
 @code {
     private string authorName = string.Empty;
-    private string existingSlug = string.Empty;
+    private string? deviceId = null;
 
-    private string DisplaySlug => string.IsNullOrEmpty(existingSlug) 
-        ? SlugUtility.GenerateSlug(authorName) 
-        : existingSlug;
+    private string DisplayDeviceId => deviceId ?? (string.IsNullOrEmpty(authorName) ? "mario-rossi-abcd1234" : $"{SlugUtility.GenerateSlug(authorName).Trim('-')}-xxxxxxxx".Trim('-'));
 
     protected override async Task OnInitializedAsync()
     {
@@ -89,7 +87,7 @@
         if (settings != null)
         {
             authorName = settings.AuthorName;
-            existingSlug = settings.AuthorSlug;
+            deviceId = settings.DeviceId;
         }
     }
 
@@ -97,18 +95,18 @@
     {
         if (string.IsNullOrWhiteSpace(authorName)) return;
 
-        // If it's the first time, generate the slug. Otherwise keep the existing one.
-        var finalSlug = string.IsNullOrEmpty(existingSlug) 
-            ? SlugUtility.GenerateSlug(authorName) 
-            : existingSlug;
+        // If for some reason it's missing (should not happen after onboarding),
+        // we generate a fallback but we never overwrite an existing one.
+        var finalDeviceId = deviceId ?? $"{SlugUtility.GenerateSlug(authorName).Trim('-')}-{Guid.NewGuid().ToString("n").Substring(0, 8)}".Trim('-');
 
         var settings = new AppSettings
         {
             AuthorName = authorName,
-            AuthorSlug = finalSlug
+            DeviceId = finalDeviceId
         };
 
         await Storage.SaveAppSettingsAsync(settings);
+        deviceId = finalDeviceId;
         Nav.NavigateTo("/");
     }
 }

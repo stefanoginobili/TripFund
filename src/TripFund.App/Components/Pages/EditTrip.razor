@@ -92,7 +92,7 @@
                                 <span class="member-name-text">@member.Value.Name</span>
                                 <span class="member-slug-text">@member.Key</span>
                             </div>
-                            @if (member.Key != authorSlug)
+                            @if (member.Key != authorName)
                             {
                                 <button class="delete-member-btn" @onclick="() => RemoveMember(member.Key)">
                                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -237,7 +237,8 @@
 
     private TripConfig? config;
     private string error = "";
-    private string authorSlug = "";
+    private string deviceId = "";
+    private string authorName = "";
 
     private string newMemberName = "";
     private string newMemberSlug = "";
@@ -259,7 +260,8 @@
     {
         config = await Storage.GetTripConfigAsync(tripSlug);
         var settings = await Storage.GetAppSettingsAsync();
-        authorSlug = settings?.AuthorSlug ?? "";
+        deviceId = settings?.DeviceId ?? "";
+        authorName = settings?.AuthorName ?? "";
     }
 
     private void ToggleEmojiPicker() => showEmojiPicker = !showEmojiPicker;
@@ -341,7 +343,7 @@
         if (config.Currencies.Count == 0) { error = "Aggiungi almeno una valuta."; return; }
 
         var settings = await Storage.GetAppSettingsAsync();
-        await Storage.SaveTripConfigAsync(tripSlug, config, settings?.AuthorSlug ?? "unknown");
+        await Storage.SaveTripConfigAsync(tripSlug, config, settings?.DeviceId ?? "unknown");
         Nav.NavigateTo($"/trip/{tripSlug}");
     }
 

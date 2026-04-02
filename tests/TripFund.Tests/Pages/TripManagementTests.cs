@@ -30,7 +30,7 @@ public class TripManagementTests : BunitContext
     {
         // Arrange
         _storageMock.Setup(s => s.GetTripRegistryAsync()).ReturnsAsync(new LocalTripRegistry());
-        _storageMock.Setup(s => s.GetAppSettingsAsync()).ReturnsAsync(new AppSettings { AuthorName = "Mario", AuthorSlug = "mario" });
+        _storageMock.Setup(s => s.GetAppSettingsAsync()).ReturnsAsync(new AppSettings { AuthorName = "Mario", DeviceId = "mario" });
         _driveMock.Setup(d => d.PickFolderAsync()).ReturnsAsync(new DriveFolder { Id = "drive-123", Name = "Drive Folder" });
 
         var cut = Render<CreateTrip>();
@@ -65,7 +65,7 @@ public class TripManagementTests : BunitContext
             Currencies = new Dictionary<string, Currency> { { "EUR", new Currency { Symbol = "€", ExpectedQuotaPerMember = 100 } } }
         };
         _storageMock.Setup(s => s.GetTripConfigAsync(tripSlug)).ReturnsAsync(config);
-        _storageMock.Setup(s => s.GetAppSettingsAsync()).ReturnsAsync(new AppSettings { AuthorName = "Mario", AuthorSlug = "mario" });
+        _storageMock.Setup(s => s.GetAppSettingsAsync()).ReturnsAsync(new AppSettings { AuthorName = "Mario", DeviceId = "mario" });
 
         var cut = Render<EditTrip>(parameters => parameters.Add(p => p.tripSlug, tripSlug));
 
@@ -92,7 +92,7 @@ public class TripManagementTests : BunitContext
             Currencies = new Dictionary<string, Currency> { { "EUR", new Currency { Symbol = "€", ExpectedQuotaPerMember = 100 } } }
         };
         _storageMock.Setup(s => s.GetTripConfigAsync(tripSlug)).ReturnsAsync(config);
-        _storageMock.Setup(s => s.GetAppSettingsAsync()).ReturnsAsync(new AppSettings { AuthorName = "Mario", AuthorSlug = "mario" });
+        _storageMock.Setup(s => s.GetAppSettingsAsync()).ReturnsAsync(new AppSettings { AuthorName = "Mario", DeviceId = "mario" });
 
         var cut = Render<EditTrip>(parameters => parameters.Add(p => p.tripSlug, tripSlug));
 
@@ -127,7 +127,7 @@ public class TripManagementTests : BunitContext
         var tripSlug = "test-trip";
         var config = new TripConfig { Id = "1", Name = "Test" };
         _storageMock.Setup(s => s.GetTripConfigAsync(tripSlug)).ReturnsAsync(config);
-        _storageMock.Setup(s => s.GetAppSettingsAsync()).ReturnsAsync(new AppSettings { AuthorName = "M", AuthorSlug = "m" });
+        _storageMock.Setup(s => s.GetAppSettingsAsync()).ReturnsAsync(new AppSettings { AuthorName = "M", DeviceId = "m" });
         _alertMock.Setup(a => a.ConfirmAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>()))
             .ReturnsAsync(true);
 

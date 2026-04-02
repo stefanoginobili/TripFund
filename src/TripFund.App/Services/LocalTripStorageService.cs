@@ -7,13 +7,13 @@ namespace TripFund.App.Services;
 public class TransactionConflictException : Exception
 {
     public string TransactionId { get; }
-    public List<string> ConflictingUserSlugs { get; }
+    public List<string> ConflictingDeviceIds { get; }
 
-    public TransactionConflictException(string transactionId, List<string> conflictingUserSlugs)
-        : base($"Conflict detected in transaction {transactionId} between: {string.Join(", ", conflictingUserSlugs)}")
+    public TransactionConflictException(string transactionId, List<string> conflictingDeviceIds)
+        : base($"Conflict detected in transaction {transactionId} between: {string.Join(", ", conflictingDeviceIds)}")
     {
         TransactionId = transactionId;
-        ConflictingUserSlugs = conflictingUserSlugs;
+        ConflictingDeviceIds = conflictingDeviceIds;
     }
 }
 
@@ -91,7 +91,7 @@ public class LocalTripStorageService
         return JsonSerializer.Deserialize<TripConfig>(json, _jsonOptions);
     }
 
-    public virtual async Task SaveTripConfigAsync(string tripSlug, TripConfig config, string userSlug, bool isResolve = false)
+    public virtual async Task SaveTripConfigAsync(string tripSlug, TripConfig config, string deviceId, bool isResolve = false)
     {
         var metadataPath = Path.Combine(_tripsPath, tripSlug, "metadata");
         if (!Directory.Exists(metadataPath)) Directory.CreateDirectory(metadataPath);
@@ -104,7 +104,7 @@ public class LocalTripStorageService
         
         var kind = isResolve ? CommitKind.Res : ( _engine.GetVersionFolders(metadataPath).Count == 0 ? CommitKind.New : CommitKind.Upd);
 
-        await _engine.CommitAsync(metadataPath, userSlug, kind, changedFiles);
+        await _engine.CommitAsync(metadataPath, deviceId, kind, changedFiles);
     }
 
     public virtual async Task<List<Transaction>> GetTransactionsAsync(string tripSlug)
@@ -136,7 +136,7 @@ public class LocalTripStorageService
 
         if (latestVersions.Count > 1)
         {
-            throw new TransactionConflictException(transactionId, latestVersions.Select(v => v.UserSlug).ToList());
+            throw new TransactionConflictException(transactionId, latestVersions.Select(v => v.DeviceId).ToList());
         }
 
         var latest = latestVersions[0];
@@ -175,7 +175,7 @@ public class LocalTripStorageService
         public bool IsDeleted { get; set; }
     }
 
-    public virtual async Task SaveTransactionAsync(string tripSlug, Transaction transaction, string authorSlug, bool isDelete = false, Dictionary<string, byte[]>? attachments = null)
+    public virtual async Task SaveTransactionAsync(string tripSlug, Transaction transaction, string deviceId, bool isDelete = false, Dictionary<string, byte[]>? attachments = null)
     {
         var transRoot = Path.Combine(_tripsPath, tripSlug, "transactions", transaction.Id);
         if (!Directory.Exists(transRoot)) Directory.CreateDirectory(transRoot);
@@ -197,7 +197,7 @@ public class LocalTripStorageService
             }
         }
 
-        await _engine.CommitAsync(transRoot, authorSlug, kind, changedFiles);
+        await _engine.CommitAsync(transRoot, deviceId, kind, changedFiles);
     }
 
     public virtual async Task<Dictionary<string, Transaction>> GetConflictingVersionsAsync(string tripSlug, string transactionId)
@@ -216,20 +216,20 @@ public class LocalTripStorageService
             {
                 var json = await File.ReadAllTextAsync(dataPath);
                 var trans = JsonSerializer.Deserialize<Transaction>(json, _jsonOptions);
-                if (trans != null) result[v.UserSlug] = trans;
+                if (trans != null) result[v.DeviceId] = trans;
             }
         }
         return result;
     }
 
-    public virtual async Task ResolveConflictAsync(string tripSlug, Transaction resolvedTransaction, string authorSlug)
+    public virtual async Task ResolveConflictAsync(string tripSlug, Transaction resolvedTransaction, string deviceId)
     {
         var transRoot = Path.Combine(_tripsPath, tripSlug, "transactions", resolvedTransaction.Id);
         
         var json = JsonSerializer.Serialize(resolvedTransaction, _jsonOptions);
         var changedFiles = new Dictionary<string, byte[]> { { "data.json", System.Text.Encoding.UTF8.GetBytes(json) } };
 
-        await _engine.CommitAsync(transRoot, authorSlug, CommitKind.Res, changedFiles);
+        await _engine.CommitAsync(transRoot, deviceId, CommitKind.Res, changedFiles);
     }
 
     public virtual async Task DeleteTripAsync(string tripSlug)

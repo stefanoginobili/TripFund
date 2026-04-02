@@ -43,7 +43,7 @@ public class OnboardingTests : BunitContext
         cut.Find("button").Click();
 
         // Assert
-        _storageMock.Verify(s => s.SaveAppSettingsAsync(It.Is<AppSettings>(a => a.AuthorName == "Mario Rossi" && a.AuthorSlug == "mario-rossi")), Times.Once);
+        _storageMock.Verify(s => s.SaveAppSettingsAsync(It.Is<AppSettings>(a => a.AuthorName == "Mario Rossi" && a.DeviceId == "mario-rossi")), Times.Once);
         nav.Uri.Should().EndWith("/");
     }
 }

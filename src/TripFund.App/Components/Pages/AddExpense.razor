@@ -154,13 +154,15 @@
     private LocationInfo? locationInfo;
     private string errorMessage = "";
     private bool isSubmitting = false;
-    private string authorSlug = "";
+    private string deviceId = "";
+    private string authorName = "";
 
     protected override async Task OnInitializedAsync()
     {
         config = await Storage.GetTripConfigAsync(tripSlug);
         var settings = await Storage.GetAppSettingsAsync();
-        authorSlug = settings?.AuthorSlug ?? "unknown";
+        deviceId = settings?.DeviceId ?? "unknown";
+        authorName = settings?.AuthorName ?? "Unknown";
 
         if (config != null)
         {
@@ -385,7 +387,7 @@
             Currency = selectedCurrency,
             Amount = totalAmount,
             Description = description,
-            Author = authorSlug,
+            Author = authorName,
             Split = splitDict,
             Location = locationInfo,
             Attachments = existingAttachments.Concat(newAttachments.Select(na => na.newName)).ToList()
@@ -401,7 +403,7 @@
 
         try
         {
-            await Storage.SaveTransactionAsync(tripSlug, transaction, authorSlug, attachments: attachmentsDict);
+            await Storage.SaveTransactionAsync(tripSlug, transaction, deviceId, attachments: attachmentsDict);
             Nav.NavigateTo($"/trip/{tripSlug}");
         }
         catch (Exception ex)
