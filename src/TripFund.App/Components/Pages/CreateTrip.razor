@@ -202,17 +202,9 @@
         };
 
         var settings = await Storage.GetAppSettingsAsync();
-        if (settings != null)
-        {
-            tripConfig.Members[settings.AuthorName] = new User
-            {
-                Name = settings.AuthorName,
-                Email = "",
-                Avatar = "👤"
-            };
-        }
 
         await Storage.SaveTripConfigAsync(tripSlug, tripConfig, settings?.DeviceId ?? "unknown");
+
 
         registry.Trips[tripSlug] = new TripRegistryEntry { DriveFolderId = folder.Id };
         await Storage.SaveTripRegistryAsync(registry);

@@ -72,6 +72,10 @@
             <div class="section-container">
                 <h3 class="section-title">Partecipanti</h3>
                 <div class="members-list">
+                    @if (!membersStats.Any())
+                    {
+                        <p class="empty-text">Nessun partecipante.</p>
+                    }
                     @foreach (var m in membersStats)
                     {
                         <div class="member-row" @onclick='() => Nav.NavigateTo($"/trip/{tripSlug}/member/{m.Slug}")'>
