@@ -23,6 +23,7 @@
     else
     {
         <div class="member-profile">
+            <h1 class="trip-name">@config.Name</h1>
             <div class="profile-avatar">@member.Avatar</div>
             <h2 class="profile-name">@member.Name</h2>
             <p class="profile-email">@member.Email</p>
@@ -228,6 +229,15 @@
         align-items: center;
         padding: 2rem 1.5rem 1rem;
         background-color: #FFFFFF;
+    }
+
+    .trip-name {
+        font-size: 1.75rem;
+        font-weight: 800;
+        color: #20563C;
+        margin-bottom: 1.25rem;
+        text-align: center;
+        line-height: 1.2;
     }
 
     .profile-avatar {
