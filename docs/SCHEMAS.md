@@ -83,8 +83,8 @@ This file is stored in the root of the app's local storage (next to `known_trips
 ```json
 {
   "authorName": "Mario Rossi",
-  "authorSlug": "mario-rossi"
+  "deviceId": "mario-rossi-abcd1234"
 }
 ```
 
-Note: `authorSlug` is auto-generated from `authorName` during the first launch/settings and is used as the suffix for transaction version folders.
+Note: `deviceId` is auto-generated from `authorName` during the first launch/settings and is used as the suffix for transaction version folders. Its value is composed by the slug of the `authorName` and the first 8 characters of a random GUID.

@@ -35,11 +35,11 @@ The application utilizes an append-only, soft-deletion storage engine. When a fo
 
 ### 3.1. Version Sub-Folder Naming Convention
 Data is never stored in the root of a versioned folder. It is stored in sub-folders adhering strictly to this regex-compatible format:
-`^(?<nnn>\d{3})_(?<kind>new|upd|res|del)_(?<user>[a-z0-9\-]+)$`
+`^(?<nnn>\d{3})_(?<kind>new|upd|res|del)_(?<deviceId>[a-z0-9\-]+)$`
 
 - `[nnn]`: A 3-digit progressive integer (e.g., `001`, `002`).
 - `[kind]`: The commit type (see 3.2).
-- `[user]`: The globally configured user slug initiating the commit.
+- `[deviceId]`: The globally configured deviceId initiating the commit.
 
 ### 3.2. Commit Kinds & Multi-File Rules
 Commits are **atomic**. A single version bump MUST be able to process a batch of multiple file changes (creations, modifications, and deletions) simultaneously.
@@ -59,7 +59,7 @@ Commits are **atomic**. A single version bump MUST be able to process a batch of
 When a user modifies data (changing one or multiple files) and saves:
 1. Scan the versioned folder for all sub-folders to find the latest state.
 2. Calculate the next sequence number: `NextSeq = MAX([nnn]) + 1`.
-3. Create the new folder: `[NextSeq]_[kind]_[user]`.
+3. Create the new folder: `[NextSeq]_[kind]_[deviceId]`.
 4. Populate the folder resolving the batch of changes against the previous state (copying untouched files, writing new/changed files, omitting deleted files).
 5. Commit the operation atomically to the file system.
 
@@ -70,14 +70,14 @@ Conflicts occur natively due to the offline-first architecture when multiple use
 A conflict is actively occurring IF AND ONLY IF there are two or more version sub-folders sharing the exact same `[nnn]` value, AND there is no valid `res` folder that supersedes them.
 
 **Conflict State Behavior:**
-1. The engine MUST group the diverging paths into "Threads" based on the `[user]` slug.
+1. The engine MUST group the diverging paths into "Threads" based on the `[deviceId]`.
 2. The engine MUST surface the latest valid data payload from *all* active threads to the UI.
 3. The UI remains in a locked/conflict state until a resolution is committed.
 
 **Resolution Algorithm:**
 1. The user selects a winning thread via the UI.
 2. The engine calculates `NextSeq = MAX([nnn_all_threads]) + 1`.
-3. The engine creates a `[NextSeq]_res_[user]` folder.
+3. The engine creates a `[NextSeq]_res_[deviceId]` folder.
 4. The engine copies the exact state (files, or the `.deleted` marker) of the chosen winning thread into the `res` folder.
 5. The conflict is marked resolved. Standard linear commits can resume at `NextSeq + 1`.
 
