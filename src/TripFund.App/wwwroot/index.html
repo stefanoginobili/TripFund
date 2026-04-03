@@ -23,6 +23,42 @@
         <span class="dismiss">🗙</span>
     </div>
 
+    <script>
+        // Keyboard Overlap Management
+        window.addEventListener('focusin', (e) => {
+            if (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT' || e.target.tagName === 'TEXTAREA') {
+                const main = document.querySelector('main');
+                if (main) {
+                    // Add significant padding to allow the focused element to be centered
+                    main.style.paddingBottom = '50vh';
+                    // Short delay to allow the keyboard animation to start/finish
+                    setTimeout(() => {
+                        e.target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    }, 300);
+                }
+            }
+        });
+        
+        window.addEventListener('focusout', (e) => {
+            if (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT' || e.target.tagName === 'TEXTAREA') {
+                const main = document.querySelector('main');
+                if (main) {
+                    main.style.paddingBottom = '';
+                }
+            }
+        });
+        
+        // Use visualViewport if available to handle orientation changes or keyboard resizing
+        if (window.visualViewport) {
+            window.visualViewport.onresize = () => {
+                const focused = document.activeElement;
+                if (focused && (focused.tagName === 'INPUT' || focused.tagName === 'SELECT' || focused.tagName === 'TEXTAREA')) {
+                    focused.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }
+            };
+        }
+    </script>
+
     <script src="_framework/blazor.webview.js" autostart="false"></script>
 
 </body>

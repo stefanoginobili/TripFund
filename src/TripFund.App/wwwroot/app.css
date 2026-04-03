@@ -9,15 +9,19 @@ html, body {
     position: relative;
     display: flex;
     flex-direction: column;
-    min-height: 100vh;
+    height: 100vh;
+    overflow: hidden;
 }
 
 main {
     flex: 1;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
 }
 
 .content {
     padding: 1.5rem;
+    padding-bottom: 3rem; /* Extra padding for better visibility */
 }
 
 h1:focus {
