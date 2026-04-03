@@ -6,7 +6,7 @@
 
 <div class="dashboard-page">
     <header class="app-header">
-        <button class="icon-btn" @onclick='() => Nav.NavigateTo($"/trip/{tripSlug}")'>
+        <button class="icon-btn" @onclick='() => Nav.NavigateTo($"/trip/{tripSlug}?currency={selectedCurrency}")'>
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <line x1="19" y1="12" x2="5" y2="12"></line>
                 <polyline points="12 19 5 12 12 5"></polyline>
@@ -46,7 +46,7 @@
                 
                 <div class="progress-container">
                     <div class="progress-bar-bg">
-                        <div class="progress-bar-fill" style="width: @(progressPercentage)%"></div>
+                        <div class="progress-bar-fill" style="width: @(progressPercentage.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture))%"></div>
                     </div>
                     <div class="progress-labels">
                         <span>@FormatCurrency(totalContributed, selectedCurrency)</span>
@@ -103,6 +103,7 @@
 @code {
     [Parameter] public string tripSlug { get; set; } = "";
     [Parameter] public string memberSlug { get; set; } = "";
+    [SupplyParameterFromQuery] public string? currency { get; set; }
     
     private TripConfig? config;
     private User? member;
@@ -125,7 +126,12 @@
             {
                 member = m;
             }
-            if (config.Currencies.Any())
+
+            if (!string.IsNullOrEmpty(currency) && config.Currencies.ContainsKey(currency))
+            {
+                selectedCurrency = currency;
+            }
+            else if (config.Currencies.Any())
             {
                 selectedCurrency = config.Currencies.Keys.First();
             }

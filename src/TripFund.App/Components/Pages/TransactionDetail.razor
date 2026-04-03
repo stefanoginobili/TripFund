@@ -7,7 +7,7 @@
 
 <div class="transaction-detail-page">
     <header class="app-header">
-        <button class="icon-btn" @onclick='() => Nav.NavigateTo($"/trip/{tripSlug}")'>
+        <button class="icon-btn" @onclick='() => Nav.NavigateTo($"/trip/{tripSlug}?currency={currency}")'>
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <line x1="19" y1="12" x2="5" y2="12"></line>
                 <polyline points="12 19 5 12 12 5"></polyline>
@@ -127,6 +127,7 @@
 @code {
     [Parameter] public string tripSlug { get; set; } = "";
     [Parameter] public string transactionId { get; set; } = "";
+    [SupplyParameterFromQuery] public string? currency { get; set; }
 
     private TripConfig? config;
     private Transaction? transaction;
@@ -153,7 +154,7 @@
         if (transaction == null) return;
         
         var route = transaction.Type == "contribution" ? "add-contribution" : "add-expense";
-        Nav.NavigateTo($"/trip/{tripSlug}/{route}?edit={transactionId}");
+        Nav.NavigateTo($"/trip/{tripSlug}/{route}?edit={transactionId}&currency={currency}");
     }
 
     private async Task DeleteTransaction()
@@ -170,7 +171,7 @@
         if (!confirm) return;
         
         await Storage.SaveTransactionAsync(tripSlug, transaction, deviceId, isDelete: true);
-        Nav.NavigateTo($"/trip/{tripSlug}");
+        Nav.NavigateTo($"/trip/{tripSlug}?currency={currency}");
     }
 
     private string FormatCurrency(decimal amount, string currencyCode)

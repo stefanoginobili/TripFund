@@ -44,7 +44,7 @@
                 
                 <div class="progress-container">
                     <div class="progress-bar-bg">
-                        <div class="progress-bar-fill" style="width: @(progressPercentage)%"></div>
+                        <div class="progress-bar-fill" style="width: @(progressPercentage.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture))%"></div>
                     </div>
                     <div class="progress-labels">
                         <span>@FormatCurrency(totalContributed, selectedCurrency)</span>
@@ -54,23 +54,25 @@
             </div>
 
             <div class="quick-actions">
-                <button class="action-btn contribute-btn" @onclick='() => Nav.NavigateTo($"/trip/{tripSlug}/add-contribution")'>
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <line x1="12" y1="5" x2="12" y2="19"></line>
-                        <line x1="5" y1="12" x2="19" y2="12"></line>
+                <button class="action-btn contribute-btn" @onclick='() => Nav.NavigateTo($"/trip/{tripSlug}/add-contribution?currency={selectedCurrency}")'>
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline>
+                        <polyline points="17 6 23 6 23 12"></polyline>
                     </svg>
                     Registra Versamento
                 </button>
-                <button class="action-btn expense-btn" @onclick='() => Nav.NavigateTo($"/trip/{tripSlug}/add-expense")'>
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <line x1="5" y1="12" x2="19" y2="12"></line>
+                <button class="action-btn expense-btn" @onclick='() => Nav.NavigateTo($"/trip/{tripSlug}/add-expense?currency={selectedCurrency}")'>
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="23 18 13.5 8.5 8.5 13.5 1 6"></polyline>
+                        <polyline points="17 18 23 18 23 12"></polyline>
                     </svg>
                     Registra Spesa
                 </button>
             </div>
 
-            <div class="section-container">
-                <h3 class="section-title">Partecipanti</h3>
+            <!-- MEMBERS SECTION -->
+            <section class="info-section">
+                <h3 class="section-header">PARTECIPANTI</h3>
                 <div class="members-list">
                     @if (!membersStats.Any())
                     {
@@ -78,7 +80,7 @@
                     }
                     @foreach (var m in membersStats)
                     {
-                        <div class="member-row" @onclick='() => Nav.NavigateTo($"/trip/{tripSlug}/member/{m.Slug}")'>
+                        <div class="member-row" @onclick='() => Nav.NavigateTo($"/trip/{tripSlug}/member/{m.Slug}?currency={selectedCurrency}")'>
                             <div class="member-avatar">@m.Avatar</div>
                             <div class="member-info">
                                 <div class="member-name">@m.Name</div>
@@ -92,13 +94,14 @@
                         </div>
                     }
                 </div>
-            </div>
+            </section>
 
-            <div class="section-container">
-                <h3 class="section-title">Transazioni recenti</h3>
+            <!-- TRANSACTIONS SECTION -->
+            <section class="info-section">
+                <h3 class="section-header">TRANSAZIONI</h3>
                 <div class="transactions-list">
                     @{
-                        var displayTx = transactions.Where(x => x.Currency == selectedCurrency).OrderByDescending(x => x.Date).Take(5).ToList();
+                        var displayTx = transactions.Where(x => x.Currency == selectedCurrency).OrderByDescending(x => x.Id).ToList();
                     }
                     @if (!displayTx.Any())
                     {
@@ -106,7 +109,18 @@
                     }
                     @foreach (var t in displayTx)
                     {
-                        <div class="transaction-row" @onclick='() => Nav.NavigateTo($"/trip/{tripSlug}/transaction/{t.Id}")'>
+                        string secondLineText;
+                        if (t.Type == "expense")
+                        {
+                            secondLineText = $"Partecipanti: {t.Split.Count}";
+                        }
+                        else
+                        {
+                            var payerSlug = t.Split.Keys.FirstOrDefault() ?? t.Author;
+                            secondLineText = config.Members.TryGetValue(payerSlug, out var member) ? member.Name : payerSlug;
+                        }
+
+                        <div class="transaction-row" @onclick='() => Nav.NavigateTo($"/trip/{tripSlug}/transaction/{t.Id}?currency={selectedCurrency}")'>
                             <div class="transaction-icon @(t.Type == "expense" ? "expense-icon" : "contrib-icon")">
                                 @if(t.Type == "expense")
                                 {
@@ -119,7 +133,8 @@
                             </div>
                             <div class="transaction-info">
                                 <div class="transaction-desc">@(string.IsNullOrWhiteSpace(t.Description) ? (t.Type == "expense" ? "Spesa" : "Versamento") : t.Description)</div>
-                                <div class="transaction-date">@t.Date.ToString("g") • @t.Author</div>
+                                <div class="transaction-meta">@secondLineText</div>
+                                <div class="transaction-meta">@t.Date.ToString("g")</div>
                             </div>
                             <div class="transaction-amount @(t.Type == "expense" ? "negative" : "positive")">
                                 @(t.Type == "expense" ? "-" : "+")@FormatCurrency(t.Amount, t.Currency)
@@ -127,13 +142,14 @@
                         </div>
                     }
                 </div>
-            </div>
+            </section>
         </main>
     }
 </div>
 
 @code {
     [Parameter] public string tripSlug { get; set; } = "";
+    [SupplyParameterFromQuery] public string? currency { get; set; }
     
     private TripConfig? config;
     private List<Transaction> transactions = new();
@@ -152,7 +168,11 @@
         config = await Storage.GetTripConfigAsync(tripSlug);
         if (config != null)
         {
-            if (config.Currencies.Any())
+            if (!string.IsNullOrEmpty(currency) && config.Currencies.ContainsKey(currency))
+            {
+                selectedCurrency = currency;
+            }
+            else if (config.Currencies.Any())
             {
                 selectedCurrency = config.Currencies.Keys.First();
             }
@@ -178,8 +198,10 @@
         
         targetAmount = currencyConfig.ExpectedQuotaPerMember * config.Members.Count;
 
-        totalContributed = 0;
-        totalRemaining = 0;
+        totalContributed = currentCurrencyTx.Where(t => t.Type == "contribution").Sum(t => t.Amount);
+        decimal totalExpenses = currentCurrencyTx.Where(t => t.Type == "expense").Sum(t => t.Amount);
+        totalRemaining = totalContributed - totalExpenses;
+
         membersStats.Clear();
 
         foreach (var member in config.Members)
@@ -198,9 +220,6 @@
 
             decimal mRemaining = mContributed - mExpenses;
             
-            totalContributed += mContributed;
-            totalRemaining += mRemaining;
-
             membersStats.Add(new MemberStats
             {
                 Slug = member.Key,
@@ -295,7 +314,24 @@
 
     .content {
         padding: 1.5rem;
-        padding-bottom: 3rem;
+        display: flex;
+        flex-direction: column;
+        gap: 1.5rem;
+    }
+
+    .info-section {
+        background-color: #FFFFFF;
+        border-radius: 24px;
+        padding: 1.5rem;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03);
+    }
+
+    .section-header {
+        font-size: 0.9rem;
+        font-weight: 700;
+        color: #6C757D;
+        letter-spacing: 0.05em;
+        margin-bottom: 1.5rem;
     }
 
     .summary-card {
@@ -303,7 +339,6 @@
         border-radius: 24px;
         padding: 1.5rem;
         color: #FFFFFF;
-        margin-bottom: 1.5rem;
         box-shadow: 0 8px 24px rgba(32, 86, 60, 0.2);
     }
 
@@ -353,7 +388,6 @@
     .quick-actions {
         display: flex;
         gap: 1rem;
-        margin-bottom: 2rem;
     }
 
     .action-btn {
@@ -381,17 +415,6 @@
         color: #DC3545;
     }
 
-    .section-container {
-        margin-bottom: 2rem;
-    }
-
-    .section-title {
-        font-size: 1.25rem;
-        font-weight: 700;
-        color: #1A3C2F;
-        margin-bottom: 1rem;
-    }
-
     .members-list, .transactions-list {
         display: flex;
         flex-direction: column;
@@ -399,13 +422,14 @@
     }
 
     .member-row, .transaction-row {
-        background-color: #FFFFFF;
+        background-color: #F8FBF9;
         padding: 1rem;
         border-radius: 16px;
         display: flex;
         align-items: center;
         box-shadow: 0 2px 8px rgba(0,0,0,0.02);
         cursor: pointer;
+        border: 1px solid #F0F0F0;
     }
 
     .member-avatar {
@@ -413,11 +437,12 @@
         margin-right: 1rem;
         width: 48px;
         height: 48px;
-        background-color: #F8FBF9;
+        background-color: #FFFFFF;
         border-radius: 50%;
         display: flex;
         align-items: center;
         justify-content: center;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
     }
 
     .member-info {
@@ -473,7 +498,7 @@
         margin-bottom: 0.2rem;
     }
 
-    .transaction-date {
+    .transaction-meta {
         font-size: 0.8rem;
         color: #6C757D;
     }
