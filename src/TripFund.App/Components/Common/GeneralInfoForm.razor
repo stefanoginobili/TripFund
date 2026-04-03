@@ -27,7 +27,7 @@
             <label>Data Inizio</label>
             <div class="date-picker-wrapper">
                 <span class="date-display">@FormatDate(StartDate)</span>
-                <input type="date" @bind="StartDate" class="native-date-input" />
+                <input type="date" value="@StartDate.ToString("yyyy-MM-dd")" @onchange="OnStartDateChange" class="native-date-input" />
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="calendar-icon">
                     <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
                     <line x1="16" y1="2" x2="16" y2="6"></line>
@@ -40,7 +40,7 @@
             <label>Data Fine</label>
             <div class="date-picker-wrapper">
                 <span class="date-display">@FormatDate(EndDate)</span>
-                <input type="date" @bind="EndDate" class="native-date-input" />
+                <input type="date" value="@EndDate.ToString("yyyy-MM-dd")" @onchange="OnEndDateChange" class="native-date-input" />
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="calendar-icon">
                     <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
                     <line x1="16" y1="2" x2="16" y2="6"></line>
@@ -51,10 +51,15 @@
         </div>
     </div>
 
+    @if (!string.IsNullOrEmpty(dateError))
+    {
+        <div class="date-validation-error">@dateError</div>
+    }
+
     <div class="form-group">
         <label>Descrizione</label>
         <div class="input-wrapper">
-            <textarea @bind="Description" placeholder="Aggiungi una descrizione..." rows="3"></textarea>
+            <textarea value="@Description" @oninput="OnDescriptionInput" placeholder="Aggiungi una descrizione..." rows="3"></textarea>
         </div>
     </div>
 </section>
@@ -77,6 +82,8 @@
 
     [Parameter] public bool IsCreate { get; set; } = false;
 
+    private string dateError = "";
+
     private async Task OnNameInput(ChangeEventArgs e)
     {
         var newName = e.Value?.ToString() ?? "";
@@ -89,6 +96,50 @@
             Slug = newSlug;
             await SlugChanged.InvokeAsync(newSlug);
         }
+    }
+
+    private async Task OnStartDateChange(ChangeEventArgs e)
+    {
+        if (DateTime.TryParse(e.Value?.ToString(), out var date))
+        {
+            dateError = "";
+            StartDate = date;
+            await StartDateChanged.InvokeAsync(date);
+
+            if (EndDate < StartDate)
+            {
+                EndDate = StartDate;
+                await EndDateChanged.InvokeAsync(EndDate);
+            }
+        }
+    }
+
+    private async Task OnEndDateChange(ChangeEventArgs e)
+    {
+        if (DateTime.TryParse(e.Value?.ToString(), out var date))
+        {
+            if (date < StartDate)
+            {
+                dateError = "La data di fine non può essere precedente alla data di inizio.";
+                // Reset visual state but keep valid model if possible, 
+                // or just force it to StartDate. Let's force it to be safe.
+                EndDate = StartDate;
+                await EndDateChanged.InvokeAsync(EndDate);
+            }
+            else
+            {
+                dateError = "";
+                EndDate = date;
+                await EndDateChanged.InvokeAsync(date);
+            }
+        }
+    }
+
+    private async Task OnDescriptionInput(ChangeEventArgs e)
+    {
+        var val = e.Value?.ToString() ?? "";
+        Description = val;
+        await DescriptionChanged.InvokeAsync(val);
     }
 
     private string FormatDate(DateTime date)
@@ -164,6 +215,14 @@
     }
 
     .flex-1 { flex: 1; }
+
+    .date-validation-error {
+        color: #DC3545;
+        font-size: 0.75rem;
+        font-weight: 600;
+        margin-top: -0.5rem;
+        margin-bottom: 1rem;
+    }
 
     .date-picker-wrapper {
         background-color: #E9ECEF;

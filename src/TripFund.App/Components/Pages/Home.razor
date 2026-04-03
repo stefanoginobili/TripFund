@@ -11,9 +11,9 @@
         <div class="spacer"></div>
         <h1 class="brand-name">TripFund</h1>
         <button class="settings-btn" @onclick="NavigateToSettings">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#20563C" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.1a2 2 0 0 1-1-1.72v-.51a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"></path>
                 <circle cx="12" cy="12" r="3"></circle>
-                <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
             </svg>
         </button>
     </header>
@@ -21,12 +21,12 @@
     <main class="content">
         <h2 class="page-title">I miei viaggi</h2>
 
-        <div class="trips-list">
-            @if (trips == null)
+        <div class="trips-sections">
+            @if (isLoading)
             {
                 <p class="status-text">Caricamento...</p>
             }
-            else if (trips.Count == 0)
+            else if (currentTrips.Count == 0 && futureTrips.Count == 0 && pastTrips.Count == 0)
             {
                 <div class="empty-state">
                     <p>Nessun viaggio trovato.</p>
@@ -35,26 +35,43 @@
             }
             else
             {
-                @foreach (var item in trips)
+                @if (currentTrips.Any())
                 {
-                    <div class="trip-card" @onclick="() => NavigateToTrip(item.Slug)">
-                        <div class="card-top">
-                            <div class="trip-icon-container">
-                                <span class="trip-icon">🏔️</span>
-                            </div>
-                            <div class="member-badge">
-                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
-                                    <circle cx="12" cy="7" r="4"></circle>
-                                </svg>
-                                <span>@item.Config.Members.Count Partecipanti</span>
-                            </div>
+                    <section class="info-section">
+                        <h3 class="section-header">IN CORSO</h3>
+                        <div class="trips-grid">
+                            @foreach (var item in currentTrips)
+                            {
+                                @RenderTripCard(item, "🛫", false, true)
+                            }
                         </div>
-                        <div class="card-bottom">
-                            <h3 class="trip-name">@item.Config.Name</h3>
-                            <p class="trip-dates">@FormatDates(item.Config.StartDate, item.Config.EndDate)</p>
+                    </section>
+                }
+
+                @if (futureTrips.Any())
+                {
+                    <section class="info-section">
+                        <h3 class="section-header">FUTURI</h3>
+                        <div class="trips-grid">
+                            @foreach (var item in futureTrips)
+                            {
+                                @RenderTripCard(item, "🕒", false, false)
+                            }
                         </div>
-                    </div>
+                    </section>
+                }
+
+                @if (pastTrips.Any())
+                {
+                    <section class="info-section">
+                        <h3 class="section-header">PASSATI</h3>
+                        <div class="trips-grid">
+                            @foreach (var item in pastTrips)
+                            {
+                                @RenderTripCard(item, "🏁", true, false)
+                            }
+                        </div>
+                    </section>
                 }
             }
         </div>
@@ -67,7 +84,10 @@
 </div>
 
 @code {
-    private List<TripListItem>? trips;
+    private List<TripListItem> currentTrips = new();
+    private List<TripListItem> futureTrips = new();
+    private List<TripListItem> pastTrips = new();
+    private bool isLoading = true;
 
     protected override async Task OnInitializedAsync()
     {
@@ -80,18 +100,37 @@
 
     private async Task LoadTrips()
     {
+        isLoading = true;
         var registry = await Storage.GetTripRegistryAsync();
-        var loadedTrips = new List<TripListItem>();
+        var allLoaded = new List<TripListItem>();
 
         foreach (var entry in registry.Trips)
         {
             var config = await Storage.GetTripConfigAsync(entry.Key);
             if (config != null)
             {
-                loadedTrips.Add(new TripListItem { Slug = entry.Key, Config = config });
+                allLoaded.Add(new TripListItem { Slug = entry.Key, Config = config });
             }
         }
-        trips = loadedTrips.OrderByDescending(t => t.Config.StartDate).ToList();
+
+        var today = DateTime.Today;
+
+        currentTrips = allLoaded
+            .Where(t => today >= t.Config.StartDate.Date && today <= t.Config.EndDate.Date)
+            .OrderBy(t => t.Config.StartDate)
+            .ToList();
+
+        futureTrips = allLoaded
+            .Where(t => t.Config.StartDate.Date > today)
+            .OrderBy(t => t.Config.StartDate)
+            .ToList();
+
+        pastTrips = allLoaded
+            .Where(t => t.Config.EndDate.Date < today)
+            .OrderByDescending(t => t.Config.StartDate)
+            .ToList();
+
+        isLoading = false;
     }
 
     private async Task HandleJoinTrip()
@@ -129,13 +168,33 @@
 
     private string FormatDates(DateTime start, DateTime end)
     {
-        // Example: 1 Nov - 20 Nov 2026
         if (start.Year == end.Year)
         {
             return $"{start:d MMM} - {end:d MMM yyyy}";
         }
         return $"{start:d MMM yyyy} - {end:d MMM yyyy}";
     }
+
+    private RenderFragment RenderTripCard(TripListItem item, string icon, bool isGray, bool isHighlighted) => __builder => {
+        <div class="trip-card @(isGray ? "grayscale" : "") @(isHighlighted ? "active-trip" : "")" @onclick="() => NavigateToTrip(item.Slug)">
+            <div class="card-top">
+                <div class="trip-icon-container">
+                    <span class="trip-icon">@icon</span>
+                </div>
+                <div class="member-badge">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                        <circle cx="12" cy="7" r="4"></circle>
+                    </svg>
+                    <span>@item.Config.Members.Count @(item.Config.Members.Count == 1 ? "Partecipante" : "Partecipanti")</span>
+                </div>
+            </div>
+            <div class="card-bottom">
+                <h3 class="trip-name">@item.Config.Name</h3>
+                <p class="trip-dates">@FormatDates(item.Config.StartDate, item.Config.EndDate)</p>
+            </div>
+        </div>
+    };
 
     private class TripListItem
     {
@@ -183,73 +242,107 @@
         flex: 1;
         padding: 2rem 1.5rem;
         padding-bottom: 10rem;
+        display: flex;
+        flex-direction: column;
+        gap: 2rem;
     }
 
     .page-title {
         font-size: 2.2rem;
         font-weight: 700;
         color: #1A3C2F;
-        margin-bottom: 2rem;
+        margin-bottom: 0.5rem;
     }
 
-    .trips-list {
+    .trips-sections {
         display: flex;
         flex-direction: column;
-        gap: 1.5rem;
+        gap: 2rem;
+    }
+
+    .info-section {
+        background-color: #FFFFFF;
+        border-radius: 24px;
+        padding: 1.5rem;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03);
+    }
+
+    .section-header {
+        font-size: 0.9rem;
+        font-weight: 700;
+        color: #6C757D;
+        letter-spacing: 0.05em;
+        margin-bottom: 1.5rem;
+    }
+
+    .trips-grid {
+        display: flex;
+        flex-direction: column;
+        gap: 1.25rem;
     }
 
     .trip-card {
-        background-color: #FFFFFF;
-        border-radius: 28px;
-        padding: 1.5rem;
-        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.04);
+        background-color: #F8FBF9;
+        border-radius: 24px;
+        padding: 1.25rem;
         cursor: pointer;
         transition: transform 0.1s;
+        border: 1px solid #F0F0F0;
     }
 
     .trip-card:active {
         transform: scale(0.98);
     }
 
+    .trip-card.active-trip {
+        border: 2px solid #20563C;
+    }
+
+    .trip-card.grayscale {
+        filter: grayscale(1);
+        opacity: 0.8;
+    }
+
     .card-top {
         display: flex;
         justify-content: space-between;
         align-items: flex-start;
-        margin-bottom: 1.5rem;
+        margin-bottom: 1.25rem;
     }
 
     .trip-icon-container {
-        width: 56px;
-        height: 56px;
-        background-color: #D6EDE2;
+        width: 48px;
+        height: 48px;
+        background-color: #FFFFFF;
         border-radius: 50%;
         display: flex;
         align-items: center;
         justify-content: center;
-        font-size: 1.8rem;
+        font-size: 1.5rem;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.05);
     }
 
     .member-badge {
         background-color: #E9F2EE;
         color: #20563C;
-        padding: 0.4rem 0.8rem;
+        padding: 0.35rem 0.7rem;
         border-radius: 20px;
-        font-size: 0.85rem;
+        font-size: 0.8rem;
         font-weight: 600;
         display: flex;
         align-items: center;
-        gap: 0.4rem;
+        gap: 0.35rem;
     }
 
     .trip-name {
-        font-size: 1.5rem;
+        font-size: 1.25rem;
         font-weight: 700;
         color: #1A3C2F;
-        margin: 0 0 0.4rem 0;
+        margin: 0 0 0.25rem 0;
     }
 
     .trip-dates {
-        font-size: 0.95rem;
+        font-size: 0.85rem;
         color: #6C757D;
         margin: 0;
     }
@@ -264,6 +357,7 @@
         display: flex;
         flex-direction: column;
         gap: 0.75rem;
+        z-index: 100;
     }
 
     .btn-create {

@@ -36,23 +36,47 @@ public class HomeTests : BunitContext
     }
 
     [Fact]
-    public void Home_WithTrips_ShouldRenderTripList()
+    public void Home_WithTrips_ShouldCategorizeCorrectly()
     {
         // Arrange
         var registry = new LocalTripRegistry();
-        registry.Trips.Add("trip-1", new TripRegistryEntry { DriveFolderId = "xyz" });
+        registry.Trips.Add("current", new TripRegistryEntry { DriveFolderId = "1" });
+        registry.Trips.Add("future", new TripRegistryEntry { DriveFolderId = "2" });
+        registry.Trips.Add("past", new TripRegistryEntry { DriveFolderId = "3" });
+
+        var today = DateTime.Today;
         
-        var config = new TripConfig { Id = "guid-1", Name = "Patagonia", StartDate = DateTime.Now, EndDate = DateTime.Now.AddDays(10) };
-        config.Members.Add("mario", new User { Name = "Mario" });
+        var current = new TripConfig { Id = "c", Name = "Current Trip", StartDate = today, EndDate = today.AddDays(5) };
+        current.Members.Add("m1", new User { Name = "M1" });
+
+        var future = new TripConfig { Id = "f", Name = "Future Trip", StartDate = today.AddDays(10), EndDate = today.AddDays(15) };
+        future.Members.Add("m1", new User { Name = "M1" });
+        future.Members.Add("m2", new User { Name = "M2" });
+
+        var past = new TripConfig { Id = "p", Name = "Past Trip", StartDate = today.AddDays(-20), EndDate = today.AddDays(-10) };
 
         _storageMock.Setup(s => s.GetTripRegistryAsync()).ReturnsAsync(registry);
-        _storageMock.Setup(s => s.GetTripConfigAsync("trip-1")).ReturnsAsync(config);
+        _storageMock.Setup(s => s.GetTripConfigAsync("current")).ReturnsAsync(current);
+        _storageMock.Setup(s => s.GetTripConfigAsync("future")).ReturnsAsync(future);
+        _storageMock.Setup(s => s.GetTripConfigAsync("past")).ReturnsAsync(past);
 
         // Act
         var cut = Render<Home>();
 
         // Assert
-        cut.Find(".trip-name").TextContent.Should().Be("Patagonia");
-        cut.Find(".member-badge").TextContent.Should().Contain("1");
+        // Sections
+        cut.FindAll(".section-header").Select(e => e.TextContent).Should().Contain(new[] { "IN CORSO", "FUTURI", "PASSATI" });
+
+        // Icons
+        cut.FindAll(".trip-icon").Select(e => e.TextContent).Should().Contain(new[] { "🛫", "🕒", "🏁" });
+
+        // Grayscale for past
+        cut.Find(".trip-card.grayscale").InnerHtml.Should().Contain("Past Trip");
+
+        // Pluralization
+        var badges = cut.FindAll(".member-badge").Select(e => e.TextContent).ToList();
+        badges.Any(b => b.Contains("1 Partecipante")).Should().BeTrue();
+        badges.Any(b => b.Contains("2 Partecipanti")).Should().BeTrue();
+        badges.Any(b => b.Contains("0 Partecipanti")).Should().BeTrue();
     }
 }
