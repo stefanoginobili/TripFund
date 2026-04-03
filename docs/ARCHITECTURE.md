@@ -52,7 +52,9 @@ Commits are **atomic**. A single version bump MUST be able to process a batch of
         3. Copy all **untouched** files from the immediate previous version.
         4. Explicitly **exclude/drop** any files the user intended to delete (e.g., removing a specific attachment).
 - **`del` (Soft Deletion):** Deletes the *entire entity*.
-    - **Rule:** The folder MUST ONLY contain an empty file named `.deleted`. No `data.json` or attachments are copied forward.
+    - **Rule:** The folder MUST ONLY contain a file named `.deleted`. No `data.json` or attachments are copied forward. The `.deleted` MUST contain 2 line:
+      - `author=Mario Rossi`: where "Mario Rossi" in this example is the author from the Global Settings.
+      - `deletedAt=20260332T212354Z`: where the timestamp is the timestamp of the deletion time.
 - **`res` (Resolution):** Closes a conflict state. Contains the exact file payload (or `.deleted` marker) of the chosen winning thread.
 
 ### 3.3. Standard Commit Operation Algorithm

@@ -106,6 +106,37 @@ public class LocalTripStorageTests : IDisposable
     }
 
     [Fact]
+    public async Task Transaction_Delete_ShouldCreateDeletedFileWithInfo()
+    {
+        // Arrange
+        var tripSlug = "test-trip";
+        var t1 = new Transaction { Id = "trans-1", Description = "Lunch" };
+        var settings = new AppSettings { AuthorName = "Mario Rossi", DeviceId = "mario-123" };
+        await _service.SaveAppSettingsAsync(settings);
+
+        // Act
+        await _service.SaveTransactionAsync(tripSlug, t1, "mario");
+        await _service.SaveTransactionAsync(tripSlug, t1, "mario", isDelete: true);
+
+        // Assert
+        var transDir = Path.Combine(_tempPath, "trips", tripSlug, "transactions", "trans-1");
+        var delVersionDir = Path.Combine(transDir, "002_del_mario");
+        var deletedFile = Path.Combine(delVersionDir, ".deleted");
+        
+        File.Exists(deletedFile).Should().BeTrue();
+        var content = await File.ReadAllTextAsync(deletedFile);
+        content.Should().Contain("author=Mario Rossi");
+        content.Should().Contain("deletedAt=");
+        
+        // Verify timestamp format roughly
+        var lines = content.Split('\n');
+        var timestampLine = lines.FirstOrDefault(l => l.StartsWith("deletedAt="));
+        timestampLine.Should().NotBeNull();
+        var timestamp = timestampLine!.Substring("deletedAt=".Length);
+        timestamp.Should().MatchRegex(@"^\d{8}T\d{6}Z$");
+    }
+
+    [Fact]
     public async Task Transaction_Conflict_ShouldThrowException()
     {
         // Arrange

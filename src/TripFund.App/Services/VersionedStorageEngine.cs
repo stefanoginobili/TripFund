@@ -73,7 +73,8 @@ public class VersionedStorageEngine
         string deviceId, 
         CommitKind kind, 
         Dictionary<string, byte[]> changedFiles, 
-        List<string>? deletedFiles = null)
+        List<string>? deletedFiles = null,
+        string? deletedInfo = null)
     {
         var versions = GetVersionFolders(rootPath);
         int nextSeq = (versions.Count == 0) ? 1 : versions.Max(v => v.Sequence) + 1;
@@ -84,7 +85,7 @@ public class VersionedStorageEngine
 
         if (kind == CommitKind.Del)
         {
-            await File.WriteAllTextAsync(Path.Combine(newDirPath, ".deleted"), "");
+            await File.WriteAllTextAsync(Path.Combine(newDirPath, ".deleted"), deletedInfo ?? "");
             return folderName;
         }
 

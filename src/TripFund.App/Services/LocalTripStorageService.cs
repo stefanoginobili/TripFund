@@ -183,7 +183,16 @@ public class LocalTripStorageService
         CommitKind kind = _engine.GetVersionFolders(transRoot).Count == 0 ? CommitKind.New : (isDelete ? CommitKind.Del : CommitKind.Upd);
 
         var changedFiles = new Dictionary<string, byte[]>();
-        if (!isDelete)
+        string? deletedInfo = null;
+
+        if (isDelete)
+        {
+            var settings = await GetAppSettingsAsync();
+            var author = settings?.AuthorName ?? "Unknown";
+            var timestamp = DateTime.UtcNow.ToString("yyyyMMddTHHmmssZ");
+            deletedInfo = $"author={author}\ndeletedAt={timestamp}";
+        }
+        else
         {
             var json = JsonSerializer.Serialize(transaction, _jsonOptions);
             changedFiles["data.json"] = System.Text.Encoding.UTF8.GetBytes(json);
@@ -197,7 +206,7 @@ public class LocalTripStorageService
             }
         }
 
-        await _engine.CommitAsync(transRoot, deviceId, kind, changedFiles);
+        await _engine.CommitAsync(transRoot, deviceId, kind, changedFiles, deletedInfo: deletedInfo);
     }
 
     public virtual async Task<Dictionary<string, Transaction>> GetConflictingVersionsAsync(string tripSlug, string transactionId)
