@@ -15,11 +15,23 @@
             </svg>
         </button>
         <h1 class="header-title">Modifica Viaggio</h1>
-        <button class="icon-btn" @onclick="HandleSave">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#20563C" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <polyline points="20 6 9 17 4 12"></polyline>
-            </svg>
-        </button>
+        <div class="header-actions">
+            <button class="icon-btn" @onclick="ToggleHeaderMenu">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#20563C" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="5" r="1"></circle>
+                    <circle cx="12" cy="12" r="1"></circle>
+                    <circle cx="12" cy="19" r="1"></circle>
+                </svg>
+            </button>
+            @if (isHeaderMenuOpen)
+            {
+                <div class="header-dropdown">
+                    <div class="dropdown-item-custom text-danger" @onclick="HandleDelete">
+                        Elimina
+                    </div>
+                </div>
+            }
+        </div>
     </header>
 
     @if (config == null)
@@ -43,7 +55,7 @@
                 </div>
 
                 <div class="form-group">
-                    <label>Slug Identificativo</label>
+                    <label>Slug</label>
                     <div class="input-wrapper read-only">
                         <input type="text" value="@tripSlug" readonly />
                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="lock-icon">
@@ -56,14 +68,28 @@
                 <div class="row-group">
                     <div class="form-group flex-1">
                         <label>Data Inizio</label>
-                        <div class="input-wrapper icon-right">
-                            <input type="date" @bind="config.StartDate" />
+                        <div class="date-picker-wrapper">
+                            <span class="date-display">@FormatDate(config.StartDate)</span>
+                            <input type="date" @bind="config.StartDate" class="native-date-input" />
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="calendar-icon">
+                                <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                                <line x1="16" y1="2" x2="16" y2="6"></line>
+                                <line x1="8" y1="2" x2="8" y2="6"></line>
+                                <line x1="3" y1="10" x2="21" y2="10"></line>
+                            </svg>
                         </div>
                     </div>
                     <div class="form-group flex-1">
                         <label>Data Fine</label>
-                        <div class="input-wrapper icon-right">
-                            <input type="date" @bind="config.EndDate" />
+                        <div class="date-picker-wrapper">
+                            <span class="date-display">@FormatDate(config.EndDate)</span>
+                            <input type="date" @bind="config.EndDate" class="native-date-input" />
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="calendar-icon">
+                                <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                                <line x1="16" y1="2" x2="16" y2="6"></line>
+                                <line x1="8" y1="2" x2="8" y2="6"></line>
+                                <line x1="3" y1="10" x2="21" y2="10"></line>
+                            </svg>
                         </div>
                     </div>
                 </div>
@@ -86,64 +112,197 @@
                 <div class="members-list">
                     @foreach (var member in config.Members)
                     {
-                        <div class="member-item">
-                            <div class="member-avatar-display">@member.Value.Avatar</div>
-                            <div class="member-details">
-                                <span class="member-name-text">@member.Value.Name</span>
-                                <span class="member-slug-text">@member.Key</span>
+                        @if (editingMemberSlug == member.Key)
+                        {
+                            <div class="member-edit-container">
+                                <div class="new-member-form">
+                                    <div class="new-member-header">
+                                        <span class="user-plus-icon">
+                                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                                                <circle cx="8.5" cy="7" r="4"></circle>
+                                                <line x1="20" y1="8" x2="20" y2="14"></line>
+                                                <line x1="17" y1="11" x2="23" y2="11"></line>
+                                            </svg>
+                                        </span>
+                                        <span class="new-member-title">Modifica Partecipante</span>
+                                    </div>
+
+                                    <div class="member-form-row">
+                                        <div class="avatar-col">
+                                            <label>AVATAR</label>
+                                            <div class="avatar-input-box" @onclick="ToggleEmojiPicker">
+                                                <span>@newMemberAvatar</span>
+                                                @if (showEmojiPicker)
+                                                {
+                                                    <div class="emoji-picker-popover" @onclick:stopPropagation>
+                                                        <div class="emoji-grid">
+                                                            @foreach (var emoji in emojis)
+                                                            {
+                                                                <button class="emoji-btn @(newMemberAvatar == emoji ? "selected" : "")" @onclick="() => SelectEmoji(emoji)">
+                                                                    @emoji
+                                                                </button>
+                                                            }
+                                                        </div>
+                                                    </div>
+                                                }
+                                            </div>
+                                        </div>
+                                        <div class="name-col">
+                                            <label>NOME</label>
+                                            <input type="text" @bind="newMemberName" placeholder="Esempio: Andrea" />
+                                        </div>
+                                    </div>
+
+                                    <div class="member-form-full-row">
+                                        <label>EMAIL</label>
+                                        <input type="email" @bind="newMemberEmail" placeholder="andrea@esempio.com" />
+                                    </div>
+
+                                    <div class="member-form-footer">
+                                        <div class="slug-col">
+                                            <label>SLUG</label>
+                                            <input type="text" value="@newMemberSlug" readonly class="readonly-input-form" />
+                                        </div>
+                                        <div class="action-buttons">
+                                            <button class="confirm-btn" @onclick="AddMember">
+                                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+                                                    <polyline points="20 6 9 17 4 12"></polyline>
+                                                </svg>
+                                            </button>
+                                            <button class="cancel-btn" @onclick="CancelMemberEdit">
+                                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                                                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                                                </svg>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
-                            @if (member.Key != authorName)
-                            {
-                                <button class="delete-member-btn" @onclick="() => RemoveMember(member.Key)">
-                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                        <line x1="18" y1="6" x2="6" y2="18"></line>
-                                        <line x1="6" y1="6" x2="18" y2="18"></line>
-                                    </svg>
-                                </button>
-                            }
-                        </div>
+                        }
+                        else
+                        {
+                            <div class="member-item">
+                                <div class="member-avatar-display">@member.Value.Avatar</div>
+                                <div class="member-details">
+                                    <span class="member-name-text">@member.Value.Name</span>
+                                    <span class="member-slug-text">@member.Key</span>
+                                </div>
+                                <div class="more-actions-container">
+                                    <div class="action-trigger" @onclick="() => ToggleMemberMenu(member.Key)">
+                                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <circle cx="12" cy="5" r="1"></circle>
+                                            <circle cx="12" cy="12" r="1"></circle>
+                                            <circle cx="12" cy="19" r="1"></circle>
+                                        </svg>
+                                    </div>
+                                    @if (openMenuMemberSlug == member.Key)
+                                    {
+                                        var keys = config.Members.Keys.ToList();
+                                        int index = keys.IndexOf(member.Key);
+                                        bool isFirst = index == 0;
+                                        bool isLast = index == keys.Count - 1;
+
+                                        <div class="actions-dropdown">
+                                            <div class="dropdown-item-custom" @onclick="() => StartEditMember(member.Key, member.Value)">
+                                                Modifica
+                                            </div>
+                                            <div class="dropdown-item-custom @(isFirst ? "disabled" : "")" @onclick="() => { if(!isFirst) MoveMemberUp(member.Key); }">
+                                                Sposta su
+                                            </div>
+                                            <div class="dropdown-item-custom @(isLast ? "disabled" : "")" @onclick="() => { if(!isLast) MoveMemberDown(member.Key); }">
+                                                Sposta giù
+                                            </div>
+                                            <div class="dropdown-item-custom text-danger" @onclick="() => ConfirmDeleteMember(member.Key)">
+                                                Elimina
+                                            </div>
+                                        </div>
+                                    }
+                                </div>
+                            </div>
+                        }
                     }
                 </div>
 
-                <div class="add-member-section">
-                    <h4 class="sub-header">AGGIUNGI NUOVO MEMBRO</h4>
-                    <div class="add-member-grid">
-                        <div class="avatar-selector" @onclick="ToggleEmojiPicker">
-                            <span class="selected-avatar">@newMemberAvatar</span>
-                            <div class="plus-badge">
-                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
-                                    <line x1="12" y1="5" x2="12" y2="19"></line>
-                                    <line x1="5" y1="12" x2="19" y2="12"></line>
-                                </svg>
+                <div class="add-member-dashed @(isAddingMember ? "expanded" : "")" @onclick="() => isAddingMember = true">
+                    @if (!isAddingMember)
+                    {
+                        <div class="dashed-btn-content">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="me-2">
+                                <line x1="12" y1="5" x2="12" y2="19"></line>
+                                <line x1="5" y1="12" x2="19" y2="12"></line>
+                            </svg>
+                            <span>Aggiungi Partecipante</span>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="new-member-form" @onclick:stopPropagation>
+                            <div class="new-member-header">
+                                <span class="user-plus-icon">
+                                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                                        <circle cx="8.5" cy="7" r="4"></circle>
+                                        <line x1="20" y1="8" x2="20" y2="14"></line>
+                                        <line x1="17" y1="11" x2="23" y2="11"></line>
+                                    </svg>
+                                </span>
+                                <span class="new-member-title">Nuovo Partecipante</span>
                             </div>
 
-                            @if (showEmojiPicker)
-                            {
-                                <div class="emoji-picker-popover" @onclick:stopPropagation>
-                                    <div class="emoji-grid">
-                                        @foreach (var emoji in emojis)
+                            <div class="member-form-row">
+                                <div class="avatar-col">
+                                    <label>AVATAR</label>
+                                    <div class="avatar-input-box" @onclick="ToggleEmojiPicker">
+                                        <span>@newMemberAvatar</span>
+                                        @if (showEmojiPicker)
                                         {
-                                            <button class="emoji-btn @(newMemberAvatar == emoji ? "selected" : "")" @onclick="() => SelectEmoji(emoji)">
-                                                @emoji
-                                            </button>
+                                            <div class="emoji-picker-popover" @onclick:stopPropagation>
+                                                <div class="emoji-grid">
+                                                    @foreach (var emoji in emojis)
+                                                    {
+                                                        <button class="emoji-btn @(newMemberAvatar == emoji ? "selected" : "")" @onclick="() => SelectEmoji(emoji)">
+                                                            @emoji
+                                                        </button>
+                                                    }
+                                                </div>
+                                            </div>
                                         }
                                     </div>
                                 </div>
-                            }
+                                <div class="name-col">
+                                    <label>NOME</label>
+                                    <input type="text" @bind="newMemberName" placeholder="Esempio: Andrea" @oninput="OnNewMemberNameInput" />
+                                </div>
+                            </div>
+
+                            <div class="member-form-full-row">
+                                <label>EMAIL</label>
+                                <input type="email" @bind="newMemberEmail" placeholder="andrea@esempio.com" />
+                            </div>
+
+                            <div class="member-form-footer">
+                                <div class="slug-col">
+                                    <label>SLUG</label>
+                                    <input type="text" @bind="newMemberSlug" placeholder="andrea-7890" />
+                                </div>
+                                <div class="action-buttons">
+                                    <button class="confirm-btn" @onclick="AddMember">
+                                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+                                            <polyline points="20 6 9 17 4 12"></polyline>
+                                        </svg>
+                                    </button>
+                                    <button class="cancel-btn" @onclick="() => isAddingMember = false">
+                                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                            <line x1="18" y1="6" x2="6" y2="18"></line>
+                                            <line x1="6" y1="6" x2="18" y2="18"></line>
+                                        </svg>
+                                    </button>
+                                </div>
+                            </div>
                         </div>
-                        <div class="name-input-container">
-                            <input type="text" placeholder="Nome" @bind="newMemberName" @oninput="OnNewMemberNameInput" />
-                        </div>
-                        <div class="slug-input-container">
-                            <input type="text" placeholder="Slug (auto)" @bind="newMemberSlug" />
-                        </div>
-                        <div class="email-input-container">
-                            <input type="email" placeholder="Email invito" @bind="newMemberEmail" />
-                        </div>
-                        <button class="add-btn-small" @onclick="AddMember">
-                            Aggiungi
-                        </button>
-                    </div>
+                    }
                 </div>
             </section>
 
@@ -319,25 +478,7 @@
                 }
             </div>
 
-            <button class="save-btn-large" @onclick="HandleSave">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="me-2">
-                    <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
-                    <polyline points="17 21 17 13 7 13 7 21"></polyline>
-                    <polyline points="7 3 7 8 15 8"></polyline>
-                </svg>
-                Salva Modifiche
-            </button>
-
-            <button class="delete-trip-btn" @onclick="HandleDelete">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="me-2">
-                    <polyline points="3 6 5 6 21 6"></polyline>
-                    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
-                </svg>
-                Elimina Viaggio dal dispositivo
-            </button>
-            <p class="delete-info">
-                Questa azione rimuoverà i dati locali. Se il viaggio è sincronizzato, potrai recuperarlo effettuando nuovamente l'accesso.
-            </p>
+            <button class="save-btn-large" @onclick="HandleSave">Salva</button>
         </main>
     }
 </div>
@@ -355,6 +496,9 @@
     private string newMemberEmail = "";
     private string newMemberAvatar = "👤";
     private bool showEmojiPicker = false;
+    private bool isAddingMember = false;
+    private string? openMenuMemberSlug = null;
+    private string? editingMemberSlug = null;
     private string[] emojis = new[] { 
         "👤", "👨", "👩", "🧔", "👴", "👵", "👶", "🦁", "🐯", "🐼", "🐨", "🦊", 
         "🍕", "🍔", "🍦", "🍩", "🍷", "🍺", "☕", "⚽", "🏀", "🎮", "🚗", "✈️", 
@@ -368,6 +512,9 @@
     private bool isAddingCurrency = false;
     private string? openMenuCurrencyCode = null;
     private string? editingCurrencyCode = null;
+    private bool isHeaderMenuOpen = false;
+
+    private void ToggleHeaderMenu() => isHeaderMenuOpen = !isHeaderMenuOpen;
 
     protected override async Task OnInitializedAsync()
     {
@@ -395,7 +542,9 @@
     {
         if (config == null) return;
         if (string.IsNullOrWhiteSpace(newMemberSlug)) { error = "Lo slug è obbligatorio."; return; }
-        if (config.Members.ContainsKey(newMemberSlug))
+        
+        // If not editing, check for duplicates
+        if (editingMemberSlug == null && config.Members.ContainsKey(newMemberSlug))
         {
             error = "Partecipante già presente.";
             return;
@@ -413,11 +562,97 @@
         newMemberEmail = "";
         newMemberAvatar = "👤";
         error = "";
+        isAddingMember = false;
+        editingMemberSlug = null;
     }
 
     private void RemoveMember(string slug)
     {
         config?.Members.Remove(slug);
+    }
+
+    private void ToggleMemberMenu(string slug)
+    {
+        if (openMenuMemberSlug == slug) openMenuMemberSlug = null;
+        else openMenuMemberSlug = slug;
+    }
+
+    private void StartEditMember(string slug, User m)
+    {
+        editingMemberSlug = slug;
+        newMemberSlug = slug;
+        newMemberName = m.Name;
+        newMemberEmail = m.Email ?? "";
+        newMemberAvatar = m.Avatar;
+        openMenuMemberSlug = null;
+    }
+
+    private void CancelMemberEdit()
+    {
+        editingMemberSlug = null;
+        newMemberSlug = "";
+        newMemberName = "";
+        newMemberEmail = "";
+        newMemberAvatar = "👤";
+    }
+
+    private void MoveMemberUp(string slug)
+    {
+        if (config == null) return;
+        var keys = config.Members.Keys.ToList();
+        int index = keys.IndexOf(slug);
+        if (index <= 0) return;
+
+        var prevKey = keys[index - 1];
+        var currentVal = config.Members[slug];
+        var prevVal = config.Members[prevKey];
+
+        var newDict = new Dictionary<string, User>();
+        foreach (var key in keys)
+        {
+            if (key == prevKey) newDict[slug] = currentVal;
+            else if (key == slug) newDict[prevKey] = prevVal;
+            else newDict[key] = config.Members[key];
+        }
+        config.Members = newDict;
+        openMenuMemberSlug = null;
+    }
+
+    private void MoveMemberDown(string slug)
+    {
+        if (config == null) return;
+        var keys = config.Members.Keys.ToList();
+        int index = keys.IndexOf(slug);
+        if (index < 0 || index >= keys.Count - 1) return;
+
+        var nextKey = keys[index + 1];
+        var currentVal = config.Members[slug];
+        var nextVal = config.Members[nextKey];
+
+        var newDict = new Dictionary<string, User>();
+        foreach (var key in keys)
+        {
+            if (key == slug) newDict[nextKey] = nextVal;
+            else if (key == nextKey) newDict[slug] = currentVal;
+            else newDict[key] = config.Members[key];
+        }
+        config.Members = newDict;
+        openMenuMemberSlug = null;
+    }
+
+    private async Task ConfirmDeleteMember(string slug)
+    {
+        openMenuMemberSlug = null;
+        bool confirm = await Alerts.ConfirmAsync(
+            "Elimina Partecipante",
+            $"Sei sicuro di voler eliminare {config?.Members[slug].Name}? Questa azione non può essere annullata.",
+            "Elimina",
+            "Annulla");
+
+        if (confirm)
+        {
+            RemoveMember(slug);
+        }
     }
 
     private void AddCurrency()
@@ -548,6 +783,11 @@
         return $"{amount:N2} {currencyCode}";
     }
 
+    private string FormatDate(DateTime date)
+    {
+        return date.ToString("dd MMM yyyy", new System.Globalization.CultureInfo("it-IT"));
+    }
+
     private async Task HandleSave()
     {
         if (config == null) return;
@@ -563,7 +803,7 @@
     {
         bool confirm = await Alerts.ConfirmAsync(
             "Elimina Viaggio",
-            "Sei sicuro di voler eliminare questo viaggio dal dispositivo? I dati su Google Drive rimarranno intatti.",
+            "Sei sicuro di voler eliminare questo viaggio dal dispositivo?",
             "Elimina",
             "Annulla");
 
@@ -599,6 +839,24 @@
         font-weight: 700;
         color: #1A3C2F;
         margin: 0;
+    }
+
+    .header-actions {
+        position: relative;
+    }
+
+    .header-dropdown {
+        position: absolute;
+        top: 100%;
+        right: 0;
+        background-color: #FFFFFF;
+        border-radius: 12px;
+        box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+        z-index: 100;
+        min-width: 180px;
+        overflow: hidden;
+        border: 1px solid #F0F0F0;
+        margin-top: 0.5rem;
     }
 
     .icon-btn {
@@ -699,6 +957,37 @@
 
     .flex-1 { flex: 1; }
 
+    .date-picker-wrapper {
+        background-color: #E9ECEF;
+        border-radius: 16px;
+        padding: 0.85rem 1.25rem;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        position: relative;
+        cursor: pointer;
+    }
+
+    .date-display {
+        font-size: 1rem;
+        font-weight: 700;
+        color: #1A3C2F;
+    }
+
+    .calendar-icon {
+        color: #8E9AAF;
+    }
+
+    .native-date-input {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        opacity: 0;
+        cursor: pointer;
+    }
+
     .members-list {
         display: flex;
         flex-direction: column;
@@ -707,24 +996,24 @@
     }
 
     .member-item {
-        background-color: #F8FBF9;
-        padding: 0.75rem 1rem;
-        border-radius: 16px;
+        background-color: #FFFFFF;
+        padding: 1.25rem 1.5rem;
+        border-radius: 24px;
         display: flex;
         align-items: center;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.03);
     }
 
     .member-avatar-display {
-        width: 40px;
-        height: 40px;
-        background-color: #FFFFFF;
+        width: 44px;
+        height: 44px;
+        background-color: #F1F3F5;
         border-radius: 50%;
         display: flex;
         align-items: center;
         justify-content: center;
-        font-size: 1.5rem;
-        margin-right: 1rem;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        font-size: 1.75rem;
+        margin-right: 1.25rem;
     }
 
     .member-details {
@@ -734,21 +1023,137 @@
     }
 
     .member-name-text {
-        font-weight: 700;
+        font-weight: 800;
         color: #1A3C2F;
+        font-size: 1.1rem;
     }
 
     .member-slug-text {
-        font-size: 0.75rem;
-        color: #6C757D;
-        font-family: monospace;
+        font-size: 0.8rem;
+        color: #8E9AAF;
+        font-weight: 600;
     }
 
-    .delete-member-btn {
-        background: none;
+    .member-edit-container {
+        border: 2px dashed #D1D9E0;
+        border-radius: 32px;
+        background-color: #FFFFFF;
+        margin-bottom: 0.75rem;
+    }
+
+    .new-member-form {
+        padding: 1.5rem;
+        display: flex;
+        flex-direction: column;
+        gap: 1.25rem;
+        text-align: left;
+        width: 100%;
+    }
+
+    .new-member-header {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        color: #1A3C2F;
+        margin-bottom: 0.5rem;
+    }
+
+    .user-plus-icon {
+        display: flex;
+        color: #20563C;
+    }
+
+    .new-member-title {
+        font-weight: 700;
+        font-size: 1.1rem;
+    }
+
+    .member-form-row {
+        display: flex;
+        gap: 1rem;
+        align-items: flex-end;
+    }
+
+    .avatar-col {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+
+    .avatar-col label, .name-col label, .member-form-full-row label, .slug-col label {
+        font-size: 0.7rem;
+        font-weight: 700;
+        color: #8E9AAF;
+        letter-spacing: 0.05em;
+    }
+
+    .avatar-input-box {
+        width: 56px;
+        height: 56px;
+        background-color: #F1F3F5;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 2rem;
+        cursor: pointer;
+        position: relative;
+    }
+
+    .name-col {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+
+    .member-form-full-row {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+
+    .new-member-form input {
+        background-color: #F1F3F5;
         border: none;
-        color: #DC3545;
-        padding: 0.5rem;
+        border-radius: 12px;
+        padding: 0.8rem 1rem;
+        font-size: 1rem;
+        font-weight: 600;
+        color: #1A3C2F;
+        width: 100%;
+    }
+
+    .member-form-footer {
+        display: flex;
+        align-items: flex-end;
+        gap: 1rem;
+    }
+
+    .slug-col {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+
+    .add-member-dashed {
+        border: 2px dashed #D1D9E0;
+        border-radius: 32px;
+        padding: 1rem;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+
+    .add-member-dashed.expanded {
+        border-style: dashed;
+        border-color: #D1D9E0;
+        background-color: #FFFFFF;
+        cursor: default;
+        padding: 0;
     }
 
     .save-btn-large {
