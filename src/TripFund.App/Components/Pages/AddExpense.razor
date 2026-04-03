@@ -36,7 +36,7 @@
             <div class="form-container">
                 <div class="amount-section">
                     <span class="currency-symbol">@GetCurrencySymbol()</span>
-                    <input type="number" step="0.01" class="amount-input" value="@totalAmount" @oninput="OnAmountInput" placeholder="0.00" />
+                    <input type="number" step="@GetStep()" class="amount-input" value="@totalAmount" @oninput="OnAmountInput" placeholder="@(GetDecimals() > 0 ? "0." + new string('0', GetDecimals()) : "0")" />
                 </div>
 
                 <div class="form-group">
@@ -69,7 +69,7 @@
                                         <div class="split-mode-toggle" @onclick="() => ToggleAuto(member)">
                                             @(member.IsAuto ? "Auto" : "Manuale")
                                         </div>
-                                        <input type="number" step="0.01" class="split-amount-input @(member.IsAuto ? "readonly" : "")" 
+                                        <input type="number" step="@GetStep()" class="split-amount-input @(member.IsAuto ? "readonly" : "")" 
                                                value="@(member.IsAuto ? member.CalculatedAmount : member.ManualAmount)"
                                                @oninput="(e) => OnManualAmountInput(member, e)"
                                                readonly="@member.IsAuto" />
@@ -235,6 +235,22 @@
         return "";
     }
 
+    private int GetDecimals()
+    {
+        if (config != null && config.Currencies.TryGetValue(selectedCurrency, out var c))
+        {
+            return c.Decimals;
+        }
+        return 2;
+    }
+
+    private string GetStep()
+    {
+        int decimals = GetDecimals();
+        if (decimals <= 0) return "1";
+        return (1 / Math.Pow(10, decimals)).ToString(System.Globalization.CultureInfo.InvariantCulture);
+    }
+
     private void OnAmountInput(ChangeEventArgs e)
     {
         if (decimal.TryParse(e.Value?.ToString(), System.Globalization.CultureInfo.InvariantCulture, out decimal val))
@@ -279,7 +295,9 @@
 
         if (autos.Any())
         {
-            decimal autoShare = Math.Floor((toDistribute / autos.Count) * 100) / 100;
+            int decimals = GetDecimals();
+            decimal factor = (decimal)Math.Pow(10, decimals);
+            decimal autoShare = Math.Floor((toDistribute / autos.Count) * factor) / factor;
             foreach (var m in autos) m.CalculatedAmount = autoShare;
 
             // Remainder handling

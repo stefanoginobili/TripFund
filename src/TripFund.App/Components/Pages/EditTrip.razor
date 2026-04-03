@@ -155,7 +155,10 @@
                     {
                         <div class="currency-pill @(curr.Value.ExpectedQuotaPerMember > 0 ? "active" : "")">
                             <div class="pill-content">
-                                <span class="currency-label">@curr.Key (@curr.Value.Symbol) - Quota: @curr.Value.ExpectedQuotaPerMember.ToString("N0")</span>
+                                <div class="currency-details-pill">
+                                    <span class="currency-label">@curr.Key (@curr.Value.Symbol)</span>
+                                    <span class="currency-meta">Quota: @curr.Value.ExpectedQuotaPerMember.ToString("N0") • Dec: @curr.Value.Decimals</span>
+                                </div>
                             </div>
                             <button class="remove-curr-btn" @onclick="() => RemoveCurrency(curr.Key)">
                                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -187,6 +190,7 @@
                             </div>
                             <div class="form-row">
                                 <input type="number" placeholder="Quota" @bind="newCurrQuota" class="small-input quota-input" />
+                                <input type="number" placeholder="Dec" @bind="newCurrDecimals" class="small-input decimals-input" style="max-width: 60px;" />
                                 <div class="action-btns">
                                     <button class="confirm-add-btn" @onclick="AddCurrency">OK</button>
                                     <button class="cancel-add-btn" @onclick="() => isAddingCurrency = false">
@@ -254,6 +258,7 @@
     private string newCurrCode = "";
     private string newCurrSymbol = "";
     private decimal newCurrQuota = 0;
+    private int newCurrDecimals = 2;
     private bool isAddingCurrency = false;
 
     protected override async Task OnInitializedAsync()
@@ -321,12 +326,14 @@
         {
             Symbol = string.IsNullOrWhiteSpace(newCurrSymbol) ? code : newCurrSymbol,
             Name = code,
+            Decimals = newCurrDecimals,
             ExpectedQuotaPerMember = newCurrQuota
         };
 
         newCurrCode = "";
         newCurrSymbol = "";
         newCurrQuota = 0;
+        newCurrDecimals = 2;
         error = "";
         isAddingCurrency = false;
     }
@@ -698,9 +705,21 @@
         gap: 0.5rem;
     }
 
+    .currency-details-pill {
+        display: flex;
+        flex-direction: column;
+    }
+
     .currency-label {
-        font-weight: 600;
+        font-weight: 700;
         color: #1A3C2F;
+        font-size: 1rem;
+    }
+
+    .currency-meta {
+        font-size: 0.8rem;
+        color: #6C757D;
+        font-weight: 600;
     }
 
     .remove-curr-btn {

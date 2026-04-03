@@ -10,6 +10,9 @@ public class Currency
     [JsonPropertyName("name")]
     public string Name { get; set; } = string.Empty;
 
+    [JsonPropertyName("decimals")]
+    public int Decimals { get; set; } = 2;
+
     [JsonPropertyName("expectedQuotaPerMember")]
     public decimal ExpectedQuotaPerMember { get; set; }
 }

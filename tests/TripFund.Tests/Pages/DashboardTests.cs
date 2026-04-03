@@ -118,6 +118,56 @@ public class DashboardTests : BunitContext
     }
 
     [Fact]
+    public void TripDashboard_ShouldFormatAmountsWithConfiguredDecimals()
+    {
+        // Arrange
+        var tripSlug = "test-trip";
+        var config = new TripConfig
+        {
+            Id = "123",
+            Name = "Test Trip",
+            Currencies = new Dictionary<string, Currency>
+            {
+                { "JPY", new Currency { Symbol = "¥", Decimals = 0, ExpectedQuotaPerMember = 100000 } }
+            },
+            Members = new Dictionary<string, User> { { "mario", new User { Name = "Mario" } } }
+        };
+
+        var transactions = new List<Transaction>
+        {
+            new Transaction
+            {
+                Id = "t1",
+                Type = "contribution",
+                Currency = "JPY",
+                Amount = 50000.75m,
+                Split = new Dictionary<string, decimal> { { "mario", 50000.75m } }
+            }
+        };
+
+        _storageMock.Setup(s => s.GetTripConfigAsync(tripSlug)).ReturnsAsync(config);
+        _storageMock.Setup(s => s.GetTransactionsAsync(tripSlug)).ReturnsAsync(transactions);
+
+        // Act
+        var cut = Render<TripDashboard>(parameters => parameters.Add(p => p.tripSlug, tripSlug));
+
+        // JPY should show 50,001 or 50.001 (rounded by N0) depending on locale
+        var summarySub = cut.Find(".summary-sub").TextContent; // Totale versato
+
+        // We check for absence of decimal part
+        summarySub.Should().NotContain(".75");
+        summarySub.Should().NotContain(",75");
+
+        // It should contain 50,001 or 50.001. We use a regex for flexibility
+        summarySub.Should().MatchRegex(@"50[.,]001");
+
+        var txRow = cut.Find(".transaction-row");
+        txRow.InnerHtml.Should().MatchRegex(@"¥ 50[.,]001");
+        // We ensure it doesn't have decimal digits like .00 or .75
+        txRow.InnerHtml.Should().NotMatchRegex(@"50[.,]001[.,]\d+");
+    }
+
+    [Fact]
     public void TripDashboard_TransactionsList_ShouldFilterByCurrencyAndSortByDate()
     {
         // Arrange

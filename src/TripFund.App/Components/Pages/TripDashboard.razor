@@ -218,7 +218,8 @@
     {
         if (config != null && config.Currencies.TryGetValue(currencyCode, out var c))
         {
-            return $"{c.Symbol} {amount:N2}";
+            string format = c.Decimals > 0 ? "N" + c.Decimals : "N0";
+            return $"{c.Symbol} {amount.ToString(format)}";
         }
         return $"{amount:N2} {currencyCode}";
     }

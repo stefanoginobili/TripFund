@@ -175,4 +175,49 @@ public class TransactionFormTests : BunitContext
         values.Should().Contain(3.34m);
         values.Count(v => v == 3.33m).Should().Be(2);
     }
+
+    [Fact]
+    public void AddExpense_ZeroDecimals_ShouldRoundAndSplitCorrectly()
+    {
+        // Arrange
+        var tripSlug = "test-trip";
+        var config = new TripConfig
+        {
+            Id = "123",
+            Name = "Test Trip",
+            Currencies = new Dictionary<string, Currency> { { "JPY", new Currency { Symbol = "¥", Decimals = 0 } } },
+            Members = new Dictionary<string, User>
+            {
+                { "mario", new User { Name = "Mario", Avatar = "M" } },
+                { "luigi", new User { Name = "Luigi", Avatar = "L" } },
+                { "carlo", new User { Name = "Carlo", Avatar = "C" } }
+            }
+        };
+        _storageMock.Setup(s => s.GetTripConfigAsync(tripSlug)).ReturnsAsync(config);
+
+        var cut = Render<AddExpense>(parameters => parameters.Add(p => p.tripSlug, tripSlug));
+
+        // Assert UI Attributes
+        var amountInput = cut.Find(".amount-input");
+        amountInput.GetAttribute("step").Should().Be("1");
+        amountInput.GetAttribute("placeholder").Should().Be("0");
+
+        // Act - Set amount to 1000
+        // 1000 / 3 = 333.333... -> with 0 decimals: 333
+        // Remainder: 1000 - (333 * 3) = 1. One should get 334.
+        amountInput.Input("1000");
+
+        // Assert
+        var splitInputs = cut.FindAll(".split-amount-input");
+        var values = splitInputs.Select(i => decimal.Parse(i.GetAttribute("value")!, System.Globalization.CultureInfo.InvariantCulture)).ToList();
+        
+        values.Sum().Should().Be(1000m);
+        values.Should().Contain(334m);
+        values.Count(v => v == 333m).Should().Be(2);
+        
+        foreach(var input in splitInputs)
+        {
+            input.GetAttribute("step").Should().Be("1");
+        }
+    }
 }

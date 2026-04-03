@@ -16,12 +16,30 @@ This file is stored inside the specific version folder of the trip's `metadata` 
   "createdAt": "2026-03-24T12:00:00Z",
   "updatedAt": "2026-03-27T13:40:00Z",
   "currencies": {
-    "EUR": { "symbol": "€", "name": "Euro", "expectedQuotaPerMember": 500.00 },
-    "ARS": { "symbol": "$", "name": "Argentine Peso", "expectedQuotaPerMember": 150000.00 }
+    "EUR": {
+      "symbol": "€",
+      "name": "Euro",
+      "decimals": 2,
+      "expectedQuotaPerMember": 500.00
+    },
+    "ARS": {
+      "symbol": "$",
+      "name": "Argentine Peso",
+      "decimals": 0,
+      "expectedQuotaPerMember": 150000.00
+    }
   },
   "members": {
-    "mario-rossi": { "name": "Mario Rossi", "email": "mario@example.com", "avatar": "🎒" },
-    "luigi": { "name": "Luigi", "email": "luigi@example.com", "avatar": "👤" }
+    "mario-rossi": {
+      "name": "Mario Rossi",
+      "email": "mario@example.com",
+      "avatar": "🎒"
+    },
+    "luigi": {
+      "name": "Luigi",
+      "email": "luigi@example.com",
+      "avatar": "👤"
+    }
   }
 }
 ```
