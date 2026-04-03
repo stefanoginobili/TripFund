@@ -1,0 +1,550 @@
+@using TripFund.App.Models
+@using TripFund.App.Services
+@inject IAlertService Alerts
+
+<section class="info-section">
+    <h3 class="section-header">CASSE DEL VIAGGIO</h3>
+    <div class="currencies-list">
+        @foreach (var curr in Currencies)
+        {
+            @if (editingCurrencyCode == curr.Key)
+            {
+                <div class="currency-edit-container">
+                    <div class="new-currency-form">
+                        <div class="new-currency-header">
+                            <span class="wallet-icon">
+                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M20 12V8H6a2 2 0 0 1-2-2c0-1.1.9-2 2-2h12v4"></path>
+                                    <path d="M4 6v12c0 1.1.9 2 2 2h14v-4"></path>
+                                    <path d="M18 12a2 2 0 0 0-2 2c0 1.1.9 2 2 2h4v-4h-4z"></path>
+                                </svg>
+                            </span>
+                            <span class="new-currency-title">Modifica Cassa</span>
+                        </div>
+                        
+                        <div class="new-currency-grid">
+                            <div class="new-curr-col">
+                                <label>CODICE</label>
+                                <input type="text" value="@newCurrCode" readonly class="readonly-input-form" />
+                            </div>
+                            <div class="new-curr-col">
+                                <label>SIMBOLO</label>
+                                <input type="text" @bind="newCurrSymbol" placeholder="€" />
+                            </div>
+                            <div class="new-curr-col">
+                                <label>DECIMALI</label>
+                                <input type="number" @bind="newCurrDecimals" />
+                            </div>
+                        </div>
+                        
+                        <div class="new-currency-footer">
+                            <div class="new-curr-col quota-col">
+                                <label>QUOTA</label>
+                                <input type="number" @bind="newCurrQuota" placeholder="1000" />
+                            </div>
+                            <div class="action-buttons">
+                                <button class="confirm-btn" @onclick="AddOrUpdateCurrency">
+                                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+                                        <polyline points="20 6 9 17 4 12"></polyline>
+                                    </svg>
+                                </button>
+                                <button class="cancel-btn" @onclick="CancelCurrencyEdit">
+                                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                                    </svg>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+            else
+            {
+                <div class="currency-card">
+                    <span class="currency-code">@curr.Key</span>
+                    <div class="currency-value-container">
+                        <span class="currency-quota-value">@FormatCurrencyValue(curr.Value.ExpectedQuotaPerMember, curr.Value)</span>
+                        <div class="more-actions-container">
+                            <div class="action-trigger" @onclick="() => ToggleCurrencyMenu(curr.Key)">
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <circle cx="12" cy="5" r="1"></circle>
+                                    <circle cx="12" cy="12" r="1"></circle>
+                                    <circle cx="12" cy="19" r="1"></circle>
+                                </svg>
+                            </div>
+                            @if (openMenuCurrencyCode == curr.Key)
+                            {
+                                var keys = Currencies.Keys.ToList();
+                                int index = keys.IndexOf(curr.Key);
+                                bool isFirst = index == 0;
+                                bool isLast = index == keys.Count - 1;
+
+                                <div class="actions-dropdown">
+                                    <div class="dropdown-item-custom" @onclick="() => StartEditCurrency(curr.Key, curr.Value)">
+                                        Modifica
+                                    </div>
+                                    <div class="dropdown-item-custom @(isFirst ? "disabled" : "")" @onclick="async () => { if(!isFirst) await MoveCurrencyUp(curr.Key); }">
+                                        Sposta su
+                                    </div>
+                                    <div class="dropdown-item-custom @(isLast ? "disabled" : "")" @onclick="async () => { if(!isLast) await MoveCurrencyDown(curr.Key); }">
+                                        Sposta giù
+                                    </div>
+                                    <div class="dropdown-item-custom text-danger" @onclick="() => ConfirmDeleteCurrency(curr.Key)">
+                                        Elimina
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                </div>
+            }
+        }
+    </div>
+
+    <div class="add-currency-dashed @(isAddingCurrency ? "expanded" : "")" @onclick="() => { if(!isAddingCurrency) isAddingCurrency = true; }">
+        @if (!isAddingCurrency)
+        {
+            <div class="dashed-btn-content">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="me-2">
+                    <line x1="12" y1="5" x2="12" y2="19"></line>
+                    <line x1="5" y1="12" x2="19" y2="12"></line>
+                </svg>
+                <span>Aggiungi Cassa</span>
+            </div>
+        }
+        else
+        {
+            <div class="new-currency-form" @onclick:stopPropagation>
+                <div class="new-currency-header">
+                    <span class="wallet-icon">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M20 12V8H6a2 2 0 0 1-2-2c0-1.1.9-2 2-2h12v4"></path>
+                            <path d="M4 6v12c0 1.1.9 2 2 2h14v-4"></path>
+                            <path d="M18 12a2 2 0 0 0-2 2c0 1.1.9 2 2 2h4v-4h-4z"></path>
+                        </svg>
+                    </span>
+                    <span class="new-currency-title">Nuova Cassa</span>
+                </div>
+                
+                <div class="new-currency-grid">
+                    <div class="new-curr-col">
+                        <label>CODICE</label>
+                        <input type="text" @bind="newCurrCode" placeholder="EUR" />
+                    </div>
+                    <div class="new-curr-col">
+                        <label>SIMBOLO</label>
+                        <input type="text" @bind="newCurrSymbol" placeholder="€" />
+                    </div>
+                    <div class="new-curr-col">
+                        <label>DECIMALI</label>
+                        <input type="number" @bind="newCurrDecimals" />
+                    </div>
+                </div>
+                
+                <div class="new-currency-footer">
+                    <div class="new-curr-col quota-col">
+                        <label>QUOTA</label>
+                        <input type="number" @bind="newCurrQuota" placeholder="1000" />
+                    </div>
+                    <div class="action-buttons">
+                        <button class="confirm-btn" @onclick="AddOrUpdateCurrency">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+                                <polyline points="20 6 9 17 4 12"></polyline>
+                            </svg>
+                        </button>
+                        <button class="cancel-btn" @onclick="() => isAddingCurrency = false">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <line x1="18" y1="6" x2="6" y2="18"></line>
+                                <line x1="6" y1="6" x2="18" y2="18"></line>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+
+    @if (!string.IsNullOrEmpty(error))
+    {
+        <div class="error-container mt-2">
+            <p class="error-text">@error</p>
+        </div>
+    }
+</section>
+
+@code {
+    [Parameter] public Dictionary<string, Currency> Currencies { get; set; } = new();
+    [Parameter] public EventCallback<Dictionary<string, Currency>> CurrenciesChanged { get; set; }
+
+    private string error = "";
+    private string newCurrCode = "";
+    private string newCurrSymbol = "";
+    private decimal newCurrQuota = 0;
+    private int newCurrDecimals = 2;
+    private bool isAddingCurrency = false;
+    private string? openMenuCurrencyCode = null;
+    private string? editingCurrencyCode = null;
+
+    private async Task AddOrUpdateCurrency()
+    {
+        if (string.IsNullOrWhiteSpace(newCurrCode)) return;
+        string code = newCurrCode.ToUpperInvariant();
+        
+        if (editingCurrencyCode == null && Currencies.ContainsKey(code))
+        {
+            error = "Valuta già presente.";
+            return;
+        }
+
+        Currencies[code] = new Currency
+        {
+            Symbol = string.IsNullOrWhiteSpace(newCurrSymbol) ? code : newCurrSymbol,
+            Name = code,
+            Decimals = newCurrDecimals,
+            ExpectedQuotaPerMember = newCurrQuota
+        };
+
+        newCurrCode = "";
+        newCurrSymbol = "";
+        newCurrQuota = 0;
+        newCurrDecimals = 2;
+        error = "";
+        isAddingCurrency = false;
+        editingCurrencyCode = null;
+        await CurrenciesChanged.InvokeAsync(Currencies);
+    }
+
+    private void ToggleCurrencyMenu(string code)
+    {
+        if (openMenuCurrencyCode == code) openMenuCurrencyCode = null;
+        else openMenuCurrencyCode = code;
+    }
+
+    private void StartEditCurrency(string code, Currency c)
+    {
+        editingCurrencyCode = code;
+        newCurrCode = code;
+        newCurrSymbol = c.Symbol;
+        newCurrDecimals = c.Decimals;
+        newCurrQuota = c.ExpectedQuotaPerMember;
+        openMenuCurrencyCode = null;
+    }
+
+    private void CancelCurrencyEdit()
+    {
+        editingCurrencyCode = null;
+        newCurrCode = "";
+        newCurrSymbol = "";
+        newCurrDecimals = 2;
+        newCurrQuota = 0;
+    }
+
+    private async Task MoveCurrencyUp(string code)
+    {
+        var keys = Currencies.Keys.ToList();
+        int index = keys.IndexOf(code);
+        if (index <= 0) return;
+
+        var prevKey = keys[index - 1];
+        var currentVal = Currencies[code];
+        var prevVal = Currencies[prevKey];
+
+        var newDict = new Dictionary<string, Currency>();
+        foreach (var key in keys)
+        {
+            if (key == prevKey) newDict[code] = currentVal;
+            else if (key == code) newDict[prevKey] = prevVal;
+            else newDict[key] = Currencies[key];
+        }
+        Currencies = newDict;
+        openMenuCurrencyCode = null;
+        await CurrenciesChanged.InvokeAsync(Currencies);
+    }
+
+    private async Task MoveCurrencyDown(string code)
+    {
+        var keys = Currencies.Keys.ToList();
+        int index = keys.IndexOf(code);
+        if (index < 0 || index >= keys.Count - 1) return;
+
+        var nextKey = keys[index + 1];
+        var currentVal = Currencies[code];
+        var nextVal = Currencies[nextKey];
+
+        var newDict = new Dictionary<string, Currency>();
+        foreach (var key in keys)
+        {
+            if (key == code) newDict[nextKey] = nextVal;
+            else if (key == nextKey) newDict[code] = currentVal;
+            else newDict[key] = Currencies[key];
+        }
+
+        Currencies = newDict;
+        openMenuCurrencyCode = null;
+        await CurrenciesChanged.InvokeAsync(Currencies);
+    }
+
+    private async Task ConfirmDeleteCurrency(string code)
+    {
+        openMenuCurrencyCode = null;
+        bool confirm = await Alerts.ConfirmAsync(
+            "Elimina Valuta",
+            $"Sei sicuro di voler eliminare la cassa in {code}? Tutte le transazioni in questa valuta potrebbero non essere più visualizzate correttamente.",
+            "Elimina",
+            "Annulla");
+
+        if (confirm)
+        {
+            Currencies.Remove(code);
+            await CurrenciesChanged.InvokeAsync(Currencies);
+        }
+    }
+
+    private string FormatCurrencyValue(decimal amount, Currency c)
+    {
+        string format = c.Decimals > 0 ? "N" + c.Decimals : "N0";
+        return $"{c.Symbol} {amount.ToString(format, new System.Globalization.CultureInfo("it-IT"))}";
+    }
+}
+
+<style>
+    .info-section {
+        background-color: #FFFFFF;
+        border-radius: 24px;
+        padding: 1.5rem;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03);
+    }
+
+    .section-header {
+        font-size: 0.9rem;
+        font-weight: 700;
+        color: #6C757D;
+        letter-spacing: 0.05em;
+        margin-bottom: 1.5rem;
+    }
+
+    .currencies-list {
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+        margin-bottom: 1rem;
+    }
+
+    .currency-card {
+        background-color: #FFFFFF;
+        padding: 1.25rem 1.5rem;
+        border-radius: 24px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.03);
+        border: 1px solid #F0F0F0;
+    }
+
+    .currency-code {
+        font-weight: 800;
+        color: #1A3C2F;
+        font-size: 1.1rem;
+    }
+
+    .currency-value-container {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+    }
+
+    .currency-quota-value {
+        font-weight: 800;
+        color: #1A3C2F;
+        font-size: 1.1rem;
+    }
+
+    .more-actions-container {
+        position: relative;
+        display: flex;
+        align-items: center;
+    }
+
+    .action-trigger {
+        display: flex;
+        align-items: center;
+        color: #ADB5BD;
+        cursor: pointer;
+        padding: 0.5rem;
+        margin: -0.5rem;
+    }
+
+    .actions-dropdown {
+        position: absolute;
+        top: 100%;
+        right: 0;
+        background-color: #FFFFFF;
+        border-radius: 12px;
+        box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+        z-index: 50;
+        min-width: 120px;
+        overflow: hidden;
+        border: 1px solid #F0F0F0;
+        margin-top: 0.5rem;
+    }
+
+    .dropdown-item-custom {
+        padding: 0.75rem 1rem;
+        font-size: 0.9rem;
+        font-weight: 600;
+        color: #1A3C2F;
+        cursor: pointer;
+    }
+
+    .dropdown-item-custom:hover {
+        background-color: #F8FBF9;
+    }
+
+    .dropdown-item-custom.disabled {
+        color: #ADB5BD;
+        cursor: default;
+        background-color: transparent !important;
+    }
+
+    .text-danger {
+        color: #DC3545 !important;
+    }
+
+    .currency-edit-container {
+        border: 2px dashed #D1D9E0;
+        border-radius: 32px;
+        background-color: #FFFFFF;
+        margin-bottom: 0.75rem;
+    }
+
+    .new-currency-form {
+        padding: 1.5rem;
+        display: flex;
+        flex-direction: column;
+        gap: 1.5rem;
+        text-align: left;
+        width: 100%;
+    }
+
+    .new-currency-header {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        color: #1A3C2F;
+    }
+
+    .wallet-icon {
+        display: flex;
+        color: #20563C;
+    }
+
+    .new-currency-title {
+        font-weight: 700;
+        font-size: 1.1rem;
+    }
+
+    .new-currency-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr 1fr;
+        gap: 1rem;
+    }
+
+    .new-curr-col {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+
+    .new-curr-col label {
+        font-size: 0.7rem;
+        font-weight: 700;
+        color: #8E9AAF;
+        letter-spacing: 0.05em;
+    }
+
+    .new-curr-col input {
+        background-color: #F1F3F5;
+        border: none;
+        border-radius: 12px;
+        padding: 0.8rem 1rem;
+        font-size: 1rem;
+        font-weight: 600;
+        color: #1A3C2F;
+        width: 100%;
+    }
+
+    .readonly-input-form {
+        background-color: #E9ECEF !important;
+        color: #6C757D !important;
+        cursor: not-allowed;
+    }
+
+    .new-currency-footer {
+        display: flex;
+        align-items: flex-end;
+        gap: 1rem;
+    }
+
+    .quota-col {
+        flex: 1;
+    }
+
+    .action-buttons {
+        display: flex;
+        gap: 0.75rem;
+    }
+
+    .confirm-btn {
+        background-color: #1A3C2F;
+        color: #FFFFFF;
+        border: none;
+        border-radius: 12px;
+        width: 48px;
+        height: 48px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .cancel-btn {
+        background-color: #FFFFFF;
+        color: #1A3C2F;
+        border: 1px solid #D1D9E0;
+        border-radius: 12px;
+        width: 48px;
+        height: 48px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .add-currency-dashed {
+        border: 2px dashed #D1D9E0;
+        border-radius: 32px;
+        padding: 1rem;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+
+    .add-currency-dashed.expanded {
+        border-style: dashed;
+        border-color: #D1D9E0;
+        background-color: #FFFFFF;
+        cursor: default;
+        padding: 0;
+    }
+
+    .dashed-btn-content {
+        display: flex;
+        align-items: center;
+        color: #6C757D;
+        font-weight: 600;
+    }
+
+    .error-container { text-align: center; }
+    .error-text { color: #DC3545; font-size: 0.85rem; font-weight: 600; }
+</style>

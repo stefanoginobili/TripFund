@@ -36,13 +36,10 @@ public class TripManagementTests : BunitContext
         var cut = Render<CreateTrip>();
 
         // Act
-        cut.Find("input[type='text']").Input("New Trip"); // This triggers OnNameInput (slug generation)
+        // Find the Name input in GeneralInfoForm
+        cut.Find("input[placeholder='es. Patagonia 2026']").Input("New Trip");
         
-        // Re-find inputs because the first one might have caused a re-render
-        var inputs = cut.FindAll("input[type='text']");
-        inputs[1].Change("new-trip"); // Manually setting slug to be sure
-
-        // Add a currency is already there by default (EUR)
+        // Slug should be generated automatically: "new-trip"
         
         await cut.Find(".btn-submit").ClickAsync();
 
@@ -70,8 +67,8 @@ public class TripManagementTests : BunitContext
         var cut = Render<EditTrip>(parameters => parameters.Add(p => p.tripSlug, tripSlug));
 
         // Act
-        var nameInput = cut.FindAll("input").First(i => i.GetAttribute("placeholder") == "es. Patagonia 2026");
-        nameInput.Change("Updated Name");
+        var nameInput = cut.Find("input[placeholder='es. Patagonia 2026']");
+        nameInput.Input("Updated Name");
 
         await cut.Find(".save-btn-large").ClickAsync();
 
@@ -97,18 +94,21 @@ public class TripManagementTests : BunitContext
         var cut = Render<EditTrip>(parameters => parameters.Add(p => p.tripSlug, tripSlug));
 
         // Act
+        // Expand the "Aggiungi Partecipante" section
+        await cut.Find(".add-member-dashed").ClickAsync();
+
         // Open emoji picker
-        await cut.Find(".avatar-selector").ClickAsync();
+        await cut.Find(".avatar-input-box").ClickAsync();
         
         // Select an emoji (e.g., the second one)
         var emojiButtons = cut.FindAll(".emoji-btn");
         await emojiButtons[1].ClickAsync();
 
         // Fill name
-        cut.Find("input[placeholder='Nome']").Input("Luigi");
+        cut.Find("input[placeholder='Esempio: Andrea']").Input("Luigi");
         
-        // Click add
-        await cut.Find(".add-btn-small").ClickAsync();
+        // Click add (confirm-btn inside the expanded form)
+        await cut.Find(".confirm-btn").ClickAsync();
 
         // Save
         await cut.Find(".save-btn-large").ClickAsync();
@@ -134,7 +134,11 @@ public class TripManagementTests : BunitContext
         var cut = Render<EditTrip>(parameters => parameters.Add(p => p.tripSlug, tripSlug));
 
         // Act
-        await cut.Find(".delete-trip-btn").ClickAsync();
+        // Open the header menu first
+        await cut.Find(".header-actions button.icon-btn").ClickAsync();
+        
+        // Now click Delete
+        await cut.Find(".dropdown-item-custom.text-danger").ClickAsync();
 
         // Assert
         _alertMock.Verify(a => a.ConfirmAsync("Elimina Viaggio", It.IsAny<string>(), "Elimina", "Annulla"), Times.Once);

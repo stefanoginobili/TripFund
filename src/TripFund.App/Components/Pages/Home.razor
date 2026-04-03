@@ -61,22 +61,8 @@
     </main>
 
     <footer class="footer">
-        <button class="btn-create" @onclick="NavigateToCreate">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
-                <line x1="12" y1="5" x2="12" y2="19"></line>
-                <line x1="5" y1="12" x2="19" y2="12"></line>
-            </svg>
-            Crea nuovo viaggio
-        </button>
-        <button class="btn-add" @onclick="HandleJoinTrip">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
-                <circle cx="8.5" cy="7" r="4"></circle>
-                <line x1="20" y1="8" x2="20" y2="14"></line>
-                <line x1="17" y1="11" x2="23" y2="11"></line>
-            </svg>
-            Aggiungi viaggio esistente
-        </button>
+        <button class="btn-create" @onclick="NavigateToCreate">Crea viaggio</button>
+        <button class="btn-add" @onclick="HandleJoinTrip">Aggiungi viaggio esistente</button>
     </footer>
 </div>
 
