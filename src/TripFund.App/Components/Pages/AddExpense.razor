@@ -7,7 +7,7 @@
 
 <div class="add-transaction-page">
     <header class="app-header">
-        <button class="icon-btn" @onclick='() => Nav.NavigateTo($"/trip/{tripSlug}?currency={selectedCurrency}")'>
+        <button class="icon-btn" @onclick="GoBack">
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <line x1="19" y1="12" x2="5" y2="12"></line>
                 <polyline points="12 19 5 12 12 5"></polyline>
@@ -86,19 +86,23 @@
                         @foreach (var att in attachments)
                         {
                             <div class="attachment-pill">
-                                <span>@att.FileName</span>
+                                <span>@GetAttachmentDisplayName(att)</span>
                                 <button class="remove-btn" @onclick="() => RemoveAttachment(att)">×</button>
                             </div>
                         }
-                        <div class="attachment-actions">
-                            <button class="action-btn-small" @onclick="CapturePhoto">
-                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path><circle cx="12" cy="13" r="4"></circle></svg>
-                                Foto
-                            </button>
-                            <button class="action-btn-small" @onclick="PickFile">
-                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"></path><polyline points="13 2 13 9 20 9"></polyline></svg>
-                                File
-                            </button>
+                    </div>
+                    <div class="attachment-actions-dashed">
+                        <div class="add-attachment-dashed" @onclick="CapturePhoto">
+                            <div class="dashed-btn-content">
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="me-2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path><circle cx="12" cy="13" r="4"></circle></svg>
+                                <span>Foto</span>
+                            </div>
+                        </div>
+                        <div class="add-attachment-dashed" @onclick="PickFile">
+                            <div class="dashed-btn-content">
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="me-2"><path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"></path><polyline points="13 2 13 9 20 9"></polyline></svg>
+                                <span>File</span>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -110,18 +114,31 @@
                         <div class="location-card">
                             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>
                             <div class="location-details">
-                                <div class="location-name">@locationInfo.Name</div>
-                                <div class="location-coords">@locationInfo.Latitude, @locationInfo.Longitude</div>
+                                <input type="text" class="location-input" @bind="locationInfo.Name" placeholder="Nome del luogo" />
+                                <div class="location-coords">@locationInfo.Latitude.ToString("F6"), @locationInfo.Longitude.ToString("F6")</div>
                             </div>
                             <button class="remove-btn" @onclick="() => locationInfo = null">×</button>
                         </div>
                     }
                     else
                     {
-                        <button class="action-btn-outline" @onclick="FetchLocation">
-                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>
-                            Aggiungi posizione GPS
-                        </button>
+                        <div class="add-location-dashed @(isLocating ? "locating" : "")" @onclick="FetchLocation">
+                            <div class="dashed-btn-content">
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="me-2">
+                                    @if (isLocating)
+                                    {
+                                        <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+                                        <circle cx="12" cy="10" r="3"></circle>
+                                    }
+                                    else
+                                    {
+                                        <line x1="12" y1="5" x2="12" y2="19"></line>
+                                        <line x1="5" y1="12" x2="19" y2="12"></line>
+                                    }
+                                </svg>
+                                <span>@(isLocating ? "Acquisizione..." : "Aggiungi posizione")</span>
+                            </div>
+                        </div>
                     }
                 </div>
 
@@ -130,8 +147,8 @@
                     <p class="error-message">@errorMessage</p>
                 }
 
-                <button class="submit-btn" @onclick="HandleSubmit" disabled="@isSubmitting">
-                    @(isSubmitting ? "Salvataggio..." : "Registra Spesa")
+                <button class="submit-btn" @onclick="HandleSubmit" disabled="@(isSubmitting || isLocating)">
+                    @(isSubmitting ? "Salvataggio..." : "Salva Spesa")
                 </button>
             </div>
         </main>
@@ -154,6 +171,7 @@
     private LocationInfo? locationInfo;
     private string errorMessage = "";
     private bool isSubmitting = false;
+    private bool isLocating = false;
     private string deviceId = "";
     private string authorName = "";
 
@@ -225,6 +243,18 @@
     private void SelectCurrency(string currencyCode)
     {
         if (editingInfo == null) selectedCurrency = currencyCode;
+    }
+
+    private void GoBack()
+    {
+        if (!string.IsNullOrEmpty(edit))
+        {
+            Nav.NavigateTo($"/trip/{tripSlug}/transaction/{edit}?currency={selectedCurrency}");
+        }
+        else
+        {
+            Nav.NavigateTo($"/trip/{tripSlug}?currency={selectedCurrency}");
+        }
     }
 
     private string GetCurrencySymbol()
@@ -369,10 +399,34 @@
         attachments.Remove(att);
     }
 
+    private string GetAttachmentDisplayName(AttachmentInfo att)
+    {
+        if (att.IsExisting) return att.FileName;
+
+        // For new attachments, we preview what the name WILL be
+        var existing = attachments.Where(a => a.IsExisting).Select(a => a.FileName).ToList();
+        int maxNum = 0;
+        var regex = new System.Text.RegularExpressions.Regex(@"^Attachment-(?<num>\d+)\..*$");
+        foreach (var name in existing)
+        {
+            var m = regex.Match(name);
+            if (m.Success && int.TryParse(m.Groups["num"].Value, out int n) && n > maxNum) maxNum = n;
+        }
+
+        // Find position of this item among new attachments
+        var newOnes = attachments.Where(a => !a.IsExisting).ToList();
+        int index = newOnes.IndexOf(att);
+        if (index < 0) return att.FileName;
+
+        return $"Attachment-{(maxNum + index + 1):D2}{att.Extension}";
+    }
+
     private async Task FetchLocation()
     {
         try
         {
+            isLocating = true;
+            errorMessage = "";
             var status = await Permissions.CheckStatusAsync<Permissions.LocationWhenInUse>();
             if (status != PermissionStatus.Granted)
             {
@@ -385,20 +439,41 @@
                 return;
             }
 
-            var location = await Geolocation.Default.GetLocationAsync(new GeolocationRequest(GeolocationAccuracy.Medium));
+            var location = await Geolocation.Default.GetLocationAsync(new GeolocationRequest(GeolocationAccuracy.Medium, TimeSpan.FromSeconds(10)));
             if (location != null)
             {
+                string name = "Posizione acquisita";
+                
+                if (Connectivity.Current.NetworkAccess == NetworkAccess.Internet)
+                {
+                    try
+                    {
+                        var placemarks = await Geocoding.Default.GetPlacemarksAsync(location.Latitude, location.Longitude);
+                        var placemark = placemarks?.FirstOrDefault();
+                        if (placemark != null)
+                        {
+                            name = $"{placemark.Thoroughfare} {placemark.SubThoroughfare}, {placemark.Locality}".Trim(' ', ',');
+                            if (string.IsNullOrWhiteSpace(name)) name = placemark.Locality ?? placemark.CountryName ?? "Posizione acquisita";
+                        }
+                    }
+                    catch { /* Ignore geocoding errors */ }
+                }
+
                 locationInfo = new LocationInfo
                 {
                     Latitude = location.Latitude,
                     Longitude = location.Longitude,
-                    Name = "Posizione acquisita" 
+                    Name = name 
                 };
             }
         }
         catch (Exception ex)
         {
             errorMessage = "Impossibile acquisire la posizione: " + ex.Message;
+        }
+        finally
+        {
+            isLocating = false;
         }
     }
 
@@ -432,8 +507,28 @@
             return;
         }
 
-        var newAttachments = attachments.Where(a => !a.IsExisting).Select(a => new { info = a, newName = $"attachment_{Guid.NewGuid():n}{a.Extension}" }).ToList();
         var existingAttachments = attachments.Where(a => a.IsExisting).Select(a => a.FileName).ToList();
+        
+        // Find max NN from existing attachments
+        int maxNum = 0;
+        var attachmentRegex = new System.Text.RegularExpressions.Regex(@"^Attachment-(?<num>\d+)\..*$");
+        foreach (var att in existingAttachments)
+        {
+            var match = attachmentRegex.Match(att);
+            if (match.Success && int.TryParse(match.Groups["num"].Value, out int n))
+            {
+                if (n > maxNum) maxNum = n;
+            }
+        }
+
+        var newAttachmentsToProcess = attachments.Where(a => !a.IsExisting).ToList();
+        var processedNewAttachments = new List<(AttachmentInfo info, string newName)>();
+        
+        foreach (var info in newAttachmentsToProcess)
+        {
+            maxNum++;
+            processedNewAttachments.Add((info, $"Attachment-{maxNum:D2}{info.Extension}"));
+        }
 
         var transaction = new Transaction
         {
@@ -446,11 +541,11 @@
             Author = authorName,
             Split = splitDict,
             Location = locationInfo,
-            Attachments = existingAttachments.Concat(newAttachments.Select(na => na.newName)).ToList()
+            Attachments = existingAttachments.Concat(processedNewAttachments.Select(na => na.newName)).ToList()
         };
 
         var attachmentsDict = new Dictionary<string, byte[]>();
-        foreach (var na in newAttachments)
+        foreach (var na in processedNewAttachments)
         {
             using var ms = new MemoryStream();
             await na.info.Stream.CopyToAsync(ms);
@@ -532,9 +627,9 @@
     .member-avatar { font-size: 1.5rem; width: 36px; height: 36px; background-color: #F8FBF9; border-radius: 50%; display: flex; align-items: center; justify-content: center; }
     .member-name { flex: 1; font-weight: 600; color: #1A3C2F; }
 
-    .split-controls { display: flex; align-items: center; gap: 1rem; padding-top: 0.5rem; border-top: 1px solid #F8FBF9; }
-    .split-mode-toggle { font-size: 0.8rem; font-weight: 700; color: #20563C; background-color: #D6EDE2; padding: 0.2rem 0.6rem; border-radius: 8px; cursor: pointer; }
-    .split-amount-input { flex: 1; border: 1px solid #E0E0E0; border-radius: 8px; padding: 0.4rem 0.6rem; text-align: right; font-weight: 700; font-size: 1rem; color: #1A3C2F; outline: none; }
+    .split-controls { display: flex; align-items: center; gap: 0.5rem; padding-top: 0.5rem; border-top: 1px solid #F8FBF9; }
+    .split-mode-toggle { flex: 1; font-size: 0.8rem; font-weight: 700; color: #20563C; background-color: #D6EDE2; padding: 0.4rem 0.2rem; border-radius: 8px; cursor: pointer; text-align: center; }
+    .split-amount-input { flex: 2; border: 1px solid #E0E0E0; border-radius: 8px; padding: 0.4rem 0.6rem; text-align: right; font-weight: 700; font-size: 1rem; color: #1A3C2F; outline: none; }
     .split-amount-input.readonly { background-color: #F8FBF9; border-color: transparent; }
 
     .switch { width: 40px; height: 22px; border-radius: 11px; padding: 2px; cursor: pointer; transition: background-color 0.2s; }
@@ -543,17 +638,46 @@
     .switch-handle { width: 18px; height: 18px; background-color: #FFFFFF; border-radius: 50%; transition: transform 0.2s; }
     .switch.on .switch-handle { transform: translateX(18px); }
 
-    .attachments-row { display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center; }
+    .attachments-row { display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center; margin-bottom: 0.75rem; }
     .attachment-pill { background-color: #D6EDE2; color: #20563C; padding: 0.4rem 0.8rem; border-radius: 20px; font-size: 0.85rem; font-weight: 600; display: flex; align-items: center; gap: 0.5rem; }
     .remove-btn { background: none; border: none; font-size: 1.2rem; line-height: 1; color: inherit; padding: 0; }
     
-    .attachment-actions { display: flex; gap: 0.5rem; }
-    .action-btn-small { background-color: #FFFFFF; border: 1px solid #E0E0E0; border-radius: 12px; padding: 0.5rem 0.75rem; font-size: 0.85rem; font-weight: 600; color: #6C757D; display: flex; align-items: center; gap: 0.4rem; }
+    .attachment-actions-dashed { display: flex; gap: 0.75rem; }
+    .add-attachment-dashed {
+        flex: 1;
+        border: 2px dashed #D1D9E0;
+        border-radius: 32px;
+        padding: 0.75rem;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        background-color: transparent;
+        color: #6C757D;
+        font-weight: 600;
+    }
 
-    .action-btn-outline { background: none; border: 1px dashed #ADB5BD; border-radius: 12px; padding: 1rem; color: #6C757D; font-weight: 600; display: flex; align-items: center; justify-content: center; gap: 0.5rem; }
+    .add-location-dashed {
+        border: 2px dashed #D1D9E0;
+        border-radius: 32px;
+        padding: 1rem;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        background-color: transparent;
+        width: 100%;
+        color: #6C757D;
+        font-weight: 600;
+    }
+    .add-location-dashed.locating { opacity: 0.6; cursor: default; }
+    .dashed-btn-content { display: flex; align-items: center; justify-content: center; }
     .location-card { background-color: #FFFFFF; padding: 0.75rem 1rem; border-radius: 16px; display: flex; align-items: center; gap: 0.75rem; box-shadow: 0 2px 8px rgba(0,0,0,0.02); }
-    .location-details { flex: 1; }
-    .location-name { font-weight: 600; color: #1A3C2F; }
+    .location-details { flex: 1; display: flex; flex-direction: column; gap: 4px; }
+    .location-input { border: 1px solid #E0E0E0; border-radius: 8px; background: #FFFFFF; font-weight: 700; color: #1A3C2F; padding: 0.4rem 0.6rem; width: 100%; outline: none; font-size: 1rem; transition: border-color 0.2s; }
+    .location-input:focus { border-color: #20563C; }
     .location-coords { font-size: 0.75rem; color: #6C757D; }
 
     .submit-btn { background-color: #20563C; color: #FFFFFF; border: none; padding: 1rem; border-radius: 16px; font-weight: 700; font-size: 1.1rem; margin-top: 1rem; box-shadow: 0 4px 12px rgba(32, 86, 60, 0.2); }

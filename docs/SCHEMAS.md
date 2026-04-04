@@ -67,19 +67,21 @@ This file is stored inside the specific version folder of the trip's `transactio
       "amount": 10000.00,
       "manual": true
     },
-    "luigi": { 
-      "amount": 5000.50, 
+    "luigi": {
+      "amount": 5000.50,
       "manual": false
-    },
-    "location": {
-      "latitude": -34.6037,
-      "longitude": -58.3816,
-      "name": "Restaurante El Gaucho"
-    },
-    "attachments": [
-      "attachment_abc123.jpg"
-    ]
-  }
+    }
+  },
+  "location": {
+    "latitude": -34.6037,
+    "longitude": -58.3816,
+    "name": "Restaurante El Gaucho"
+  },
+  "attachments": [
+    "Attachment-01.jpg",
+    "Attachment-02.pdf"
+  ]
+}
 ```
 
 * Note 1: `id` MUST be formatted as a compact GMT timestamp followed by an 8-character GUID prefix (e.g., `yyyyMMddTHHmmssZ-[guid-prefix]`). This ensures folders are chronologically sortable on the file system while remaining unique.

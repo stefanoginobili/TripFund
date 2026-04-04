@@ -173,6 +173,15 @@ public class LocalTripStorageService
         return info.Transaction;
     }
 
+    public virtual async Task<string?> GetAttachmentPath(string tripSlug, string transactionId, string fileName)
+    {
+        var info = await GetLatestTransactionVersionWithMetadataAsync(tripSlug, transactionId);
+        if (info == null || info.IsDeleted || info.Transaction == null) return null;
+
+        var path = Path.Combine(_tripsPath, tripSlug, "transactions", transactionId, info.VersionFolderName, fileName);
+        return File.Exists(path) ? path : null;
+    }
+
     public class TransactionVersionInfo
     {
         public Transaction? Transaction { get; set; }

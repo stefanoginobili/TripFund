@@ -88,20 +88,6 @@
                 </div>
             </div>
 
-            @if (transaction.Location != null)
-            {
-                <div class="info-section">
-                    <h3 class="section-header">Luogo</h3>
-                    <div class="info-card">
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="me-2 text-muted">
-                            <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
-                            <circle cx="12" cy="10" r="3"></circle>
-                        </svg>
-                        <span>@transaction.Location.Name</span>
-                    </div>
-                </div>
-            }
-
             @if (transaction.Attachments.Any())
             {
                 <div class="info-section">
@@ -109,7 +95,7 @@
                     <div class="attachments-list">
                         @foreach (var attachment in transaction.Attachments)
                         {
-                            <div class="info-card">
+                            <div class="info-card clickable" @onclick="() => OpenAttachment(attachment)">
                                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="me-2 text-muted">
                                     <path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"></path>
                                     <polyline points="13 2 13 9 20 9"></polyline>
@@ -117,6 +103,23 @@
                                 <span>@attachment</span>
                             </div>
                         }
+                    </div>
+                </div>
+            }
+
+            @if (transaction.Location != null)
+            {
+                <div class="info-section">
+                    <h3 class="section-header">Luogo</h3>
+                    <div class="info-card clickable" @onclick="OpenMap">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="me-2 text-muted">
+                            <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+                            <circle cx="12" cy="10" r="3"></circle>
+                        </svg>
+                        <div class="location-text">
+                            <div class="location-name">@(string.IsNullOrWhiteSpace(transaction.Location.Name) ? "Posizione" : transaction.Location.Name)</div>
+                            <div class="location-coords">@transaction.Location.Latitude.ToString("F6"), @transaction.Location.Longitude.ToString("F6")</div>
+                        </div>
                     </div>
                 </div>
             }
@@ -147,6 +150,30 @@
     }
 
     private void ToggleMenu() => isMenuOpen = !isMenuOpen;
+
+    private async Task OpenMap()
+    {
+        if (transaction?.Location != null)
+        {
+            await Map.Default.OpenAsync(transaction.Location.Latitude, transaction.Location.Longitude, new MapLaunchOptions
+            {
+                Name = transaction.Location.Name,
+                NavigationMode = NavigationMode.None
+            });
+        }
+    }
+
+    private async Task OpenAttachment(string fileName)
+    {
+        var path = await Storage.GetAttachmentPath(tripSlug, transactionId, fileName);
+        if (!string.IsNullOrEmpty(path))
+        {
+            await Launcher.Default.OpenAsync(new OpenFileRequest
+            {
+                File = new ReadOnlyFile(path)
+            });
+        }
+    }
 
     private void EditTransaction()
     {
@@ -391,6 +418,30 @@
         box-shadow: 0 2px 8px rgba(0,0,0,0.02);
         font-weight: 500;
         color: #1A3C2F;
+    }
+
+    .info-card.clickable {
+        cursor: pointer;
+    }
+
+    .info-card.clickable:active {
+        background-color: #F8FBF9;
+    }
+
+    .location-text {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+    }
+
+    .location-name {
+        font-weight: 600;
+        color: #1A3C2F;
+    }
+
+    .location-coords {
+        font-size: 0.75rem;
+        color: #6C757D;
     }
 
     .attachments-list {

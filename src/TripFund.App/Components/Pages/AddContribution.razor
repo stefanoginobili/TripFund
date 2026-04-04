@@ -7,7 +7,7 @@
 
 <div class="add-transaction-page">
     <header class="app-header">
-        <button class="icon-btn" @onclick='() => Nav.NavigateTo($"/trip/{tripSlug}?currency={selectedCurrency}")'>
+        <button class="icon-btn" @onclick="GoBack">
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <line x1="19" y1="12" x2="5" y2="12"></line>
                 <polyline points="12 19 5 12 12 5"></polyline>
@@ -68,7 +68,7 @@
                 }
 
                 <button class="submit-btn" @onclick="HandleSubmit">
-                    Registra Versamento
+                    Salva Versamento
                 </button>
             </div>
         </main>
@@ -136,6 +136,18 @@
     private void SelectCurrency(string currencyCode)
     {
         if (editingTransaction == null) selectedCurrency = currencyCode;
+    }
+
+    private void GoBack()
+    {
+        if (!string.IsNullOrEmpty(edit))
+        {
+            Nav.NavigateTo($"/trip/{tripSlug}/transaction/{edit}?currency={selectedCurrency}");
+        }
+        else
+        {
+            Nav.NavigateTo($"/trip/{tripSlug}?currency={selectedCurrency}");
+        }
     }
 
     private string GetCurrencySymbol()
