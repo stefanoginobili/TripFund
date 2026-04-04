@@ -261,33 +261,39 @@
     }
 
     .info-section {
-        background-color: #FFFFFF;
-        border-radius: 24px;
-        padding: 1.5rem;
-        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03);
+        background-color: transparent;
+        border-radius: 0;
+        padding: 0;
+        box-shadow: none;
+        width: 100%;
+        margin-bottom: 1rem;
     }
 
     .section-header {
-        font-size: 0.9rem;
-        font-weight: 700;
-        color: #6C757D;
-        letter-spacing: 0.05em;
-        margin-bottom: 1.5rem;
+        font-size: 0.8rem;
+        font-weight: 800;
+        color: #20563C;
+        letter-spacing: 0.1em;
+        margin-bottom: 1rem;
+        text-transform: uppercase;
     }
 
     .trips-grid {
         display: flex;
         flex-direction: column;
-        gap: 1.25rem;
+        gap: 1rem;
+        width: 100%;
     }
 
     .trip-card {
-        background-color: #F8FBF9;
+        background-color: #FFFFFF;
         border-radius: 24px;
         padding: 1.25rem;
         cursor: pointer;
-        transition: transform 0.1s;
+        transition: transform 0.1s, box-shadow 0.2s;
         border: 1px solid #F0F0F0;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.02);
+        width: 100%;
     }
 
     .trip-card:active {

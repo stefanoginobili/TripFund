@@ -71,8 +71,8 @@
                 <p class="transaction-meta">@transaction.Date.ToString("g") • Creato da @transaction.Author</p>
             </div>
 
-            <div class="section-container">
-                <h3 class="section-title">Divisione</h3>
+            <div class="info-section">
+                <h3 class="section-header">Divisione</h3>
                 <div class="split-list">
                     @foreach (var split in transaction.Split)
                     {
@@ -90,8 +90,8 @@
 
             @if (transaction.Location != null)
             {
-                <div class="section-container">
-                    <h3 class="section-title">Luogo</h3>
+                <div class="info-section">
+                    <h3 class="section-header">Luogo</h3>
                     <div class="info-card">
                         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="me-2 text-muted">
                             <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
@@ -104,8 +104,8 @@
 
             @if (transaction.Attachments.Any())
             {
-                <div class="section-container">
-                    <h3 class="section-title">Allegati</h3>
+                <div class="info-section">
+                    <h3 class="section-header">Allegati</h3>
                     <div class="attachments-list">
                         @foreach (var attachment in transaction.Attachments)
                         {
@@ -326,17 +326,22 @@
         margin: 0;
     }
 
-    .section-container {
-        margin-bottom: 2rem;
+    .info-section {
+        background-color: transparent;
+        border-radius: 0;
+        padding: 0;
+        box-shadow: none;
+        width: 100%;
+        margin-bottom: 1.5rem;
     }
 
-    .section-title {
-        font-size: 1.1rem;
-        font-weight: 700;
-        color: #6C757D;
-        text-transform: uppercase;
-        letter-spacing: 0.05em;
+    .section-header {
+        font-size: 0.8rem;
+        font-weight: 800;
+        color: #20563C;
+        letter-spacing: 0.1em;
         margin-bottom: 1rem;
+        text-transform: uppercase;
     }
 
     .split-list {

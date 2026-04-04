@@ -49,8 +49,8 @@
                     <input type="datetime-local" class="form-control" @bind="transactionDate" />
                 </div>
 
-                <div class="section-container">
-                    <h3 class="section-title">Divisione</h3>
+                <div class="info-section">
+                    <h3 class="section-header">Divisione</h3>
                     <div class="members-split-list">
                         @foreach (var member in memberSplits)
                         {
@@ -80,8 +80,8 @@
                     </div>
                 </div>
 
-                <div class="section-container">
-                    <h3 class="section-title">Allegati</h3>
+                <div class="info-section">
+                    <h3 class="section-header">Allegati</h3>
                     <div class="attachments-row">
                         @foreach (var att in attachments)
                         {
@@ -103,8 +103,8 @@
                     </div>
                 </div>
 
-                <div class="section-container">
-                    <h3 class="section-title">Luogo</h3>
+                <div class="info-section">
+                    <h3 class="section-header">Luogo</h3>
                     @if (locationInfo != null)
                     {
                         <div class="location-card">
@@ -470,8 +470,23 @@
     .form-group label { font-size: 0.9rem; font-weight: 600; color: #6C757D; }
     .form-control { padding: 0.8rem 1rem; border-radius: 12px; border: 1px solid #E0E0E0; background-color: #FFFFFF; font-size: 1rem; outline: none; }
     
-    .section-container { display: flex; flex-direction: column; gap: 0.75rem; }
-    .section-title { font-size: 1.1rem; font-weight: 700; color: #1A3C2F; margin-top: 0.5rem; }
+    .info-section {
+        background-color: transparent;
+        border-radius: 0;
+        padding: 0;
+        box-shadow: none;
+        width: 100%;
+        margin-bottom: 1.5rem;
+    }
+
+    .section-header {
+        font-size: 0.8rem;
+        font-weight: 800;
+        color: #20563C;
+        letter-spacing: 0.1em;
+        margin-bottom: 1rem;
+        text-transform: uppercase;
+    }
 
     .members-split-list { display: flex; flex-direction: column; gap: 0.5rem; }
     .member-split-row { background-color: #FFFFFF; padding: 0.75rem 1rem; border-radius: 16px; display: flex; flex-direction: column; gap: 0.75rem; box-shadow: 0 2px 8px rgba(0,0,0,0.02); }

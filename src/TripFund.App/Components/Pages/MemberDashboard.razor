@@ -65,8 +65,8 @@
                 </button>
             </div>
 
-            <div class="section-container">
-                <h3 class="section-title">Transazioni utente</h3>
+            <div class="info-section">
+                <h3 class="section-header">TRANSAZIONI UTENTE</h3>
                 <div class="transactions-list">
                     @if (!userTransactions.Any())
                     {
@@ -380,15 +380,22 @@
         color: #FFFFFF;
     }
 
-    .section-container {
-        margin-bottom: 2rem;
+    .info-section {
+        background-color: transparent;
+        border-radius: 0;
+        padding: 0;
+        box-shadow: none;
+        width: 100%;
+        margin-bottom: 1.5rem;
     }
 
-    .section-title {
-        font-size: 1.25rem;
-        font-weight: 700;
-        color: #1A3C2F;
+    .section-header {
+        font-size: 0.8rem;
+        font-weight: 800;
+        color: #20563C;
+        letter-spacing: 0.1em;
         margin-bottom: 1rem;
+        text-transform: uppercase;
     }
 
     .transactions-list {
