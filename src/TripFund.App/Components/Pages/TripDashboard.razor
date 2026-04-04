@@ -101,7 +101,7 @@
                 <h3 class="section-header">TRANSAZIONI</h3>
                 <div class="transactions-list">
                     @{
-                        var displayTx = transactions.Where(x => x.Currency == selectedCurrency).OrderByDescending(x => x.Id).ToList();
+                        var displayTx = transactions.Where(x => x.Currency == selectedCurrency).OrderByDescending(x => x.Date).ToList();
                     }
                     @if (!displayTx.Any())
                     {

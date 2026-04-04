@@ -57,6 +57,6 @@ public class TransactionDetailTests : BunitContext
         // Assert
         _alertMock.Verify(a => a.ConfirmAsync("Elimina Transazione", It.IsAny<string>(), "Elimina", "Annulla"), Times.Once);
         _storageMock.Verify(s => s.SaveTransactionAsync(tripSlug, transaction, "mario", true, It.IsAny<Dictionary<string, byte[]>>()), Times.Once);
-        nav.Uri.Should().EndWith($"/trip/{tripSlug}");
+        nav.Uri.Should().Contain($"/trip/{tripSlug}?currency=");
     }
 }

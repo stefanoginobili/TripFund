@@ -187,9 +187,9 @@ public class DashboardTests : BunitContext
         var now = DateTime.UtcNow;
         var transactions = new List<Transaction>
         {
-            new Transaction { Id = "old-eur", Currency = "EUR", Date = now.AddHours(-2), Amount = 10, Description = "Old EUR", Split = new Dictionary<string, decimal>() },
-            new Transaction { Id = "new-eur", Currency = "EUR", Date = now.AddHours(-1), Amount = 20, Description = "New EUR", Split = new Dictionary<string, decimal>() },
-            new Transaction { Id = "usd-tx", Currency = "USD", Date = now, Amount = 30, Description = "USD TX", Split = new Dictionary<string, decimal>() }
+            new Transaction { Id = "20260404T080000Z-12345678", Currency = "EUR", Date = now.AddHours(-2), Amount = 10, Description = "Old EUR", Split = new Dictionary<string, decimal>() },
+            new Transaction { Id = "20260404T090000Z-87654321", Currency = "EUR", Date = now.AddHours(-1), Amount = 20, Description = "New EUR", Split = new Dictionary<string, decimal>() },
+            new Transaction { Id = "20260404T100000Z-11223344", Currency = "USD", Date = now, Amount = 30, Description = "USD TX", Split = new Dictionary<string, decimal>() }
         };
 
         _storageMock.Setup(s => s.GetTripConfigAsync(tripSlug)).ReturnsAsync(config);

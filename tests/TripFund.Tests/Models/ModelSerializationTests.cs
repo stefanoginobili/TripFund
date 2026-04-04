@@ -23,6 +23,8 @@ public class ModelSerializationTests
           ""startDate"": ""2026-11-01T00:00:00Z"",
           ""endDate"": ""2026-11-20T00:00:00Z"",
           ""createdAt"": ""2026-03-24T12:00:00Z"",
+          ""updatedAt"": ""2026-03-27T13:40:00Z"",
+          ""author"": ""Mario Rossi"",
           ""currencies"": {
             ""EUR"": { ""symbol"": ""€"", ""name"": ""Euro"", ""expectedQuotaPerMember"": 500.00 },
             ""ARS"": { ""symbol"": ""$"", ""name"": ""Argentine Peso"", ""expectedQuotaPerMember"": 150000.00 }
@@ -42,6 +44,8 @@ public class ModelSerializationTests
         tripConfig.Should().NotBeNull();
         tripConfig!.Id.Should().Be("guid-trip-1234");
         tripConfig.Name.Should().Be("Patagonia 2026");
+        tripConfig.Author.Should().Be("Mario Rossi");
+        tripConfig.UpdatedAt.Should().Be(DateTime.Parse("2026-03-27T13:40:00Z").ToUniversalTime());
         tripConfig.Currencies.Should().HaveCount(2);
         tripConfig.Currencies["EUR"].ExpectedQuotaPerMember.Should().Be(500.00m);
         tripConfig.Members.Should().HaveCount(2);
@@ -58,6 +62,8 @@ public class ModelSerializationTests
           ""id"": ""20260325T143000Z-a1b2c3d4"",
           ""type"": ""expense"", 
           ""date"": ""2026-03-25T14:30:00Z"",
+          ""createdAt"": ""2026-03-25T14:30:00Z"",
+          ""updatedAt"": ""2026-03-26T11:20:00Z"",
           ""currency"": ""ARS"",
           ""amount"": 15000.50,
           ""description"": ""Cena a Buenos Aires"",
@@ -84,7 +90,10 @@ public class ModelSerializationTests
         // Assert
         transaction.Should().NotBeNull();
         transaction!.Id.Should().Be("20260325T143000Z-a1b2c3d4");
+        transaction.CreatedAt.Should().Be(DateTime.Parse("2026-03-25T14:30:00Z").ToUniversalTime());
+        transaction.UpdatedAt.Should().Be(DateTime.Parse("2026-03-26T11:20:00Z").ToUniversalTime());
         transaction.Amount.Should().Be(15000.50m);
+        transaction.Author.Should().Be("Mario Rossi");
         transaction.Split.Should().HaveCount(2);
         transaction.Location.Should().NotBeNull();
         transaction.Location!.Name.Should().Be("Restaurante El Gaucho");

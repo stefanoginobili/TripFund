@@ -15,6 +15,7 @@ This file is stored inside the specific version folder of the trip's `metadata` 
   "endDate": "2026-11-20",
   "createdAt": "2026-03-24T12:00:00Z",
   "updatedAt": "2026-03-27T13:40:00Z",
+  "author": "Mario Rossi",
   "currencies": {
     "EUR": {
       "symbol": "€",
@@ -44,7 +45,8 @@ This file is stored inside the specific version folder of the trip's `metadata` 
 }
 ```
 
-Note: `expectedQuotaPerMember` defines the target contribution amount that EACH member is expected to deposit into the shared fund for that specific currency.
+* Note 1: `expectedQuotaPerMember` defines the target contribution amount that EACH member is expected to deposit into the shared fund for that specific currency. `author` contains the user name (from the Global Settings) that last saved (created or updated) the trip config.
+* Note 2: `author` is a plain string representing the physical user of the device (retrieved from `app_settings.json`'s `authorName`), NOT a trip member's slug. It is used purely for auditing and conflict resolution purposes. It is set each time the configuration is created or updated.
 
 ## 2. Transaction (`data.json`)
 This file is stored inside the specific version folder of the trip's `transactions` (see `ARCHITECTURE.md` for folders' structure).
@@ -54,6 +56,8 @@ This file is stored inside the specific version folder of the trip's `transactio
   "id": "20260325T143000Z-a1b2c3d4",
   "type": "expense", 
   "date": "2026-03-25T14:30:00Z",
+  "createdAt": "2026-03-25T14:30:00Z",
+  "updatedAt": "2026-03-26T11:20:00Z",
   "currency": "ARS",
   "amount": 15000.50,
   "description": "Cena a Buenos Aires",
@@ -74,7 +78,7 @@ This file is stored inside the specific version folder of the trip's `transactio
 ```
 
 * Note 1: `id` MUST be formatted as a compact GMT timestamp followed by an 8-character GUID prefix (e.g., `yyyyMMddTHHmmssZ-[guid-prefix]`). This ensures folders are chronologically sortable on the file system while remaining unique.
-* Note 2: `author` is a plain string representing the physical user of the device (retrieved from `app_settings.json`'s `authorName`), NOT a trip member's slug. It is used purely for auditing and conflict resolution purposes.
+* Note 2: `author` is a plain string representing the physical user of the device (retrieved from `app_settings.json`'s `authorName`), NOT a trip member's slug. It is used purely for auditing and conflict resolution purposes. It is set each time a transaction is created or updated.
 * Note 3: `type` can be "expense" (spesa) or "contribution" (versamento in cassa). The split dictionary determines the money flow per user. If "expense", the split amounts are DEDUCTED from the users' balances. If "contribution", the `split` amount is ADDED to the user's balance. The sum of all values in split MUST exactly equal the `amount`.
 
 ## 3. Local Trip Registry (`known_trips.json`)

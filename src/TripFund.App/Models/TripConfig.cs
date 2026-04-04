@@ -25,6 +25,9 @@ public class TripConfig
     [JsonPropertyName("updatedAt")]
     public DateTime UpdatedAt { get; set; }
 
+    [JsonPropertyName("author")]
+    public string Author { get; set; } = string.Empty;
+
     [JsonPropertyName("currencies")]
     public Dictionary<string, Currency> Currencies { get; set; } = new();
 

@@ -96,7 +96,12 @@ public class LocalTripStorageService
         var metadataPath = Path.Combine(_tripsPath, tripSlug, "metadata");
         if (!Directory.Exists(metadataPath)) Directory.CreateDirectory(metadataPath);
 
+        var settings = await GetAppSettingsAsync();
+        config.Author = settings?.AuthorName ?? "Unknown";
+
+        if (config.CreatedAt == default) config.CreatedAt = DateTime.UtcNow;
         config.UpdatedAt = DateTime.UtcNow;
+
         var json = JsonSerializer.Serialize(config, _jsonOptions);
         var bytes = System.Text.Encoding.UTF8.GetBytes(json);
 
@@ -185,15 +190,20 @@ public class LocalTripStorageService
         var changedFiles = new Dictionary<string, byte[]>();
         string? deletedInfo = null;
 
+        var settings = await GetAppSettingsAsync();
+        var author = settings?.AuthorName ?? "Unknown";
+
         if (isDelete)
         {
-            var settings = await GetAppSettingsAsync();
-            var author = settings?.AuthorName ?? "Unknown";
             var timestamp = DateTime.UtcNow.ToString("yyyyMMddTHHmmssZ");
             deletedInfo = $"author={author}\ndeletedAt={timestamp}";
         }
         else
         {
+            transaction.Author = author;
+            if (transaction.CreatedAt == default) transaction.CreatedAt = DateTime.UtcNow;
+            transaction.UpdatedAt = DateTime.UtcNow;
+
             var json = JsonSerializer.Serialize(transaction, _jsonOptions);
             changedFiles["data.json"] = System.Text.Encoding.UTF8.GetBytes(json);
             
@@ -235,6 +245,10 @@ public class LocalTripStorageService
     {
         var transRoot = Path.Combine(_tripsPath, tripSlug, "transactions", resolvedTransaction.Id);
         
+        var settings = await GetAppSettingsAsync();
+        resolvedTransaction.Author = settings?.AuthorName ?? "Unknown";
+        resolvedTransaction.UpdatedAt = DateTime.UtcNow;
+
         var json = JsonSerializer.Serialize(resolvedTransaction, _jsonOptions);
         var changedFiles = new Dictionary<string, byte[]> { { "data.json", System.Text.Encoding.UTF8.GetBytes(json) } };
 

@@ -41,10 +41,10 @@ public class TripManagementTests : BunitContext
         
         // Slug should be generated automatically: "new-trip"
         
-        await cut.Find(".btn-submit").ClickAsync();
+        await cut.Find(".save-btn-large").ClickAsync();
 
         // Assert
-        _storageMock.Verify(s => s.SaveTripConfigAsync("new-trip", It.Is<TripConfig>(c => c.Name == "New Trip"), It.IsAny<string>(), It.IsAny<bool>()), Times.Once);
+        _storageMock.Verify(s => s.SaveTripConfigAsync("new-trip", It.Is<TripConfig>(c => c.Name == "New Trip"), "mario", It.IsAny<bool>()), Times.Once);
         _storageMock.Verify(s => s.SaveTripRegistryAsync(It.Is<LocalTripRegistry>(r => r.Trips.ContainsKey("new-trip"))), Times.Once);
     }
 
