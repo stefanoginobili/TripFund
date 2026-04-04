@@ -33,7 +33,7 @@
         <ApplicationTitle>TripFund.App</ApplicationTitle>
 
         <!-- App Identifier -->
-        <ApplicationId>com.avventurenelmondo.tripfund.app</ApplicationId>
+        <ApplicationId>com.stefanoginobili.tripfund.app</ApplicationId>
 
         <!-- Versions -->
         <ApplicationDisplayVersion>1.0</ApplicationDisplayVersion>

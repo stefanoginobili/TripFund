@@ -36,7 +36,7 @@
             <div class="form-container">
                 <div class="amount-section">
                     <span class="currency-symbol">@GetCurrencySymbol()</span>
-                    <input type="number" step="@GetStep()" class="amount-input" value="@totalAmount" @oninput="OnAmountInput" placeholder="@(GetDecimals() > 0 ? "0." + new string('0', GetDecimals()) : "0")" />
+                    <input type="number" step="@GetStep()" class="amount-input" value="@totalAmount.ToString("F" + GetDecimals(), System.Globalization.CultureInfo.InvariantCulture)" @oninput="OnAmountInput" placeholder="@(GetDecimals() > 0 ? "0." + new string('0', GetDecimals()) : "0")" />
                 </div>
 
                 <div class="form-group">
@@ -70,7 +70,7 @@
                                             @(member.IsAuto ? "Auto" : "Manuale")
                                         </div>
                                         <input type="number" step="@GetStep()" class="split-amount-input @(member.IsAuto ? "readonly" : "")" 
-                                               value="@(member.IsAuto ? member.CalculatedAmount : member.ManualAmount)"
+                                               value="@((member.IsAuto ? member.CalculatedAmount : member.ManualAmount).ToString("F" + GetDecimals(), System.Globalization.CultureInfo.InvariantCulture))"
                                                @oninput="(e) => OnManualAmountInput(member, e)"
                                                readonly="@member.IsAuto" />
                                     </div>
@@ -188,11 +188,12 @@
                     
                     foreach (var m in memberSplits)
                     {
-                        if (tx.Split.TryGetValue(m.Slug, out decimal val))
+                        if (tx.Split.TryGetValue(m.Slug, out SplitInfo? val))
                         {
                             m.IsIncluded = true;
-                            m.ManualAmount = val;
-                            m.IsAuto = false; // Set to manual to preserve exact values initially
+                            m.ManualAmount = val.Amount;
+                            m.CalculatedAmount = val.Amount; 
+                            m.IsAuto = !val.Manual;
                         }
                     }
 
@@ -296,16 +297,25 @@
         if (autos.Any())
         {
             int decimals = GetDecimals();
-            decimal factor = (decimal)Math.Pow(10, decimals);
-            decimal autoShare = Math.Floor((toDistribute / autos.Count) * factor) / factor;
+            decimal autoShare = Math.Round(toDistribute / autos.Count, decimals, MidpointRounding.ToZero);
             foreach (var m in autos) m.CalculatedAmount = autoShare;
 
             // Remainder handling
             decimal currentTotal = manualSum + (autoShare * autos.Count);
             decimal remainder = totalAmount - currentTotal;
+            
             if (remainder != 0)
             {
-                autos.First().CalculatedAmount += remainder;
+                // The remainder is at most (0.01 * (autos.Count - 1)) if we rounded down
+                // We add/subtract 1 unit of the smallest decimal to participants until remainder is 0
+                decimal unit = (decimal)Math.Pow(10, -decimals);
+                int count = (int)Math.Abs(remainder / unit);
+                decimal sign = Math.Sign(remainder);
+                
+                for (int i = 0; i < count && i < autos.Count; i++)
+                {
+                    autos[i].CalculatedAmount += sign * unit;
+                }
             }
         }
     }
@@ -380,14 +390,18 @@
 
         isSubmitting = true;
 
-        var splitDict = new Dictionary<string, decimal>();
+        var splitDict = new Dictionary<string, SplitInfo>();
         foreach (var m in included)
         {
-            splitDict[m.Slug] = m.IsAuto ? m.CalculatedAmount : m.ManualAmount;
+            splitDict[m.Slug] = new SplitInfo 
+            { 
+                Amount = m.IsAuto ? m.CalculatedAmount : m.ManualAmount, 
+                Manual = !m.IsAuto 
+            };
         }
 
         // Verify split sum
-        if (splitDict.Values.Sum() != totalAmount)
+        if (splitDict.Values.Sum(s => s.Amount) != totalAmount)
         {
             errorMessage = "La somma delle quote non corrisponde al totale.";
             isSubmitting = false;

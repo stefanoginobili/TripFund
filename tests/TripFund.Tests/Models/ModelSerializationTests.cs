@@ -69,8 +69,8 @@ public class ModelSerializationTests
           ""description"": ""Cena a Buenos Aires"",
           ""author"": ""Mario Rossi"",
           ""split"": {
-            ""mario-rossi"": 10000.00,
-            ""luigi"": 5000.50
+            ""mario-rossi"": { ""amount"": 10000.00, ""manual"": true },
+            ""luigi"": { ""amount"": 5000.50, ""manual"": false }
           }, 
           ""location"": {
             ""latitude"": -34.6037,

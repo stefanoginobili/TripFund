@@ -32,13 +32,22 @@ public class Transaction
     public string Author { get; set; } = string.Empty;
 
     [JsonPropertyName("split")]
-    public Dictionary<string, decimal> Split { get; set; } = new();
+    public Dictionary<string, SplitInfo> Split { get; set; } = new();
 
     [JsonPropertyName("location")]
     public LocationInfo? Location { get; set; }
 
     [JsonPropertyName("attachments")]
     public List<string> Attachments { get; set; } = new();
+}
+
+public class SplitInfo
+{
+    [JsonPropertyName("amount")]
+    public decimal Amount { get; set; }
+
+    [JsonPropertyName("manual")]
+    public bool Manual { get; set; }
 }
 
 public class LocationInfo

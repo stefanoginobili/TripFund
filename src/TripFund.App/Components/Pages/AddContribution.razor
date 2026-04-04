@@ -188,7 +188,7 @@
             Amount = amount,
             Description = "Versamento in cassa",
             Author = authorName,
-            Split = new Dictionary<string, decimal> { { selectedMemberSlug, amount } }
+            Split = new Dictionary<string, SplitInfo> { { selectedMemberSlug, new SplitInfo { Amount = amount, Manual = true } } }
         };
 
         await Storage.SaveTransactionAsync(tripSlug, transaction, deviceId);

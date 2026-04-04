@@ -211,10 +211,10 @@
 
             foreach (var t in currentCurrencyTx)
             {
-                if (t.Split.TryGetValue(member.Key, out decimal amount))
+                if (t.Split.TryGetValue(member.Key, out SplitInfo? split))
                 {
-                    if (t.Type == "contribution") mContributed += amount;
-                    else if (t.Type == "expense") mExpenses += amount;
+                    if (t.Type == "contribution") mContributed += split.Amount;
+                    else if (t.Type == "expense") mExpenses += split.Amount;
                 }
             }
 

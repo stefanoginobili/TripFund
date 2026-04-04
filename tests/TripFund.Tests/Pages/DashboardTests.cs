@@ -49,7 +49,7 @@ public class DashboardTests : BunitContext
                 Type = "contribution",
                 Currency = "EUR",
                 Amount = 300,
-                Split = new Dictionary<string, decimal> { { "mario", 300 } }
+                Split = new Dictionary<string, SplitInfo> { { "mario", new SplitInfo { Amount = 300, Manual = true } } }
             },
             new Transaction
             {
@@ -57,7 +57,7 @@ public class DashboardTests : BunitContext
                 Type = "expense",
                 Currency = "EUR",
                 Amount = 100,
-                Split = new Dictionary<string, decimal> { { "mario", 50 }, { "luigi", 50 } }
+                Split = new Dictionary<string, SplitInfo> { { "mario", new SplitInfo { Amount = 50, Manual = false } }, { "luigi", new SplitInfo { Amount = 50, Manual = false } } }
             },
             new Transaction
             {
@@ -65,7 +65,7 @@ public class DashboardTests : BunitContext
                 Type = "contribution",
                 Currency = "USD",
                 Amount = 100,
-                Split = new Dictionary<string, decimal> { { "luigi", 100 } }
+                Split = new Dictionary<string, SplitInfo> { { "luigi", new SplitInfo { Amount = 100, Manual = true } } }
             }
         };
 
@@ -141,7 +141,7 @@ public class DashboardTests : BunitContext
                 Type = "contribution",
                 Currency = "JPY",
                 Amount = 50000.75m,
-                Split = new Dictionary<string, decimal> { { "mario", 50000.75m } }
+                Split = new Dictionary<string, SplitInfo> { { "mario", new SplitInfo { Amount = 50000.75m, Manual = true } } }
             }
         };
 
@@ -187,9 +187,9 @@ public class DashboardTests : BunitContext
         var now = DateTime.UtcNow;
         var transactions = new List<Transaction>
         {
-            new Transaction { Id = "20260404T080000Z-12345678", Currency = "EUR", Date = now.AddHours(-2), Amount = 10, Description = "Old EUR", Split = new Dictionary<string, decimal>() },
-            new Transaction { Id = "20260404T090000Z-87654321", Currency = "EUR", Date = now.AddHours(-1), Amount = 20, Description = "New EUR", Split = new Dictionary<string, decimal>() },
-            new Transaction { Id = "20260404T100000Z-11223344", Currency = "USD", Date = now, Amount = 30, Description = "USD TX", Split = new Dictionary<string, decimal>() }
+            new Transaction { Id = "20260404T080000Z-12345678", Currency = "EUR", Date = now.AddHours(-2), Amount = 10, Description = "Old EUR", Split = new Dictionary<string, SplitInfo>() },
+            new Transaction { Id = "20260404T090000Z-87654321", Currency = "EUR", Date = now.AddHours(-1), Amount = 20, Description = "New EUR", Split = new Dictionary<string, SplitInfo>() },
+            new Transaction { Id = "20260404T100000Z-11223344", Currency = "USD", Date = now, Amount = 30, Description = "USD TX", Split = new Dictionary<string, SplitInfo>() }
         };
 
         _storageMock.Setup(s => s.GetTripConfigAsync(tripSlug)).ReturnsAsync(config);
@@ -245,7 +245,7 @@ public class DashboardTests : BunitContext
                 Type = "contribution",
                 Currency = "EUR",
                 Amount = 300,
-                Split = new Dictionary<string, decimal> { { "mario", 300 } }
+                Split = new Dictionary<string, SplitInfo> { { "mario", new SplitInfo { Amount = 300, Manual = true } } }
             },
             new Transaction
             {
@@ -253,7 +253,7 @@ public class DashboardTests : BunitContext
                 Type = "expense",
                 Currency = "EUR",
                 Amount = 100,
-                Split = new Dictionary<string, decimal> { { "mario", 50 }, { "luigi", 50 } }
+                Split = new Dictionary<string, SplitInfo> { { "mario", new SplitInfo { Amount = 50, Manual = false } }, { "luigi", new SplitInfo { Amount = 50, Manual = false } } }
             }
         };
 

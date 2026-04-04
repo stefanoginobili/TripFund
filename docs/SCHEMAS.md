@@ -54,7 +54,7 @@ This file is stored inside the specific version folder of the trip's `transactio
 ```json
 {
   "id": "20260325T143000Z-a1b2c3d4",
-  "type": "expense", 
+  "type": "expense",
   "date": "2026-03-25T14:30:00Z",
   "createdAt": "2026-03-25T14:30:00Z",
   "updatedAt": "2026-03-26T11:20:00Z",
@@ -63,23 +63,29 @@ This file is stored inside the specific version folder of the trip's `transactio
   "description": "Cena a Buenos Aires",
   "author": "Mario Rossi",
   "split": {
-    "mario-rossi": 10000.00,
-    "luigi": 5000.50
-  }, 
-  "location": {
-    "latitude": -34.6037,
-    "longitude": -58.3816,
-    "name": "Restaurante El Gaucho"
-  },
-  "attachments": [
-    "attachment_abc123.jpg"
-  ]
-}
+    "mario-rossi": {
+      "amount": 10000.00,
+      "manual": true
+    },
+    "luigi": { 
+      "amount": 5000.50, 
+      "manual": false
+    },
+    "location": {
+      "latitude": -34.6037,
+      "longitude": -58.3816,
+      "name": "Restaurante El Gaucho"
+    },
+    "attachments": [
+      "attachment_abc123.jpg"
+    ]
+  }
 ```
 
 * Note 1: `id` MUST be formatted as a compact GMT timestamp followed by an 8-character GUID prefix (e.g., `yyyyMMddTHHmmssZ-[guid-prefix]`). This ensures folders are chronologically sortable on the file system while remaining unique.
 * Note 2: `author` is a plain string representing the physical user of the device (retrieved from `app_settings.json`'s `authorName`), NOT a trip member's slug. It is used purely for auditing and conflict resolution purposes. It is set each time a transaction is created or updated.
-* Note 3: `type` can be "expense" (spesa) or "contribution" (versamento in cassa). The split dictionary determines the money flow per user. If "expense", the split amounts are DEDUCTED from the users' balances. If "contribution", the `split` amount is ADDED to the user's balance. The sum of all values in split MUST exactly equal the `amount`.
+* Note 3: `manuale` is a flag indicating wheter the amount has been manually set by the user or it has been automatically calculated by the application.
+* Note 4: `type` can be "expense" (spesa) or "contribution" (versamento in cassa). The split dictionary determines the money flow per user. If "expense", the split amounts are DEDUCTED from the users' balances. If "contribution", the `split` amount is ADDED to the user's balance. The sum of all values in split MUST exactly equal the `amount`.
 
 ## 3. Local Trip Registry (`known_trips.json`)
 This file is stored in the root of the app's local storage. It acts purely as a pointer registry to find the trip folders.

@@ -163,12 +163,12 @@
 
         foreach (var t in currentCurrencyTx)
         {
-            if (t.Split.TryGetValue(memberSlug, out decimal amount) && amount > 0)
+            if (t.Split.TryGetValue(memberSlug, out SplitInfo? split) && split.Amount > 0)
             {
-                userTransactions.Add(new UserTransactionItem { OriginalTx = t, UserAmount = amount });
+                userTransactions.Add(new UserTransactionItem { OriginalTx = t, UserAmount = split.Amount });
                 
-                if (t.Type == "contribution") totalContributed += amount;
-                else if (t.Type == "expense") mExpenses += amount;
+                if (t.Type == "contribution") totalContributed += split.Amount;
+                else if (t.Type == "expense") mExpenses += split.Amount;
             }
         }
 

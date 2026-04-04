@@ -58,7 +58,7 @@ public class TransactionFormTests : BunitContext
         splitInputs.Should().HaveCount(3);
         foreach (var input in splitInputs)
         {
-            input.GetAttribute("value").Should().Be("10");
+            input.GetAttribute("value").Should().Be("10.00");
         }
     }
 
@@ -100,8 +100,8 @@ public class TransactionFormTests : BunitContext
         var luigiRow = cut.FindAll(".member-split-row").First(r => r.InnerHtml.Contains("Luigi"));
         var carloRow = cut.FindAll(".member-split-row").First(r => r.InnerHtml.Contains("Carlo"));
 
-        luigiRow.QuerySelector(".split-amount-input")!.GetAttribute("value").Should().Be("25");
-        carloRow.QuerySelector(".split-amount-input")!.GetAttribute("value").Should().Be("25");
+        luigiRow.QuerySelector(".split-amount-input")!.GetAttribute("value").Should().Be("25.00");
+        carloRow.QuerySelector(".split-amount-input")!.GetAttribute("value").Should().Be("25.00");
     }
 
     [Fact]
@@ -134,7 +134,7 @@ public class TransactionFormTests : BunitContext
         // Assert
         // Luigi should take the full 100
         var luigiRow = cut.FindAll(".member-split-row").First(r => r.InnerHtml.Contains("Luigi"));
-        luigiRow.QuerySelector(".split-amount-input")!.GetAttribute("value").Should().Be("100");
+        luigiRow.QuerySelector(".split-amount-input")!.GetAttribute("value").Should().Be("100.00");
         
         // Mario row should NOT have split controls anymore
         marioRow = cut.FindAll(".member-split-row").First(r => r.InnerHtml.Contains("Mario"));
@@ -219,5 +219,90 @@ public class TransactionFormTests : BunitContext
         {
             input.GetAttribute("step").Should().Be("1");
         }
+    }
+
+    [Fact]
+    public async Task AddExpense_Submit_ShouldSaveManualFlagCorrectly()
+    {
+        // Arrange
+        var tripSlug = "test-trip";
+        var config = new TripConfig
+        {
+            Id = "123",
+            Name = "Test Trip",
+            Currencies = new Dictionary<string, Currency> { { "EUR", new Currency { Symbol = "€" } } },
+            Members = new Dictionary<string, User>
+            {
+                { "mario", new User { Name = "Mario", Avatar = "M" } },
+                { "luigi", new User { Name = "Luigi", Avatar = "L" } }
+            }
+        };
+        _storageMock.Setup(s => s.GetTripConfigAsync(tripSlug)).ReturnsAsync(config);
+        
+        Transaction? savedTransaction = null;
+        _storageMock.Setup(s => s.SaveTransactionAsync(tripSlug, It.IsAny<Transaction>(), It.IsAny<string>(), It.IsAny<bool>(), It.IsAny<Dictionary<string, byte[]>>()))
+            .Callback<string, Transaction, string, bool, Dictionary<string, byte[]>>((s, t, d, b, a) => savedTransaction = t)
+            .Returns(Task.CompletedTask);
+
+        var cut = Render<AddExpense>(parameters => parameters.Add(p => p.tripSlug, tripSlug));
+
+        // Act
+        cut.Find(".amount-input").Input("100");
+        cut.Find("input[placeholder='es. Cena a Buenos Aires']").Change("Test Expense");
+
+        // Set Mario to Manual (Luigi stays Auto)
+        var marioRow = cut.FindAll(".member-split-row").First(r => r.InnerHtml.Contains("Mario"));
+        marioRow.QuerySelector(".split-mode-toggle")!.Click();
+        
+        marioRow = cut.FindAll(".member-split-row").First(r => r.InnerHtml.Contains("Mario"));
+        marioRow.QuerySelector(".split-amount-input")!.Input("40");
+
+        // Submit
+        await cut.Find(".submit-btn").ClickAsync();
+
+        // Assert
+        savedTransaction.Should().NotBeNull();
+        savedTransaction!.Split["mario"].Amount.Should().Be(40);
+        savedTransaction.Split["mario"].Manual.Should().BeTrue();
+        
+        savedTransaction.Split["luigi"].Amount.Should().Be(60);
+        savedTransaction.Split["luigi"].Manual.Should().BeFalse();
+    }
+
+    [Fact]
+    public async Task AddContribution_Submit_ShouldAlwaysSaveAsManual()
+    {
+        // Arrange
+        var tripSlug = "test-trip";
+        var config = new TripConfig
+        {
+            Id = "123",
+            Name = "Test Trip",
+            Currencies = new Dictionary<string, Currency> { { "EUR", new Currency { Symbol = "€" } } },
+            Members = new Dictionary<string, User>
+            {
+                { "mario", new User { Name = "Mario", Avatar = "M" } }
+            }
+        };
+        _storageMock.Setup(s => s.GetTripConfigAsync(tripSlug)).ReturnsAsync(config);
+        
+        Transaction? savedTransaction = null;
+        _storageMock.Setup(s => s.SaveTransactionAsync(tripSlug, It.IsAny<Transaction>(), It.IsAny<string>(), It.IsAny<bool>(), It.IsAny<Dictionary<string, byte[]>>()))
+            .Callback<string, Transaction, string, bool, Dictionary<string, byte[]>>((s, t, d, b, a) => savedTransaction = t)
+            .Returns(Task.CompletedTask);
+
+        var cut = Render<AddContribution>(parameters => parameters.Add(p => p.tripSlug, tripSlug));
+
+        // Act
+        cut.Find(".amount-input").Change("500");
+        cut.Find("select.form-control").Change("mario");
+
+        // Submit
+        await cut.Find(".submit-btn").ClickAsync();
+
+        // Assert
+        savedTransaction.Should().NotBeNull();
+        savedTransaction!.Split["mario"].Amount.Should().Be(500);
+        savedTransaction.Split["mario"].Manual.Should().BeTrue();
     }
 }
