@@ -55,7 +55,13 @@ public class VersionedStorageEngine
         if (versions.Count == 0) return new List<VersionFolderInfo>();
 
         var maxSequence = versions.Max(v => v.Sequence);
-        return versions.Where(v => v.Sequence == maxSequence).ToList();
+        var latest = versions.Where(v => v.Sequence == maxSequence).ToList();
+
+        // If there's a 'res' folder at the latest sequence, it wins over 'upd' or 'new'
+        var resVersions = latest.Where(v => v.Kind == CommitKind.Res).ToList();
+        if (resVersions.Count > 0) return resVersions;
+
+        return latest;
     }
 
     public bool IsInConflict(string rootPath)
@@ -92,17 +98,18 @@ public class VersionedStorageEngine
         // For 'upd' and 'res', we need to copy previous state
         if (kind == CommitKind.Upd || kind == CommitKind.Res)
         {
-            // We assume the caller has resolved which previous version to use if there was a conflict.
-            // In case of 'upd' against a conflict, it would technically create a new thread or be blocked by UI.
-            // For simplicity here, we take the latest available if not in conflict, or require a 'res' kind.
-            
-            var latestVersions = GetLatestVersionFolders(rootPath);
-            if (latestVersions.Count > 0)
+            // We need to find the latest version BEFORE nextSeq
+            var previousVersions = versions.Where(v => v.Sequence < nextSeq).ToList();
+            if (previousVersions.Any())
             {
-                // If there's a conflict, this commit should probably be a 'res' or it will just add to the conflict.
-                // Architecture 3.2 says 'upd' includes all untouched files from the immediate previous version.
-                var prevFolder = latestVersions.First().FolderName;
-                var prevPath = Path.Combine(rootPath, prevFolder);
+                var maxPrevSeq = previousVersions.Max(v => v.Sequence);
+                var latestOfPrev = previousVersions.Where(v => v.Sequence == maxPrevSeq).ToList();
+                
+                // Prioritize 'res' if it exists at the previous level
+                var resOfPrev = latestOfPrev.Where(v => v.Kind == CommitKind.Res).ToList();
+                var sourceInfo = resOfPrev.Any() ? resOfPrev.First() : latestOfPrev.First();
+
+                var prevPath = Path.Combine(rootPath, sourceInfo.FolderName);
                 
                 if (!File.Exists(Path.Combine(prevPath, ".deleted")))
                 {

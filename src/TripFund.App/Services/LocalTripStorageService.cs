@@ -188,6 +188,7 @@ public class LocalTripStorageService
         CommitKind kind = _engine.GetVersionFolders(transRoot).Count == 0 ? CommitKind.New : (isDelete ? CommitKind.Del : CommitKind.Upd);
 
         var changedFiles = new Dictionary<string, byte[]>();
+        List<string>? deletedFiles = null;
         string? deletedInfo = null;
 
         var settings = await GetAppSettingsAsync();
@@ -200,6 +201,18 @@ public class LocalTripStorageService
         }
         else
         {
+            if (kind == CommitKind.Upd)
+            {
+                var latest = await GetLatestTransactionVersionAsync(tripSlug, transaction.Id);
+                if (latest != null)
+                {
+                    // Find attachments that are in the previous version but NOT in the new transaction.Attachments
+                    deletedFiles = latest.Attachments
+                        .Where(a => !transaction.Attachments.Contains(a))
+                        .ToList();
+                }
+            }
+
             transaction.Author = author;
             if (transaction.CreatedAt == default) transaction.CreatedAt = DateTime.UtcNow;
             transaction.UpdatedAt = DateTime.UtcNow;
@@ -216,7 +229,7 @@ public class LocalTripStorageService
             }
         }
 
-        await _engine.CommitAsync(transRoot, deviceId, kind, changedFiles, deletedInfo: deletedInfo);
+        await _engine.CommitAsync(transRoot, deviceId, kind, changedFiles, deletedFiles: deletedFiles, deletedInfo: deletedInfo);
     }
 
     public virtual async Task<Dictionary<string, Transaction>> GetConflictingVersionsAsync(string tripSlug, string transactionId)
@@ -245,6 +258,17 @@ public class LocalTripStorageService
     {
         var transRoot = Path.Combine(_tripsPath, tripSlug, "transactions", resolvedTransaction.Id);
         
+        List<string>? deletedFiles = null;
+        var conflicts = await GetConflictingVersionsAsync(tripSlug, resolvedTransaction.Id);
+        if (conflicts.Any())
+        {
+            // We take the first one as a baseline for what might have been deleted
+            var baseline = conflicts.Values.First();
+            deletedFiles = baseline.Attachments
+                .Where(a => !resolvedTransaction.Attachments.Contains(a))
+                .ToList();
+        }
+
         var settings = await GetAppSettingsAsync();
         resolvedTransaction.Author = settings?.AuthorName ?? "Unknown";
         resolvedTransaction.UpdatedAt = DateTime.UtcNow;
@@ -252,7 +276,7 @@ public class LocalTripStorageService
         var json = JsonSerializer.Serialize(resolvedTransaction, _jsonOptions);
         var changedFiles = new Dictionary<string, byte[]> { { "data.json", System.Text.Encoding.UTF8.GetBytes(json) } };
 
-        await _engine.CommitAsync(transRoot, deviceId, CommitKind.Res, changedFiles);
+        await _engine.CommitAsync(transRoot, deviceId, CommitKind.Res, changedFiles, deletedFiles: deletedFiles);
     }
 
     public virtual async Task DeleteTripAsync(string tripSlug)
