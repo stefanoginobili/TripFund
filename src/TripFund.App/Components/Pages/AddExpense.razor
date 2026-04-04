@@ -324,6 +324,18 @@
     {
         try
         {
+            var status = await Permissions.CheckStatusAsync<Permissions.Camera>();
+            if (status != PermissionStatus.Granted)
+            {
+                status = await Permissions.RequestAsync<Permissions.Camera>();
+            }
+
+            if (status != PermissionStatus.Granted)
+            {
+                errorMessage = "Permesso fotocamera non concesso.";
+                return;
+            }
+
             var photo = await MediaPicker.Default.CapturePhotoAsync();
             if (photo != null)
             {
@@ -361,6 +373,18 @@
     {
         try
         {
+            var status = await Permissions.CheckStatusAsync<Permissions.LocationWhenInUse>();
+            if (status != PermissionStatus.Granted)
+            {
+                status = await Permissions.RequestAsync<Permissions.LocationWhenInUse>();
+            }
+
+            if (status != PermissionStatus.Granted)
+            {
+                errorMessage = "Permesso posizione non concesso.";
+                return;
+            }
+
             var location = await Geolocation.Default.GetLocationAsync(new GeolocationRequest(GeolocationAccuracy.Medium));
             if (location != null)
             {

@@ -28,5 +28,13 @@
     </array>
     <key>XSAppIconAssets</key>
     <string>Assets.xcassets/appicon.appiconset</string>
+    <key>NSCameraUsageDescription</key>
+    <string>Questa app ha bisogno di accedere alla fotocamera per scattare foto delle ricevute.</string>
+    <key>NSLocationWhenInUseUsageDescription</key>
+    <string>Questa app ha bisogno di accedere alla tua posizione per salvare il luogo della spesa.</string>
+    <key>NSPhotoLibraryAddUsageDescription</key>
+    <string>Questa app ha bisogno di salvare le foto delle ricevute nella tua libreria.</string>
+    <key>NSPhotoLibraryUsageDescription</key>
+    <string>Questa app ha bisogno di accedere alla tua libreria per selezionare le ricevute salvate.</string>
 </dict>
 </plist>
