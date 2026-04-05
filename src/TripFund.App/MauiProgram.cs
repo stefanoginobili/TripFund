@@ -6,6 +6,10 @@ public static class MauiProgram
 {
 	public static MauiApp CreateMauiApp()
 	{
+		var itCulture = new System.Globalization.CultureInfo("it-IT");
+		System.Globalization.CultureInfo.DefaultThreadCurrentCulture = itCulture;
+		System.Globalization.CultureInfo.DefaultThreadCurrentUICulture = itCulture;
+
 		var builder = MauiApp.CreateBuilder();
 		builder
 			.UseMauiApp<App>()

@@ -100,7 +100,7 @@
 
     private async Task OnStartDateChange(ChangeEventArgs e)
     {
-        if (DateTime.TryParse(e.Value?.ToString(), out var date))
+        if (DateTime.TryParse(e.Value?.ToString(), System.Globalization.CultureInfo.InvariantCulture, System.Globalization.DateTimeStyles.None, out var date))
         {
             dateError = "";
             StartDate = date;
@@ -116,7 +116,7 @@
 
     private async Task OnEndDateChange(ChangeEventArgs e)
     {
-        if (DateTime.TryParse(e.Value?.ToString(), out var date))
+        if (DateTime.TryParse(e.Value?.ToString(), System.Globalization.CultureInfo.InvariantCulture, System.Globalization.DateTimeStyles.None, out var date))
         {
             if (date < StartDate)
             {

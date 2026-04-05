@@ -80,6 +80,7 @@
                                 bool isFirst = index == 0;
                                 bool isLast = index == keys.Count - 1;
 
+                                <div class="popover-overlay" @onclick="() => openMenuCurrencyCode = null"></div>
                                 <div class="actions-dropdown">
                                     <div class="dropdown-item-custom" @onclick="() => StartEditCurrency(curr.Key, curr.Value)">
                                         Modifica
@@ -385,7 +386,7 @@
         background-color: #FFFFFF;
         border-radius: 12px;
         box-shadow: 0 8px 24px rgba(0,0,0,0.12);
-        z-index: 50;
+        z-index: 1101;
         min-width: 120px;
         overflow: hidden;
         border: 1px solid #F0F0F0;

@@ -26,6 +26,7 @@
             </button>
             @if (isHeaderMenuOpen)
             {
+                <div class="popover-overlay" @onclick="ToggleHeaderMenu"></div>
                 <div class="header-dropdown">
                     <div class="dropdown-item-custom text-danger" @onclick="HandleDelete">
                         Elimina
@@ -86,6 +87,7 @@
                                                 <span>@newMemberAvatar</span>
                                                 @if (showEmojiPicker)
                                                 {
+                                                    <div class="popover-overlay" @onclick="ToggleEmojiPicker"></div>
                                                     <div class="emoji-picker-popover" @onclick:stopPropagation>
                                                         <div class="emoji-grid">
                                                             @foreach (var emoji in emojis)
@@ -155,6 +157,7 @@
                                         bool isFirst = index == 0;
                                         bool isLast = index == keys.Count - 1;
 
+                                        <div class="popover-overlay" @onclick="() => openMenuMemberSlug = null"></div>
                                         <div class="actions-dropdown">
                                             <div class="dropdown-item-custom" @onclick="() => StartEditMember(member.Key, member.Value)">
                                                 Modifica
@@ -208,6 +211,7 @@
                                         <span>@newMemberAvatar</span>
                                         @if (showEmojiPicker)
                                         {
+                                            <div class="popover-overlay" @onclick="ToggleEmojiPicker"></div>
                                             <div class="emoji-picker-popover" @onclick:stopPropagation>
                                                 <div class="emoji-grid">
                                                     @foreach (var emoji in emojis)
@@ -497,7 +501,7 @@
         background-color: #FFFFFF;
         border-radius: 12px;
         box-shadow: 0 8px 24px rgba(0,0,0,0.12);
-        z-index: 100;
+        z-index: 1101;
         min-width: 180px;
         overflow: hidden;
         border: 1px solid #F0F0F0;
@@ -824,7 +828,7 @@
         position: absolute;
         top: 70px;
         left: 0;
-        z-index: 100;
+        z-index: 1101;
         background-color: #FFFFFF;
         border-radius: 16px;
         box-shadow: 0 8px 32px rgba(0,0,0,0.15);
@@ -833,6 +837,41 @@
         max-height: 250px;
         overflow-y: auto;
         overflow-x: hidden;
+    }
+
+    .actions-dropdown {
+        position: absolute;
+        top: 100%;
+        right: 0;
+        background-color: #FFFFFF;
+        border-radius: 12px;
+        box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+        z-index: 1101;
+        min-width: 120px;
+        overflow: hidden;
+        border: 1px solid #F0F0F0;
+        margin-top: 0.5rem;
+    }
+
+    .dropdown-item-custom {
+        padding: 0.75rem 1rem;
+        font-size: 0.9rem;
+        font-weight: 600;
+        color: #1A3C2F;
+        cursor: pointer;
+        transition: background-color 0.2s;
+        display: flex;
+        align-items: center;
+    }
+
+    .dropdown-item-custom:hover {
+        background-color: #F8FBF9;
+    }
+
+    .dropdown-item-custom.disabled {
+        opacity: 0.5;
+        cursor: default;
+        pointer-events: none;
     }
 
     .emoji-grid {

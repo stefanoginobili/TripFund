@@ -26,6 +26,7 @@
                 </button>
                 @if (isMenuOpen)
                 {
+                    <div class="popover-overlay" @onclick="ToggleMenu"></div>
                     <div class="dropdown-menu-custom">
                         <button class="dropdown-item" @onclick="EditTransaction">
                             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="me-2">
@@ -264,7 +265,7 @@
         border-radius: 12px;
         box-shadow: 0 8px 24px rgba(0,0,0,0.12);
         padding: 0.5rem;
-        z-index: 1000;
+        z-index: 1101;
         min-width: 150px;
         display: flex;
         flex-direction: column;

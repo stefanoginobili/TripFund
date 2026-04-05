@@ -111,3 +111,13 @@ h1:focus {
     padding-left: env(safe-area-inset-left);
     padding-right: env(safe-area-inset-right);
 }
+
+.popover-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: transparent;
+    z-index: 1100; /* Above everything */
+}
