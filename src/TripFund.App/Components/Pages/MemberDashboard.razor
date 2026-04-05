@@ -38,11 +38,11 @@
             <div class="summary-card">
                 <p class="summary-label">Totale versato</p>
                 <h2 class="summary-total">@FormatCurrency(totalContributed, selectedCurrency)</h2>
-                <p class="summary-sub">Totale rimasto: <strong>@FormatCurrency(remainingBalance, selectedCurrency)</strong></p>
+                <p class="summary-sub">@(isExceeded ? "Eccedenza" : "Saldo"): <strong>@FormatCurrency(remainingBalance, selectedCurrency)</strong></p>
                 
                 <div class="progress-container">
                     <div class="progress-bar-bg">
-                        <div class="progress-bar-fill" style="width: @(progressPercentage.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture))%"></div>
+                        <div class="progress-bar-fill @(isExceeded ? "warning" : "")" style="width: @(progressPercentage.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture))%"></div>
                     </div>
                     <div class="progress-labels">
                         <span>@FormatCurrency(totalContributed, selectedCurrency)</span>
@@ -86,7 +86,7 @@
                                 <div class="transaction-meta">@t.OriginalTx.Date.ToString("g")</div>
                             </div>
                             <div class="transaction-amount @(t.OriginalTx.Type == "expense" ? "negative" : "positive")">
-                                @(t.OriginalTx.Type == "expense" ? "-" : "+")@FormatCurrency(t.UserAmount, t.OriginalTx.Currency)
+                                @FormatCurrency(t.UserAmount, t.OriginalTx.Currency)
                             </div>
                         </div>
                     }
@@ -113,6 +113,7 @@
     private decimal remainingBalance = 0;
     private decimal targetAmount = 0;
     private double progressPercentage = 0;
+    private bool isExceeded => totalContributed > targetAmount;
 
     protected override async Task OnInitializedAsync()
     {
@@ -342,6 +343,10 @@
         height: 100%;
         background-color: #FFFFFF;
         border-radius: 4px;
+    }
+
+    .progress-bar-fill.warning {
+        background-color: #FFA500;
     }
 
     .progress-labels {

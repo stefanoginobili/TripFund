@@ -83,7 +83,7 @@ public class DashboardTests : BunitContext
         // Total Remaining EUR = 200
 
         var summaryTotal = cut.Find(".summary-total").TextContent;
-        summaryTotal.Should().Contain("200"); // Totale rimasto
+        summaryTotal.Should().Contain("200"); // Saldo
 
         var summarySub = cut.Find(".summary-sub").TextContent;
         summarySub.Should().Contain("300"); // Totale versato
@@ -115,6 +115,33 @@ public class DashboardTests : BunitContext
 
         marioRow = cut.FindAll(".member-row").First(r => r.InnerHtml.Contains("Mario"));
         marioRow.InnerHtml.Should().Contain("0"); // Versato
+    }
+
+    [Fact]
+    public void TripDashboard_ShouldShowEccedenzaWhenOverBudget()
+    {
+        // Arrange
+        var tripSlug = "over-trip";
+        var config = new TripConfig
+        {
+            Id = "1",
+            Name = "Over Trip",
+            Currencies = new Dictionary<string, Currency> { { "EUR", new Currency { ExpectedQuotaPerMember = 100 } } },
+            Members = new Dictionary<string, User> { { "m", new User { Name = "M" } } }
+        };
+        var transactions = new List<Transaction>
+        {
+            new Transaction { Type = "contribution", Currency = "EUR", Amount = 150, Split = new Dictionary<string, SplitInfo> { { "m", new SplitInfo { Amount = 150 } } } }
+        };
+        _storageMock.Setup(s => s.GetTripConfigAsync(tripSlug)).ReturnsAsync(config);
+        _storageMock.Setup(s => s.GetTransactionsAsync(tripSlug)).ReturnsAsync(transactions);
+
+        // Act
+        var cut = Render<TripDashboard>(p => p.Add(x => x.tripSlug, tripSlug));
+
+        // Assert
+        cut.Find(".summary-label").TextContent.Should().Be("Eccedenza");
+        cut.Find(".progress-bar-fill").ClassName.Should().Contain("warning");
     }
 
     [Fact]
@@ -327,7 +354,7 @@ public class DashboardTests : BunitContext
         var summaryTotal = cut.Find(".summary-total").TextContent; // Totale versato
         summaryTotal.Should().Contain("300");
 
-        var summarySub = cut.Find(".summary-sub").TextContent; // Totale rimasto
+        var summarySub = cut.Find(".summary-sub").TextContent; // Saldo
         summarySub.Should().Contain("250");
 
         var transactionRows = cut.FindAll(".transaction-row");
@@ -335,8 +362,14 @@ public class DashboardTests : BunitContext
 
         // Specifically check that expense row shows 50 (Mario's split), not 100 (total amount)
         var expenseRow = transactionRows.First(r => r.InnerHtml.Contains("expense-icon"));
-        expenseRow.InnerHtml.Should().Contain("50");
-        expenseRow.InnerHtml.Should().NotContain("100");
+        var expenseAmount = expenseRow.QuerySelector(".transaction-amount")?.TextContent ?? "";
+        expenseAmount.Should().Contain("50");
+        expenseAmount.Should().NotContain("-");
+
+        var contribRow = transactionRows.First(r => r.InnerHtml.Contains("contrib-icon"));
+        var contribAmount = contribRow.QuerySelector(".transaction-amount")?.TextContent ?? "";
+        contribAmount.Should().Contain("300");
+        contribAmount.Should().NotContain("+");
     }
 
     [Fact]
@@ -435,5 +468,33 @@ public class DashboardTests : BunitContext
         // Assert
         var contribBtn = cut.Find(".contribute-btn");
         contribBtn.HasAttribute("disabled").Should().BeTrue();
+    }
+
+    [Fact]
+    public void MemberDashboard_ShouldShowEccedenzaWhenOverBudget()
+    {
+        // Arrange
+        var tripSlug = "over-trip";
+        var memberSlug = "m";
+        var config = new TripConfig
+        {
+            Id = "1",
+            Name = "Over Trip",
+            Currencies = new Dictionary<string, Currency> { { "EUR", new Currency { ExpectedQuotaPerMember = 100 } } },
+            Members = new Dictionary<string, User> { { "m", new User { Name = "M" } } }
+        };
+        var transactions = new List<Transaction>
+        {
+            new Transaction { Type = "contribution", Currency = "EUR", Amount = 150, Split = new Dictionary<string, SplitInfo> { { "m", new SplitInfo { Amount = 150 } } } }
+        };
+        _storageMock.Setup(s => s.GetTripConfigAsync(tripSlug)).ReturnsAsync(config);
+        _storageMock.Setup(s => s.GetTransactionsAsync(tripSlug)).ReturnsAsync(transactions);
+
+        // Act
+        var cut = Render<MemberDashboard>(p => p.Add(x => x.tripSlug, tripSlug).Add(x => x.memberSlug, memberSlug));
+
+        // Assert
+        cut.Find(".summary-sub").TextContent.Should().Contain("Eccedenza");
+        cut.Find(".progress-bar-fill").ClassName.Should().Contain("warning");
     }
 }

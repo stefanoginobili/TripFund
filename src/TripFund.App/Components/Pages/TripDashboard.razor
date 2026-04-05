@@ -32,13 +32,13 @@
 
         <main class="content">
             <div class="summary-card">
-                <p class="summary-label">Totale rimasto</p>
+                <p class="summary-label">@(isExceeded ? "Eccedenza" : "Saldo")</p>
                 <h2 class="summary-total">@FormatCurrency(totalRemaining, selectedCurrency)</h2>
                 <p class="summary-sub">Totale versato: <strong>@FormatCurrency(totalContributed, selectedCurrency)</strong></p>
                 
                 <div class="progress-container">
                     <div class="progress-bar-bg">
-                        <div class="progress-bar-fill" style="width: @(progressPercentage.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture))%"></div>
+                        <div class="progress-bar-fill @(isExceeded ? "warning" : "")" style="width: @(progressPercentage.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture))%"></div>
                     </div>
                     <div class="progress-labels">
                         <span>@FormatCurrency(totalContributed, selectedCurrency)</span>
@@ -131,7 +131,7 @@
                                 <div class="transaction-meta">@t.Date.ToString("g")</div>
                             </div>
                             <div class="transaction-amount @(t.Type == "expense" ? "negative" : "positive")">
-                                @(t.Type == "expense" ? "-" : "+")@FormatCurrency(t.Amount, t.Currency)
+                                @FormatCurrency(t.Amount, t.Currency)
                             </div>
                         </div>
                     }
@@ -154,6 +154,7 @@
     private decimal totalRemaining = 0;
     private decimal targetAmount = 0;
     private double progressPercentage = 0;
+    private bool isExceeded => totalContributed > targetAmount;
 
     private List<MemberStats> membersStats = new();
 
@@ -383,6 +384,10 @@
         height: 100%;
         background-color: #FFFFFF;
         border-radius: 4px;
+    }
+
+    .progress-bar-fill.warning {
+        background-color: #FFA500;
     }
 
     .progress-labels {
