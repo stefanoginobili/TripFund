@@ -226,9 +226,9 @@
         if (config != null && config.Currencies.TryGetValue(currencyCode, out var c))
         {
             string format = c.Decimals > 0 ? "N" + c.Decimals : "N0";
-            return $"{currencyCode} {amount.ToString(format, System.Globalization.CultureInfo.InvariantCulture)}";
+            return $"{currencyCode} {amount.ToString(format)}";
         }
-        return $"{currencyCode} {amount.ToString("N2", System.Globalization.CultureInfo.InvariantCulture)}";
+        return $"{currencyCode} {amount.ToString("N2")}";
     }
 }
 

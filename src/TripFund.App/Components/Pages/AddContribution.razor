@@ -30,7 +30,7 @@
             <div class="form-container">
                 <div class="amount-section">
                     <span class="currency-symbol">@GetCurrencySymbol()</span>
-                    <input type="text" inputmode="@(GetDecimals() > 0 ? "decimal" : "numeric")" class="amount-input" value="@amount.ToString("F" + GetDecimals(), System.Globalization.CultureInfo.InvariantCulture)" @onchange="OnAmountChanged" onfocus="headerLogic.selectText(this)" placeholder="@(GetDecimals() > 0 ? "0." + new string('0', GetDecimals()) : "0")" />
+                    <input type="text" inputmode="@(GetDecimals() > 0 ? "decimal" : "numeric")" class="amount-input" value="@amount.ToString("F" + GetDecimals())" @onchange="OnAmountChanged" onfocus="headerLogic.selectText(this)" placeholder="@(GetDecimals() > 0 ? "0," + new string('0', GetDecimals()) : "0")" />
                 </div>
 
                 <div class="datetime-row">
@@ -254,8 +254,8 @@
 
     private void OnAmountChanged(ChangeEventArgs e)
     {
-        var input = e.Value?.ToString()?.Replace(",", ".");
-        if (decimal.TryParse(input, System.Globalization.CultureInfo.InvariantCulture, out decimal val))
+        var input = e.Value?.ToString()?.Replace(".", ",");
+        if (decimal.TryParse(input, out decimal val))
         {
             amount = Math.Round(val, GetDecimals());
         }

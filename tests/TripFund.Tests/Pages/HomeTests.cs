@@ -15,6 +15,10 @@ public class HomeTests : BunitContext
 
     public HomeTests()
     {
+        var itCulture = new System.Globalization.CultureInfo("it-IT");
+        System.Globalization.CultureInfo.DefaultThreadCurrentCulture = itCulture;
+        System.Globalization.CultureInfo.DefaultThreadCurrentUICulture = itCulture;
+
         _storageMock = new Mock<LocalTripStorageService>("dummy_path");
         _driveMock = new Mock<IDriveService>();
         Services.AddSingleton(_storageMock.Object);

@@ -40,7 +40,7 @@
                         <div class="new-currency-footer">
                             <div class="new-curr-col quota-col">
                                 <label>QUOTA</label>
-                                <input type="text" inputmode="decimal" value="@newCurrQuota.ToString("F" + newCurrDecimals, System.Globalization.CultureInfo.InvariantCulture)" @onchange="OnQuotaChanged" onfocus="headerLogic.selectText(this)" placeholder="1000" />
+                                <input type="text" inputmode="decimal" value="@newCurrQuota.ToString("F" + newCurrDecimals)" @onchange="OnQuotaChanged" onfocus="headerLogic.selectText(this)" placeholder="1000" />
                             </div>
                             <div class="action-buttons">
                                 <button class="confirm-btn" @onclick="AddOrUpdateCurrency">
@@ -146,7 +146,7 @@
                 <div class="new-currency-footer">
                     <div class="new-curr-col quota-col">
                         <label>QUOTA</label>
-                        <input type="text" inputmode="decimal" value="@newCurrQuota.ToString("F" + newCurrDecimals, System.Globalization.CultureInfo.InvariantCulture)" @onchange="OnQuotaChanged" onfocus="headerLogic.selectText(this)" placeholder="1000" />
+                        <input type="text" inputmode="decimal" value="@newCurrQuota.ToString("F" + newCurrDecimals)" @onchange="OnQuotaChanged" onfocus="headerLogic.selectText(this)" placeholder="1000" />
                     </div>
                     <div class="action-buttons">
                         <button class="confirm-btn" @onclick="AddOrUpdateCurrency">
@@ -226,8 +226,8 @@
 
     private void OnQuotaChanged(ChangeEventArgs e)
     {
-        var input = e.Value?.ToString()?.Replace(",", ".");
-        if (decimal.TryParse(input, System.Globalization.CultureInfo.InvariantCulture, out decimal val))
+        var input = e.Value?.ToString()?.Replace(".", ",");
+        if (decimal.TryParse(input, out decimal val))
         {
             newCurrQuota = val;
         }

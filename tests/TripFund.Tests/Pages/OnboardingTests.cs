@@ -15,6 +15,10 @@ public class OnboardingTests : BunitContext
 
     public OnboardingTests()
     {
+        var itCulture = new System.Globalization.CultureInfo("it-IT");
+        System.Globalization.CultureInfo.DefaultThreadCurrentCulture = itCulture;
+        System.Globalization.CultureInfo.DefaultThreadCurrentUICulture = itCulture;
+
         _storageMock = new Mock<LocalTripStorageService>("dummy_path");
         Services.AddSingleton(_storageMock.Object);
     }

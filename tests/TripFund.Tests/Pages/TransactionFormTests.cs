@@ -18,8 +18,9 @@ public class TransactionFormTests : BunitContext
 
     public TransactionFormTests()
     {
-        System.Globalization.CultureInfo.DefaultThreadCurrentCulture = System.Globalization.CultureInfo.InvariantCulture;
-        System.Globalization.CultureInfo.DefaultThreadCurrentUICulture = System.Globalization.CultureInfo.InvariantCulture;
+        var itCulture = new System.Globalization.CultureInfo("it-IT");
+        System.Globalization.CultureInfo.DefaultThreadCurrentCulture = itCulture;
+        System.Globalization.CultureInfo.DefaultThreadCurrentUICulture = itCulture;
 
         _storageMock = new Mock<LocalTripStorageService>("dummy_path");
         Services.AddSingleton(_storageMock.Object);
@@ -50,15 +51,15 @@ public class TransactionFormTests : BunitContext
 
         var cut = Render<AddExpense>(parameters => parameters.Add(p => p.tripSlug, tripSlug));
 
-        // Act - Set amount to 30.00
-        cut.Find(".amount-input").Change("30.00");
+        // Act - Set amount to 30,00
+        cut.Find(".amount-input").Change("30,00");
 
-        // Assert - Each of the 3 members should have 10.00
+        // Assert - Each of the 3 members should have 10,00
         var splitInputs = cut.FindAll(".split-amount-input");
         splitInputs.Should().HaveCount(3);
         foreach (var input in splitInputs)
         {
-            input.GetAttribute("value").Should().Be("10.00");
+            input.GetAttribute("value").Should().Be("10,00");
         }
     }
 
@@ -100,8 +101,8 @@ public class TransactionFormTests : BunitContext
         var luigiRow = cut.FindAll(".member-split-row").First(r => r.InnerHtml.Contains("Luigi"));
         var carloRow = cut.FindAll(".member-split-row").First(r => r.InnerHtml.Contains("Carlo"));
 
-        luigiRow.QuerySelector(".split-amount-input")!.GetAttribute("value").Should().Be("25.00");
-        carloRow.QuerySelector(".split-amount-input")!.GetAttribute("value").Should().Be("25.00");
+        luigiRow.QuerySelector(".split-amount-input")!.GetAttribute("value").Should().Be("25,00");
+        carloRow.QuerySelector(".split-amount-input")!.GetAttribute("value").Should().Be("25,00");
     }
 
     [Fact]
@@ -134,7 +135,7 @@ public class TransactionFormTests : BunitContext
         // Assert
         // Luigi should take the full 100
         var luigiRow = cut.FindAll(".member-split-row").First(r => r.InnerHtml.Contains("Luigi"));
-        luigiRow.QuerySelector(".split-amount-input")!.GetAttribute("value").Should().Be("100.00");
+        luigiRow.QuerySelector(".split-amount-input")!.GetAttribute("value").Should().Be("100,00");
         
         // Mario row should NOT have split controls anymore
         marioRow = cut.FindAll(".member-split-row").First(r => r.InnerHtml.Contains("Mario"));
@@ -162,14 +163,14 @@ public class TransactionFormTests : BunitContext
 
         var cut = Render<AddExpense>(parameters => parameters.Add(p => p.tripSlug, tripSlug));
 
-        // Act - Set amount to 10.00
+        // Act - Set amount to 10,00
         // 10 / 3 = 3.3333...
-        // One should get 3.34, others 3.33
-        cut.Find(".amount-input").Change("10.00");
+        // One should get 3,34, others 3,33
+        cut.Find(".amount-input").Change("10,00");
 
         // Assert
         var splitInputs = cut.FindAll(".split-amount-input");
-        var values = splitInputs.Select(i => decimal.Parse(i.GetAttribute("value")!, System.Globalization.CultureInfo.InvariantCulture)).ToList();
+        var values = splitInputs.Select(i => decimal.Parse(i.GetAttribute("value")!, new System.Globalization.CultureInfo("it-IT"))).ToList();
         
         values.Sum().Should().Be(10.00m);
         values.Should().Contain(3.34m);
@@ -209,7 +210,7 @@ public class TransactionFormTests : BunitContext
 
         // Assert
         var splitInputs = cut.FindAll(".split-amount-input");
-        var values = splitInputs.Select(i => decimal.Parse(i.GetAttribute("value")!, System.Globalization.CultureInfo.InvariantCulture)).ToList();
+        var values = splitInputs.Select(i => decimal.Parse(i.GetAttribute("value")!, new System.Globalization.CultureInfo("it-IT"))).ToList();
         
         values.Sum().Should().Be(1000m);
         values.Should().Contain(334m);

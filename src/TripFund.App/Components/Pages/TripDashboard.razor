@@ -38,10 +38,10 @@
                 
                 <div class="progress-container">
                     <div class="progress-bar-bg">
-                        <div class="progress-bar-fill @(isExceeded ? "warning" : "")" style="width: @(progressPercentage.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture))%"></div>
+                        <div class="progress-bar-fill @(isExceeded ? "warning" : "")" style="width: @(progressPercentage.ToString("0.##"))%"></div>
                     </div>
                     <div class="progress-labels">
-                        <span>@FormatCurrency(totalContributed, selectedCurrency)</span>
+                        <span></span>
                         <span>Obiettivo: @FormatCurrency(targetAmount, selectedCurrency)</span>
                     </div>
                 </div>

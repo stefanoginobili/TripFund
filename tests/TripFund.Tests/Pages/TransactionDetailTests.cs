@@ -16,6 +16,10 @@ public class TransactionDetailTests : BunitContext
 
     public TransactionDetailTests()
     {
+        var itCulture = new System.Globalization.CultureInfo("it-IT");
+        System.Globalization.CultureInfo.DefaultThreadCurrentCulture = itCulture;
+        System.Globalization.CultureInfo.DefaultThreadCurrentUICulture = itCulture;
+
         _storageMock = new Mock<LocalTripStorageService>("dummy_path");
         _alertMock = new Mock<IAlertService>();
         Services.AddSingleton(_storageMock.Object);
@@ -143,7 +147,7 @@ public class TransactionDetailTests : BunitContext
 
         // Assert
         var amountTitle = cut.Find(".amount-title");
-        amountTitle.TextContent.Trim().Should().Be("EUR 123.45");
+        amountTitle.TextContent.Trim().Should().Be("EUR 123,45");
         amountTitle.TextContent.Should().NotContain("€");
     }
 

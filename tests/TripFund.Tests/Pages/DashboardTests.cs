@@ -16,6 +16,10 @@ public class DashboardTests : BunitContext
 
     public DashboardTests()
     {
+        var itCulture = new System.Globalization.CultureInfo("it-IT");
+        System.Globalization.CultureInfo.DefaultThreadCurrentCulture = itCulture;
+        System.Globalization.CultureInfo.DefaultThreadCurrentUICulture = itCulture;
+
         _storageMock = new Mock<LocalTripStorageService>("dummy_path");
         Services.AddSingleton(_storageMock.Object);
     }
@@ -229,20 +233,19 @@ public class DashboardTests : BunitContext
         // Act
         var cut = Render<TripDashboard>(parameters => parameters.Add(p => p.tripSlug, tripSlug));
 
-        // JPY should show 50,001 or 50.001 (rounded by N0) depending on locale
+        // JPY should show 50.001 (rounded by N0 in it-IT, where . is thousands separator)
         var summarySub = cut.Find(".summary-sub").TextContent; // Totale versato
 
         // We check for absence of decimal part
-        summarySub.Should().NotContain(".75");
         summarySub.Should().NotContain(",75");
 
-        // It should contain 50,001 or 50.001. We use a regex for flexibility
-        summarySub.Should().MatchRegex(@"50[.,]001");
+        // In it-IT, N0 for 50001 is "50.001"
+        summarySub.Should().Contain("50.001");
 
         var txRow = cut.Find(".transaction-row");
-        txRow.InnerHtml.Should().MatchRegex(@"¥ 50[.,]001");
-        // We ensure it doesn't have decimal digits like .00 or .75
-        txRow.InnerHtml.Should().NotMatchRegex(@"50[.,]001[.,]\d+");
+        txRow.InnerHtml.Should().Contain("¥ 50.001");
+        // We ensure it doesn't have decimal digits
+        txRow.InnerHtml.Should().NotMatchRegex(@"50\.001,\d+");
     }
 
     [Fact]

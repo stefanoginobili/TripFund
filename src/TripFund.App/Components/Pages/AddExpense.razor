@@ -30,7 +30,7 @@
             <div class="form-container">
                 <div class="amount-section">
                     <span class="currency-symbol">@GetCurrencySymbol()</span>
-                    <input type="text" inputmode="@(GetDecimals() > 0 ? "decimal" : "numeric")" class="amount-input" value="@totalAmount.ToString("F" + GetDecimals(), System.Globalization.CultureInfo.InvariantCulture)" @onchange="OnAmountChanged" onfocus="headerLogic.selectText(this)" placeholder="@(GetDecimals() > 0 ? "0." + new string('0', GetDecimals()) : "0")" />
+                    <input type="text" inputmode="@(GetDecimals() > 0 ? "decimal" : "numeric")" class="amount-input" value="@totalAmount.ToString("F" + GetDecimals())" @onchange="OnAmountChanged" onfocus="headerLogic.selectText(this)" placeholder="@(GetDecimals() > 0 ? "0," + new string('0', GetDecimals()) : "0")" />
                 </div>
 
                 <div class="form-group">
@@ -86,7 +86,7 @@
                                             @(member.IsAuto ? "Auto" : "Manuale")
                                         </div>
                                         <input type="text" inputmode="@(GetDecimals() > 0 ? "decimal" : "numeric")" class="split-amount-input @(member.IsAuto ? "readonly" : "")" 
-                                               value="@((member.IsAuto ? member.CalculatedAmount : member.ManualAmount).ToString("F" + GetDecimals(), System.Globalization.CultureInfo.InvariantCulture))"
+                                               value="@((member.IsAuto ? member.CalculatedAmount : member.ManualAmount).ToString("F" + GetDecimals()))"
                                                @onchange="(e) => OnManualAmountChanged(member, e)"
                                                onfocus="headerLogic.selectText(this)"
                                                readonly="@member.IsAuto" />
@@ -319,8 +319,8 @@
 
     private void OnAmountChanged(ChangeEventArgs e)
     {
-        var input = e.Value?.ToString()?.Replace(",", ".");
-        if (decimal.TryParse(input, System.Globalization.CultureInfo.InvariantCulture, out decimal val))
+        var input = e.Value?.ToString()?.Replace(".", ",");
+        if (decimal.TryParse(input, out decimal val))
         {
             totalAmount = Math.Round(val, GetDecimals());
             RecalculateSplit();
@@ -342,8 +342,8 @@
 
     private void OnManualAmountChanged(MemberSplitInfo member, ChangeEventArgs e)
     {
-        var input = e.Value?.ToString()?.Replace(",", ".");
-        if (decimal.TryParse(input, System.Globalization.CultureInfo.InvariantCulture, out decimal val))
+        var input = e.Value?.ToString()?.Replace(".", ",");
+        if (decimal.TryParse(input, out decimal val))
         {
             member.ManualAmount = val;
             RecalculateSplit();
