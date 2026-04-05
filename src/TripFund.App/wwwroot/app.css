@@ -17,11 +17,12 @@ main {
     flex: 1;
     overflow-y: auto;
     -webkit-overflow-scrolling: touch;
+    padding-bottom: calc(5rem + env(safe-area-inset-bottom));
 }
 
 .content {
     padding: 1.5rem;
-    padding-bottom: 3rem; /* Extra padding for better visibility */
+    padding-bottom: calc(5rem + env(safe-area-inset-bottom)) !important;
 }
 
 h1:focus {
@@ -92,13 +93,6 @@ h1:focus {
     background-color: transparent;
     width: 100%;
     z-index: 1000;
-}
-
-main {
-    flex: 1;
-    overflow-y: auto;
-    -webkit-overflow-scrolling: touch;
-    padding-bottom: env(safe-area-inset-bottom);
 }
 
 .flex-column, .navbar-brand {
