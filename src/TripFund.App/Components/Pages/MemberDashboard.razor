@@ -22,11 +22,18 @@
     }
     else
     {
-        <div class="member-profile">
+        <div class="member-profile @(isMissing ? "missing-member" : "")">
             <h1 class="trip-name">@config.Name</h1>
             <div class="profile-avatar">@member.Avatar</div>
             <h2 class="profile-name">@member.Name</h2>
-            <p class="profile-email">@member.Email</p>
+            @if (isMissing)
+            {
+                <p class="missing-label">Partecipante non configurato nel viaggio</p>
+            }
+            else
+            {
+                <p class="profile-email">@member.Email</p>
+            }
         </div>
 
         <div class="currency-selector">
@@ -111,6 +118,7 @@
     private List<UserTransactionItem> userTransactions = new();
     
     private string selectedCurrency = "";
+    private bool isMissing = false;
     
     private decimal totalContributed = 0;
     private decimal remainingBalance = 0;
@@ -122,9 +130,22 @@
         config = await Storage.GetTripConfigAsync(tripSlug);
         if (config != null)
         {
+            allTransactions = await Storage.GetTransactionsAsync(tripSlug);
+
             if (config.Members.TryGetValue(memberSlug, out var m))
             {
                 member = m;
+                isMissing = false;
+            }
+            else if (allTransactions.Any(t => t.Split.ContainsKey(memberSlug)))
+            {
+                member = new User
+                {
+                    Name = memberSlug,
+                    Avatar = "❓",
+                    Email = ""
+                };
+                isMissing = true;
             }
 
             if (!string.IsNullOrEmpty(currency) && config.Currencies.ContainsKey(currency))
@@ -135,7 +156,6 @@
             {
                 selectedCurrency = config.Currencies.Keys.First();
             }
-            allTransactions = await Storage.GetTransactionsAsync(tripSlug);
             CalculateStats();
         }
     }
@@ -238,6 +258,11 @@
         background-color: #FFFFFF;
     }
 
+    .member-profile.missing-member {
+        filter: grayscale(100%);
+        opacity: 0.8;
+    }
+
     .trip-name {
         font-size: 1.75rem;
         font-weight: 800;
@@ -271,6 +296,15 @@
         font-size: 0.9rem;
         color: #6C757D;
         margin: 0;
+    }
+
+    .missing-label {
+        font-size: 0.85rem;
+        font-weight: 700;
+        color: #DC3545;
+        margin: 0;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
     }
 
     .currency-selector {

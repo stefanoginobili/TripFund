@@ -118,6 +118,57 @@ public class DashboardTests : BunitContext
     }
 
     [Fact]
+    public void TripDashboard_ShouldDisplayMissingMembersAtTheBottomWithGreyScale()
+    {
+        // Arrange
+        var tripSlug = "test-trip";
+        var config = new TripConfig
+        {
+            Id = "123",
+            Name = "Test Trip",
+            Currencies = new Dictionary<string, Currency>
+            {
+                { "EUR", new Currency { Symbol = "€", ExpectedQuotaPerMember = 500 } }
+            },
+            Members = new Dictionary<string, User>
+            {
+                { "mario", new User { Name = "Mario", Avatar = "M" } }
+            }
+        };
+
+        var transactions = new List<Transaction>
+        {
+            new Transaction
+            {
+                Id = "t1",
+                Type = "contribution",
+                Currency = "EUR",
+                Amount = 100,
+                Split = new Dictionary<string, SplitInfo> { { "missing-user", new SplitInfo { Amount = 100, Manual = true } } }
+            }
+        };
+
+        _storageMock.Setup(s => s.GetTripConfigAsync(tripSlug)).ReturnsAsync(config);
+        _storageMock.Setup(s => s.GetTransactionsAsync(tripSlug)).ReturnsAsync(transactions);
+
+        // Act
+        var cut = Render<TripDashboard>(parameters => parameters.Add(p => p.tripSlug, tripSlug));
+
+        // Assert
+        var memberRows = cut.FindAll(".member-row");
+        memberRows.Should().HaveCount(2);
+
+        // Mario is first
+        memberRows[0].InnerHtml.Should().Contain("Mario");
+        memberRows[0].ClassName.Should().NotContain("missing-member");
+
+        // Missing user is second
+        memberRows[1].InnerHtml.Should().Contain("missing-user");
+        memberRows[1].InnerHtml.Should().Contain("❓");
+        memberRows[1].ClassName.Should().Contain("missing-member");
+    }
+
+    [Fact]
     public void TripDashboard_ShouldFormatAmountsWithConfiguredDecimals()
     {
         // Arrange
@@ -285,5 +336,58 @@ public class DashboardTests : BunitContext
         var expenseRow = transactionRows.First(r => r.InnerHtml.Contains("expense-icon"));
         expenseRow.InnerHtml.Should().Contain("50");
         expenseRow.InnerHtml.Should().NotContain("100");
+    }
+
+    [Fact]
+    public void MemberDashboard_ShouldHandleMissingMemberCorrectly()
+    {
+        // Arrange
+        var tripSlug = "test-trip";
+        var memberSlug = "missing-user";
+        var config = new TripConfig
+        {
+            Id = "123",
+            Name = "Test Trip",
+            Currencies = new Dictionary<string, Currency>
+            {
+                { "EUR", new Currency { Symbol = "€", ExpectedQuotaPerMember = 500 } }
+            },
+            Members = new Dictionary<string, User>
+            {
+                { "mario", new User { Name = "Mario", Avatar = "M" } }
+            }
+        };
+
+        var transactions = new List<Transaction>
+        {
+            new Transaction
+            {
+                Id = "t1",
+                Type = "contribution",
+                Currency = "EUR",
+                Amount = 100,
+                Split = new Dictionary<string, SplitInfo> { { "missing-user", new SplitInfo { Amount = 100, Manual = true } } }
+            }
+        };
+
+        _storageMock.Setup(s => s.GetTripConfigAsync(tripSlug)).ReturnsAsync(config);
+        _storageMock.Setup(s => s.GetTransactionsAsync(tripSlug)).ReturnsAsync(transactions);
+
+        // Act
+        var cut = Render<MemberDashboard>(parameters => parameters
+            .Add(p => p.tripSlug, tripSlug)
+            .Add(p => p.memberSlug, memberSlug)
+        );
+
+        // Assert
+        var profile = cut.Find(".member-profile");
+        profile.ClassName.Should().Contain("missing-member");
+        profile.InnerHtml.Should().Contain("missing-user");
+        profile.InnerHtml.Should().Contain("❓");
+        profile.InnerHtml.Should().Contain("Partecipante non configurato nel viaggio");
+        profile.InnerHtml.Should().NotContain("N/A");
+
+        var summaryTotal = cut.Find(".summary-total").TextContent;
+        summaryTotal.Should().Contain("100");
     }
 }

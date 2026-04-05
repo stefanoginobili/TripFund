@@ -80,7 +80,7 @@
                     }
                     @foreach (var m in membersStats)
                     {
-                        <div class="member-row" @onclick='() => Nav.NavigateTo($"/trip/{tripSlug}/member/{m.Slug}?currency={selectedCurrency}")'>
+                        <div class="member-row @(m.IsMissing ? "missing-member" : "")" @onclick='() => Nav.NavigateTo($"/trip/{tripSlug}/member/{m.Slug}?currency={selectedCurrency}")'>
                             <div class="member-avatar">@m.Avatar</div>
                             <div class="member-info">
                                 <div class="member-name">@m.Name</div>
@@ -204,6 +204,7 @@
 
         membersStats.Clear();
 
+        // Standard members
         foreach (var member in config.Members)
         {
             decimal mContributed = 0;
@@ -226,7 +227,39 @@
                 Name = member.Value.Name,
                 Avatar = member.Value.Avatar,
                 TotalContributed = mContributed,
-                RemainingBalance = mRemaining
+                RemainingBalance = mRemaining,
+                IsMissing = false
+            });
+        }
+
+        // Missing members (present in transactions but not in config)
+        var transactionSlugs = currentCurrencyTx.SelectMany(t => t.Split.Keys).Distinct();
+        var missingSlugs = transactionSlugs.Where(s => !config.Members.ContainsKey(s)).ToList();
+
+        foreach (var slug in missingSlugs)
+        {
+            decimal mContributed = 0;
+            decimal mExpenses = 0;
+
+            foreach (var t in currentCurrencyTx)
+            {
+                if (t.Split.TryGetValue(slug, out SplitInfo? split))
+                {
+                    if (t.Type == "contribution") mContributed += split.Amount;
+                    else if (t.Type == "expense") mExpenses += split.Amount;
+                }
+            }
+
+            decimal mRemaining = mContributed - mExpenses;
+
+            membersStats.Add(new MemberStats
+            {
+                Slug = slug,
+                Name = slug,
+                Avatar = "❓",
+                TotalContributed = mContributed,
+                RemainingBalance = mRemaining,
+                IsMissing = true
             });
         }
 
@@ -250,6 +283,7 @@
         public string Avatar { get; set; } = "";
         public decimal TotalContributed { get; set; }
         public decimal RemainingBalance { get; set; }
+        public bool IsMissing { get; set; }
     }
 }
 
@@ -433,6 +467,11 @@
         box-shadow: 0 2px 8px rgba(0,0,0,0.02);
         cursor: pointer;
         border: 1px solid #F0F0F0;
+    }
+
+    .member-row.missing-member {
+        filter: grayscale(100%);
+        opacity: 0.7;
     }
 
     .member-avatar {

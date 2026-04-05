@@ -23,6 +23,57 @@ public class TransactionDetailTests : BunitContext
     }
 
     [Fact]
+    public void TransactionDetail_ShouldDisplayMissingMembersWithGrayscaleAndQuestionMark()
+    {
+        // Arrange
+        var tripSlug = "test-trip";
+        var transactionId = "trans-123";
+        
+        var config = new TripConfig 
+        { 
+            Id = "1", 
+            Name = "Test Trip",
+            Members = new Dictionary<string, User>
+            {
+                { "mario", new User { Name = "Mario", Avatar = "M" } }
+            },
+            Currencies = new Dictionary<string, Currency> { { "EUR", new Currency { Symbol = "€" } } }
+        };
+        var transaction = new Transaction 
+        { 
+            Id = transactionId, 
+            Amount = 100, 
+            Currency = "EUR", 
+            Description = "Test",
+            Split = new Dictionary<string, SplitInfo>
+            {
+                { "mario", new SplitInfo { Amount = 60 } },
+                { "missing-user", new SplitInfo { Amount = 40 } }
+            }
+        };
+
+        _storageMock.Setup(s => s.GetTripConfigAsync(tripSlug)).ReturnsAsync(config);
+        _storageMock.Setup(s => s.GetLatestTransactionVersionAsync(tripSlug, transactionId)).ReturnsAsync(transaction);
+
+        var cut = Render<TransactionDetail>(parameters => parameters
+            .Add(p => p.tripSlug, tripSlug)
+            .Add(p => p.transactionId, transactionId)
+        );
+
+        // Assert
+        var splitRows = cut.FindAll(".split-row");
+        splitRows.Should().HaveCount(2);
+
+        var marioRow = splitRows.First(r => r.InnerHtml.Contains("Mario"));
+        marioRow.ClassName.Should().NotContain("missing-member");
+        marioRow.InnerHtml.Should().Contain("M");
+
+        var missingRow = splitRows.First(r => r.InnerHtml.Contains("missing-user"));
+        missingRow.ClassName.Should().Contain("missing-member");
+        missingRow.InnerHtml.Should().Contain("❓");
+    }
+
+    [Fact]
     public async Task DeleteTransaction_ShouldCallServiceAndNavigate()
     {
         // Arrange
