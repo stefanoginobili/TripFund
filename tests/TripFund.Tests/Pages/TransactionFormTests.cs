@@ -93,7 +93,7 @@ public class TransactionFormTests : BunitContext
         
         // Re-find Mario row because of re-render
         marioRow = cut.FindAll(".member-split-row").First(r => r.InnerHtml.Contains("Mario"));
-        marioRow.QuerySelector(".split-amount-input")!.Input("50");
+        marioRow.QuerySelector(".split-amount-input")!.Change("50");
 
         // Assert
         // Luigi and Carlo (Auto) should share the remaining 50 -> 25 each
@@ -199,7 +199,7 @@ public class TransactionFormTests : BunitContext
 
         // Assert UI Attributes
         var amountInput = cut.Find(".amount-input");
-        amountInput.GetAttribute("step").Should().Be("1");
+        amountInput.GetAttribute("inputmode").Should().Be("numeric");
         amountInput.GetAttribute("placeholder").Should().Be("0");
 
         // Act - Set amount to 1000
@@ -217,7 +217,7 @@ public class TransactionFormTests : BunitContext
         
         foreach(var input in splitInputs)
         {
-            input.GetAttribute("step").Should().Be("1");
+            input.GetAttribute("inputmode").Should().Be("numeric");
         }
     }
 
@@ -255,7 +255,7 @@ public class TransactionFormTests : BunitContext
         marioRow.QuerySelector(".split-mode-toggle")!.Click();
         
         marioRow = cut.FindAll(".member-split-row").First(r => r.InnerHtml.Contains("Mario"));
-        marioRow.QuerySelector(".split-amount-input")!.Input("40");
+        marioRow.QuerySelector(".split-amount-input")!.Change("40");
 
         // Submit
         await cut.Find(".submit-btn").ClickAsync();

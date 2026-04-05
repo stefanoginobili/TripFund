@@ -30,7 +30,7 @@
             <div class="form-container">
                 <div class="amount-section">
                     <span class="currency-symbol">@GetCurrencySymbol()</span>
-                    <input type="number" step="@GetStep()" class="amount-input" value="@totalAmount.ToString("F" + GetDecimals(), System.Globalization.CultureInfo.InvariantCulture)" @onchange="OnAmountChanged" onfocus="headerLogic.selectText(this)" placeholder="@(GetDecimals() > 0 ? "0." + new string('0', GetDecimals()) : "0")" />
+                    <input type="text" inputmode="@(GetDecimals() > 0 ? "decimal" : "numeric")" class="amount-input" value="@totalAmount.ToString("F" + GetDecimals(), System.Globalization.CultureInfo.InvariantCulture)" @onchange="OnAmountChanged" onfocus="headerLogic.selectText(this)" placeholder="@(GetDecimals() > 0 ? "0." + new string('0', GetDecimals()) : "0")" />
                 </div>
 
                 <div class="form-group">
@@ -85,9 +85,10 @@
                                         <div class="split-mode-toggle" @onclick="() => ToggleAuto(member)">
                                             @(member.IsAuto ? "Auto" : "Manuale")
                                         </div>
-                                        <input type="number" step="@GetStep()" class="split-amount-input @(member.IsAuto ? "readonly" : "")" 
+                                        <input type="text" inputmode="@(GetDecimals() > 0 ? "decimal" : "numeric")" class="split-amount-input @(member.IsAuto ? "readonly" : "")" 
                                                value="@((member.IsAuto ? member.CalculatedAmount : member.ManualAmount).ToString("F" + GetDecimals(), System.Globalization.CultureInfo.InvariantCulture))"
-                                               @oninput="(e) => OnManualAmountInput(member, e)"
+                                               @onchange="(e) => OnManualAmountChanged(member, e)"
+                                               onfocus="headerLogic.selectText(this)"
                                                readonly="@member.IsAuto" />
                                     </div>
                                 }
@@ -318,7 +319,8 @@
 
     private void OnAmountChanged(ChangeEventArgs e)
     {
-        if (decimal.TryParse(e.Value?.ToString(), System.Globalization.CultureInfo.InvariantCulture, out decimal val))
+        var input = e.Value?.ToString()?.Replace(",", ".");
+        if (decimal.TryParse(input, System.Globalization.CultureInfo.InvariantCulture, out decimal val))
         {
             totalAmount = Math.Round(val, GetDecimals());
             RecalculateSplit();
@@ -338,9 +340,10 @@
         RecalculateSplit();
     }
 
-    private void OnManualAmountInput(MemberSplitInfo member, ChangeEventArgs e)
+    private void OnManualAmountChanged(MemberSplitInfo member, ChangeEventArgs e)
     {
-        if (decimal.TryParse(e.Value?.ToString(), System.Globalization.CultureInfo.InvariantCulture, out decimal val))
+        var input = e.Value?.ToString()?.Replace(",", ".");
+        if (decimal.TryParse(input, System.Globalization.CultureInfo.InvariantCulture, out decimal val))
         {
             member.ManualAmount = val;
             RecalculateSplit();

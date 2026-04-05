@@ -35,11 +35,13 @@ window.headerLogic = {
     },
     selectText: function (element) {
         if (element) {
-            element.select();
-            // Fallback for some mobile browsers
-            if (element.setSelectionRange) {
-                element.setSelectionRange(0, 9999);
-            }
+            setTimeout(() => {
+                element.select();
+                // Fallback for some mobile browsers
+                if (element.setSelectionRange) {
+                    element.setSelectionRange(0, 9999);
+                }
+            }, 10);
         }
     }
 };

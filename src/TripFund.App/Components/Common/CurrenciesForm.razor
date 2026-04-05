@@ -33,14 +33,14 @@
                             </div>
                             <div class="new-curr-col">
                                 <label>DECIMALI</label>
-                                <input type="number" @bind="newCurrDecimals" />
+                                <input type="text" inputmode="numeric" value="@newCurrDecimals" @onchange="OnDecimalsChanged" onfocus="headerLogic.selectText(this)" />
                             </div>
                         </div>
                         
                         <div class="new-currency-footer">
                             <div class="new-curr-col quota-col">
                                 <label>QUOTA</label>
-                                <input type="number" @bind="newCurrQuota" placeholder="1000" />
+                                <input type="text" inputmode="decimal" value="@newCurrQuota.ToString("F" + newCurrDecimals, System.Globalization.CultureInfo.InvariantCulture)" @onchange="OnQuotaChanged" onfocus="headerLogic.selectText(this)" placeholder="1000" />
                             </div>
                             <div class="action-buttons">
                                 <button class="confirm-btn" @onclick="AddOrUpdateCurrency">
@@ -139,14 +139,14 @@
                     </div>
                     <div class="new-curr-col">
                         <label>DECIMALI</label>
-                        <input type="number" @bind="newCurrDecimals" />
+                        <input type="text" inputmode="numeric" value="@newCurrDecimals" @onchange="OnDecimalsChanged" onfocus="headerLogic.selectText(this)" />
                     </div>
                 </div>
                 
                 <div class="new-currency-footer">
                     <div class="new-curr-col quota-col">
                         <label>QUOTA</label>
-                        <input type="number" @bind="newCurrQuota" placeholder="1000" />
+                        <input type="text" inputmode="decimal" value="@newCurrQuota.ToString("F" + newCurrDecimals, System.Globalization.CultureInfo.InvariantCulture)" @onchange="OnQuotaChanged" onfocus="headerLogic.selectText(this)" placeholder="1000" />
                     </div>
                     <div class="action-buttons">
                         <button class="confirm-btn" @onclick="AddOrUpdateCurrency">
@@ -214,6 +214,23 @@
         isAddingCurrency = false;
         editingCurrencyCode = null;
         await CurrenciesChanged.InvokeAsync(Currencies);
+    }
+
+    private void OnDecimalsChanged(ChangeEventArgs e)
+    {
+        if (int.TryParse(e.Value?.ToString(), out int val))
+        {
+            newCurrDecimals = Math.Clamp(val, 0, 4);
+        }
+    }
+
+    private void OnQuotaChanged(ChangeEventArgs e)
+    {
+        var input = e.Value?.ToString()?.Replace(",", ".");
+        if (decimal.TryParse(input, System.Globalization.CultureInfo.InvariantCulture, out decimal val))
+        {
+            newCurrQuota = val;
+        }
     }
 
     private void ToggleCurrencyMenu(string code)
