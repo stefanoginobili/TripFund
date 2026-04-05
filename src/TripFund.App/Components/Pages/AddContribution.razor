@@ -68,8 +68,8 @@
                     <p class="error-message">@errorMessage</p>
                 }
 
-                <button class="submit-btn" @onclick="HandleSubmit">
-                    Salva Versamento
+                <button class="submit-btn" @onclick="HandleSubmit" disabled="@isSubmitting">
+                    @(isSubmitting ? "Salvataggio..." : "Salva")
                 </button>
             </div>
         </main>
@@ -93,6 +93,7 @@
     private string errorMessage = "";
     private string deviceId = "";
     private string authorName = "";
+    private bool isSubmitting = false;
 
     protected override async Task OnInitializedAsync()
     {
@@ -185,6 +186,8 @@
             return;
         }
 
+        isSubmitting = true;
+
         var transaction = new Transaction
         {
             Id = editingTransaction?.Id ?? TransactionIdGenerator.GenerateId(),
@@ -197,11 +200,19 @@
             Split = new Dictionary<string, SplitInfo> { { selectedMemberSlug, new SplitInfo { Amount = amount, Manual = true } } }
         };
 
-        await Storage.SaveTransactionAsync(tripSlug, transaction, deviceId);
-        
-        // TODO: Invia ricevuta via email se sendReceipt è true (Task 10)
-        
-        Nav.NavigateTo($"/trip/{tripSlug}?currency={selectedCurrency}");
+        try
+        {
+            await Storage.SaveTransactionAsync(tripSlug, transaction, deviceId);
+            
+            // TODO: Invia ricevuta via email se sendReceipt è true (Task 10)
+            
+            await GoBack();
+        }
+        catch (Exception ex)
+        {
+            errorMessage = "Errore durante il salvataggio: " + ex.Message;
+            isSubmitting = false;
+        }
     }
 }
 

@@ -149,7 +149,7 @@
                 }
 
                 <button class="submit-btn" @onclick="HandleSubmit" disabled="@(isSubmitting || isLocating)">
-                    @(isSubmitting ? "Salvataggio..." : "Salva Spesa")
+                    @(isSubmitting ? "Salvataggio..." : "Salva")
                 </button>
             </div>
         </main>
@@ -549,7 +549,7 @@
         try
         {
             await Storage.SaveTransactionAsync(tripSlug, transaction, deviceId, attachments: attachmentsDict);
-            Nav.NavigateTo($"/trip/{tripSlug}?currency={selectedCurrency}");
+            await GoBack();
         }
         catch (Exception ex)
         {
