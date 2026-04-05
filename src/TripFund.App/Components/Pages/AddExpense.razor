@@ -4,6 +4,7 @@
 @using TripFund.App.Utilities
 @inject LocalTripStorageService Storage
 @inject NavigationManager Nav
+@inject IJSRuntime JSRuntime
 
 <div class="add-transaction-page">
     <header class="app-header">
@@ -245,16 +246,9 @@
         if (editingInfo == null) selectedCurrency = currencyCode;
     }
 
-    private void GoBack()
+    private async Task GoBack()
     {
-        if (!string.IsNullOrEmpty(edit))
-        {
-            Nav.NavigateTo($"/trip/{tripSlug}/transaction/{edit}?currency={selectedCurrency}");
-        }
-        else
-        {
-            Nav.NavigateTo($"/trip/{tripSlug}?currency={selectedCurrency}");
-        }
+        await JSRuntime.InvokeVoidAsync("history.back");
     }
 
     private string GetCurrencySymbol()

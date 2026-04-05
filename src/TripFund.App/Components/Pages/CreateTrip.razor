@@ -5,10 +5,11 @@
 @inject LocalTripStorageService Storage
 @inject IDriveService Drive
 @inject NavigationManager Nav
+@inject IJSRuntime JSRuntime
 
 <div class="create-trip-page">
     <header class="app-header">
-        <button class="back-btn" @onclick='() => Nav.NavigateTo("/")'>
+        <button class="back-btn" @onclick='async () => await JSRuntime.InvokeVoidAsync("history.back")'>
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <line x1="19" y1="12" x2="5" y2="12"></line>
                 <polyline points="12 19 5 12 12 5"></polyline>
