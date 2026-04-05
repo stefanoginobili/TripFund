@@ -344,7 +344,7 @@
             Date = transactionDate.ToUniversalTime(),
             Currency = selectedCurrency,
             Amount = amount,
-            Description = "Versamento in cassa",
+            Description = $"Versamento in cassa {selectedCurrency}",
             Author = authorName,
             Split = new Dictionary<string, SplitInfo> { { selectedMemberSlug, new SplitInfo { Amount = amount, Manual = true } } }
         };
