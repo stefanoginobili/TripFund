@@ -33,21 +33,91 @@
                     <input type="number" step="@GetStep()" class="amount-input" @bind="amount" placeholder="@(GetDecimals() > 0 ? "0." + new string('0', GetDecimals()) : "0")" />
                 </div>
 
-                <div class="form-group">
-                    <label>Data e ora</label>
-                    <input type="datetime-local" class="form-control" @bind="transactionDate" @bind:format="yyyy-MM-ddTHH:mm" />
+                <div class="datetime-row">
+                    <div class="form-group flex-1">
+                        <label>Data</label>
+                        <div class="datetime-picker-box">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#20563C" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                                <line x1="16" y1="2" x2="16" y2="6"></line>
+                                <line x1="8" y1="2" x2="8" y2="6"></line>
+                                <line x1="3" y1="10" x2="21" y2="10"></line>
+                            </svg>
+                            <span class="datetime-value">@GetFormattedDate()</span>
+                            <input type="date" class="hidden-picker" value="@transactionDate.ToString("yyyy-MM-dd")" @onchange="OnDateChanged" />
+                        </div>
+                    </div>
+                    <div class="form-group flex-1">
+                        <label>Ora</label>
+                        <div class="datetime-picker-box">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#20563C" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                <circle cx="12" cy="12" r="10"></circle>
+                                <polyline points="12 6 12 12 16 14"></polyline>
+                            </svg>
+                            <span class="datetime-value">@transactionDate.ToString("HH:mm")</span>
+                            <input type="time" class="hidden-picker" value="@transactionDate.ToString("HH:mm")" @onchange="OnTimeChanged" />
+                        </div>
+                    </div>
                 </div>
 
                 <div class="form-group">
-                    <label>Membro che versa</label>
-                    <select class="form-control" @bind="selectedMemberSlug">
-                        <option value="">Seleziona membro...</option>
-                        @foreach (var member in config.Members)
+                    <label>Partecipante</label>
+                    <div class="custom-member-selector @(isMemberSelectorOpen ? "open" : "")" @onclick="ToggleMemberSelector">
+                        @if (string.IsNullOrEmpty(selectedMemberSlug))
                         {
-                            <option value="@member.Key">@member.Value.Avatar @member.Value.Name</option>
+                            <div class="selected-member-placeholder">Seleziona membro...</div>
                         }
-                    </select>
+                        else if (config.Members.TryGetValue(selectedMemberSlug, out var m))
+                        {
+                            <div class="member-selector-item">
+                                <div class="member-avatar-circle" style="background-color: #D6EDE2; color: #20563C;">
+                                    @if (m.Avatar.Length > 2) { <span>@m.Avatar</span> } else { <span class="emoji">@m.Avatar</span> }
+                                </div>
+                                <div class="member-selector-info">
+                                    <div class="member-selector-name">@m.Name</div>
+                                    <div class="member-selector-total">Versati: @GetCurrencySymbol() @GetMemberTotal(selectedMemberSlug).ToString("N" + GetDecimals())</div>
+                                </div>
+                                <div class="selector-arrow">
+                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                        <polyline points="7 15 12 10 17 15"></polyline>
+                                        <polyline points="7 9 12 4 17 9"></polyline>
+                                    </svg>
+                                </div>
+                            </div>
+                        }
+
+                        @if (isMemberSelectorOpen)
+                        {
+                            <div class="member-selector-dropdown" @onclick:stopPropagation>
+                                @foreach (var member in config.Members)
+                                {
+                                    <div class="dropdown-member-item @(selectedMemberSlug == member.Key ? "selected" : "")" @onclick="() => SelectMember(member.Key)">
+                                        <div class="member-avatar-circle small">
+                                            @member.Value.Avatar
+                                        </div>
+                                        <div class="member-selector-info">
+                                            <div class="member-selector-name">@member.Value.Name</div>
+                                            <div class="member-selector-total">Versati: @GetCurrencySymbol() @GetMemberTotal(member.Key).ToString("N" + GetDecimals())</div>
+                                        </div>
+                                        @if (selectedMemberSlug == member.Key)
+                                        {
+                                            <div class="check-icon">
+                                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#20563C" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+                                                    <polyline points="20 6 9 17 4 12"></polyline>
+                                                </svg>
+                                            </div>
+                                        }
+                                    </div>
+                                }
+                            </div>
+                        }
+                    </div>
                 </div>
+
+                @if (isMemberSelectorOpen)
+                {
+                    <div class="popover-overlay" @onclick="ToggleMemberSelector"></div>
+                }
 
                 <div class="form-group switch-group">
                     <label>Invia ricevuta via email</label>
@@ -78,6 +148,7 @@
 
     private TripConfig? config;
     private Transaction? editingTransaction;
+    private List<Transaction> allTransactions = new();
     private string selectedCurrency = "";
     private string selectedMemberSlug = "";
     private decimal amount;
@@ -87,10 +158,12 @@
     private string deviceId = "";
     private string authorName = "";
     private bool isSubmitting = false;
+    private bool isMemberSelectorOpen = false;
 
     protected override async Task OnInitializedAsync()
     {
         config = await Storage.GetTripConfigAsync(tripSlug);
+        allTransactions = await Storage.GetTransactionsAsync(tripSlug);
         var settings = await Storage.GetAppSettingsAsync();
         deviceId = settings?.DeviceId ?? "unknown";
         authorName = settings?.AuthorName ?? "Unknown";
@@ -128,6 +201,22 @@
         }
     }
 
+    private void ToggleMemberSelector() => isMemberSelectorOpen = !isMemberSelectorOpen;
+
+    private void SelectMember(string slug)
+    {
+        selectedMemberSlug = slug;
+        isMemberSelectorOpen = false;
+    }
+
+    private decimal GetMemberTotal(string slug)
+    {
+        if (allTransactions == null) return 0;
+        return allTransactions
+            .Where(t => t.Type == "contribution" && t.Currency == selectedCurrency && t.Split != null && t.Split.ContainsKey(slug))
+            .Sum(t => t.Amount);
+    }
+
     private void SelectCurrency(string currencyCode)
     {
         if (editingTransaction == null) selectedCurrency = currencyCode;
@@ -136,6 +225,30 @@
     private async Task GoBack()
     {
         await JSRuntime.InvokeVoidAsync("history.back");
+    }
+
+    private string GetFormattedDate()
+    {
+        var today = DateTime.Today;
+        if (transactionDate.Date == today) return "Oggi";
+        if (transactionDate.Date == today.AddDays(-1)) return "Ieri";
+        return transactionDate.ToString("dd/MM/yyyy");
+    }
+
+    private void OnDateChanged(ChangeEventArgs e)
+    {
+        if (DateTime.TryParse(e.Value?.ToString(), out var date))
+        {
+            transactionDate = new DateTime(date.Year, date.Month, date.Day, transactionDate.Hour, transactionDate.Minute, 0);
+        }
+    }
+
+    private void OnTimeChanged(ChangeEventArgs e)
+    {
+        if (TimeSpan.TryParse(e.Value?.ToString(), out var time))
+        {
+            transactionDate = transactionDate.Date.Add(time);
+        }
     }
 
     private string GetCurrencySymbol()
@@ -288,9 +401,11 @@
     }
 
     .form-group label {
-        font-size: 0.9rem;
-        font-weight: 600;
-        color: #6C757D;
+        font-size: 0.75rem;
+        font-weight: 800;
+        color: #1A3C2F;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
     }
 
     .form-control {
@@ -300,6 +415,128 @@
         background-color: #FFFFFF;
         font-size: 1rem;
         outline: none;
+    }
+
+    .flex-1 { flex: 1; }
+    .datetime-row { display: flex; gap: 1rem; }
+    .datetime-picker-box { background-color: #F1F3F5; border-radius: 16px; padding: 0.85rem 1rem; display: flex; align-items: center; gap: 0.75rem; position: relative; cursor: pointer; min-height: 56px; }
+    .datetime-value { font-size: 1.1rem; font-weight: 700; color: #1A3C2F; }
+    .hidden-picker { position: absolute; top: 0; left: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; }
+
+    .custom-member-selector {
+        position: relative;
+        background-color: #FFFFFF;
+        border-radius: 16px;
+        padding: 0.75rem 1rem;
+        border: 1px solid #E0E0E0;
+        cursor: pointer;
+        min-height: 72px;
+        display: flex;
+        align-items: center;
+        transition: all 0.2s;
+    }
+
+    .custom-member-selector.open {
+        border-color: #20563C;
+        z-index: 1001;
+    }
+
+    .selected-member-placeholder {
+        color: #6C757D;
+        font-weight: 600;
+    }
+
+    .member-selector-item {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        width: 100%;
+    }
+
+    .member-avatar-circle {
+        width: 48px;
+        height: 48px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.5rem;
+        flex-shrink: 0;
+    }
+
+    .member-avatar-circle.small {
+        width: 36px;
+        height: 36px;
+        font-size: 1.1rem;
+        background-color: #F1F3F5;
+    }
+
+    .member-selector-info {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .member-selector-name {
+        font-weight: 800;
+        color: #1A3C2F;
+        font-size: 1.1rem;
+    }
+
+    .member-selector-total {
+        font-size: 0.85rem;
+        color: #6C757D;
+        font-weight: 600;
+    }
+
+    .selector-arrow {
+        color: #6C757D;
+    }
+
+    .member-selector-dropdown {
+        position: absolute;
+        top: calc(100% + 8px);
+        left: 0;
+        right: 0;
+        background-color: #FFFFFF;
+        border-radius: 16px;
+        box-shadow: 0 8px 32px rgba(0,0,0,0.12);
+        z-index: 1002;
+        max-height: 300px;
+        overflow-y: auto;
+        padding: 0.5rem;
+        border: 1px solid #F0F0F0;
+    }
+
+    .dropdown-member-item {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        padding: 0.75rem;
+        border-radius: 12px;
+        transition: background-color 0.2s;
+    }
+
+    .dropdown-member-item:hover {
+        background-color: #F8FBF9;
+    }
+
+    .dropdown-member-item.selected {
+        background-color: #D6EDE2;
+    }
+
+    .check-icon {
+        margin-left: auto;
+    }
+
+    .popover-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0,0,0,0.05);
+        z-index: 1000;
     }
 
     .switch-group {

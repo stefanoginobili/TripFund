@@ -28,7 +28,7 @@
                 {
                     <div class="popover-overlay" @onclick="ToggleMenu"></div>
                     <div class="dropdown-menu-custom">
-                        <button class="dropdown-item" @onclick="EditTransaction">
+                        <button class="dropdown-item" @onclick="EditTransaction" disabled="@(!canEdit)">
                             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="me-2">
                                 <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
                                 <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
@@ -67,7 +67,7 @@
                     }
                 </div>
                 <h2 class="amount-title @(transaction.Type == "expense" ? "negative" : "positive")">
-                    @FormatCurrency(transaction.Amount, transaction.Currency)
+                    @FormatAmountWithCode(transaction.Amount, transaction.Currency)
                 </h2>
                 <p class="transaction-desc">@(string.IsNullOrWhiteSpace(transaction.Description) ? (transaction.Type == "expense" ? "Spesa" : "Versamento") : transaction.Description)</p>
                 <p class="transaction-meta">@transaction.Date.ToString("g")</p>
@@ -140,11 +140,17 @@
     private Transaction? transaction;
     private string deviceId = "";
     private bool isMenuOpen = false;
+    private bool canEdit = true;
 
     protected override async Task OnInitializedAsync()
     {
         config = await Storage.GetTripConfigAsync(tripSlug);
         transaction = await Storage.GetLatestTransactionVersionAsync(tripSlug, transactionId);
+
+        if (transaction != null && config != null)
+        {
+            canEdit = transaction.Split.Keys.All(slug => config.Members.ContainsKey(slug));
+        }
 
         var settings = await Storage.GetAppSettingsAsync();
         if (settings != null)
@@ -182,7 +188,7 @@
     private void EditTransaction()
     {
         isMenuOpen = false;
-        if (transaction == null) return;
+        if (transaction == null || !canEdit) return;
         
         var route = transaction.Type == "contribution" ? "add-contribution" : "add-expense";
         Nav.NavigateTo($"/trip/{tripSlug}/{route}?edit={transactionId}&currency={currency}");
@@ -213,6 +219,16 @@
             return $"{c.Symbol} {amount.ToString(format)}";
         }
         return $"{amount:N2} {currencyCode}";
+    }
+
+    private string FormatAmountWithCode(decimal amount, string currencyCode)
+    {
+        if (config != null && config.Currencies.TryGetValue(currencyCode, out var c))
+        {
+            string format = c.Decimals > 0 ? "N" + c.Decimals : "N0";
+            return $"{currencyCode} {amount.ToString(format, System.Globalization.CultureInfo.InvariantCulture)}";
+        }
+        return $"{currencyCode} {amount.ToString("N2", System.Globalization.CultureInfo.InvariantCulture)}";
     }
 }
 

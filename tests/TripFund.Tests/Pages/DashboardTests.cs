@@ -390,4 +390,50 @@ public class DashboardTests : BunitContext
         var summaryTotal = cut.Find(".summary-total").TextContent;
         summaryTotal.Should().Contain("100");
     }
+
+    [Fact]
+    public void MemberDashboard_ShouldDisableContributionButtonIfMemberIsMissing()
+    {
+        // Arrange
+        var tripSlug = "test-trip";
+        var memberSlug = "missing-user";
+        var config = new TripConfig
+        {
+            Id = "123",
+            Name = "Test Trip",
+            Currencies = new Dictionary<string, Currency>
+            {
+                { "EUR", new Currency { Symbol = "€", ExpectedQuotaPerMember = 500 } }
+            },
+            Members = new Dictionary<string, User>
+            {
+                { "mario", new User { Name = "Mario", Avatar = "M" } }
+            }
+        };
+
+        var transactions = new List<Transaction>
+        {
+            new Transaction
+            {
+                Id = "t1",
+                Type = "contribution",
+                Currency = "EUR",
+                Amount = 100,
+                Split = new Dictionary<string, SplitInfo> { { "missing-user", new SplitInfo { Amount = 100, Manual = true } } }
+            }
+        };
+
+        _storageMock.Setup(s => s.GetTripConfigAsync(tripSlug)).ReturnsAsync(config);
+        _storageMock.Setup(s => s.GetTransactionsAsync(tripSlug)).ReturnsAsync(transactions);
+
+        // Act
+        var cut = Render<MemberDashboard>(parameters => parameters
+            .Add(p => p.tripSlug, tripSlug)
+            .Add(p => p.memberSlug, memberSlug)
+        );
+
+        // Assert
+        var contribBtn = cut.Find(".contribute-btn");
+        contribBtn.HasAttribute("disabled").Should().BeTrue();
+    }
 }

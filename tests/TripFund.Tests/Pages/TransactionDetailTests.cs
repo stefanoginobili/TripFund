@@ -110,4 +110,88 @@ public class TransactionDetailTests : BunitContext
         _storageMock.Verify(s => s.SaveTransactionAsync(tripSlug, transaction, "mario", true, It.IsAny<Dictionary<string, byte[]>>()), Times.Once);
         nav.Uri.Should().Contain($"/trip/{tripSlug}?currency=");
     }
+
+    [Fact]
+    public void TransactionDetail_ShouldShowCurrencyCodeInsteadOfSymbol()
+    {
+        // Arrange
+        var tripSlug = "test-trip";
+        var transactionId = "trans-123";
+        
+        var config = new TripConfig 
+        { 
+            Id = "1", 
+            Name = "Test Trip",
+            Currencies = new Dictionary<string, Currency> { { "EUR", new Currency { Symbol = "€", Decimals = 2 } } }
+        };
+        var transaction = new Transaction 
+        { 
+            Id = transactionId, 
+            Amount = 123.45m, 
+            Currency = "EUR", 
+            Description = "Dinner",
+            Split = new Dictionary<string, SplitInfo>()
+        };
+
+        _storageMock.Setup(s => s.GetTripConfigAsync(tripSlug)).ReturnsAsync(config);
+        _storageMock.Setup(s => s.GetLatestTransactionVersionAsync(tripSlug, transactionId)).ReturnsAsync(transaction);
+
+        var cut = Render<TransactionDetail>(parameters => parameters
+            .Add(p => p.tripSlug, tripSlug)
+            .Add(p => p.transactionId, transactionId)
+        );
+
+        // Assert
+        var amountTitle = cut.Find(".amount-title");
+        amountTitle.TextContent.Trim().Should().Be("EUR 123.45");
+        amountTitle.TextContent.Should().NotContain("€");
+    }
+
+    [Fact]
+    public async Task TransactionDetail_ShouldDisableEditIfMemberIsMissing()
+    {
+        // Arrange
+        var tripSlug = "test-trip";
+        var transactionId = "trans-123";
+        
+        var config = new TripConfig 
+        { 
+            Id = "1", 
+            Name = "Test Trip",
+            Members = new Dictionary<string, User>
+            {
+                { "mario", new User { Name = "Mario", Avatar = "M" } }
+            },
+            Currencies = new Dictionary<string, Currency> { { "EUR", new Currency { Symbol = "€" } } }
+        };
+        var transaction = new Transaction 
+        { 
+            Id = transactionId, 
+            Amount = 100, 
+            Currency = "EUR", 
+            Description = "Test",
+            Split = new Dictionary<string, SplitInfo>
+            {
+                { "mario", new SplitInfo { Amount = 60 } },
+                { "missing-user", new SplitInfo { Amount = 40 } }
+            }
+        };
+
+        _storageMock.Setup(s => s.GetTripConfigAsync(tripSlug)).ReturnsAsync(config);
+        _storageMock.Setup(s => s.GetLatestTransactionVersionAsync(tripSlug, transactionId)).ReturnsAsync(transaction);
+
+        var cut = Render<TransactionDetail>(parameters => parameters
+            .Add(p => p.tripSlug, tripSlug)
+            .Add(p => p.transactionId, transactionId)
+        );
+
+        // Act
+        // Open menu
+        var menuBtn = cut.Find("header .dropdown button.icon-btn");
+        await cut.InvokeAsync(() => menuBtn.Click());
+
+        // Assert
+        var editBtn = cut.FindAll(".dropdown-item").First(b => b.InnerHtml.Contains("Modifica"));
+        editBtn.HasAttribute("disabled").Should().BeTrue();
+    }
 }

@@ -52,7 +52,7 @@
             </div>
 
             <div class="quick-actions">
-                <button class="action-btn contribute-btn" @onclick='() => Nav.NavigateTo($"/trip/{tripSlug}/add-contribution?member={memberSlug}&currency={selectedCurrency}")'>
+                <button class="action-btn contribute-btn" @onclick="NavigateToContribution" disabled="@isMissing">
                     <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline>
                         <polyline points="17 6 23 6 23 12"></polyline>
@@ -153,6 +153,12 @@
     {
         selectedCurrency = currencyCode;
         CalculateStats();
+    }
+
+    private void NavigateToContribution()
+    {
+        if (isMissing) return;
+        Nav.NavigateTo($"/trip/{tripSlug}/add-contribution?member={memberSlug}&currency={selectedCurrency}");
     }
 
     private void CalculateStats()
@@ -364,6 +370,11 @@
         font-weight: 600;
         font-size: 0.9rem;
         box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+    }
+
+    .action-btn:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
     }
 
     .contribute-btn {

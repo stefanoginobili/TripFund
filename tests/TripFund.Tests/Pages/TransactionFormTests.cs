@@ -295,7 +295,11 @@ public class TransactionFormTests : BunitContext
 
         // Act
         cut.Find(".amount-input").Change("500");
-        cut.Find("select.form-control").Change("mario");
+        
+        // Use custom selector
+        cut.Find(".custom-member-selector").Click();
+        var marioItem = cut.FindAll(".dropdown-member-item").First(i => i.InnerHtml.Contains("Mario"));
+        marioItem.Click();
 
         // Submit
         await cut.Find(".submit-btn").ClickAsync();
@@ -373,5 +377,50 @@ public class TransactionFormTests : BunitContext
         // New ones should be 08 and 09
         savedTransaction.Attachments.Should().Contain("Attachment-08.jpg");
         savedTransaction.Attachments.Should().Contain("Attachment-09.pdf");
+    }
+
+    [Fact]
+    public async Task AddExpense_ChangeDateTime_ShouldUpdateTransactionDate()
+    {
+        // Arrange
+        var tripSlug = "test-trip";
+        var config = new TripConfig
+        {
+            Id = "123",
+            Currencies = new Dictionary<string, Currency> { { "EUR", new Currency { Symbol = "€" } } },
+            Members = new Dictionary<string, User> { { "mario", new User { Name = "Mario" } } }
+        };
+        _storageMock.Setup(s => s.GetTripConfigAsync(tripSlug)).ReturnsAsync(config);
+        
+        Transaction? savedTransaction = null;
+        _storageMock.Setup(s => s.SaveTransactionAsync(tripSlug, It.IsAny<Transaction>(), It.IsAny<string>(), It.IsAny<bool>(), It.IsAny<Dictionary<string, byte[]>>()))
+            .Callback<string, Transaction, string, bool, Dictionary<string, byte[]>>((s, t, d, b, a) => savedTransaction = t)
+            .Returns(Task.CompletedTask);
+
+        var cut = Render<AddExpense>(parameters => parameters.Add(p => p.tripSlug, tripSlug));
+
+        // Act
+        cut.Find(".amount-input").Input("10");
+        cut.Find("input[placeholder='es. Cena a Buenos Aires']").Change("Test DateTime");
+
+        // Change Date to 2026-05-20
+        var datePicker = cut.Find("input[type='date']");
+        datePicker.Change("2026-05-20");
+
+        // Change Time to 15:30
+        var timePicker = cut.Find("input[type='time']");
+        timePicker.Change("15:30");
+
+        // Submit
+        await cut.Find(".submit-btn").ClickAsync();
+
+        // Assert
+        savedTransaction.Should().NotBeNull();
+        var localDate = savedTransaction!.Date.ToLocalTime();
+        localDate.Year.Should().Be(2026);
+        localDate.Month.Should().Be(5);
+        localDate.Day.Should().Be(20);
+        localDate.Hour.Should().Be(15);
+        localDate.Minute.Should().Be(30);
     }
 }
