@@ -1,0 +1,58 @@
+@namespace TripFund.App.Components.Common
+
+<div class="currency-selector-container">
+    <div class="currency-selector-pill-group">
+        @foreach (var curr in Currencies)
+        {
+            <button type="button" 
+                    class="currency-pill @(SelectedCurrency == curr ? "active" : "")" 
+                    @onclick="() => OnCurrencySelected.InvokeAsync(curr)">
+                @curr
+            </button>
+        }
+    </div>
+</div>
+
+@code {
+    [Parameter] public IEnumerable<string> Currencies { get; set; } = Enumerable.Empty<string>();
+    [Parameter] public string SelectedCurrency { get; set; } = "";
+    [Parameter] public EventCallback<string> OnCurrencySelected { get; set; }
+}
+
+<style>
+    .currency-selector-container {
+        display: flex;
+        justify-content: center;
+        padding: 1rem 1.5rem;
+        background-color: #FFFFFF;
+    }
+
+    .currency-selector-pill-group {
+        display: inline-flex;
+        background-color: #F5F7F6;
+        border-radius: 32px;
+        padding: 4px;
+    }
+
+    .currency-pill {
+        padding: 0.5rem 1.5rem;
+        border-radius: 28px;
+        border: none;
+        background: transparent;
+        color: #1A3C2F;
+        font-weight: 700;
+        font-size: 0.9rem;
+        transition: all 0.2s ease;
+        min-width: 70px;
+        cursor: pointer;
+    }
+
+    .currency-pill.active {
+        background-color: #20563C;
+        color: #FFFFFF;
+    }
+
+    .currency-pill:not(.active):hover {
+        background-color: rgba(0,0,0,0.03);
+    }
+</style>

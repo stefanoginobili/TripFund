@@ -32,14 +32,7 @@
             }
         </div>
 
-        <div class="currency-selector">
-            @foreach (var curr in config.Currencies.Keys)
-            {
-                <button class="currency-pill @(selectedCurrency == curr ? "active" : "")" @onclick="() => SelectCurrency(curr)">
-                    @curr
-                </button>
-            }
-        </div>
+        <CurrencySelector Currencies="config.Currencies.Keys" SelectedCurrency="@selectedCurrency" OnCurrencySelected="SelectCurrency" />
 
         <main class="content">
             <div class="summary-card">
@@ -294,30 +287,6 @@
         font-size: 0.9rem;
         color: #6C757D;
         margin: 0;
-    }
-
-    .currency-selector {
-        display: flex;
-        gap: 0.5rem;
-        padding: 1rem 1.5rem;
-        background-color: #FFFFFF;
-        overflow-x: auto;
-    }
-
-    .currency-pill {
-        padding: 0.5rem 1rem;
-        border-radius: 20px;
-        background-color: #F0F0F0;
-        color: #6C757D;
-        border: none;
-        font-weight: 600;
-        font-size: 0.9rem;
-        white-space: nowrap;
-    }
-
-    .currency-pill.active {
-        background-color: #20563C;
-        color: #FFFFFF;
     }
 
     .content {
