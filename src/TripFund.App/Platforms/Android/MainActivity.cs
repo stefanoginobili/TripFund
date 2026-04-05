@@ -15,10 +15,13 @@ public class MainActivity : MauiAppCompatActivity
         if (Window != null)
         {
             WindowCompat.SetDecorFitsSystemWindows(Window, false);
+            
+#pragma warning disable CA1422
             Window.SetStatusBarColor(Android.Graphics.Color.Transparent);
             Window.SetNavigationBarColor(Android.Graphics.Color.Transparent);
+#pragma warning restore CA1422
 
-            if (Build.VERSION.SdkInt >= BuildVersionCodes.Q)
+            if (OperatingSystem.IsAndroidVersionAtLeast(29))
             {
                 Window.NavigationBarContrastEnforced = false;
             }
@@ -26,8 +29,11 @@ public class MainActivity : MauiAppCompatActivity
             if (Window.DecorView != null)
             {
                 var controller = WindowCompat.GetInsetsController(Window, Window.DecorView);
-                controller.AppearanceLightStatusBars = true;
-                controller.AppearanceLightNavigationBars = true;
+                if (controller != null)
+                {
+                    controller.AppearanceLightStatusBars = true;
+                    controller.AppearanceLightNavigationBars = true;
+                }
             }
         }
     }
