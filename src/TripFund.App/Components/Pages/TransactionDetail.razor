@@ -65,7 +65,7 @@
                     }
                 </div>
                 <h2 class="amount-title @(transaction.Type == "expense" ? "negative" : "positive")">
-                    @(transaction.Type == "expense" ? "-" : "+")@FormatCurrency(transaction.Amount, transaction.Currency)
+                    @FormatCurrency(transaction.Amount, transaction.Currency)
                 </h2>
                 <p class="transaction-desc">@(string.IsNullOrWhiteSpace(transaction.Description) ? (transaction.Type == "expense" ? "Spesa" : "Versamento") : transaction.Description)</p>
                 <p class="transaction-meta">@transaction.Date.ToString("g") • Creato da @transaction.Author</p>

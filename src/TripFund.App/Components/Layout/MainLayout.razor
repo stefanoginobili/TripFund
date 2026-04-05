@@ -1,4 +1,7 @@
 @inherits LayoutComponentBase
+@implements IDisposable
+@inject IJSRuntime JSRuntime
+@inject NavigationManager Nav
 
 <div class="page">
     <main>
@@ -7,3 +10,36 @@
         </article>
     </main>
 </div>
+
+@code {
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await JSRuntime.InvokeVoidAsync("headerLogic.init");
+        }
+    }
+
+    protected override void OnInitialized()
+    {
+        Nav.LocationChanged += HandleLocationChanged;
+    }
+
+    private async void HandleLocationChanged(object? sender, LocationChangedEventArgs e)
+    {
+        try 
+        {
+            await JSRuntime.InvokeVoidAsync("headerLogic.resetScroll");
+        }
+        catch (Exception ex)
+        {
+            // Silently fail if JS runtime is not ready yet during navigation
+            System.Diagnostics.Debug.WriteLine($"Scroll reset error: {ex.Message}");
+        }
+    }
+
+    public void Dispose()
+    {
+        Nav.LocationChanged -= HandleLocationChanged;
+    }
+}

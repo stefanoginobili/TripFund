@@ -1,6 +1,6 @@
 html, body {
     font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
-    background-color: white;
+    background-color: #F8FBF9;
     margin: 0;
     padding: 0;
 }
@@ -11,13 +11,13 @@ html, body {
     flex-direction: column;
     height: 100vh;
     overflow: hidden;
+    background-color: #F8FBF9;
 }
 
 main {
     flex: 1;
     overflow-y: auto;
     -webkit-overflow-scrolling: touch;
-    padding-bottom: calc(5rem + env(safe-area-inset-bottom));
 }
 
 .content {
@@ -93,6 +93,18 @@ h1:focus {
     background-color: transparent;
     width: 100%;
     z-index: 1000;
+}
+
+.app-header {
+    position: sticky;
+    top: 0;
+    z-index: 999;
+    background-color: #FFFFFF;
+    transition: transform 0.3s ease-in-out;
+}
+
+.header-hidden {
+    transform: translateY(-100%);
 }
 
 .flex-column, .navbar-brand {
