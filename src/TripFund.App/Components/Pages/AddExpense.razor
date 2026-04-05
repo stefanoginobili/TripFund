@@ -30,7 +30,7 @@
             <div class="form-container">
                 <div class="amount-section">
                     <span class="currency-symbol">@GetCurrencySymbol()</span>
-                    <input type="number" step="@GetStep()" class="amount-input" value="@totalAmount.ToString("F" + GetDecimals(), System.Globalization.CultureInfo.InvariantCulture)" @oninput="OnAmountInput" placeholder="@(GetDecimals() > 0 ? "0." + new string('0', GetDecimals()) : "0")" />
+                    <input type="number" step="@GetStep()" class="amount-input" value="@totalAmount.ToString("F" + GetDecimals(), System.Globalization.CultureInfo.InvariantCulture)" @onchange="OnAmountChanged" onfocus="headerLogic.selectText(this)" placeholder="@(GetDecimals() > 0 ? "0." + new string('0', GetDecimals()) : "0")" />
                 </div>
 
                 <div class="form-group">
@@ -240,6 +240,7 @@
 
             if (editingInfo == null)
             {
+                totalAmount = 0;
                 if (!string.IsNullOrEmpty(currency) && config.Currencies.ContainsKey(currency))
                 {
                     selectedCurrency = currency;
@@ -315,11 +316,11 @@
         return (1 / Math.Pow(10, decimals)).ToString(System.Globalization.CultureInfo.InvariantCulture);
     }
 
-    private void OnAmountInput(ChangeEventArgs e)
+    private void OnAmountChanged(ChangeEventArgs e)
     {
         if (decimal.TryParse(e.Value?.ToString(), System.Globalization.CultureInfo.InvariantCulture, out decimal val))
         {
-            totalAmount = val;
+            totalAmount = Math.Round(val, GetDecimals());
             RecalculateSplit();
         }
     }

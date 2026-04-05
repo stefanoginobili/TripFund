@@ -51,7 +51,7 @@ public class TransactionFormTests : BunitContext
         var cut = Render<AddExpense>(parameters => parameters.Add(p => p.tripSlug, tripSlug));
 
         // Act - Set amount to 30.00
-        cut.Find(".amount-input").Input("30.00");
+        cut.Find(".amount-input").Change("30.00");
 
         // Assert - Each of the 3 members should have 10.00
         var splitInputs = cut.FindAll(".split-amount-input");
@@ -85,7 +85,7 @@ public class TransactionFormTests : BunitContext
 
         // Act
         // 1. Set total amount to 100
-        cut.Find(".amount-input").Input("100");
+        cut.Find(".amount-input").Change("100");
 
         // 2. Set Mario to Manual and give him 50
         var marioRow = cut.FindAll(".member-split-row").First(r => r.InnerHtml.Contains("Mario"));
@@ -125,7 +125,7 @@ public class TransactionFormTests : BunitContext
         var cut = Render<AddExpense>(parameters => parameters.Add(p => p.tripSlug, tripSlug));
 
         // Act
-        cut.Find(".amount-input").Input("100");
+        cut.Find(".amount-input").Change("100");
         
         // Exclude Mario
         var marioRow = cut.FindAll(".member-split-row").First(r => r.InnerHtml.Contains("Mario"));
@@ -165,7 +165,7 @@ public class TransactionFormTests : BunitContext
         // Act - Set amount to 10.00
         // 10 / 3 = 3.3333...
         // One should get 3.34, others 3.33
-        cut.Find(".amount-input").Input("10.00");
+        cut.Find(".amount-input").Change("10.00");
 
         // Assert
         var splitInputs = cut.FindAll(".split-amount-input");
@@ -205,7 +205,7 @@ public class TransactionFormTests : BunitContext
         // Act - Set amount to 1000
         // 1000 / 3 = 333.333... -> with 0 decimals: 333
         // Remainder: 1000 - (333 * 3) = 1. One should get 334.
-        amountInput.Input("1000");
+        amountInput.Change("1000");
 
         // Assert
         var splitInputs = cut.FindAll(".split-amount-input");
@@ -247,7 +247,7 @@ public class TransactionFormTests : BunitContext
         var cut = Render<AddExpense>(parameters => parameters.Add(p => p.tripSlug, tripSlug));
 
         // Act
-        cut.Find(".amount-input").Input("100");
+        cut.Find(".amount-input").Change("100");
         cut.Find("input[placeholder='es. Cena a Buenos Aires']").Change("Test Expense");
 
         // Set Mario to Manual (Luigi stays Auto)
@@ -364,7 +364,7 @@ public class TransactionFormTests : BunitContext
         attachmentsList.Add(new2);
 
         // Act
-        cut.Find(".amount-input").Input("10");
+        cut.Find(".amount-input").Change("10");
         cut.Find("input[placeholder='es. Cena a Buenos Aires']").Change("Test Attachments");
         await cut.Find(".submit-btn").ClickAsync();
 
@@ -400,7 +400,7 @@ public class TransactionFormTests : BunitContext
         var cut = Render<AddExpense>(parameters => parameters.Add(p => p.tripSlug, tripSlug));
 
         // Act
-        cut.Find(".amount-input").Input("10");
+        cut.Find(".amount-input").Change("10");
         cut.Find("input[placeholder='es. Cena a Buenos Aires']").Change("Test DateTime");
 
         // Change Date to 2026-05-20
