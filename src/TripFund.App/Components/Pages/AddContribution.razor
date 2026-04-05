@@ -14,7 +14,7 @@
                 <polyline points="12 19 5 12 12 5"></polyline>
             </svg>
         </button>
-        <h1 class="header-title">Registra Versamento</h1>
+        <h1 class="header-title">@(config?.Name ?? "Caricamento...")</h1>
         <div class="spacer"></div>
     </header>
 
@@ -28,9 +28,18 @@
 
         <main class="content">
             <div class="form-container">
-                <div class="amount-section">
-                    <span class="currency-symbol">@GetCurrencySymbol()</span>
-                    <input type="text" inputmode="@(GetDecimals() > 0 ? "decimal" : "numeric")" class="amount-input" value="@amount.ToString("F" + GetDecimals())" @onchange="OnAmountChanged" onfocus="headerLogic.selectText(this)" placeholder="@(GetDecimals() > 0 ? "0," + new string('0', GetDecimals()) : "0")" />
+                <div class="amount-tile">
+                    <div class="tile-icon">
+                        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline>
+                            <polyline points="17 6 23 6 23 12"></polyline>
+                        </svg>
+                    </div>
+                    <label class="tile-label">Importo Versamento</label>
+                    <div class="amount-section">
+                        <span class="currency-symbol">@GetCurrencySymbol()</span>
+                        <input type="text" inputmode="@(GetDecimals() > 0 ? "decimal" : "numeric")" class="amount-input" value="@amount.ToString("F" + GetDecimals())" @onchange="OnAmountChanged" onfocus="headerLogic.selectText(this)" placeholder="@(GetDecimals() > 0 ? "0," + new string('0', GetDecimals()) : "0")" />
+                    </div>
                 </div>
 
                 <div class="datetime-row">
@@ -65,7 +74,7 @@
                     <div class="custom-member-selector @(isMemberSelectorOpen ? "open" : "")" @onclick="ToggleMemberSelector">
                         @if (string.IsNullOrEmpty(selectedMemberSlug))
                         {
-                            <div class="selected-member-placeholder">Seleziona membro...</div>
+                            <div class="selected-member-placeholder">Seleziona...</div>
                         }
                         else if (config.Members.TryGetValue(selectedMemberSlug, out var m))
                         {
@@ -79,8 +88,8 @@
                                 </div>
                                 <div class="selector-arrow">
                                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                                        <polyline points="7 15 12 10 17 15"></polyline>
                                         <polyline points="7 9 12 4 17 9"></polyline>
+                                        <polyline points="7 15 12 20 17 15"></polyline>
                                     </svg>
                                 </div>
                             </div>
@@ -119,9 +128,9 @@
                     <div class="popover-overlay" @onclick="ToggleMemberSelector"></div>
                 }
 
-                <div class="form-group switch-group">
+                <div class="form-group switch-group @(!HasValidEmail() ? "disabled" : "")">
                     <label>Invia ricevuta via email</label>
-                    <div class="switch @(sendReceipt ? "on" : "off")" @onclick="() => sendReceipt = !sendReceipt">
+                    <div class="switch @(sendReceipt ? "on" : "off")" @onclick="ToggleSendReceipt">
                         <div class="switch-handle"></div>
                     </div>
                 </div>
@@ -208,6 +217,30 @@
     {
         selectedMemberSlug = slug;
         isMemberSelectorOpen = false;
+        
+        // Reset send receipt if the new member has no email
+        if (!HasValidEmail())
+        {
+            sendReceipt = false;
+        }
+    }
+
+    private bool HasValidEmail()
+    {
+        if (config == null || string.IsNullOrEmpty(selectedMemberSlug)) return false;
+        if (config.Members.TryGetValue(selectedMemberSlug, out var member))
+        {
+            return !string.IsNullOrWhiteSpace(member.Email) && member.Email.Contains("@");
+        }
+        return false;
+    }
+
+    private void ToggleSendReceipt()
+    {
+        if (HasValidEmail())
+        {
+            sendReceipt = !sendReceipt;
+        }
     }
 
     private decimal GetMemberTotal(string slug)
@@ -298,7 +331,7 @@
 
         if (string.IsNullOrEmpty(selectedMemberSlug))
         {
-            errorMessage = "Selezionare un membro.";
+            errorMessage = "Selezionare un partecipante.";
             return;
         }
 
@@ -352,7 +385,7 @@
 
     .header-title {
         font-size: 1.25rem;
-        font-weight: 700;
+        font-weight: 800;
         color: #1A3C2F;
         margin: 0;
     }
@@ -379,16 +412,45 @@
         gap: 1.5rem;
     }
 
+    .amount-tile {
+        background-color: #D6EDE2;
+        border: none;
+        border-radius: 28px;
+        padding: 1.75rem 1rem;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 0.25rem;
+        margin-bottom: 0.5rem;
+        box-shadow: 0 4px 12px rgba(32, 86, 60, 0.05);
+    }
+
+    .tile-icon {
+        color: #20563C;
+        margin-bottom: 0.5rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .tile-label {
+        font-size: 0.7rem;
+        font-weight: 800;
+        color: #20563C;
+        letter-spacing: 0.15em;
+        text-transform: uppercase;
+    }
+
     .amount-section {
         display: flex;
         align-items: center;
         justify-content: center;
         gap: 0.5rem;
-        padding: 2rem 0;
+        padding: 0.5rem 0;
     }
 
     .currency-symbol {
-        font-size: 2rem;
+        font-size: 2.75rem;
         font-weight: 700;
         color: #20563C;
     }
@@ -396,12 +458,22 @@
     .amount-input {
         border: none;
         background: none;
-        font-size: 3rem;
+        font-size: 3.75rem;
         font-weight: 700;
-        color: #1A3C2F;
-        width: 200px;
+        color: #20563C;
+        width: 100%;
+        max-width: 300px;
         text-align: center;
         outline: none;
+    }
+
+    .tile-label-bottom {
+        font-size: 0.7rem;
+        font-weight: 800;
+        color: #8E9191;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        margin-top: -0.25rem;
     }
 
     .form-group {
@@ -553,6 +625,15 @@
         flex-direction: row;
         justify-content: space-between;
         align-items: center;
+        transition: opacity 0.2s;
+    }
+
+    .switch-group.disabled {
+        opacity: 0.5;
+    }
+
+    .switch-group.disabled .switch {
+        cursor: not-allowed;
     }
 
     .switch {
