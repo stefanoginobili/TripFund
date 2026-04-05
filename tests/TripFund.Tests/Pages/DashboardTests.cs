@@ -318,11 +318,12 @@ public class DashboardTests : BunitContext
         );
 
         // Assert
-        // Target: 500
-        // Mario Contributed: 300
-        // Mario Expense: 50
-        // Mario Remaining: 250
+        var headerTitle = cut.Find(".header-title").TextContent;
+        headerTitle.Should().Be("Test Trip");
 
+        var profile = cut.Find(".member-profile");
+        profile.InnerHtml.Should().NotContain("Test Trip"); // Should not be in profile anymore
+        
         var summaryTotal = cut.Find(".summary-total").TextContent; // Totale versato
         summaryTotal.Should().Contain("300");
 
@@ -384,8 +385,7 @@ public class DashboardTests : BunitContext
         profile.ClassName.Should().Contain("missing-member");
         profile.InnerHtml.Should().Contain("missing-user");
         profile.InnerHtml.Should().Contain("❓");
-        profile.InnerHtml.Should().Contain("Partecipante non configurato nel viaggio");
-        profile.InnerHtml.Should().NotContain("N/A");
+        profile.InnerHtml.Should().NotContain("Partecipante non configurato nel viaggio");
 
         var summaryTotal = cut.Find(".summary-total").TextContent;
         summaryTotal.Should().Contain("100");

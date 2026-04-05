@@ -12,7 +12,7 @@
                 <polyline points="12 19 5 12 12 5"></polyline>
             </svg>
         </button>
-        <h1 class="header-title">Dettaglio Partecipante</h1>
+        <h1 class="header-title">@(config?.Name ?? "Dettaglio Partecipante")</h1>
         <div class="spacer"></div>
     </header>
 
@@ -23,14 +23,9 @@
     else
     {
         <div class="member-profile @(isMissing ? "missing-member" : "")">
-            <h1 class="trip-name">@config.Name</h1>
             <div class="profile-avatar">@member.Avatar</div>
             <h2 class="profile-name">@member.Name</h2>
-            @if (isMissing)
-            {
-                <p class="missing-label">Partecipante non configurato nel viaggio</p>
-            }
-            else
+            @if (!isMissing)
             {
                 <p class="profile-email">@member.Email</p>
             }
@@ -64,9 +59,9 @@
 
             <div class="quick-actions">
                 <button class="action-btn contribute-btn" @onclick='() => Nav.NavigateTo($"/trip/{tripSlug}/add-contribution?member={memberSlug}&currency={selectedCurrency}")'>
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <line x1="12" y1="5" x2="12" y2="19"></line>
-                        <line x1="5" y1="12" x2="19" y2="12"></line>
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline>
+                        <polyline points="17 6 23 6 23 12"></polyline>
                     </svg>
                     Registra Versamento
                 </button>
@@ -81,7 +76,7 @@
                     }
                     @foreach (var t in userTransactions.OrderByDescending(x => x.OriginalTx.Date))
                     {
-                        <div class="transaction-row" @onclick='() => Nav.NavigateTo($"/trip/{tripSlug}/transaction/{t.OriginalTx.Id}")'>
+                        <div class="transaction-row" @onclick='() => Nav.NavigateTo($"/trip/{tripSlug}/transaction/{t.OriginalTx.Id}?currency={selectedCurrency}")'>
                             <div class="transaction-icon @(t.OriginalTx.Type == "expense" ? "expense-icon" : "contrib-icon")">
                                 @if(t.OriginalTx.Type == "expense")
                                 {
@@ -94,7 +89,7 @@
                             </div>
                             <div class="transaction-info">
                                 <div class="transaction-desc">@(string.IsNullOrWhiteSpace(t.OriginalTx.Description) ? (t.OriginalTx.Type == "expense" ? "Spesa" : "Versamento") : t.OriginalTx.Description)</div>
-                                <div class="transaction-date">@t.OriginalTx.Date.ToString("g") • @t.OriginalTx.Author</div>
+                                <div class="transaction-meta">@t.OriginalTx.Date.ToString("g")</div>
                             </div>
                             <div class="transaction-amount @(t.OriginalTx.Type == "expense" ? "negative" : "positive")">
                                 @(t.OriginalTx.Type == "expense" ? "-" : "+")@FormatCurrency(t.UserAmount, t.OriginalTx.Currency)
@@ -258,9 +253,11 @@
         background-color: #FFFFFF;
     }
 
-    .member-profile.missing-member {
+    .member-profile.missing-member .profile-avatar,
+    .member-profile.missing-member .profile-name,
+    .member-profile.missing-member .trip-name {
         filter: grayscale(100%);
-        opacity: 0.8;
+        opacity: 0.6;
     }
 
     .trip-name {
@@ -296,15 +293,6 @@
         font-size: 0.9rem;
         color: #6C757D;
         margin: 0;
-    }
-
-    .missing-label {
-        font-size: 0.85rem;
-        font-weight: 700;
-        color: #DC3545;
-        margin: 0;
-        text-transform: uppercase;
-        letter-spacing: 0.05em;
     }
 
     .currency-selector {
@@ -396,7 +384,7 @@
     .action-btn {
         flex: 1;
         display: flex;
-        flex-direction: row;
+        flex-direction: column;
         align-items: center;
         justify-content: center;
         gap: 0.5rem;
@@ -409,8 +397,8 @@
     }
 
     .contribute-btn {
-        background-color: #20563C;
-        color: #FFFFFF;
+        background-color: #D6EDE2;
+        color: #20563C;
     }
 
     .info-section {
@@ -438,13 +426,14 @@
     }
 
     .transaction-row {
-        background-color: #FFFFFF;
+        background-color: #F8FBF9;
         padding: 1rem;
         border-radius: 16px;
         display: flex;
         align-items: center;
         box-shadow: 0 2px 8px rgba(0,0,0,0.02);
         cursor: pointer;
+        border: 1px solid #F0F0F0;
     }
 
     .transaction-icon {
@@ -477,7 +466,7 @@
         margin-bottom: 0.2rem;
     }
 
-    .transaction-date {
+    .transaction-meta {
         font-size: 0.8rem;
         color: #6C757D;
     }

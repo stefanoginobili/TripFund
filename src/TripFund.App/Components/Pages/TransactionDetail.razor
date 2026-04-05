@@ -13,7 +13,7 @@
                 <polyline points="12 19 5 12 12 5"></polyline>
             </svg>
         </button>
-        <h1 class="header-title">Dettaglio Transazione</h1>
+        <h1 class="header-title">@(config?.Name ?? "Dettaglio Transazione")</h1>
         <div class="header-actions">
             <div class="dropdown">
                 <button class="icon-btn" @onclick="ToggleMenu">
@@ -68,7 +68,8 @@
                     @FormatCurrency(transaction.Amount, transaction.Currency)
                 </h2>
                 <p class="transaction-desc">@(string.IsNullOrWhiteSpace(transaction.Description) ? (transaction.Type == "expense" ? "Spesa" : "Versamento") : transaction.Description)</p>
-                <p class="transaction-meta">@transaction.Date.ToString("g") • Creato da @transaction.Author</p>
+                <p class="transaction-meta">@transaction.Date.ToString("g")</p>
+                <p class="transaction-meta">Creato da @transaction.Author</p>
             </div>
 
             <div class="info-section">
