@@ -121,6 +121,77 @@ public class TripManagementTests : BunitContext
     }
 
     [Fact]
+    public async Task EditTrip_ClickOutsideEmojiPicker_ShouldClosePicker()
+    {
+        // Arrange
+        var tripSlug = "test-trip";
+        var config = new TripConfig 
+        { 
+            Id = "guid-1", 
+            Name = "Test Trip", 
+            Members = new Dictionary<string, User> { { "mario", new User { Name = "Mario", Avatar = "👨" } } },
+            Currencies = new Dictionary<string, Currency> { { "EUR", new Currency { Symbol = "€", ExpectedQuotaPerMember = 100 } } }
+        };
+        _storageMock.Setup(s => s.GetTripConfigAsync(tripSlug)).ReturnsAsync(config);
+        _storageMock.Setup(s => s.GetAppSettingsAsync()).ReturnsAsync(new AppSettings { AuthorName = "Mario", DeviceId = "mario" });
+
+        var cut = Render<EditTrip>(parameters => parameters.Add(p => p.tripSlug, tripSlug));
+
+        // Act
+        // Expand the "Aggiungi Partecipante" section
+        await cut.Find(".add-member-dashed").ClickAsync();
+
+        // Open emoji picker
+        await cut.Find(".avatar-input-box").ClickAsync();
+        
+        // Assert picker is open
+        cut.FindAll(".emoji-picker-popover").Should().NotBeEmpty();
+
+        // Click overlay to close
+        await cut.Find(".popover-overlay").ClickAsync();
+
+        // Assert picker is closed
+        cut.FindAll(".emoji-picker-popover").Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task EditTrip_ClickAddMember_WhileEditingAnother_ShouldClosePreviousEditor()
+    {
+        // Arrange
+        var tripSlug = "test-trip";
+        var config = new TripConfig 
+        { 
+            Id = "guid-1", 
+            Name = "Test Trip", 
+            Members = new Dictionary<string, User> { { "mario", new User { Name = "Mario", Avatar = "👨" } } },
+            Currencies = new Dictionary<string, Currency> { { "EUR", new Currency { Symbol = "€", ExpectedQuotaPerMember = 100 } } }
+        };
+        _storageMock.Setup(s => s.GetTripConfigAsync(tripSlug)).ReturnsAsync(config);
+        _storageMock.Setup(s => s.GetAppSettingsAsync()).ReturnsAsync(new AppSettings { AuthorName = "Mario", DeviceId = "mario" });
+
+        var cut = Render<EditTrip>(parameters => parameters.Add(p => p.tripSlug, tripSlug));
+
+        // Act 1: Start editing Mario directly
+        var startEditMethod = cut.Instance.GetType().GetMethod("StartEditMember", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+        startEditMethod.Should().NotBeNull();
+        await cut.InvokeAsync(async () => 
+        {
+            var task = startEditMethod!.Invoke(cut.Instance, new object[] { "mario", config.Members["mario"] }) as Task;
+            if (task != null) await task;
+        });
+        
+        // Assert: Mario edit form is open
+        cut.Find(".new-member-title").TextContent.Should().Contain("Modifica Partecipante");
+        
+        // Act 2: Click "Aggiungi Partecipante"
+        await cut.Find(".add-member-dashed").ClickAsync();
+
+        // Assert: Mario edit form is closed, New Member form is open
+        cut.FindAll(".member-edit-container").Should().BeEmpty();
+        cut.FindAll(".new-member-form").Should().NotBeEmpty();
+    }
+
+    [Fact]
     public async Task EditTrip_Delete_ShouldConfirmAndCallStorage()
     {
         // Arrange

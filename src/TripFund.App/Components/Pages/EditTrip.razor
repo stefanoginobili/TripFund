@@ -26,7 +26,7 @@
             </button>
             @if (isHeaderMenuOpen)
             {
-                <div class="popover-overlay" @onclick="ToggleHeaderMenu"></div>
+                <div class="popover-overlay" @onclick="ToggleHeaderMenu" @onclick:stopPropagation></div>
                 <div class="header-dropdown">
                     <div class="dropdown-item-custom text-danger" @onclick="HandleDelete">
                         Elimina
@@ -87,7 +87,7 @@
                                                 <span>@newMemberAvatar</span>
                                                 @if (showEmojiPicker)
                                                 {
-                                                    <div class="popover-overlay" @onclick="ToggleEmojiPicker"></div>
+                                                    <div class="popover-overlay" @onclick="ToggleEmojiPicker" @onclick:stopPropagation></div>
                                                     <div class="emoji-picker-popover" @onclick:stopPropagation>
                                                         <div class="emoji-grid">
                                                             @foreach (var emoji in emojis)
@@ -157,9 +157,9 @@
                                         bool isFirst = index == 0;
                                         bool isLast = index == keys.Count - 1;
 
-                                        <div class="popover-overlay" @onclick="() => openMenuMemberSlug = null"></div>
+                                        <div class="popover-overlay" @onclick="() => openMenuMemberSlug = null" @onclick:stopPropagation></div>
                                         <div class="actions-dropdown">
-                                            <div class="dropdown-item-custom" @onclick="() => StartEditMember(member.Key, member.Value)">
+                                            <div class="dropdown-item-custom" @onclick="async () => await StartEditMember(member.Key, member.Value)">
                                                 Modifica
                                             </div>
                                             <div class="dropdown-item-custom @(isFirst ? "disabled" : "")" @onclick="() => { if(!isFirst) MoveMemberUp(member.Key); }">
@@ -179,7 +179,7 @@
                     }
                 </div>
 
-                <div class="add-member-dashed @(isAddingMember ? "expanded" : "")" @onclick="() => isAddingMember = true">
+                <div class="add-member-dashed @(isAddingMember ? "expanded" : "")" @onclick="() => { if(!isAddingMember) { CancelMemberEdit(); isAddingMember = true; } }">
                     @if (!isAddingMember)
                     {
                         <div class="dashed-btn-content">
@@ -211,7 +211,7 @@
                                         <span>@newMemberAvatar</span>
                                         @if (showEmojiPicker)
                                         {
-                                            <div class="popover-overlay" @onclick="ToggleEmojiPicker"></div>
+                                            <div class="popover-overlay" @onclick="ToggleEmojiPicker" @onclick:stopPropagation></div>
                                             <div class="emoji-picker-popover" @onclick:stopPropagation>
                                                 <div class="emoji-grid">
                                                     @foreach (var emoji in emojis)
@@ -359,14 +359,17 @@
         else openMenuMemberSlug = slug;
     }
 
-    private void StartEditMember(string slug, User m)
+    private async Task StartEditMember(string slug, User m)
     {
+        isAddingMember = false;
         editingMemberSlug = slug;
         newMemberSlug = slug;
         newMemberName = m.Name;
         newMemberEmail = m.Email ?? "";
         newMemberAvatar = m.Avatar;
         openMenuMemberSlug = null;
+        await Task.Yield();
+        StateHasChanged();
     }
 
     private void CancelMemberEdit()

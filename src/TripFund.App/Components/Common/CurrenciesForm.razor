@@ -103,7 +103,7 @@
         }
     </div>
 
-    <div class="add-currency-dashed @(isAddingCurrency ? "expanded" : "")" @onclick="() => { if(!isAddingCurrency) isAddingCurrency = true; }">
+    <div class="add-currency-dashed @(isAddingCurrency ? "expanded" : "")" @onclick="() => { if(!isAddingCurrency) { CancelCurrencyEdit(); isAddingCurrency = true; } }">
         @if (!isAddingCurrency)
         {
             <div class="dashed-btn-content">
@@ -224,6 +224,7 @@
 
     private void StartEditCurrency(string code, Currency c)
     {
+        isAddingCurrency = false;
         editingCurrencyCode = code;
         newCurrCode = code;
         newCurrSymbol = c.Symbol;
