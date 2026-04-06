@@ -26,12 +26,13 @@
     <script>
         // Keyboard Overlap Management
         window.addEventListener('focusin', (e) => {
+            // Exclude date and time pickers from padding logic to avoid layout shifts on dismissal
+            if (e.target.type === 'date' || e.target.type === 'time') return;
+
             if (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT' || e.target.tagName === 'TEXTAREA') {
                 const main = document.querySelector('main');
                 if (main) {
-                    // Add significant padding to allow the focused element to be centered
                     main.style.paddingBottom = '50vh';
-                    // Short delay to allow the keyboard animation to start/finish
                     setTimeout(() => {
                         e.target.scrollIntoView({ behavior: 'smooth', block: 'center' });
                     }, 300);
@@ -40,6 +41,8 @@
         });
         
         window.addEventListener('focusout', (e) => {
+            if (e.target.type === 'date' || e.target.type === 'time') return;
+
             if (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT' || e.target.tagName === 'TEXTAREA') {
                 const main = document.querySelector('main');
                 if (main) {

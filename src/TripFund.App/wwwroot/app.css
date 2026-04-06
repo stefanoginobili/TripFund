@@ -103,6 +103,12 @@ h1:focus {
     transition: transform 0.3s ease-in-out;
 }
 
+/* Fix flickering: when native pickers are active, the header shouldn't intercept taps */
+body:has(input[type="date"]:focus, input[type="time"]:focus) .app-header {
+    pointer-events: none;
+    opacity: 0.8; /* Subtle indicator it's inactive */
+}
+
 .header-hidden {
     transform: translateY(-100%);
 }

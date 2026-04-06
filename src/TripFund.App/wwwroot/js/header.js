@@ -26,6 +26,35 @@ window.headerLogic = {
             
             lastScrollY = currentScrollY;
         }, { passive: true });
+
+        // Global fix for date/time pickers focus issue in Hybrid apps
+        // We blur the element on change to handle selection.
+        // We also use a global listener to blur it when clicking outside or dismissing the picker.
+        document.addEventListener('change', (e) => {
+            if (e.target && (e.target.type === 'date' || e.target.type === 'time')) {
+                e.target.blur();
+            }
+        });
+
+        // 'input' event often fires earlier than 'change' on mobile
+        document.addEventListener('input', (e) => {
+            if (e.target && (e.target.type === 'date' || e.target.type === 'time')) {
+                e.target.blur();
+            }
+        });
+
+        // This handles the "cancel" case where the user taps the overlay.
+        // Most OS native pickers will trigger a click/touchstart on the document 
+        // after being dismissed, even if the tap was on the native overlay.
+        document.addEventListener('touchstart', (e) => {
+            const active = document.activeElement;
+            if (active && (active.type === 'date' || active.type === 'time')) {
+                // If we're clicking the picker itself, don't blur it yet
+                if (e.target !== active) {
+                    active.blur();
+                }
+            }
+        }, { passive: true });
     },
     resetScroll: function () {
         const mainElement = document.querySelector('main');
