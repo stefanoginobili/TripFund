@@ -312,7 +312,7 @@ public class TransactionFormTests : BunitContext
     }
 
     [Fact]
-    public async Task AddContribution_Submit_ShouldIncludeCurrencyInDescription()
+    public async Task AddContribution_Submit_ShouldUseDefaultDescription()
     {
         // Arrange
         var tripSlug = "test-trip";
@@ -348,7 +348,48 @@ public class TransactionFormTests : BunitContext
 
         // Assert
         savedTransaction.Should().NotBeNull();
-        savedTransaction!.Description.Should().Be("Versamento in cassa USD");
+        savedTransaction!.Description.Should().Be("Versamento in cassa");
+    }
+
+    [Fact]
+    public async Task AddContribution_Submit_ShouldUseManualDescription()
+    {
+        // Arrange
+        var tripSlug = "test-trip";
+        var config = new TripConfig
+        {
+            Id = "123",
+            Name = "Test Trip",
+            Currencies = new Dictionary<string, Currency> { { "EUR", new Currency { Symbol = "€" } } },
+            Members = new Dictionary<string, User>
+            {
+                { "mario", new User { Name = "Mario", Avatar = "M" } }
+            }
+        };
+        _storageMock.Setup(s => s.GetTripConfigAsync(tripSlug)).ReturnsAsync(config);
+        
+        Transaction? savedTransaction = null;
+        _storageMock.Setup(s => s.SaveTransactionAsync(tripSlug, It.IsAny<Transaction>(), It.IsAny<string>(), It.IsAny<bool>(), It.IsAny<Dictionary<string, byte[]>>()))
+            .Callback<string, Transaction, string, bool, Dictionary<string, byte[]>>((s, t, d, b, a) => savedTransaction = t)
+            .Returns(Task.CompletedTask);
+
+        var cut = Render<AddContribution>(parameters => parameters.Add(p => p.tripSlug, tripSlug));
+
+        // Act
+        cut.Find(".amount-input").Change("100");
+        cut.Find("input[placeholder='es. Versamento iniziale']").Change("Ricarica fondo comune");
+        
+        // Select member
+        cut.Find(".custom-member-selector").Click();
+        var marioItem = cut.FindAll(".dropdown-member-item").First(i => i.InnerHtml.Contains("Mario"));
+        marioItem.Click();
+
+        // Submit
+        await cut.Find(".submit-btn").ClickAsync();
+
+        // Assert
+        savedTransaction.Should().NotBeNull();
+        savedTransaction!.Description.Should().Be("Ricarica fondo comune");
     }
 
     [Fact]

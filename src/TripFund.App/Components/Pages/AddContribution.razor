@@ -42,6 +42,11 @@
                     </div>
                 </div>
 
+                <div class="form-group">
+                    <label>Descrizione</label>
+                    <input type="text" class="form-control" @bind="description" placeholder="es. Versamento iniziale" />
+                </div>
+
                 <div class="datetime-row">
                     <div class="form-group flex-1">
                         <label>Data</label>
@@ -161,6 +166,7 @@
     private string selectedCurrency = "";
     private string selectedMemberSlug = "";
     private decimal amount;
+    private string description = "Versamento in cassa";
     private DateTime transactionDate = DateTime.Now;
     private bool sendReceipt = false;
     private string errorMessage = "";
@@ -186,6 +192,7 @@
                 {
                     selectedCurrency = editingTransaction.Currency;
                     amount = editingTransaction.Amount;
+                    description = editingTransaction.Description;
                     transactionDate = editingTransaction.Date.ToLocalTime();
                     selectedMemberSlug = editingTransaction.Split.Keys.FirstOrDefault() ?? "";
                 }
@@ -329,6 +336,12 @@
             return;
         }
 
+        if (string.IsNullOrWhiteSpace(description))
+        {
+            errorMessage = "Inserire una descrizione.";
+            return;
+        }
+
         if (string.IsNullOrEmpty(selectedMemberSlug))
         {
             errorMessage = "Selezionare un partecipante.";
@@ -344,7 +357,7 @@
             Date = transactionDate.ToUniversalTime(),
             Currency = selectedCurrency,
             Amount = amount,
-            Description = $"Versamento in cassa {selectedCurrency}",
+            Description = description,
             Author = authorName,
             Split = new Dictionary<string, SplitInfo> { { selectedMemberSlug, new SplitInfo { Amount = amount, Manual = true } } }
         };
