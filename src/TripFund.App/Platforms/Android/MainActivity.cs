@@ -19,7 +19,7 @@ public class MainActivity : MauiAppCompatActivity
             WindowCompat.SetDecorFitsSystemWindows(Window, false);
             
 #pragma warning disable CA1422
-            Window.SetStatusBarColor(Android.Graphics.Color.Transparent);
+            Window.SetStatusBarColor(Android.Graphics.Color.ParseColor("#F8FBF9"));
             Window.SetNavigationBarColor(Android.Graphics.Color.Transparent);
 #pragma warning restore CA1422
 
