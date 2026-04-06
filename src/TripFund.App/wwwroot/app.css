@@ -22,7 +22,7 @@ main {
 
 .content {
     padding: 1.5rem;
-    padding-bottom: calc(5rem + env(safe-area-inset-bottom)) !important;
+    padding-bottom: calc(5rem + env(safe-area-inset-bottom));
 }
 
 h1:focus {
