@@ -36,5 +36,7 @@
     <string>Questa app ha bisogno di salvare le foto delle ricevute nella tua libreria.</string>
     <key>NSPhotoLibraryUsageDescription</key>
     <string>Questa app ha bisogno di accedere alla tua libreria per selezionare le ricevute salvate.</string>
+    <key>UIUserInterfaceStyle</key>
+    <string>Light</string>
 </dict>
 </plist>

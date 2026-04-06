@@ -17,6 +17,7 @@ public partial class App : MauiWinUIApplication
 	public App()
 	{
 		this.InitializeComponent();
+		this.RequestedTheme = Microsoft.UI.Xaml.ApplicationTheme.Light;
 	}
 
 	protected override MauiApp CreateMauiApp() => MauiProgram.CreateMauiApp();
