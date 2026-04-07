@@ -1,0 +1,92 @@
+@using TripFund.App.Services
+@inject INativeDatePickerService DatePickerService
+
+<div class="form-group @Class">
+    @if (!string.IsNullOrEmpty(Label))
+    {
+        <label>@Label</label>
+    }
+    <div class="native-picker-box" @onclick="HandleClick">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="picker-icon">
+            <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+            <line x1="16" y1="2" x2="16" y2="6"></line>
+            <line x1="8" y1="2" x2="8" y2="6"></line>
+            <line x1="3" y1="10" x2="21" y2="10"></line>
+        </svg>
+        <span class="picker-value">@GetFormattedDate()</span>
+        <input type="date" class="hidden-native-input" value="@Value.ToString("yyyy-MM-dd")" @onchange="OnInputChanged" readonly="@isAndroid" />
+    </div>
+</div>
+
+@code {
+    [Parameter] public DateTime Value { get; set; }
+    [Parameter] public EventCallback<DateTime> ValueChanged { get; set; }
+    [Parameter] public string? Label { get; set; }
+    [Parameter] public string? Class { get; set; }
+
+    private bool isAndroid = DeviceInfo.Current.Platform == DevicePlatform.Android;
+
+    private string GetFormattedDate()
+    {
+        var today = DateTime.Today;
+        if (Value.Date == today) return "Oggi";
+        if (Value.Date == today.AddDays(-1)) return "Ieri";
+        return Value.ToString("dd/MM/yyyy");
+    }
+
+    private async Task HandleClick()
+    {
+        if (isAndroid)
+        {
+            var result = await DatePickerService.ShowDatePickerAsync(Value);
+            if (result.HasValue)
+            {
+                var newValue = new DateTime(result.Value.Year, result.Value.Month, result.Value.Day, Value.Hour, Value.Minute, Value.Second);
+                await ValueChanged.InvokeAsync(newValue);
+            }
+        }
+    }
+
+    private async Task OnInputChanged(ChangeEventArgs e)
+    {
+        if (!isAndroid && DateTime.TryParse(e.Value?.ToString(), out var date))
+        {
+            var newValue = new DateTime(date.Year, date.Month, date.Day, Value.Hour, Value.Minute, Value.Second);
+            await ValueChanged.InvokeAsync(newValue);
+        }
+    }
+}
+
+<style>
+    .native-picker-box {
+        background-color: #F1F3F5;
+        border-radius: 16px;
+        padding: 0.85rem 1rem;
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        position: relative;
+        cursor: pointer;
+        min-height: 56px;
+    }
+
+    .picker-icon {
+        color: #20563C;
+    }
+
+    .picker-value {
+        font-size: 1.1rem;
+        font-weight: 700;
+        color: #1A3C2F;
+    }
+
+    .hidden-native-input {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        opacity: 0;
+        cursor: pointer;
+    }
+</style>

@@ -28,6 +28,10 @@
     </array>
     <key>XSAppIconAssets</key>
     <string>Assets.xcassets/appicon.appiconset</string>
+    <key>UILaunchStoryboardName</key>
+    <string>MauiSplashScreen</string>
+    <key>UISupportsIndirectInputEvents</key>
+    <true/>
     <key>NSCameraUsageDescription</key>
     <string>Questa app ha bisogno di accedere alla fotocamera per scattare foto delle ricevute.</string>
     <key>NSLocationWhenInUseUsageDescription</key>

@@ -28,6 +28,12 @@ public static class MauiProgram
 		builder.Services.AddSingleton<Services.IThumbnailService, Services.ThumbnailService>();
 		builder.Services.AddSingleton<Services.IEmailService, Services.EmailService>();
 
+#if ANDROID
+		builder.Services.AddSingleton<Services.INativeDatePickerService, Platforms.Android.NativeDatePickerService>();
+#else
+		builder.Services.AddSingleton<Services.INativeDatePickerService, Services.NativeDatePickerService>();
+#endif
+
 #if DEBUG
 		builder.Services.AddBlazorWebViewDeveloperTools();
 		builder.Logging.AddDebug();
