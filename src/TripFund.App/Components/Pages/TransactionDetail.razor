@@ -54,7 +54,7 @@
     }
     else
     {
-        <main class="content">
+        <div class="content">
             <div class="summary-card">
                 <div class="transaction-icon @(transaction.Type == "expense" ? "expense-icon" : "contrib-icon")">
                     @if(transaction.Type == "expense")
@@ -127,7 +127,7 @@
                     </div>
                 </div>
             }
-        </main>
+        </div>
     }
 </div>
 
@@ -238,10 +238,12 @@
         min-height: 100vh;
         display: flex;
         flex-direction: column;
-        margin: -1.5rem;
     }
 
     .app-header {
+        position: sticky;
+        top: 0;
+        z-index: 999;
         display: flex;
         align-items: center;
         justify-content: space-between;

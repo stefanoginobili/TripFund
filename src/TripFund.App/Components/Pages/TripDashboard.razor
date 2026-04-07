@@ -30,7 +30,7 @@
     {
         <CurrencySelector Currencies="config.Currencies.Keys" SelectedCurrency="@selectedCurrency" OnCurrencySelected="SelectCurrency" />
 
-        <main class="content">
+        <div class="content">
             <div class="summary-card">
                 <p class="summary-label">@(isExceeded ? "Eccedenza" : "Saldo")</p>
                 <h2 class="summary-total">@FormatCurrency(totalRemaining, selectedCurrency)</h2>
@@ -137,7 +137,7 @@
                     }
                 </div>
             </section>
-        </main>
+        </div>
     }
 </div>
 
@@ -288,10 +288,12 @@
         min-height: 100vh;
         display: flex;
         flex-direction: column;
-        margin: -1.5rem;
     }
 
     .app-header {
+        position: sticky;
+        top: 0;
+        z-index: 999;
         display: flex;
         align-items: center;
         justify-content: space-between;

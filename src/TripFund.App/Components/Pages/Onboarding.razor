@@ -10,7 +10,7 @@
         <h1 class="brand-name">TripFund</h1>
     </header>
 
-    <main class="onboarding-content">
+    <div class="onboarding-content">
         <div class="icon-container">
             <div class="app-icon">
                 <div class="inner-square"></div>
@@ -56,7 +56,7 @@
                 </span>
             </button>
         </div>
-    </main>
+    </div>
 
 </div>
 
@@ -87,11 +87,13 @@
         display: flex;
         flex-direction: column;
         align-items: center;
-        margin: -1.5rem;
         padding: 1.5rem;
     }
 
     .app-header {
+        position: sticky;
+        top: 0;
+        z-index: 999;
         margin-bottom: 2rem;
     }
 

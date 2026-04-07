@@ -1,20 +1,22 @@
-html, body {
+html, body, #app {
     font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
     background-color: #F8FBF9;
     margin: 0;
     padding: 0;
+    height: 100%;
+    overflow: hidden;
 }
 
 .page {
     position: relative;
     display: flex;
     flex-direction: column;
-    height: 100vh;
+    height: 100%;
     overflow: hidden;
     background-color: #F8FBF9;
 }
 
-main {
+.page > main {
     flex: 1;
     overflow-y: auto;
     -webkit-overflow-scrolling: touch;
@@ -87,8 +89,6 @@ h1:focus {
 
 .status-bar-safe-area {
     display: flex;
-    position: sticky;
-    top: 0;
     height: env(safe-area-inset-top);
     background-color: #F8FBF9;
     width: 100%;

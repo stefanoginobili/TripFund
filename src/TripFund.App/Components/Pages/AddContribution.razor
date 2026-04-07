@@ -26,7 +26,7 @@
     {
         <CurrencySelector Currencies="config.Currencies.Keys" SelectedCurrency="@selectedCurrency" OnCurrencySelected="SelectCurrency" />
 
-        <main class="content">
+        <div class="content">
             <div class="form-container">
                 <div class="amount-tile">
                     <div class="tile-icon">
@@ -149,7 +149,7 @@
                     @(isSubmitting ? "Salvataggio..." : "Salva")
                 </button>
             </div>
-        </main>
+        </div>
     }
 </div>
 
@@ -384,10 +384,12 @@
         min-height: 100vh;
         display: flex;
         flex-direction: column;
-        margin: -1.5rem;
     }
 
     .app-header {
+        position: sticky;
+        top: 0;
+        z-index: 999;
         display: flex;
         align-items: center;
         justify-content: space-between;

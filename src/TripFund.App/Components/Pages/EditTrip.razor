@@ -44,7 +44,7 @@
     }
     else
     {
-        <main class="content">
+        <div class="content">
             <!-- GENERAL INFO SECTION -->
             <GeneralInfoForm @bind-Name="config.Name"
                              @bind-Slug="tripSlug"
@@ -268,7 +268,7 @@
             </div>
 
             <button class="save-btn-large" @onclick="HandleSave">Salva</button>
-        </main>
+        </div>
     }
 </div>
 
@@ -473,11 +473,13 @@
         min-height: 100vh;
         display: flex;
         flex-direction: column;
-        margin: -1.5rem;
         font-family: 'Open Sans', sans-serif;
     }
 
     .app-header {
+        position: sticky;
+        top: 0;
+        z-index: 999;
         display: flex;
         align-items: center;
         justify-content: space-between;

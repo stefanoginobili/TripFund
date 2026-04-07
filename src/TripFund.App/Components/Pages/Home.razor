@@ -18,7 +18,7 @@
         </button>
     </header>
 
-    <main class="content">
+    <div class="content">
         <h2 class="page-title">I miei viaggi</h2>
 
         <div class="trips-sections">
@@ -75,7 +75,7 @@
                 }
             }
         </div>
-    </main>
+    </div>
 
     <footer class="footer">
         <button class="btn-create" @onclick="NavigateToCreate">Crea viaggio</button>
@@ -208,8 +208,6 @@
         background-color: #F8FBF9;
         display: flex;
         flex-direction: column;
-        margin: -1.5rem;
-        padding-bottom: 1rem;
     }
 
     .app-header {
@@ -219,6 +217,9 @@
         padding: 1rem 1.5rem;
         background-color: #FFFFFF;
         border-bottom: 1px solid #F0F0F0;
+        position: sticky;
+        top: 0;
+        z-index: 999;
     }
 
     .brand-name {
@@ -238,9 +239,8 @@
         display: flex;
     }
 
-    /* Override global content padding for this page */
     .content {
-        padding: 1.5rem 1.5rem 0 1.5rem !important;
+        padding: 1.5rem;
         display: flex;
         flex-direction: column;
         gap: 1.25rem;

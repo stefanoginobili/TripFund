@@ -19,7 +19,7 @@
         <div style="width: 40px;"></div> <!-- Empty space to keep title centered -->
     </header>
 
-    <main class="content">
+    <div class="content">
         <GeneralInfoForm @bind-Name="tripName"
                          @bind-Slug="tripSlug"
                          @bind-StartDate="startDate"
@@ -35,7 +35,7 @@
         }
 
         <button class="save-btn-large" @onclick="HandleCreate">Crea</button>
-    </main>
+    </div>
 </div>
 
 @code {
@@ -95,10 +95,12 @@
         min-height: 100vh;
         display: flex;
         flex-direction: column;
-        margin: -1.5rem;
     }
 
     .app-header {
+        position: sticky;
+        top: 0;
+        z-index: 999;
         display: flex;
         align-items: center;
         justify-content: space-between;

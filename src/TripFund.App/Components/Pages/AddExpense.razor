@@ -26,7 +26,7 @@
     {
         <CurrencySelector Currencies="config.Currencies.Keys" SelectedCurrency="@selectedCurrency" OnCurrencySelected="SelectCurrency" />
 
-        <main class="content">
+        <div class="content">
             <div class="form-container">
                 <div class="amount-tile">
                     <div class="tile-icon">
@@ -177,7 +177,7 @@
                     @(isSubmitting ? "Salvataggio..." : "Salva")
                 </button>
             </div>
-        </main>
+        </div>
     }
 </div>
 
@@ -632,8 +632,18 @@
 
 <style>
     /* Reuse some styles from AddContribution */
-    .add-transaction-page { background-color: #F8FBF9; min-height: 100vh; display: flex; flex-direction: column; margin: -1.5rem; }
-    .app-header { display: flex; align-items: center; justify-content: space-between; padding: 1rem 1.5rem; background-color: #FFFFFF; border-bottom: 1px solid #F0F0F0; }
+    .add-transaction-page { background-color: #F8FBF9; min-height: 100vh; display: flex; flex-direction: column; }
+    .app-header {
+        position: sticky;
+        top: 0;
+        z-index: 999;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 1rem 1.5rem;
+        background-color: #FFFFFF;
+        border-bottom: 1px solid #F0F0F0;
+    }
     .header-title {
         font-size: 1.25rem;
         font-weight: 800;

@@ -18,7 +18,7 @@
         <div style="width: 40px;"></div> <!-- Spacer to center title -->
     </header>
 
-    <main class="content">
+    <div class="content">
         <div class="form-card">
             <div class="form-group mb-4">
                 <label class="form-label">NOME AUTORE</label>
@@ -51,7 +51,7 @@
                 <p class="help-text">L'identificativo univoco del dispositivo non può essere modificato.</p>
             </div>
         </div>
-    </main>
+    </div>
 
     <footer class="footer">
         <button class="btn-submit" disabled="@(string.IsNullOrWhiteSpace(authorName))" @onclick="SaveSettings">Salva</button>
@@ -100,10 +100,12 @@
         min-height: 100vh;
         display: flex;
         flex-direction: column;
-        margin: -1.5rem;
     }
 
     .app-header {
+        position: sticky;
+        top: 0;
+        z-index: 999;
         display: flex;
         align-items: center;
         justify-content: space-between;
