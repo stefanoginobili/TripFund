@@ -31,6 +31,7 @@ public class EmailReceiptTests : BunitContext
         Services.AddSingleton(_storageMock.Object);
         Services.AddSingleton(_emailMock.Object);
         Services.AddSingleton(_alertMock.Object);
+        Services.AddSingleton(new Mock<INativeDatePickerService>().Object);
 
         // Mock AppSettings
         var settings = new AppSettings { AuthorName = "Test Author", DeviceId = "test-author" };

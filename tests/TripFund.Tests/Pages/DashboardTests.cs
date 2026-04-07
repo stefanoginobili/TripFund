@@ -23,6 +23,8 @@ public class DashboardTests : BunitContext
 
         _storageMock = new Mock<LocalTripStorageService>("dummy_path");
         Services.AddSingleton(_storageMock.Object);
+        Services.AddSingleton(new Mock<IEmailService>().Object);
+        Services.AddSingleton(new Mock<IAlertService>().Object);
     }
 
     [Fact]
@@ -536,5 +538,153 @@ public class DashboardTests : BunitContext
         // Assert
         cut.Find(".summary-sub").TextContent.Should().Contain("Eccedenza");
         cut.Find(".progress-bar-fill").ClassName.Should().Contain("warning");
+    }
+
+    [Fact]
+    public void MemberDashboard_ShouldShowThreeDotMenuWithSummaryEmailAction()
+    {
+        // Arrange
+        var tripSlug = "test-trip";
+        var memberSlug = "mario";
+        var emailServiceMock = new Mock<IEmailService>();
+        var alertServiceMock = new Mock<IAlertService>();
+        Services.AddSingleton(emailServiceMock.Object);
+        Services.AddSingleton(alertServiceMock.Object);
+
+        var config = new TripConfig
+        {
+            Id = "123",
+            Name = "Test Trip",
+            Currencies = new Dictionary<string, Currency> { { "EUR", new Currency { Symbol = "€" } } },
+            Members = new Dictionary<string, User> { { "mario", new User { Name = "Mario", Email = "mario@example.com" } } }
+        };
+
+        var transactions = new List<Transaction>
+        {
+            new Transaction
+            {
+                Id = "t1",
+                Type = "contribution",
+                Currency = "EUR",
+                Amount = 100,
+                Split = new Dictionary<string, SplitInfo> { { "mario", new SplitInfo { Amount = 100, Manual = true } } }
+            }
+        };
+
+        _storageMock.Setup(s => s.GetTripConfigAsync(tripSlug)).ReturnsAsync(config);
+        _storageMock.Setup(s => s.GetTransactionsAsync(tripSlug)).ReturnsAsync(transactions);
+
+        // Act
+        var cut = Render<MemberDashboard>(parameters => parameters
+            .Add(p => p.tripSlug, tripSlug)
+            .Add(p => p.memberSlug, memberSlug)
+        );
+
+        // Assert - Three-dot button should be present
+        var menuBtn = cut.Find(".header-actions .icon-btn");
+        menuBtn.InnerHtml.Should().Contain("<circle");
+
+        // Menu should be closed initially
+        cut.FindAll(".dropdown-menu-custom").Should().BeEmpty();
+
+        // Act - Open menu
+        menuBtn.Click();
+
+        // Assert - Menu should be open
+        var dropdown = cut.Find(".dropdown-menu-custom");
+        var summaryBtn = dropdown.QuerySelector(".dropdown-item");
+        summaryBtn.Should().NotBeNull();
+        summaryBtn!.TextContent.Should().Contain("Riepilogo Versamenti");
+        summaryBtn.HasAttribute("disabled").Should().BeFalse();
+
+        // Act - Click summary button
+        summaryBtn.Click();
+
+        // Assert - Email service should be called
+        emailServiceMock.Verify(e => e.SendEmailAsync(
+            It.Is<string>(s => s.Contains("Riepilogo versamenti")),
+            It.IsAny<string>(),
+            It.Is<string[]>(a => a.Contains("mario@example.com"))
+        ), Times.Once);
+    }
+
+    [Fact]
+    public void MemberDashboard_SummaryEmailAction_ShouldBeDisabledIfNoContributions()
+    {
+        // Arrange
+        var tripSlug = "test-trip";
+        var memberSlug = "mario";
+        Services.AddSingleton(new Mock<IEmailService>().Object);
+        Services.AddSingleton(new Mock<IAlertService>().Object);
+
+        var config = new TripConfig
+        {
+            Id = "123",
+            Name = "Test Trip",
+            Currencies = new Dictionary<string, Currency> { { "EUR", new Currency { Symbol = "€" } } },
+            Members = new Dictionary<string, User> { { "mario", new User { Name = "Mario", Email = "mario@example.com" } } }
+        };
+
+        _storageMock.Setup(s => s.GetTripConfigAsync(tripSlug)).ReturnsAsync(config);
+        _storageMock.Setup(s => s.GetTransactionsAsync(tripSlug)).ReturnsAsync(new List<Transaction>());
+
+        // Act
+        var cut = Render<MemberDashboard>(parameters => parameters
+            .Add(p => p.tripSlug, tripSlug)
+            .Add(p => p.memberSlug, memberSlug)
+        );
+
+        // Act - Open menu
+        cut.Find(".header-actions .icon-btn").Click();
+
+        // Assert - Button should be disabled
+        var summaryBtn = cut.Find(".dropdown-item");
+        summaryBtn.HasAttribute("disabled").Should().BeTrue();
+    }
+
+    [Fact]
+    public void MemberDashboard_SummaryEmailAction_ShouldBeDisabledIfMemberHasNoEmail()
+    {
+        // Arrange
+        var tripSlug = "test-trip";
+        var memberSlug = "mario";
+        Services.AddSingleton(new Mock<IEmailService>().Object);
+        Services.AddSingleton(new Mock<IAlertService>().Object);
+
+        var config = new TripConfig
+        {
+            Id = "123",
+            Name = "Test Trip",
+            Currencies = new Dictionary<string, Currency> { { "EUR", new Currency { Symbol = "€" } } },
+            Members = new Dictionary<string, User> { { "mario", new User { Name = "Mario", Email = "" } } }
+        };
+
+        var transactions = new List<Transaction>
+        {
+            new Transaction
+            {
+                Id = "t1",
+                Type = "contribution",
+                Currency = "EUR",
+                Amount = 100,
+                Split = new Dictionary<string, SplitInfo> { { "mario", new SplitInfo { Amount = 100, Manual = true } } }
+            }
+        };
+
+        _storageMock.Setup(s => s.GetTripConfigAsync(tripSlug)).ReturnsAsync(config);
+        _storageMock.Setup(s => s.GetTransactionsAsync(tripSlug)).ReturnsAsync(transactions);
+
+        // Act
+        var cut = Render<MemberDashboard>(parameters => parameters
+            .Add(p => p.tripSlug, tripSlug)
+            .Add(p => p.memberSlug, memberSlug)
+        );
+
+        // Act - Open menu
+        cut.Find(".header-actions .icon-btn").Click();
+
+        // Assert - Button should be disabled
+        var summaryBtn = cut.Find(".dropdown-item");
+        summaryBtn.HasAttribute("disabled").Should().BeTrue();
     }
 }
