@@ -80,18 +80,18 @@
                                 bool isFirst = index == 0;
                                 bool isLast = index == keys.Count - 1;
 
-                                <div class="popover-overlay" @onclick="() => openMenuCurrencyCode = null"></div>
-                                <div class="actions-dropdown">
-                                    <div class="dropdown-item-custom" @onclick="() => StartEditCurrency(curr.Key, curr.Value)">
+                                <div class="popover-overlay" @onclick="() => openMenuCurrencyCode = null" @onclick:stopPropagation></div>
+                                <div class="dropdown-menu-custom" @onclick:stopPropagation>
+                                    <div class="dropdown-item-custom" @onclick="() => { openMenuCurrencyCode = null; StartEditCurrency(curr.Key, curr.Value); }">
                                         Modifica
                                     </div>
-                                    <div class="dropdown-item-custom @(isFirst ? "disabled" : "")" @onclick="async () => { if(!isFirst) await MoveCurrencyUp(curr.Key); }">
+                                    <div class="dropdown-item-custom @(isFirst ? "disabled" : "")" @onclick="async () => { if(!isFirst) { openMenuCurrencyCode = null; await MoveCurrencyUp(curr.Key); } }">
                                         Sposta su
                                     </div>
-                                    <div class="dropdown-item-custom @(isLast ? "disabled" : "")" @onclick="async () => { if(!isLast) await MoveCurrencyDown(curr.Key); }">
+                                    <div class="dropdown-item-custom @(isLast ? "disabled" : "")" @onclick="async () => { if(!isLast) { openMenuCurrencyCode = null; await MoveCurrencyDown(curr.Key); } }">
                                         Sposta giù
                                     </div>
-                                    <div class="dropdown-item-custom text-danger" @onclick="() => ConfirmDeleteCurrency(curr.Key)">
+                                    <div class="dropdown-item-custom text-danger" @onclick="async () => { openMenuCurrencyCode = null; await ConfirmDeleteCurrency(curr.Key); }">
                                         Elimina
                                     </div>
                                 </div>
@@ -397,26 +397,34 @@
         margin: -0.5rem;
     }
 
-    .actions-dropdown {
+    .dropdown-menu-custom {
         position: absolute;
         top: 100%;
         right: 0;
         background-color: #FFFFFF;
         border-radius: 12px;
         box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+        padding: 0.5rem;
         z-index: 1101;
-        min-width: 120px;
-        overflow: hidden;
+        min-width: 150px;
         border: 1px solid #F0F0F0;
         margin-top: 0.5rem;
+        display: flex;
+        flex-direction: column;
     }
 
     .dropdown-item-custom {
         padding: 0.75rem 1rem;
-        font-size: 0.9rem;
+        font-size: 0.95rem;
         font-weight: 600;
         color: #1A3C2F;
         cursor: pointer;
+        transition: background-color 0.2s;
+        display: flex;
+        align-items: center;
+        border-radius: 8px;
+        width: 100%;
+        white-space: nowrap;
     }
 
     .dropdown-item-custom:hover {

@@ -15,6 +15,9 @@ namespace TripFund.Tests.Pages;
 public class TransactionFormTests : BunitContext
 {
     private readonly Mock<LocalTripStorageService> _storageMock;
+    private readonly Mock<IAlertService> _alertMock;
+    private readonly Mock<IEmailService> _emailMock;
+    private readonly Mock<INativeDatePickerService> _datePickerMock;
 
     public TransactionFormTests()
     {
@@ -23,7 +26,14 @@ public class TransactionFormTests : BunitContext
         System.Globalization.CultureInfo.DefaultThreadCurrentUICulture = itCulture;
 
         _storageMock = new Mock<LocalTripStorageService>("dummy_path");
+        _alertMock = new Mock<IAlertService>();
+        _emailMock = new Mock<IEmailService>();
+        _datePickerMock = new Mock<INativeDatePickerService>();
+        
         Services.AddSingleton(_storageMock.Object);
+        Services.AddSingleton(_alertMock.Object);
+        Services.AddSingleton(_emailMock.Object);
+        Services.AddSingleton(_datePickerMock.Object);
         
         // Mock AppSettings
         var settings = new AppSettings { AuthorName = "Test Author", DeviceId = "test-author" };
@@ -504,5 +514,41 @@ public class TransactionFormTests : BunitContext
         localDate.Day.Should().Be(20);
         localDate.Hour.Should().Be(15);
         localDate.Minute.Should().Be(30);
+    }
+
+    [Fact]
+    public void EditExpense_ShouldDeleteTransaction()
+    {
+        // Arrange
+        var tripSlug = "test-trip";
+        var transactionId = "trans-123";
+        var nav = Services.GetRequiredService<NavigationManager>();
+
+        var config = new TripConfig { Id = "1", Name = "Test Trip", Currencies = new Dictionary<string, Currency> { { "EUR", new Currency { Symbol = "€" } } } };
+        var transaction = new Transaction { Id = transactionId, Type = "expense", Amount = 100, Currency = "EUR", Description = "Test" };
+
+        _storageMock.Setup(s => s.GetTripConfigAsync(tripSlug)).ReturnsAsync(config);
+        _storageMock.Setup(s => s.GetLatestTransactionVersionWithMetadataAsync(tripSlug, transactionId))
+            .ReturnsAsync(new LocalTripStorageService.TransactionVersionInfo { Transaction = transaction });
+        _alertMock.Setup(a => a.ConfirmAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>()))
+            .ReturnsAsync(true);
+
+        nav.NavigateTo($"/trip/{tripSlug}/add-expense?edit={transactionId}");
+        var cut = Render<AddExpense>(parameters => parameters
+            .Add(p => p.tripSlug, tripSlug)
+        );
+
+        // Act - Open menu
+        var menuBtn = cut.Find("header .dropdown button.icon-btn");
+        menuBtn.Click();
+
+        // Click delete
+        var deleteBtn = cut.Find(".dropdown-item.text-danger");
+        deleteBtn.Click();
+
+        // Assert
+        _alertMock.Verify(a => a.ConfirmAsync("Elimina Spesa", It.IsAny<string>(), "Elimina", "Annulla"), Times.Once);
+        _storageMock.Verify(s => s.SaveTransactionAsync(tripSlug, transaction, "test-author", true, It.IsAny<Dictionary<string, byte[]>>()), Times.Once);
+        nav.Uri.Should().Contain($"/trip/{tripSlug}?currency=EUR");
     }
 }

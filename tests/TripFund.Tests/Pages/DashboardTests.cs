@@ -7,6 +7,7 @@ using TripFund.App.Services;
 using FluentAssertions;
 using System.Collections.Generic;
 using System.Linq;
+using AngleSharp.Dom;
 
 namespace TripFund.Tests.Pages;
 
@@ -295,6 +296,42 @@ public class DashboardTests : BunitContext
         usdTxRows.Should().HaveCount(1);
         usdTxRows[0].InnerHtml.Should().Contain("USD TX");
         usdTxRows.Any(r => r.InnerHtml.Contains("EUR")).Should().BeFalse();
+    }
+
+    [Fact]
+    public void TripDashboard_ShouldShowThreeDotMenuWithEditAction()
+    {
+        // Arrange
+        var tripSlug = "test-trip";
+        var config = new TripConfig
+        {
+            Id = "123",
+            Name = "Test Trip",
+            Currencies = new Dictionary<string, Currency> { { "EUR", new Currency { Symbol = "€" } } },
+            Members = new Dictionary<string, User> { { "mario", new User { Name = "Mario" } } }
+        };
+
+        _storageMock.Setup(s => s.GetTripConfigAsync(tripSlug)).ReturnsAsync(config);
+        _storageMock.Setup(s => s.GetTransactionsAsync(tripSlug)).ReturnsAsync(new List<Transaction>());
+
+        // Act
+        var cut = Render<TripDashboard>(parameters => parameters.Add(p => p.tripSlug, tripSlug));
+
+        // Assert - Three-dot button should be present
+        AngleSharp.Dom.IElement menuBtn = cut.FindAll(".header-actions .icon-btn").First();
+        menuBtn.InnerHtml.Should().Contain("<circle"); // SVG for three dots
+
+        // Menu should be closed initially
+        cut.FindAll(".dropdown-menu-custom").Should().BeEmpty();
+
+        // Act - Open menu
+        menuBtn.Click();
+
+        // Assert - Menu should be open
+        AngleSharp.Dom.IElement dropdown = cut.FindAll(".dropdown-menu-custom").First();
+        AngleSharp.Dom.IElement? editBtn = dropdown.QuerySelector(".dropdown-item");
+        editBtn.Should().NotBeNull();
+        editBtn!.TextContent.Should().Contain("Modifica");
     }
 
     [Fact]

@@ -17,7 +17,33 @@
             </svg>
         </button>
         <h1 class="header-title">@(config?.Name ?? "...")</h1>
-        <div class="spacer"></div>
+        <div class="header-actions">
+            @if (editingTransaction != null)
+            {
+                <div class="dropdown">
+                    <button class="icon-btn" @onclick="ToggleMenu">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="12" cy="12" r="1"></circle>
+                            <circle cx="12" cy="5" r="1"></circle>
+                            <circle cx="12" cy="19" r="1"></circle>
+                        </svg>
+                    </button>
+                    @if (isMenuOpen)
+                    {
+                        <div class="popover-overlay-menu" @onclick="ToggleMenu"></div>
+                        <div class="dropdown-menu-custom">
+                            <button class="dropdown-item text-danger" @onclick="DeleteTransaction">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="me-2">
+                                    <polyline points="3 6 5 6 21 6"></polyline>
+                                    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                                </svg>
+                                Elimina Versamento
+                            </button>
+                        </div>
+                    }
+                </div>
+            }
+        </div>
     </header>
 
     @if (config == null)
@@ -147,6 +173,7 @@
     private string authorName = "";
     private bool isSubmitting = false;
     private bool isMemberSelectorOpen = false;
+    private bool isMenuOpen = false;
 
     protected override async Task OnInitializedAsync()
     {
@@ -210,6 +237,32 @@
     private void SelectCurrency(string currencyCode)
     {
         if (editingTransaction == null) selectedCurrency = currencyCode;
+    }
+
+    private void ToggleMenu() => isMenuOpen = !isMenuOpen;
+
+    private async Task DeleteTransaction()
+    {
+        isMenuOpen = false;
+        if (editingTransaction == null) return;
+
+        bool confirm = await AlertService.ConfirmAsync(
+            "Elimina Versamento",
+            "Sei sicuro di voler eliminare questo versamento? L'operazione non può essere annullata.",
+            "Elimina",
+            "Annulla");
+
+        if (!confirm) return;
+
+        try
+        {
+            await Storage.SaveTransactionAsync(tripSlug, editingTransaction, deviceId, isDelete: true);
+            Nav.NavigateTo($"/trip/{tripSlug}?currency={selectedCurrency}");
+        }
+        catch (Exception ex)
+        {
+            errorMessage = "Errore durante l'eliminazione: " + ex.Message;
+        }
     }
 
     private async Task GoBack()
@@ -342,10 +395,18 @@
     }
 
     .header-title {
+        position: absolute;
+        left: 50%;
+        transform: translateX(-50%);
         font-size: 1.25rem;
         font-weight: 800;
         color: #1A3C2F;
         margin: 0;
+        text-align: center;
+        width: 60%;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
     }
 
     .icon-btn {
@@ -356,6 +417,60 @@
         display: flex;
         align-items: center;
         justify-content: center;
+    }
+
+    .header-actions {
+        display: flex;
+        align-items: center;
+        position: relative;
+    }
+
+    .dropdown-menu-custom {
+        position: absolute;
+        top: 100%;
+        right: 0;
+        background-color: #FFFFFF;
+        border-radius: 12px;
+        box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+        padding: 0.5rem;
+        z-index: 1101;
+        min-width: 150px;
+        display: flex;
+        flex-direction: column;
+        border: 1px solid #F0F0F0;
+    }
+
+    .dropdown-item {
+        background: none;
+        border: none;
+        padding: 0.75rem 1rem;
+        text-align: left;
+        font-weight: 600;
+        font-size: 0.95rem;
+        color: #1A3C2F;
+        display: flex;
+        align-items: center;
+        border-radius: 8px;
+        width: 100%;
+        white-space: nowrap;
+    }
+
+    .dropdown-item:hover:not(:disabled) {
+        background-color: #F8FBF9;
+    }
+
+    .text-danger {
+        color: #DC3545 !important;
+    }
+
+    .popover-overlay-menu {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: transparent;
+        z-index: 1100;
     }
 
     .spacer { width: 36px; }

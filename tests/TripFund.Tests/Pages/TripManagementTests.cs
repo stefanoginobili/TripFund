@@ -13,6 +13,7 @@ public class TripManagementTests : BunitContext
     private readonly Mock<LocalTripStorageService> _storageMock;
     private readonly Mock<IDriveService> _driveMock;
     private readonly Mock<IAlertService> _alertMock;
+    private readonly Mock<INativeDatePickerService> _datePickerMock;
 
     public TripManagementTests()
     {
@@ -23,10 +24,12 @@ public class TripManagementTests : BunitContext
         _storageMock = new Mock<LocalTripStorageService>("dummy_path");
         _driveMock = new Mock<IDriveService>();
         _alertMock = new Mock<IAlertService>();
+        _datePickerMock = new Mock<INativeDatePickerService>();
         
         Services.AddSingleton(_storageMock.Object);
         Services.AddSingleton(_driveMock.Object);
         Services.AddSingleton(_alertMock.Object);
+        Services.AddSingleton(_datePickerMock.Object);
     }
 
     [Fact]
