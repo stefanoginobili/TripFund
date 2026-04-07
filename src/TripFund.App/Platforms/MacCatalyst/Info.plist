@@ -44,5 +44,9 @@
     <string>Questa app ha bisogno di accedere alla tua libreria per selezionare le ricevute salvate.</string>
     <key>UIUserInterfaceStyle</key>
     <string>Light</string>
+    <key>LSApplicationQueriesSchemes</key>
+    <array>
+        <string>mailto</string>
+    </array>
 </dict>
 </plist>

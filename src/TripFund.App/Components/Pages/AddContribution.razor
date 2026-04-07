@@ -3,6 +3,8 @@
 @using TripFund.App.Services
 @using TripFund.App.Utilities
 @inject LocalTripStorageService Storage
+@inject IEmailService EmailService
+@inject IAlertService AlertService
 @inject NavigationManager Nav
 @inject IJSRuntime JSRuntime
 
@@ -299,6 +301,8 @@
     {
         errorMessage = "";
 
+        if (config == null) return;
+
         if (amount <= 0)
         {
             errorMessage = "Inserire un importo valido.";
@@ -334,6 +338,25 @@
         try
         {
             await Storage.SaveTransactionAsync(tripSlug, transaction, deviceId);
+            
+            if (config.Members.TryGetValue(selectedMemberSlug, out var member) && !string.IsNullOrEmpty(member.Email))
+            {
+                bool confirm = await AlertService.ConfirmAsync("Invia ricevuta", $"Vuoi inviare una ricevuta via email a {member.Name}?", "Sì", "No");
+                if (confirm)
+                {
+                    try
+                    {
+                        var updatedTransactions = await Storage.GetTransactionsAsync(tripSlug);
+                        var body = ReceiptGenerator.GenerateContributionText(config, transaction, updatedTransactions);
+                        await EmailService.SendEmailAsync($"TripFund - {config.Name} - Riepilogo aggiornato versamenti", body, new[] { member.Email });
+                    }
+                    catch (Exception emailEx)
+                    {
+                        await AlertService.ShowAlertAsync("Errore Email", "Non è stato possibile preparare l'email: " + emailEx.Message);
+                    }
+                }
+            }
+
             await GoBack();
         }
         catch (Exception ex)

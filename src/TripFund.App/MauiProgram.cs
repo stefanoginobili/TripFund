@@ -26,6 +26,7 @@ public static class MauiProgram
 		builder.Services.AddSingleton<Services.IDriveService, Services.MockDriveService>();
 		builder.Services.AddSingleton<Services.IAlertService, Services.MauiAlertService>();
 		builder.Services.AddSingleton<Services.IThumbnailService, Services.ThumbnailService>();
+		builder.Services.AddSingleton<Services.IEmailService, Services.EmailService>();
 
 #if DEBUG
 		builder.Services.AddBlazorWebViewDeveloperTools();
