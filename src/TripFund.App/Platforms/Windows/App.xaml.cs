@@ -18,6 +18,9 @@ public partial class App : MauiWinUIApplication
 	{
 		this.InitializeComponent();
 		this.RequestedTheme = Microsoft.UI.Xaml.ApplicationTheme.Light;
+		
+		// Force it-IT locale for Windows
+		global::Windows.Globalization.ApplicationLanguages.PrimaryLanguageOverride = "it-IT";
 	}
 
 	protected override MauiApp CreateMauiApp() => MauiProgram.CreateMauiApp();

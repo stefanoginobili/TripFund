@@ -1,4 +1,5 @@
 ﻿using Microsoft.Extensions.Logging;
+using Microsoft.AspNetCore.Components.WebView.Maui;
 
 namespace TripFund.App;
 
@@ -9,6 +10,8 @@ public static class MauiProgram
 		var itCulture = new System.Globalization.CultureInfo("it-IT");
 		System.Globalization.CultureInfo.DefaultThreadCurrentCulture = itCulture;
 		System.Globalization.CultureInfo.DefaultThreadCurrentUICulture = itCulture;
+		System.Globalization.CultureInfo.CurrentCulture = itCulture;
+		System.Globalization.CultureInfo.CurrentUICulture = itCulture;
 
 		var builder = MauiApp.CreateBuilder();
 		builder
