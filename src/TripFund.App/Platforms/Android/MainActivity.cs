@@ -32,15 +32,21 @@ public class MainActivity : MauiAppCompatActivity
         Java.Util.Locale.Default = locale;
 
         var appLocale = LocaleListCompat.ForLanguageTags("it-IT");
-        AppCompatDelegate.ApplicationLocales = appLocale;
+        if (appLocale != null)
+        {
+            AppCompatDelegate.ApplicationLocales = appLocale;
+        }
 
         base.OnCreate(savedInstanceState);
 
         // Ensure configuration is updated for current resources
-        #pragma warning disable CA1422
-        Resources.Configuration.SetLocale(locale);
-        Resources.UpdateConfiguration(Resources.Configuration, Resources.DisplayMetrics);
-        #pragma warning restore CA1422
+#pragma warning disable CA1422
+        if (Resources?.Configuration != null)
+        {
+            Resources.Configuration.SetLocale(locale);
+            Resources.UpdateConfiguration(Resources.Configuration, Resources.DisplayMetrics);
+        }
+#pragma warning restore CA1422
 
         AppCompatDelegate.DefaultNightMode = AppCompatDelegate.ModeNightNo;
         if (Window != null)

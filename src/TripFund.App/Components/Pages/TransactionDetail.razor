@@ -1,10 +1,12 @@
 @page "/trip/{tripSlug}/transaction/{transactionId}"
 @using TripFund.App.Models
 @using TripFund.App.Services
+@using System.IO
 @inject LocalTripStorageService Storage
 @inject NavigationManager Nav
 @inject IAlertService Alerts
 @inject IJSRuntime JSRuntime
+@inject IThumbnailService Thumbnails
 
 <div class="transaction-detail-page">
     <header class="app-header">
@@ -92,19 +94,31 @@
                 </div>
             </div>
 
-            @if (transaction.Attachments.Any())
+            @if (previews.Any())
             {
                 <div class="info-section">
                     <h3 class="section-header">Allegati</h3>
-                    <div class="attachments-list">
-                        @foreach (var attachment in transaction.Attachments)
+                    <div class="attachments-grid">
+                        @foreach (var preview in previews)
                         {
-                            <div class="info-card clickable" @onclick="() => OpenAttachment(attachment)">
-                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="me-2 text-muted">
-                                    <path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"></path>
-                                    <polyline points="13 2 13 9 20 9"></polyline>
-                                </svg>
-                                <span>@attachment</span>
+                            <div class="attachment-preview-wrapper" @onclick="() => OpenAttachment(preview.FileName)">
+                                <div class="attachment-square">
+                                    @if (preview.IsImage && !string.IsNullOrEmpty(preview.PreviewUrl))
+                                    {
+                                        <img src="@preview.PreviewUrl" alt="@preview.FileName" />
+                                    }
+                                    else
+                                    {
+                                        <div class="file-icon-placeholder">
+                                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                <path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"></path>
+                                                <polyline points="13 2 13 9 20 9"></polyline>
+                                            </svg>
+                                            <span class="file-ext">@(Path.GetExtension(preview.FileName).TrimStart('.').ToUpper())</span>
+                                        </div>
+                                    }
+                                </div>
+                                <div class="attachment-name">@Path.GetFileNameWithoutExtension(preview.FileName)</div>
                             </div>
                         }
                     </div>
@@ -141,6 +155,7 @@
     private string deviceId = "";
     private bool isMenuOpen = false;
     private bool canEdit = true;
+    private List<AttachmentPreview> previews = new();
 
     protected override async Task OnInitializedAsync()
     {
@@ -150,12 +165,48 @@
         if (transaction != null && config != null)
         {
             canEdit = transaction.Split.Keys.All(slug => config.Members.ContainsKey(slug));
+            await LoadPreviews();
         }
 
         var settings = await Storage.GetAppSettingsAsync();
         if (settings != null)
         {
             deviceId = settings.DeviceId;
+        }
+    }
+
+    private async Task LoadPreviews()
+    {
+        if (transaction == null) return;
+        previews.Clear();
+        foreach (var fileName in transaction.Attachments)
+        {
+            var path = await Storage.GetAttachmentPath(tripSlug, transactionId, fileName);
+            var preview = new AttachmentPreview { FileName = fileName };
+            if (!string.IsNullOrEmpty(path))
+            {
+                var ext = Path.GetExtension(fileName).ToLower();
+                // Try to get native thumbnail first (covers images and documents on supporting platforms)
+                var nativeThumb = await Thumbnails.GetThumbnailBase64Async(path);
+                if (!string.IsNullOrEmpty(nativeThumb))
+                {
+                    preview.PreviewUrl = nativeThumb;
+                    preview.IsImage = true;
+                }
+                else if (ext == ".jpg" || ext == ".jpeg" || ext == ".png" || ext == ".gif" || ext == ".webp")
+                {
+                    // Fallback for images if native generator failed but it is an image
+                    try
+                    {
+                        var bytes = await File.ReadAllBytesAsync(path);
+                        var base64 = Convert.ToBase64String(bytes);
+                        preview.PreviewUrl = $"data:image/{ext.TrimStart('.')};base64,{base64}";
+                        preview.IsImage = true;
+                    }
+                    catch { /* ignore */ }
+                }
+            }
+            previews.Add(preview);
         }
     }
 
@@ -229,6 +280,13 @@
             return $"{currencyCode} {amount.ToString(format)}";
         }
         return $"{currencyCode} {amount.ToString("N2")}";
+    }
+
+    private class AttachmentPreview
+    {
+        public string FileName { get; set; } = "";
+        public string? PreviewUrl { get; set; }
+        public bool IsImage { get; set; }
     }
 }
 
@@ -471,9 +529,57 @@
         color: #6C757D;
     }
 
-    .attachments-list {
+    .attachments-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 12px;
+    }
+
+    .attachment-preview-wrapper {
         display: flex;
         flex-direction: column;
-        gap: 0.75rem;
+        gap: 6px;
+        cursor: pointer;
+    }
+
+    .attachment-square {
+        aspect-ratio: 1 / 1;
+        width: 100%;
+        background-color: #FFFFFF;
+        border: 1px solid #E0E0E0;
+        border-radius: 12px;
+        overflow: hidden;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.02);
+    }
+
+    .attachment-square img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+
+    .file-icon-placeholder {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        color: #6C757D;
+    }
+
+    .file-ext {
+        font-size: 0.6rem;
+        font-weight: 800;
+        margin-top: 2px;
+    }
+
+    .attachment-name {
+        font-size: 0.7rem;
+        color: #6C757D;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        text-align: center;
     }
 </style>
