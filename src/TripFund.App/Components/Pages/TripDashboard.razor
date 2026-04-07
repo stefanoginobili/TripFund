@@ -24,8 +24,9 @@
 
     @if (config == null)
     {
-        <p class="status-text">Caricamento...</p>
+        <LoadingSpinner />
     }
+
     else
     {
         <CurrencySelector Currencies="config.Currencies.Keys" SelectedCurrency="@selectedCurrency" OnCurrencySelected="SelectCurrency" />

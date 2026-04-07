@@ -24,8 +24,9 @@
         <div class="trips-sections">
             @if (isLoading)
             {
-                <p class="status-text">Caricamento...</p>
+                <LoadingSpinner />
             }
+
             else if (currentTrips.Count == 0 && futureTrips.Count == 0 && pastTrips.Count == 0)
             {
                 <div class="empty-state">

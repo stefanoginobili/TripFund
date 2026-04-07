@@ -14,14 +14,15 @@
                 <polyline points="12 19 5 12 12 5"></polyline>
             </svg>
         </button>
-        <h1 class="header-title">@(config?.Name ?? "Caricamento...")</h1>
+        <h1 class="header-title">@(config?.Name ?? "...")</h1>
         <div class="spacer"></div>
     </header>
 
     @if (config == null)
     {
-        <p class="status-text">Caricamento...</p>
+        <LoadingSpinner />
     }
+
     else
     {
         <CurrencySelector Currencies="config.Currencies.Keys" SelectedCurrency="@selectedCurrency" OnCurrencySelected="SelectCurrency" />

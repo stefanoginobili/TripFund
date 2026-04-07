@@ -52,8 +52,9 @@
 
     @if (transaction == null || config == null)
     {
-        <p class="status-text">Caricamento...</p>
+        <LoadingSpinner />
     }
+
     else
     {
         <div class="content">
