@@ -19,7 +19,7 @@
     protected override async Task OnInitializedAsync()
     {
         var settings = await Storage.GetAppSettingsAsync();
-        if (settings == null && !Nav.Uri.EndsWith("/onboarding"))
+        if (string.IsNullOrEmpty(settings?.DeviceId) && !Nav.Uri.EndsWith("/onboarding"))
         {
             Nav.NavigateTo("/onboarding");
         }
