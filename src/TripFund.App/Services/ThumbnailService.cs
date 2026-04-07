@@ -1,5 +1,5 @@
 using System.IO;
-#if IOS || MACCATALYST
+#if IOS
 using QuickLookThumbnailing;
 using UIKit;
 using Foundation;
@@ -25,7 +25,7 @@ public class ThumbnailService : IThumbnailService
 
         try
         {
-#if IOS || MACCATALYST
+#if IOS
             return await GetNativeThumbnailIOS(filePath);
 #elif ANDROID
             return await GetNativeThumbnailAndroid(filePath);
@@ -39,7 +39,7 @@ public class ThumbnailService : IThumbnailService
         }
     }
 
-#if IOS || MACCATALYST
+#if IOS
     private async Task<string?> GetNativeThumbnailIOS(string filePath)
     {
         var url = NSUrl.FromFilename(filePath);
