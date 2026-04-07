@@ -134,13 +134,6 @@
                     <div class="popover-overlay" @onclick="ToggleMemberSelector"></div>
                 }
 
-                <div class="form-group switch-group @(!HasValidEmail() ? "disabled" : "")">
-                    <label>Invia ricevuta via email</label>
-                    <div class="switch @(sendReceipt ? "on" : "off")" @onclick="ToggleSendReceipt">
-                        <div class="switch-handle"></div>
-                    </div>
-                </div>
-
                 @if (!string.IsNullOrEmpty(errorMessage))
                 {
                     <p class="error-message">@errorMessage</p>
@@ -169,7 +162,6 @@
     private decimal amount;
     private string description = "Versamento in cassa";
     private DateTime transactionDate = DateTime.Now;
-    private bool sendReceipt = false;
     private string errorMessage = "";
     private string deviceId = "";
     private string authorName = "";
@@ -225,30 +217,6 @@
     {
         selectedMemberSlug = slug;
         isMemberSelectorOpen = false;
-        
-        // Reset send receipt if the new member has no email
-        if (!HasValidEmail())
-        {
-            sendReceipt = false;
-        }
-    }
-
-    private bool HasValidEmail()
-    {
-        if (config == null || string.IsNullOrEmpty(selectedMemberSlug)) return false;
-        if (config.Members.TryGetValue(selectedMemberSlug, out var member))
-        {
-            return !string.IsNullOrWhiteSpace(member.Email) && member.Email.Contains("@");
-        }
-        return false;
-    }
-
-    private void ToggleSendReceipt()
-    {
-        if (HasValidEmail())
-        {
-            sendReceipt = !sendReceipt;
-        }
     }
 
     private decimal GetMemberTotal(string slug)
@@ -366,9 +334,6 @@
         try
         {
             await Storage.SaveTransactionAsync(tripSlug, transaction, deviceId);
-            
-            // TODO: Invia ricevuta via email se sendReceipt è true (Task 10)
-            
             await GoBack();
         }
         catch (Exception ex)
@@ -636,43 +601,6 @@
         background: rgba(0,0,0,0.05);
         z-index: 1000;
     }
-
-    .switch-group {
-        flex-direction: row;
-        justify-content: space-between;
-        align-items: center;
-        transition: opacity 0.2s;
-    }
-
-    .switch-group.disabled {
-        opacity: 0.5;
-    }
-
-    .switch-group.disabled .switch {
-        cursor: not-allowed;
-    }
-
-    .switch {
-        width: 50px;
-        height: 26px;
-        border-radius: 13px;
-        padding: 3px;
-        cursor: pointer;
-        transition: background-color 0.2s;
-    }
-
-    .switch.on { background-color: #20563C; }
-    .switch.off { background-color: #E0E0E0; }
-
-    .switch-handle {
-        width: 20px;
-        height: 20px;
-        background-color: #FFFFFF;
-        border-radius: 50%;
-        transition: transform 0.2s;
-    }
-
-    .switch.on .switch-handle { transform: translateX(24px); }
 
     .error-message {
         color: #DC3545;
