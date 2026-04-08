@@ -72,5 +72,13 @@ window.headerLogic = {
                 }
             }, 10);
         }
+    },
+    scrollIntoView: function (selector, block = 'center') {
+        setTimeout(() => {
+            const element = document.querySelector(selector);
+            if (element) {
+                element.scrollIntoView({ behavior: 'smooth', block: block, inline: 'nearest' });
+            }
+        }, 50);
     }
 };

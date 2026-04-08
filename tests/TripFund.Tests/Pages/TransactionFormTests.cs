@@ -547,9 +547,8 @@ public class TransactionFormTests : BunitContext
 
         // Set Timezone to UTC (safe across platforms) using custom selector
         var tzId = "UTC";
-        var italianName = TimeZoneMapper.GetItalianCityName(tzId);
         cut.Find(".custom-tz-selector").Click();
-        var utcItem = cut.FindAll(".dropdown-tz-item").First(i => i.QuerySelector(".tz-selector-name")!.TextContent == italianName);
+        var utcItem = cut.FindAll(".dropdown-tz-item").First(i => i.QuerySelector(".tz-selector-name")!.TextContent == tzId);
         utcItem.Click();
 
         // Submit
@@ -599,9 +598,8 @@ public class TransactionFormTests : BunitContext
             .FirstOrDefault(tz => tz.BaseUtcOffset != localTz.BaseUtcOffset) ?? TimeZoneInfo.Utc;
 
         var tzId = differentTz.Id;
-        var italianName = TimeZoneMapper.GetItalianCityName(tzId);
         cut.Find(".custom-tz-selector").Click();
-        var tzItem = cut.FindAll(".dropdown-tz-item").First(i => i.QuerySelector(".tz-selector-name")!.TextContent == italianName);
+        var tzItem = cut.FindAll(".dropdown-tz-item").First(i => i.QuerySelector(".tz-selector-name")!.TextContent == tzId);
         tzItem.Click();
         // Submit - This is where it used to crash
         await cut.Find(".submit-btn").ClickAsync();

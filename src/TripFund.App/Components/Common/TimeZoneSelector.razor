@@ -24,8 +24,8 @@
                     </svg>
                 </div>
                 <div class="tz-selector-info">
-                    <div class="tz-selector-name">@TimeZoneMapper.GetItalianCityName(Value)</div>
-                    <div class="tz-selector-offset">@GetDisplayName(selectedTz)</div>
+                    <div class="tz-selector-name">@(selectedTz?.Id ?? string.Empty)</div>
+                    <div class="tz-selector-offset">@GetFormattedDisplayName(selectedTz)</div>
                 </div>
                 <div class="selector-arrow">
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
@@ -40,18 +40,21 @@
         {
             <div class="tz-selector-dropdown" @onclick:stopPropagation>
                 <div class="tz-items-list">
-                    @if (!FilteredTimeZones.Any())
+                    @if (!_timeZones.Any())
                     {
                         <div class="no-results">Nessuna Time Zone trovata</div>
                     }
-                    @foreach (var tz in FilteredTimeZones)
+                    @foreach (var tz in _timeZones)
                     {
-                        <div class="dropdown-tz-item @(Value == tz.Id ? "selected" : "")" @onclick="() => SelectTimeZone(tz.Id)">
+                        var isSelected = Value == tz.Id;
+                        <div id="@(isSelected ? "selected-tz-item" : null)" 
+                             class="dropdown-tz-item @(isSelected ? "selected" : "")" 
+                             @onclick="() => SelectTimeZone(tz.Id)">
                             <div class="tz-selector-info">
-                                <div class="tz-selector-name">@TimeZoneMapper.GetItalianCityName(tz.Id)</div>
-                                <div class="tz-selector-offset">@GetDisplayName(tz)</div>
+                                <div class="tz-selector-name">@tz.Id</div>
+                                <div class="tz-selector-offset">@GetFormattedDisplayName(tz)</div>
                             </div>
-                            @if (Value == tz.Id)
+                            @if (isSelected)
                             {
                                 <div class="check-icon">
                                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#20563C" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -61,15 +64,6 @@
                             }
                         </div>
                     }
-                </div>
-                <div class="tz-search-container">
-                    <input @ref="_searchInput"
-                           type="text" 
-                           class="tz-search-input" 
-                           placeholder="Cerca fuso orario..." 
-                           @bind="_searchText" 
-                           @bind:event="oninput"
-                           @onclick:stopPropagation />
                 </div>
             </div>
         }
@@ -89,9 +83,7 @@
 
     private List<TimeZoneInfo> _timeZones = new();
     private bool _isOpen = false;
-    private string _searchText = string.Empty;
-    private ElementReference _searchInput;
-    private bool _shouldFocus = false;
+    private bool _shouldScroll = false;
 
     protected override void OnInitialized()
     {
@@ -108,32 +100,21 @@
         }
     }
 
-    private IEnumerable<TimeZoneInfo> FilteredTimeZones => 
-        string.IsNullOrWhiteSpace(_searchText) 
-            ? _timeZones 
-            : _timeZones.Where(t => TimeZoneMapper.GetItalianCityName(t.Id).Contains(_searchText, StringComparison.OrdinalIgnoreCase) || 
-                                   t.Id.Contains(_searchText, StringComparison.OrdinalIgnoreCase));
-
     private void ToggleDropdown()
     {
         _isOpen = !_isOpen;
-        if (_isOpen) 
+        if (_isOpen)
         {
-            _searchText = string.Empty;
-            _shouldFocus = true;
+            _shouldScroll = true;
         }
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        if (_shouldFocus && _isOpen)
+        if (_shouldScroll && _isOpen)
         {
-            _shouldFocus = false;
-            try
-            {
-                await _searchInput.FocusAsync();
-            }
-            catch { /* Ignore if element is not yet available */ }
+            _shouldScroll = false;
+            await JSRuntime.InvokeVoidAsync("headerLogic.scrollIntoView", "#selected-tz-item", "center");
         }
     }
 
@@ -144,13 +125,21 @@
         await ValueChanged.InvokeAsync(id);
     }
 
-    private string GetDisplayName(TimeZoneInfo? tz)
+    private string GetFormattedDisplayName(TimeZoneInfo? tz)
     {
         if (tz == null) return string.Empty;
         
         var offset = tz.BaseUtcOffset;
         var sign = offset.Ticks >= 0 ? "+" : "-";
-        return $"(UTC{sign}{Math.Abs(offset.Hours):D2}:{Math.Abs(offset.Minutes):D2})";
+        var offsetString = $"(UTC{sign}{Math.Abs(offset.Hours):D2}:{Math.Abs(offset.Minutes):D2})";
+        
+        var displayName = tz.DisplayName;
+        if (displayName.StartsWith(offsetString))
+        {
+            return displayName;
+        }
+        
+        return $"{offsetString} {displayName}";
     }
 }
 
@@ -241,25 +230,6 @@
         border: 1px solid #F0F0F0;
         display: flex;
         flex-direction: column;
-    }
-
-    .tz-search-container {
-        padding: 0.5rem 0.5rem 0.25rem;
-        border-top: 1px solid #F0F0F0;
-        margin-top: 0.25rem;
-    }
-
-    .tz-search-input {
-        width: 100%;
-        border: 1px solid #E0E0E0;
-        border-radius: 8px;
-        padding: 0.5rem 0.75rem;
-        font-size: 0.9rem;
-        outline: none;
-    }
-
-    .tz-search-input:focus {
-        border-color: #20563C;
     }
 
     .tz-items-list {

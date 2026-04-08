@@ -114,7 +114,10 @@
                             <div class="member-selector-dropdown" @onclick:stopPropagation>
                                 @foreach (var member in config.Members)
                                 {
-                                    <div class="dropdown-member-item @(selectedMemberSlug == member.Key ? "selected" : "")" @onclick="() => SelectMember(member.Key)">
+                                    bool isSelected = selectedMemberSlug == member.Key;
+                                    <div id="@(isSelected ? "selected-member-item" : null)" 
+                                         class="dropdown-member-item @(isSelected ? "selected" : "")" 
+                                         @onclick="() => SelectMember(member.Key)">
                                         <div class="member-avatar-circle small">
                                             @member.Value.Avatar
                                         </div>
@@ -122,7 +125,7 @@
                                             <div class="member-selector-name">@member.Value.Name</div>
                                             <div class="member-selector-total">Versati: @GetCurrencySymbol() @GetMemberTotal(member.Key).ToString("N" + GetDecimals())</div>
                                         </div>
-                                        @if (selectedMemberSlug == member.Key)
+                                        @if (isSelected)
                                         {
                                             <div class="check-icon">
                                                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#20563C" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
@@ -177,6 +180,7 @@
     private bool isSubmitting = false;
     private bool isMemberSelectorOpen = false;
     private bool isMenuOpen = false;
+    private bool shouldScroll = false;
 
     protected override async Task OnInitializedAsync()
     {
@@ -231,7 +235,23 @@
         }
     }
 
-    private void ToggleMemberSelector() => isMemberSelectorOpen = !isMemberSelectorOpen;
+    private void ToggleMemberSelector()
+    {
+        isMemberSelectorOpen = !isMemberSelectorOpen;
+        if (isMemberSelectorOpen)
+        {
+            shouldScroll = true;
+        }
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (shouldScroll && isMemberSelectorOpen)
+        {
+            shouldScroll = false;
+            await JSRuntime.InvokeVoidAsync("headerLogic.scrollIntoView", "#selected-member-item", "center");
+        }
+    }
 
     private void SelectMember(string slug)
     {
