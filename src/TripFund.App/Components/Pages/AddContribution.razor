@@ -53,7 +53,7 @@
 
     else
     {
-        <CurrencySelector Currencies="config.Currencies.Keys" SelectedCurrency="@selectedCurrency" OnCurrencySelected="SelectCurrency" />
+        <CurrencySelector Currencies="@(new[] { selectedCurrency })" SelectedCurrency="@selectedCurrency" OnCurrencySelected="SelectCurrency" />
 
         <div class="content">
             <div class="form-container">

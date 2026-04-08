@@ -92,7 +92,7 @@
                 <div class="transactions-list">
                     @if (!userTransactions.Any())
                     {
-                        <p class="empty-text">Nessuna transazione per questo partecipante.</p>
+                        <p class="empty-text">Nessuna transazione in @selectedCurrency.</p>
                     }
                     @foreach (var t in userTransactions.OrderByDescending(x => x.OriginalTx.Date))
                     {
