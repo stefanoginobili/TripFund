@@ -47,7 +47,10 @@
 
     else
     {
-        <CurrencySelector Currencies="config.Currencies.Keys" SelectedCurrency="@selectedCurrency" OnCurrencySelected="SelectCurrency" />
+        @if (config.Currencies.Count > 1)
+        {
+            <CurrencySelector Currencies="config.Currencies.Keys" SelectedCurrency="@selectedCurrency" OnCurrencySelected="SelectCurrency" />
+        }
 
         <div class="content">
             <div class="summary-card">

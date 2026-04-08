@@ -38,39 +38,7 @@ public class CurrencySelectorVisibilityTests : BunitContext
     }
 
     [Fact]
-    public void AddContribution_ShouldOnlyShowRequestedCurrency()
-    {
-        // Arrange
-        var tripSlug = "test-trip";
-        var config = new TripConfig
-        {
-            Currencies = new Dictionary<string, Currency> 
-            { 
-                { "EUR", new Currency { Symbol = "€" } },
-                { "USD", new Currency { Symbol = "$" } },
-                { "GBP", new Currency { Symbol = "£" } }
-            },
-            Members = new Dictionary<string, User> { { "mario", new User { Name = "Mario" } } }
-        };
-        _storageMock.Setup(s => s.GetTripConfigAsync(tripSlug)).ReturnsAsync(config);
-
-        // Act - Request USD
-        var nav = Services.GetRequiredService<NavigationManager>();
-        nav.NavigateTo($"/trip/{tripSlug}/add-contribution?currency=USD");
-        
-        var cut = Render<AddContribution>(parameters => parameters
-            .Add(p => p.tripSlug, tripSlug)
-        );
-
-        // Assert
-        var pills = cut.FindAll(".currency-pill");
-        pills.Should().HaveCount(1);
-        pills[0].TextContent.Trim().Should().Be("USD");
-        pills[0].ClassList.Should().Contain("active");
-    }
-
-    [Fact]
-    public void AddExpense_ShouldOnlyShowRequestedCurrency()
+    public void AddContribution_ShouldShowRequestedCurrencyWhenTripHasMultipleCurrencies()
     {
         // Arrange
         var tripSlug = "test-trip";
@@ -85,7 +53,36 @@ public class CurrencySelectorVisibilityTests : BunitContext
         };
         _storageMock.Setup(s => s.GetTripConfigAsync(tripSlug)).ReturnsAsync(config);
 
-        // Act - Request EUR explicitly
+        // Act - Request USD
+        var nav = Services.GetRequiredService<NavigationManager>();
+        nav.NavigateTo($"/trip/{tripSlug}/add-contribution?currency=USD");
+        
+        var cut = Render<AddContribution>(parameters => parameters
+            .Add(p => p.tripSlug, tripSlug)
+        );
+
+        // Assert - Should show selector because trip has > 1 currency
+        var pills = cut.FindAll(".currency-pill");
+        pills.Should().HaveCount(1);
+        pills[0].TextContent.Trim().Should().Be("USD");
+    }
+
+    [Fact]
+    public void AddExpense_ShouldHideCurrencySelectorWhenTripHasOnlyOneCurrency()
+    {
+        // Arrange
+        var tripSlug = "test-trip";
+        var config = new TripConfig
+        {
+            Currencies = new Dictionary<string, Currency> 
+            { 
+                { "EUR", new Currency { Symbol = "€" } }
+            },
+            Members = new Dictionary<string, User> { { "mario", new User { Name = "Mario" } } }
+        };
+        _storageMock.Setup(s => s.GetTripConfigAsync(tripSlug)).ReturnsAsync(config);
+
+        // Act - Request EUR
         var nav = Services.GetRequiredService<NavigationManager>();
         nav.NavigateTo($"/trip/{tripSlug}/add-expense?currency=EUR");
 
@@ -93,10 +90,77 @@ public class CurrencySelectorVisibilityTests : BunitContext
             .Add(p => p.tripSlug, tripSlug)
         );
 
+        // Assert - Should NOT show because trip has only 1 currency
+        cut.FindAll(".currency-selector-container").Should().BeEmpty();
+    }
+
+    [Fact]
+    public void TripDashboard_ShouldNOTShowCurrencySelectorWhenOnlyOneCurrencyConfigured()
+    {
+        // Arrange
+        var tripSlug = "test-trip";
+        var config = new TripConfig
+        {
+            Currencies = new Dictionary<string, Currency> { { "EUR", new Currency { Symbol = "€" } } },
+            Members = new Dictionary<string, User> { { "mario", new User { Name = "Mario" } } }
+        };
+        _storageMock.Setup(s => s.GetTripConfigAsync(tripSlug)).ReturnsAsync(config);
+        _storageMock.Setup(s => s.GetTransactionsAsync(tripSlug)).ReturnsAsync(new List<Transaction>());
+
+        // Act
+        var cut = Render<TripDashboard>(parameters => parameters.Add(p => p.tripSlug, tripSlug));
+
         // Assert
-        var pills = cut.FindAll(".currency-pill");
-        pills.Should().HaveCount(1);
-        pills[0].TextContent.Trim().Should().Be("EUR");
+        cut.FindAll(".currency-selector-container").Should().BeEmpty();
+    }
+
+    [Fact]
+    public void TripDashboard_ShouldShowCurrencySelectorWhenMultipleCurrenciesConfigured()
+    {
+        // Arrange
+        var tripSlug = "test-trip";
+        var config = new TripConfig
+        {
+            Currencies = new Dictionary<string, Currency> 
+            { 
+                { "EUR", new Currency { Symbol = "€" } },
+                { "USD", new Currency { Symbol = "$" } }
+            },
+            Members = new Dictionary<string, User> { { "mario", new User { Name = "Mario" } } }
+        };
+        _storageMock.Setup(s => s.GetTripConfigAsync(tripSlug)).ReturnsAsync(config);
+        _storageMock.Setup(s => s.GetTransactionsAsync(tripSlug)).ReturnsAsync(new List<Transaction>());
+
+        // Act
+        var cut = Render<TripDashboard>(parameters => parameters.Add(p => p.tripSlug, tripSlug));
+
+        // Assert
+        cut.FindAll(".currency-selector-container").Should().NotBeEmpty();
+        cut.FindAll(".currency-pill").Should().HaveCount(2);
+    }
+
+    [Fact]
+    public void MemberDashboard_ShouldNOTShowCurrencySelectorWhenOnlyOneCurrencyConfigured()
+    {
+        // Arrange
+        var tripSlug = "test-trip";
+        var memberSlug = "mario";
+        var config = new TripConfig
+        {
+            Currencies = new Dictionary<string, Currency> { { "EUR", new Currency { Symbol = "€" } } },
+            Members = new Dictionary<string, User> { { memberSlug, new User { Name = "Mario" } } }
+        };
+        _storageMock.Setup(s => s.GetTripConfigAsync(tripSlug)).ReturnsAsync(config);
+        _storageMock.Setup(s => s.GetTransactionsAsync(tripSlug)).ReturnsAsync(new List<Transaction>());
+
+        // Act
+        var cut = Render<MemberDashboard>(parameters => parameters
+            .Add(p => p.tripSlug, tripSlug)
+            .Add(p => p.memberSlug, memberSlug)
+        );
+
+        // Assert
+        cut.FindAll(".currency-selector-container").Should().BeEmpty();
     }
 
     [Fact]
