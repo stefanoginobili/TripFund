@@ -98,7 +98,7 @@
                                 </div>
                                 <div class="member-selector-info">
                                     <div class="member-selector-name">@m.Name</div>
-                                    <div class="member-selector-total">Versati: @GetCurrencySymbol() @GetMemberTotal(selectedMemberSlug).ToString("N" + GetDecimals())</div>
+                                    <div class="member-selector-total">Quota versata: @GetCurrencySymbol() @GetMemberTotal(selectedMemberSlug).ToString("N" + GetDecimals())</div>
                                 </div>
                                 <div class="selector-arrow">
                                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
@@ -123,7 +123,7 @@
                                         </div>
                                         <div class="member-selector-info">
                                             <div class="member-selector-name">@member.Value.Name</div>
-                                            <div class="member-selector-total">Versati: @GetCurrencySymbol() @GetMemberTotal(member.Key).ToString("N" + GetDecimals())</div>
+                                            <div class="member-selector-total">Quota versata: @GetCurrencySymbol() @GetMemberTotal(member.Key).ToString("N" + GetDecimals())</div>
                                         </div>
                                         @if (isSelected)
                                         {

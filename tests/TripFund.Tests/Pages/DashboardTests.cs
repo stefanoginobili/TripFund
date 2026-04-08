@@ -147,7 +147,7 @@ public class DashboardTests : BunitContext
         var cut = Render<TripDashboard>(p => p.Add(x => x.tripSlug, tripSlug));
 
         // Assert
-        cut.Find(".summary-label").TextContent.Should().Be("Eccedenza");
+        cut.Find(".summary-label").TextContent.Should().Be("Saldo");
         cut.Find(".progress-bar-fill").ClassName.Should().Contain("warning");
     }
 
@@ -536,6 +536,7 @@ public class DashboardTests : BunitContext
         var cut = Render<MemberDashboard>(p => p.Add(x => x.tripSlug, tripSlug).Add(x => x.memberSlug, memberSlug));
 
         // Assert
+        cut.Find(".summary-label").TextContent.Should().Contain("Totale versato");
         cut.Find(".summary-sub").TextContent.Should().Contain("Eccedenza");
         cut.Find(".progress-bar-fill").ClassName.Should().Contain("warning");
     }

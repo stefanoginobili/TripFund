@@ -43,7 +43,7 @@ public class ReceiptGeneratorTests
         var result = ReceiptGenerator.GenerateContributionText(trip, contribution, allTransactions);
 
         // Assert
-        result.Should().Contain("Data: 27/10/2023 12:30 (ora di Roma)");
+        result.Should().Contain("Data: 27/10/2023 12:30 (UTC+02:00)");
         result.Should().Contain("Gli orari mostrati sono quelli acquisiti al momento dell'operazione.");
     }
 
@@ -84,6 +84,6 @@ public class ReceiptGeneratorTests
         var result = ReceiptGenerator.GenerateContributionText(trip, contribution, allTransactions);
 
         // Assert
-        result.Should().Contain("Data: 27/10/2023 09:00 (ora di New York)");
+        result.Should().Contain("Data: 27/10/2023 09:00 (UTC-04:00)");
     }
 }
