@@ -34,15 +34,14 @@ public static class ReceiptGenerator
         {
             var currency = trip.Currencies.TryGetValue(c.Currency, out var cur) ? cur : new Currency { Symbol = c.Currency, Decimals = 2 };
             
-            DateTime displayDate = c.Date.DateTime;
-            
-            // For robustness, if timezone is present, try to ensure we are showing the time in THAT timezone
-            // although DateTimeOffset.DateTime should already be the "local" time recorded.
+            var displayDate = c.Date.DateTime;
+            TimeZoneInfo tz = TimeZoneInfo.Local;
+
             if (!string.IsNullOrEmpty(c.Timezone))
             {
                 try
                 {
-                    var tz = TimeZoneInfo.FindSystemTimeZoneById(c.Timezone);
+                    tz = TimeZoneInfo.FindSystemTimeZoneById(c.Timezone);
                     displayDate = TimeZoneInfo.ConvertTime(c.Date, tz).DateTime;
                 }
                 catch
@@ -52,10 +51,10 @@ public static class ReceiptGenerator
                 }
             }
 
-            var offset = c.Date.Offset;
-            var offsetStr = $"{(offset >= TimeSpan.Zero ? "+" : "-")}{Math.Abs(offset.Hours):D2}:{Math.Abs(offset.Minutes):D2}";
-            
-            sb.AppendLine($"• Data: {displayDate.ToString("dd/MM/yyyy HH:mm", _itCulture)} (UTC{offsetStr})");
+            var offsetStr = TimeZoneMapper.GetFormattedOffset(tz, c.Date);
+
+            sb.AppendLine($"• Data: {displayDate.ToString("dd/MM/yyyy HH:mm", _itCulture)} {offsetStr}");
+
             sb.AppendLine($"  Importo: {c.Currency} {c.Split[memberSlug].Amount.ToString("N" + currency.Decimals, _itCulture)}");
             sb.AppendLine();
         }

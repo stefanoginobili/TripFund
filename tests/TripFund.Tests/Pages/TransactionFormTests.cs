@@ -4,6 +4,7 @@ using Moq;
 using TripFund.App.Components.Pages;
 using TripFund.App.Models;
 using TripFund.App.Services;
+using TripFund.App.Utilities;
 using FluentAssertions;
 using System.Collections.Generic;
 using System.Linq;
@@ -545,9 +546,10 @@ public class TransactionFormTests : BunitContext
         cut.Find("input[type='time']").Change("10:00");
 
         // Set Timezone to UTC (safe across platforms) using custom selector
-        var tzId = TimeZoneInfo.Utc.Id;
+        var tzId = "UTC";
+        var italianName = TimeZoneMapper.GetItalianCityName(tzId);
         cut.Find(".custom-tz-selector").Click();
-        var utcItem = cut.FindAll(".dropdown-tz-item").First(i => i.QuerySelector(".tz-selector-name")!.TextContent == tzId);
+        var utcItem = cut.FindAll(".dropdown-tz-item").First(i => i.QuerySelector(".tz-selector-name")!.TextContent == italianName);
         utcItem.Click();
 
         // Submit
@@ -593,13 +595,14 @@ public class TransactionFormTests : BunitContext
         // Find a timezone with a different offset than local to trigger potential crash
         var localTz = TimeZoneInfo.Local;
         var differentTz = TimeZoneInfo.GetSystemTimeZones()
+            .Where(tz => TimeZoneMapper.IsSupported(tz.Id))
             .FirstOrDefault(tz => tz.BaseUtcOffset != localTz.BaseUtcOffset) ?? TimeZoneInfo.Utc;
-        
-        var tzId = differentTz.Id;
-        cut.Find(".custom-tz-selector").Click();
-        var tzItem = cut.FindAll(".dropdown-tz-item").First(i => i.QuerySelector(".tz-selector-name")!.TextContent == tzId);
-        tzItem.Click();
 
+        var tzId = differentTz.Id;
+        var italianName = TimeZoneMapper.GetItalianCityName(tzId);
+        cut.Find(".custom-tz-selector").Click();
+        var tzItem = cut.FindAll(".dropdown-tz-item").First(i => i.QuerySelector(".tz-selector-name")!.TextContent == italianName);
+        tzItem.Click();
         // Submit - This is where it used to crash
         await cut.Find(".submit-btn").ClickAsync();
 

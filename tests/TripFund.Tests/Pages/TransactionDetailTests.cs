@@ -251,7 +251,7 @@ public class TransactionDetailTests : BunitContext
 
         // Assert
         var metaTags = cut.FindAll(".transaction-meta");
-        // The one with the date should be "10/05/2024 10:00 (UTC+00:00)"
-        metaTags.Any(m => m.TextContent.Contains("10/05/2024 10:00 (UTC+00:00)")).Should().BeTrue();
+        // The one with the date should be "10/05/2024 10:00 (UTC)"
+        metaTags.Any(m => m.TextContent.Contains("10/05/2024 10:00 (UTC)")).Should().BeTrue();
     }
 }

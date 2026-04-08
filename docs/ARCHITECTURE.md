@@ -85,3 +85,6 @@ A conflict is actively occurring IF AND ONLY IF there are two or more version su
 
 **Conflict Override Edge Case:**
 If an out-of-sync client uploads a new version folder (e.g., an `upd` or `del`) that sits alongside an existing `res` folder, the resolution is invalidated. The engine MUST revert the entity to an active Conflict State, requiring a new `res` commit to reconcile the newly introduced thread.
+
+## 4. Time Zones
+- Mapped all IANA TimeZone IDs to their Italian city name in a static class `TimeZoneMapper`. Updated `TimeZoneSelector` to filter by these supported zones and display the Italian city names. Moved the search input to the bottom of the `TimeZoneSelector` list. Formatted transaction timestamps to use Italian timezone names (e.g., "(ora di Roma)"). Updated tests to reflect the new formatting.

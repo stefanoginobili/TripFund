@@ -1,3 +1,4 @@
+@using TripFund.App.Utilities
 @namespace TripFund.App.Components.Common
 @inject IJSRuntime JSRuntime
 
@@ -23,7 +24,7 @@
                     </svg>
                 </div>
                 <div class="tz-selector-info">
-                    <div class="tz-selector-name">@Value</div>
+                    <div class="tz-selector-name">@TimeZoneMapper.GetItalianCityName(Value)</div>
                     <div class="tz-selector-offset">@GetDisplayName(selectedTz)</div>
                 </div>
                 <div class="selector-arrow">
@@ -38,15 +39,6 @@
         @if (_isOpen)
         {
             <div class="tz-selector-dropdown" @onclick:stopPropagation>
-                <div class="tz-search-container">
-                    <input @ref="_searchInput"
-                           type="text" 
-                           class="tz-search-input" 
-                           placeholder="Cerca fuso orario..." 
-                           @bind="_searchText" 
-                           @bind:event="oninput"
-                           @onclick:stopPropagation />
-                </div>
                 <div class="tz-items-list">
                     @if (!FilteredTimeZones.Any())
                     {
@@ -56,7 +48,7 @@
                     {
                         <div class="dropdown-tz-item @(Value == tz.Id ? "selected" : "")" @onclick="() => SelectTimeZone(tz.Id)">
                             <div class="tz-selector-info">
-                                <div class="tz-selector-name">@tz.Id</div>
+                                <div class="tz-selector-name">@TimeZoneMapper.GetItalianCityName(tz.Id)</div>
                                 <div class="tz-selector-offset">@GetDisplayName(tz)</div>
                             </div>
                             @if (Value == tz.Id)
@@ -69,6 +61,15 @@
                             }
                         </div>
                     }
+                </div>
+                <div class="tz-search-container">
+                    <input @ref="_searchInput"
+                           type="text" 
+                           class="tz-search-input" 
+                           placeholder="Cerca fuso orario..." 
+                           @bind="_searchText" 
+                           @bind:event="oninput"
+                           @onclick:stopPropagation />
                 </div>
             </div>
         }
@@ -95,20 +96,23 @@
     protected override void OnInitialized()
     {
         _timeZones = TimeZoneInfo.GetSystemTimeZones()
+            .Where(tz => TimeZoneMapper.IsSupported(tz.Id))
             .OrderBy(tz => tz.BaseUtcOffset)
             .ToList();
             
         if (string.IsNullOrEmpty(Value))
         {
-            Value = TimeZoneInfo.Local.Id;
+            Value = _timeZones.FirstOrDefault(t => t.Id == TimeZoneInfo.Local.Id)?.Id 
+                    ?? _timeZones.FirstOrDefault()?.Id 
+                    ?? TimeZoneInfo.Utc.Id;
         }
     }
 
     private IEnumerable<TimeZoneInfo> FilteredTimeZones => 
         string.IsNullOrWhiteSpace(_searchText) 
             ? _timeZones 
-            : _timeZones.Where(t => t.Id.Contains(_searchText, StringComparison.OrdinalIgnoreCase) || 
-                                   t.DisplayName.Contains(_searchText, StringComparison.OrdinalIgnoreCase));
+            : _timeZones.Where(t => TimeZoneMapper.GetItalianCityName(t.Id).Contains(_searchText, StringComparison.OrdinalIgnoreCase) || 
+                                   t.Id.Contains(_searchText, StringComparison.OrdinalIgnoreCase));
 
     private void ToggleDropdown()
     {
@@ -144,15 +148,9 @@
     {
         if (tz == null) return string.Empty;
         
-        // On some platforms (Windows, Android), DisplayName already starts with (UTC+NN:NN)
-        if (tz.DisplayName.StartsWith("(UTC", StringComparison.OrdinalIgnoreCase))
-        {
-            return tz.DisplayName;
-        }
-
         var offset = tz.BaseUtcOffset;
         var sign = offset.Ticks >= 0 ? "+" : "-";
-        return $"(UTC{sign}{Math.Abs(offset.Hours):D2}:{Math.Abs(offset.Minutes):D2}) {tz.DisplayName}";
+        return $"(UTC{sign}{Math.Abs(offset.Hours):D2}:{Math.Abs(offset.Minutes):D2})";
     }
 }
 
@@ -246,9 +244,9 @@
     }
 
     .tz-search-container {
-        padding: 0.25rem 0.5rem 0.5rem;
-        border-bottom: 1px solid #F0F0F0;
-        margin-bottom: 0.25rem;
+        padding: 0.5rem 0.5rem 0.25rem;
+        border-top: 1px solid #F0F0F0;
+        margin-top: 0.25rem;
     }
 
     .tz-search-input {

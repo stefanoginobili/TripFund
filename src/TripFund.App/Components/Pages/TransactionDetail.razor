@@ -263,26 +263,28 @@
     private string GetDisplayDate(Transaction tx)
     {
         DateTimeOffset displayDate;
+        TimeZoneInfo tz;
+        
         if (string.IsNullOrEmpty(tx.Timezone))
         {
+            tz = TimeZoneInfo.Local;
             displayDate = tx.Date.ToLocalTime();
         }
         else
         {
             try
             {
-                var tz = TimeZoneInfo.FindSystemTimeZoneById(tx.Timezone);
+                tz = TimeZoneInfo.FindSystemTimeZoneById(tx.Timezone);
                 displayDate = TimeZoneInfo.ConvertTime(tx.Date, tz);
             }
             catch
             {
+                tz = TimeZoneInfo.Local;
                 displayDate = tx.Date.ToLocalTime();
             }
         }
 
-        var offset = displayDate.Offset;
-        var sign = offset.Ticks >= 0 ? "+" : "-";
-        var offsetStr = $"(UTC{sign}{Math.Abs(offset.Hours):D2}:{Math.Abs(offset.Minutes):D2})";
+        var offsetStr = TimeZoneMapper.GetFormattedOffset(tz, displayDate);
         
         return $"{displayDate.ToString("dd/MM/yyyy HH:mm")} {offsetStr}";
     }
@@ -291,18 +293,10 @@
     {
         if (string.IsNullOrEmpty(tx.Timezone))
         {
-            return TimeZoneInfo.Local.Id;
+            return TimeZoneMapper.GetItalianCityName(TimeZoneInfo.Local.Id);
         }
 
-        try
-        {
-            var tz = TimeZoneInfo.FindSystemTimeZoneById(tx.Timezone);
-            return tz.Id;
-        }
-        catch
-        {
-            return tx.Timezone;
-        }
+        return TimeZoneMapper.GetItalianCityName(tx.Timezone);
     }
 
     private class AttachmentPreview

@@ -33,6 +33,7 @@ public class ReceiptGeneratorTests
             Date = dateWithOffset,
             Currency = "EUR",
             Amount = 100,
+            Timezone = "Europe/Rome",
             Split = new Dictionary<string, SplitInfo> { { "mario", new SplitInfo { Amount = 100 } } }
         };
 
@@ -42,7 +43,7 @@ public class ReceiptGeneratorTests
         var result = ReceiptGenerator.GenerateContributionText(trip, contribution, allTransactions);
 
         // Assert
-        result.Should().Contain("Data: 27/10/2023 12:30 (UTC+02:00)");
+        result.Should().Contain("Data: 27/10/2023 12:30 (ora di Roma)");
         result.Should().Contain("Gli orari mostrati sono quelli acquisiti al momento dell'operazione.");
     }
 
@@ -73,6 +74,7 @@ public class ReceiptGeneratorTests
             Date = dateWithOffset,
             Currency = "EUR",
             Amount = 50,
+            Timezone = "America/New_York",
             Split = new Dictionary<string, SplitInfo> { { "mario", new SplitInfo { Amount = 50 } } }
         };
 
@@ -82,6 +84,6 @@ public class ReceiptGeneratorTests
         var result = ReceiptGenerator.GenerateContributionText(trip, contribution, allTransactions);
 
         // Assert
-        result.Should().Contain("Data: 27/10/2023 08:00 (UTC-05:00)");
+        result.Should().Contain("Data: 27/10/2023 09:00 (ora di New York)");
     }
 }
