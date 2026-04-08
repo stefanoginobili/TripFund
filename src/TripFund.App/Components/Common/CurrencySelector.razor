@@ -18,13 +18,12 @@
     [Parameter] public string SelectedCurrency { get; set; } = "";
     [Parameter] public EventCallback<string> OnCurrencySelected { get; set; }
 }
-
 <style>
     .currency-selector-container {
         display: flex;
         justify-content: center;
         padding: 1rem 1.5rem;
-        background-color: #FFFFFF;
+        background-color: #F8FBF9;
     }
 
     .currency-selector-pill-group {
@@ -32,9 +31,11 @@
         background-color: #F5F7F6;
         border-radius: 32px;
         padding: 4px;
+        border: 1px solid #E0E0E0;
     }
 
     .currency-pill {
+...
         padding: 0.5rem 1.5rem;
         border-radius: 28px;
         border: none;
