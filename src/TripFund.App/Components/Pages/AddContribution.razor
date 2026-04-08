@@ -355,7 +355,7 @@
                     {
                         var updatedTransactions = await Storage.GetTransactionsAsync(tripSlug);
                         var body = ReceiptGenerator.GenerateContributionText(config, transaction, updatedTransactions);
-                        await EmailService.SendEmailAsync($"{config.Name} - Riepilogo aggiornato versamenti", body, new[] { member.Email });
+                        await EmailService.SendEmailAsync($"{config.Name} - Riepilogo versamenti", body, new[] { member.Email });
                     }
                     catch (Exception emailEx)
                     {

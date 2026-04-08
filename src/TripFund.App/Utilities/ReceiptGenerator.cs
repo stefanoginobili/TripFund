@@ -66,6 +66,7 @@ public static class ReceiptGenerator
         sb.AppendLine();
         sb.AppendLine("--");
         sb.AppendLine("Inviato automaticamente dall'app TripFund.");
+        sb.AppendLine($"Gli orari sono espressi nel fuso orario \"{TimeZoneInfo.Local.Id}\".");
         sb.AppendLine("Se pensi ci sia un errore, contatta il coordinatore del gruppo.");
 
         return sb.ToString();

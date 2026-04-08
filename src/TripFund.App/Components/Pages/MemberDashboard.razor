@@ -88,11 +88,11 @@
             </div>
 
             <div class="info-section">
-                <h3 class="section-header">TRANSAZIONI UTENTE</h3>
+                <h3 class="section-header">TRANSAZIONI</h3>
                 <div class="transactions-list">
                     @if (!userTransactions.Any())
                     {
-                        <p class="empty-text">Nessuna transazione per questo utente.</p>
+                        <p class="empty-text">Nessuna transazione per questo partecipante.</p>
                     }
                     @foreach (var t in userTransactions.OrderByDescending(x => x.OriginalTx.Date))
                     {
@@ -109,7 +109,7 @@
                             </div>
                             <div class="transaction-info">
                                 <div class="transaction-desc">@(string.IsNullOrWhiteSpace(t.OriginalTx.Description) ? (t.OriginalTx.Type == "expense" ? "Spesa" : "Versamento") : t.OriginalTx.Description)</div>
-                                <div class="transaction-meta">@t.OriginalTx.Date.ToString("g")</div>
+                                <div class="transaction-meta">@t.OriginalTx.Date.ToLocalTime().ToString("g")</div>
                             </div>
                             <div class="transaction-amount @(t.OriginalTx.Type == "expense" ? "negative" : "positive")">
                                 @FormatCurrency(t.UserAmount, t.OriginalTx.Currency)

@@ -147,7 +147,7 @@
                             <div class="transaction-info">
                                 <div class="transaction-desc">@(string.IsNullOrWhiteSpace(t.Description) ? (t.Type == "expense" ? "Spesa" : "Versamento") : t.Description)</div>
                                 <div class="transaction-meta">@secondLineText</div>
-                                <div class="transaction-meta">@t.Date.ToString("g")</div>
+                                <div class="transaction-meta">@t.Date.ToLocalTime().ToString("g")</div>
                             </div>
                             <div class="transaction-amount @(t.Type == "expense" ? "negative" : "positive")">
                                 @FormatCurrency(t.Amount, t.Currency)

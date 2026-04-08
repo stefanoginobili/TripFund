@@ -66,7 +66,7 @@
                     @FormatAmountWithCode(transaction.Amount, transaction.Currency)
                 </h2>
                 <p class="transaction-desc">@(string.IsNullOrWhiteSpace(transaction.Description) ? (transaction.Type == "expense" ? "Spesa" : "Versamento") : transaction.Description)</p>
-                <p class="transaction-meta">@transaction.Date.ToString("g")</p>
+                <p class="transaction-meta">@transaction.Date.ToLocalTime().ToString("g")</p>
                 <p class="transaction-meta">Creato da @transaction.Author</p>
             </div>
 
