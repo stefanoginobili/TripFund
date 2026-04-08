@@ -147,7 +147,7 @@
                             <div class="transaction-info">
                                 <div class="transaction-desc">@(string.IsNullOrWhiteSpace(t.Description) ? (t.Type == "expense" ? "Spesa" : "Versamento") : t.Description)</div>
                                 <div class="transaction-meta">@secondLineText</div>
-                                <div class="transaction-meta">@t.Date.ToLocalTime().ToString("g")</div>
+                                <div class="transaction-meta">@GetDisplayDate(t)</div>
                             </div>
                             <div class="transaction-amount @(t.Type == "expense" ? "negative" : "positive")">
                                 @FormatCurrency(t.Amount, t.Currency)
@@ -291,6 +291,33 @@
             return $"{c.Symbol} {amount.ToString(format)}";
         }
         return $"{amount:N2} {currencyCode}";
+    }
+
+    private string GetDisplayDate(Transaction tx)
+    {
+        DateTimeOffset displayDate;
+        if (string.IsNullOrEmpty(tx.Timezone))
+        {
+            displayDate = tx.Date.ToLocalTime();
+        }
+        else
+        {
+            try
+            {
+                var tz = TimeZoneInfo.FindSystemTimeZoneById(tx.Timezone);
+                displayDate = TimeZoneInfo.ConvertTime(tx.Date, tz);
+            }
+            catch
+            {
+                displayDate = tx.Date.ToLocalTime();
+            }
+        }
+
+        var offset = displayDate.Offset;
+        var sign = offset.Ticks >= 0 ? "+" : "-";
+        var offsetStr = $"(UTC{sign}{Math.Abs(offset.Hours):D2}:{Math.Abs(offset.Minutes):D2})";
+        
+        return $"{displayDate.ToString("dd/MM/yyyy HH:mm")} {offsetStr}";
     }
 
     private class MemberStats

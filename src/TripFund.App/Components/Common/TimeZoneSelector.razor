@@ -1,0 +1,312 @@
+@namespace TripFund.App.Components.Common
+@inject IJSRuntime JSRuntime
+
+<div class="form-group @Class">
+    <label>@Label</label>
+    <div class="custom-tz-selector @(_isOpen ? "open" : "")" @onclick="ToggleDropdown">
+        @if (string.IsNullOrEmpty(Value))
+        {
+            <div class="selected-tz-placeholder">Seleziona fuso orario...</div>
+        }
+        else
+        {
+            var selectedTz = _timeZones.FirstOrDefault(t => t.Id == Value);
+            <div class="tz-selector-item">
+                <div class="tz-icon-circle">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <line x1="2" y1="12" x2="22" y2="12"></line>
+                        <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
+                        <circle cx="18" cy="18" r="5" fill="white"></circle>
+                        <circle cx="18" cy="18" r="5"></circle>
+                        <polyline points="18 15 18 18 20 19"></polyline>
+                    </svg>
+                </div>
+                <div class="tz-selector-info">
+                    <div class="tz-selector-name">@Value</div>
+                    <div class="tz-selector-offset">@GetDisplayName(selectedTz)</div>
+                </div>
+                <div class="selector-arrow">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="7 9 12 4 17 9"></polyline>
+                        <polyline points="7 15 12 20 17 15"></polyline>
+                    </svg>
+                </div>
+            </div>
+        }
+
+        @if (_isOpen)
+        {
+            <div class="tz-selector-dropdown" @onclick:stopPropagation>
+                <div class="tz-search-container">
+                    <input @ref="_searchInput"
+                           type="text" 
+                           class="tz-search-input" 
+                           placeholder="Cerca fuso orario..." 
+                           @bind="_searchText" 
+                           @bind:event="oninput"
+                           @onclick:stopPropagation />
+                </div>
+                <div class="tz-items-list">
+                    @if (!FilteredTimeZones.Any())
+                    {
+                        <div class="no-results">Nessuna Time Zone trovata</div>
+                    }
+                    @foreach (var tz in FilteredTimeZones)
+                    {
+                        <div class="dropdown-tz-item @(Value == tz.Id ? "selected" : "")" @onclick="() => SelectTimeZone(tz.Id)">
+                            <div class="tz-selector-info">
+                                <div class="tz-selector-name">@tz.Id</div>
+                                <div class="tz-selector-offset">@GetDisplayName(tz)</div>
+                            </div>
+                            @if (Value == tz.Id)
+                            {
+                                <div class="check-icon">
+                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#20563C" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <polyline points="20 6 9 17 4 12"></polyline>
+                                    </svg>
+                                </div>
+                            }
+                        </div>
+                    }
+                </div>
+            </div>
+        }
+    </div>
+</div>
+
+@if (_isOpen)
+{
+    <div class="popover-overlay" @onclick="ToggleDropdown"></div>
+}
+
+@code {
+    [Parameter] public string Label { get; set; } = "Fuso Orario";
+    [Parameter] public string Value { get; set; } = string.Empty;
+    [Parameter] public EventCallback<string> ValueChanged { get; set; }
+    [Parameter] public string Class { get; set; } = string.Empty;
+
+    private List<TimeZoneInfo> _timeZones = new();
+    private bool _isOpen = false;
+    private string _searchText = string.Empty;
+    private ElementReference _searchInput;
+    private bool _shouldFocus = false;
+
+    protected override void OnInitialized()
+    {
+        _timeZones = TimeZoneInfo.GetSystemTimeZones()
+            .OrderBy(tz => tz.BaseUtcOffset)
+            .ToList();
+            
+        if (string.IsNullOrEmpty(Value))
+        {
+            Value = TimeZoneInfo.Local.Id;
+        }
+    }
+
+    private IEnumerable<TimeZoneInfo> FilteredTimeZones => 
+        string.IsNullOrWhiteSpace(_searchText) 
+            ? _timeZones 
+            : _timeZones.Where(t => t.Id.Contains(_searchText, StringComparison.OrdinalIgnoreCase) || 
+                                   t.DisplayName.Contains(_searchText, StringComparison.OrdinalIgnoreCase));
+
+    private void ToggleDropdown()
+    {
+        _isOpen = !_isOpen;
+        if (_isOpen) 
+        {
+            _searchText = string.Empty;
+            _shouldFocus = true;
+        }
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (_shouldFocus && _isOpen)
+        {
+            _shouldFocus = false;
+            try
+            {
+                await _searchInput.FocusAsync();
+            }
+            catch { /* Ignore if element is not yet available */ }
+        }
+    }
+
+    private async Task SelectTimeZone(string id)
+    {
+        Value = id;
+        _isOpen = false;
+        await ValueChanged.InvokeAsync(id);
+    }
+
+    private string GetDisplayName(TimeZoneInfo? tz)
+    {
+        if (tz == null) return string.Empty;
+        
+        // On some platforms (Windows, Android), DisplayName already starts with (UTC+NN:NN)
+        if (tz.DisplayName.StartsWith("(UTC", StringComparison.OrdinalIgnoreCase))
+        {
+            return tz.DisplayName;
+        }
+
+        var offset = tz.BaseUtcOffset;
+        var sign = offset.Ticks >= 0 ? "+" : "-";
+        return $"(UTC{sign}{Math.Abs(offset.Hours):D2}:{Math.Abs(offset.Minutes):D2}) {tz.DisplayName}";
+    }
+}
+
+<style>
+    .custom-tz-selector {
+        position: relative;
+        background-color: #FFFFFF;
+        border-radius: 16px;
+        padding: 0.6rem 1rem;
+        border: 1px solid #E0E0E0;
+        cursor: pointer;
+        min-height: 64px;
+        display: flex;
+        align-items: center;
+        transition: all 0.2s;
+    }
+
+    .custom-tz-selector.open {
+        border-color: #20563C;
+        z-index: 1001;
+    }
+
+    .selected-tz-placeholder {
+        color: #6C757D;
+        font-weight: 600;
+    }
+
+    .tz-selector-item {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        width: 100%;
+    }
+
+    .tz-icon-circle {
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        background-color: #F8FBF9;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #20563C;
+        flex-shrink: 0;
+        border: 1px solid #F0F0F0;
+    }
+
+    .tz-selector-info {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+    }
+
+    .tz-selector-name {
+        font-weight: 700;
+        color: #1A3C2F;
+        font-size: 0.95rem;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .tz-selector-offset {
+        font-size: 0.75rem;
+        color: #6C757D;
+        font-weight: 500;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .selector-arrow {
+        color: #6C757D;
+        flex-shrink: 0;
+    }
+
+    .tz-selector-dropdown {
+        position: absolute;
+        bottom: calc(100% + 8px);
+        left: 0;
+        right: 0;
+        background-color: #FFFFFF;
+        border-radius: 16px;
+        box-shadow: 0 8px 32px rgba(0,0,0,0.12);
+        z-index: 1002;
+        padding: 0.5rem;
+        border: 1px solid #F0F0F0;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .tz-search-container {
+        padding: 0.25rem 0.5rem 0.5rem;
+        border-bottom: 1px solid #F0F0F0;
+        margin-bottom: 0.25rem;
+    }
+
+    .tz-search-input {
+        width: 100%;
+        border: 1px solid #E0E0E0;
+        border-radius: 8px;
+        padding: 0.5rem 0.75rem;
+        font-size: 0.9rem;
+        outline: none;
+    }
+
+    .tz-search-input:focus {
+        border-color: #20563C;
+    }
+
+    .tz-items-list {
+        max-height: calc(7 * 56px); /* Approximately 7 items at ~56px each */
+        overflow-y: auto;
+    }
+
+    .no-results {
+        padding: 1rem;
+        text-align: center;
+        color: #6C757D;
+        font-size: 0.9rem;
+        font-style: italic;
+    }
+
+    .dropdown-tz-item {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        padding: 0.6rem 0.75rem;
+        border-radius: 12px;
+        transition: background-color 0.2s;
+        min-height: 52px;
+    }
+
+    .dropdown-tz-item:hover {
+        background-color: #F8FBF9;
+    }
+
+    .dropdown-tz-item.selected {
+        background-color: #D6EDE2;
+    }
+
+    .check-icon {
+        margin-left: auto;
+        flex-shrink: 0;
+    }
+
+    .popover-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0,0,0,0.05);
+        z-index: 1000;
+    }
+</style>

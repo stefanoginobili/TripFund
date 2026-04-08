@@ -61,7 +61,8 @@ public class ModelSerializationTests
         var json = @"{
           ""id"": ""20260325T143000Z-a1b2c3d4"",
           ""type"": ""expense"", 
-          ""date"": ""2026-03-25T14:30:00Z"",
+          ""date"": ""2026-03-25T14:30:00+02:00"",
+          ""timezone"": ""Central Europe Standard Time"",
           ""createdAt"": ""2026-03-25T14:30:00Z"",
           ""updatedAt"": ""2026-03-26T11:20:00Z"",
           ""currency"": ""ARS"",
@@ -90,6 +91,8 @@ public class ModelSerializationTests
         // Assert
         transaction.Should().NotBeNull();
         transaction!.Id.Should().Be("20260325T143000Z-a1b2c3d4");
+        transaction.Date.Should().Be(DateTimeOffset.Parse("2026-03-25T14:30:00+02:00"));
+        transaction.Timezone.Should().Be("Central Europe Standard Time");
         transaction.CreatedAt.Should().Be(DateTime.Parse("2026-03-25T14:30:00Z").ToUniversalTime());
         transaction.UpdatedAt.Should().Be(DateTime.Parse("2026-03-26T11:20:00Z").ToUniversalTime());
         transaction.Amount.Should().Be(15000.50m);

@@ -11,7 +11,10 @@ public class Transaction
     public string Type { get; set; } = string.Empty; // "expense" or "contribution"
 
     [JsonPropertyName("date")]
-    public DateTime Date { get; set; }
+    public DateTimeOffset Date { get; set; }
+
+    [JsonPropertyName("timezone")]
+    public string Timezone { get; set; } = string.Empty;
 
     [JsonPropertyName("createdAt")]
     public DateTime CreatedAt { get; set; }

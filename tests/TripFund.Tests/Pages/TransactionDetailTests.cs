@@ -214,4 +214,44 @@ public class TransactionDetailTests : BunitContext
         var pdfWrapper = previewWrappers.First(w => w.QuerySelector(".attachment-name")!.TextContent == "doc1");
         pdfWrapper.QuerySelector(".file-ext")!.TextContent.Should().Be("PDF");
     }
+
+    [Fact]
+    public void TransactionDetail_ShouldDisplayDateInStoredTimezone()
+    {
+        // Arrange
+        var tripSlug = "test-trip";
+        var transactionId = "trans-123";
+        
+        var config = new TripConfig 
+        { 
+            Id = "1", 
+            Name = "Test Trip",
+            Currencies = new Dictionary<string, Currency> { { "EUR", new Currency { Symbol = "€" } } }
+        };
+        
+        // 10:00 AM UTC
+        var date = new DateTimeOffset(2024, 5, 10, 10, 0, 0, TimeSpan.Zero);
+        var transaction = new Transaction 
+        { 
+            Id = transactionId, 
+            Amount = 100, 
+            Currency = "EUR", 
+            Date = date,
+            Timezone = TimeZoneInfo.Utc.Id,
+            Split = new Dictionary<string, SplitInfo>()
+        };
+
+        _storageMock.Setup(s => s.GetTripConfigAsync(tripSlug)).ReturnsAsync(config);
+        _storageMock.Setup(s => s.GetLatestTransactionVersionAsync(tripSlug, transactionId)).ReturnsAsync(transaction);
+
+        var cut = Render<TransactionDetail>(parameters => parameters
+            .Add(p => p.tripSlug, tripSlug)
+            .Add(p => p.transactionId, transactionId)
+        );
+
+        // Assert
+        var metaTags = cut.FindAll(".transaction-meta");
+        // The one with the date should be "10/05/2024 10:00 (UTC+00:00)"
+        metaTags.Any(m => m.TextContent.Contains("10/05/2024 10:00 (UTC+00:00)")).Should().BeTrue();
+    }
 }

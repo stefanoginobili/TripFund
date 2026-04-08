@@ -81,6 +81,8 @@
                     <NativeTimePicker Label="Ora" @bind-Value="transactionDate" Class="flex-1" />
                 </div>
 
+                <TimeZoneSelector Label="Fuso Orario" @bind-Value="timezoneId" />
+
                 <div class="form-group">
                     <label>Partecipante</label>
                     <div class="custom-member-selector @(isMemberSelectorOpen ? "open" : "")" @onclick="ToggleMemberSelector">
@@ -168,6 +170,7 @@
     private decimal amount;
     private string description = "Versamento in cassa";
     private DateTime transactionDate = DateTime.Now;
+    private string timezoneId = TimeZoneInfo.Local.Id;
     private string errorMessage = "";
     private string deviceId = "";
     private string authorName = "";
@@ -193,7 +196,16 @@
                     selectedCurrency = editingTransaction.Currency;
                     amount = editingTransaction.Amount;
                     description = editingTransaction.Description;
-                    transactionDate = editingTransaction.Date.ToLocalTime();
+                    timezoneId = string.IsNullOrEmpty(editingTransaction.Timezone) ? TimeZoneInfo.Local.Id : editingTransaction.Timezone;
+                    try
+                    {
+                        var tz = TimeZoneInfo.FindSystemTimeZoneById(timezoneId);
+                        transactionDate = TimeZoneInfo.ConvertTimeFromUtc(editingTransaction.Date.UtcDateTime, tz);
+                    }
+                    catch
+                    {
+                        transactionDate = editingTransaction.Date.LocalDateTime;
+                    }
                     selectedMemberSlug = editingTransaction.Split.Keys.FirstOrDefault() ?? "";
                 }
             }
@@ -201,6 +213,7 @@
             if (editingTransaction == null)
             {
                 amount = 0;
+                timezoneId = TimeZoneInfo.Local.Id;
                 if (!string.IsNullOrEmpty(currency) && config.Currencies.ContainsKey(currency))
                 {
                     selectedCurrency = currency;
@@ -330,11 +343,25 @@
 
         isSubmitting = true;
 
+        TimeZoneInfo tz;
+        try
+        {
+            tz = TimeZoneInfo.FindSystemTimeZoneById(timezoneId);
+        }
+        catch
+        {
+            tz = TimeZoneInfo.Local;
+        }
+        
+        var offset = tz.GetUtcOffset(transactionDate);
+        var finalDate = new DateTimeOffset(DateTime.SpecifyKind(transactionDate, DateTimeKind.Unspecified), offset);
+
         var transaction = new Transaction
         {
             Id = editingTransaction?.Id ?? TransactionIdGenerator.GenerateId(),
             Type = "contribution",
-            Date = transactionDate.ToUniversalTime(),
+            Date = finalDate,
+            Timezone = timezoneId,
             Currency = selectedCurrency,
             Amount = amount,
             Description = description,

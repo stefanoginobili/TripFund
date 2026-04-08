@@ -7,7 +7,7 @@ namespace TripFund.Tests.Utilities;
 public class ReceiptGeneratorTests
 {
     [Fact]
-    public void GenerateContributionText_ShouldShowLocalTime()
+    public void GenerateContributionText_ShouldShowAcquisitionTimeWithUtcOffset()
     {
         // Arrange
         var trip = new TripConfig
@@ -23,14 +23,14 @@ public class ReceiptGeneratorTests
             }
         };
 
-        // Date in UTC
-        var utcDate = new DateTime(2023, 10, 27, 10, 0, 0, DateTimeKind.Utc);
+        // Date with a specific offset (e.g., +02:00)
+        var dateWithOffset = new DateTimeOffset(2023, 10, 27, 12, 30, 0, TimeSpan.FromHours(2));
         
         var contribution = new Transaction
         {
             Id = "1",
             Type = "contribution",
-            Date = utcDate,
+            Date = dateWithOffset,
             Currency = "EUR",
             Amount = 100,
             Split = new Dictionary<string, SplitInfo> { { "mario", new SplitInfo { Amount = 100 } } }
@@ -42,8 +42,46 @@ public class ReceiptGeneratorTests
         var result = ReceiptGenerator.GenerateContributionText(trip, contribution, allTransactions);
 
         // Assert
-        result.Should().Contain("Data: 27/10/2023");
-        result.Should().MatchRegex(@"• Data: \d{2}/\d{2}/\d{4} \d{2}:\d{2}");
-        result.Should().Contain($"Gli orari sono espressi nel fuso orario {TimeZoneInfo.Local.Id}");
+        result.Should().Contain("Data: 27/10/2023 12:30 (UTC+02:00)");
+        result.Should().Contain("Gli orari mostrati sono quelli acquisiti al momento dell'operazione.");
+    }
+
+    [Fact]
+    public void GenerateContributionText_ShouldHandleNegativeOffsets()
+    {
+        // Arrange
+        var trip = new TripConfig
+        {
+            Name = "Test Trip",
+            Members = new Dictionary<string, User>
+            {
+                { "mario", new User { Name = "Mario", Email = "mario@example.com", Avatar = "👨" } }
+            },
+            Currencies = new Dictionary<string, Currency>
+            {
+                { "EUR", new Currency { Symbol = "€", Decimals = 2 } }
+            }
+        };
+
+        // Date with a negative offset (e.g., -05:00)
+        var dateWithOffset = new DateTimeOffset(2023, 10, 27, 08, 00, 0, TimeSpan.FromHours(-5));
+        
+        var contribution = new Transaction
+        {
+            Id = "2",
+            Type = "contribution",
+            Date = dateWithOffset,
+            Currency = "EUR",
+            Amount = 50,
+            Split = new Dictionary<string, SplitInfo> { { "mario", new SplitInfo { Amount = 50 } } }
+        };
+
+        var allTransactions = new List<Transaction> { contribution };
+
+        // Act
+        var result = ReceiptGenerator.GenerateContributionText(trip, contribution, allTransactions);
+
+        // Assert
+        result.Should().Contain("Data: 27/10/2023 08:00 (UTC-05:00)");
     }
 }

@@ -517,6 +517,99 @@ public class TransactionFormTests : BunitContext
     }
 
     [Fact]
+    public async Task AddExpense_WithTimezone_ShouldSaveDateTimeOffsetCorrectly()
+    {
+        // Arrange
+        var tripSlug = "test-trip";
+        var config = new TripConfig
+        {
+            Id = "123",
+            Currencies = new Dictionary<string, Currency> { { "EUR", new Currency { Symbol = "€" } } },
+            Members = new Dictionary<string, User> { { "mario", new User { Name = "Mario" } } }
+        };
+        _storageMock.Setup(s => s.GetTripConfigAsync(tripSlug)).ReturnsAsync(config);
+        
+        Transaction? savedTransaction = null;
+        _storageMock.Setup(s => s.SaveTransactionAsync(tripSlug, It.IsAny<Transaction>(), It.IsAny<string>(), It.IsAny<bool>(), It.IsAny<Dictionary<string, byte[]>>()))
+            .Callback<string, Transaction, string, bool, Dictionary<string, byte[]>>((s, t, d, b, a) => savedTransaction = t)
+            .Returns(Task.CompletedTask);
+
+        var cut = Render<AddExpense>(parameters => parameters.Add(p => p.tripSlug, tripSlug));
+
+        // Act
+        cut.Find(".amount-input").Change("10");
+        cut.Find("input[placeholder='es. Cena a Buenos Aires']").Change("Test Timezone");
+
+        // Set Date and Time
+        cut.Find("input[type='date']").Change("2024-05-10");
+        cut.Find("input[type='time']").Change("10:00");
+
+        // Set Timezone to UTC (safe across platforms) using custom selector
+        var tzId = TimeZoneInfo.Utc.Id;
+        cut.Find(".custom-tz-selector").Click();
+        var utcItem = cut.FindAll(".dropdown-tz-item").First(i => i.QuerySelector(".tz-selector-name")!.TextContent == tzId);
+        utcItem.Click();
+
+        // Submit
+        await cut.Find(".submit-btn").ClickAsync();
+
+        // Assert
+        savedTransaction.Should().NotBeNull();
+        savedTransaction!.Timezone.Should().Be(tzId);
+        
+        // We expect the date to be 2024-05-10 10:00:00 +00:00
+        savedTransaction.Date.Year.Should().Be(2024);
+        savedTransaction.Date.Month.Should().Be(5);
+        savedTransaction.Date.Day.Should().Be(10);
+        savedTransaction.Date.Hour.Should().Be(10);
+        savedTransaction.Date.Minute.Should().Be(0);
+        savedTransaction.Date.Offset.Should().Be(TimeSpan.Zero);
+    }
+
+    [Fact]
+    public async Task AddExpense_WithDifferentTimezone_ShouldNotCrash()
+    {
+        // Arrange
+        var tripSlug = "test-trip";
+        var config = new TripConfig
+        {
+            Id = "123",
+            Currencies = new Dictionary<string, Currency> { { "EUR", new Currency { Symbol = "€" } } },
+            Members = new Dictionary<string, User> { { "mario", new User { Name = "Mario" } } }
+        };
+        _storageMock.Setup(s => s.GetTripConfigAsync(tripSlug)).ReturnsAsync(config);
+        
+        Transaction? savedTransaction = null;
+        _storageMock.Setup(s => s.SaveTransactionAsync(tripSlug, It.IsAny<Transaction>(), It.IsAny<string>(), It.IsAny<bool>(), It.IsAny<Dictionary<string, byte[]>>()))
+            .Callback<string, Transaction, string, bool, Dictionary<string, byte[]>>((s, t, d, b, a) => savedTransaction = t)
+            .Returns(Task.CompletedTask);
+
+        var cut = Render<AddExpense>(parameters => parameters.Add(p => p.tripSlug, tripSlug));
+
+        // Act
+        cut.Find(".amount-input").Change("10");
+        cut.Find("input[placeholder='es. Cena a Buenos Aires']").Change("Test Description");
+        
+        // Find a timezone with a different offset than local to trigger potential crash
+        var localTz = TimeZoneInfo.Local;
+        var differentTz = TimeZoneInfo.GetSystemTimeZones()
+            .FirstOrDefault(tz => tz.BaseUtcOffset != localTz.BaseUtcOffset) ?? TimeZoneInfo.Utc;
+        
+        var tzId = differentTz.Id;
+        cut.Find(".custom-tz-selector").Click();
+        var tzItem = cut.FindAll(".dropdown-tz-item").First(i => i.QuerySelector(".tz-selector-name")!.TextContent == tzId);
+        tzItem.Click();
+
+        // Submit - This is where it used to crash
+        await cut.Find(".submit-btn").ClickAsync();
+
+        // Assert
+        savedTransaction.Should().NotBeNull();
+        savedTransaction!.Timezone.Should().Be(tzId);
+        savedTransaction.Date.Offset.Should().Be(differentTz.GetUtcOffset(savedTransaction.Date.DateTime));
+    }
+
+    [Fact]
     public void EditExpense_ShouldDeleteTransaction()
     {
         // Arrange

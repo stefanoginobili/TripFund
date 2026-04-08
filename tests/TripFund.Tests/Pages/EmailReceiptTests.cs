@@ -87,7 +87,7 @@ public class EmailReceiptTests : BunitContext
         
         // 2. Verify Email was sent
         _emailMock.Verify(e => e.SendEmailAsync(
-            It.Is<string>(s => s.Contains("Riepilogo aggiornato versamenti")),
+            It.Is<string>(s => s.Contains("Riepilogo versamenti")),
             It.Is<string>(body => body.Contains("500,00") && body.Contains("Test Trip") && body.Contains("DETTAGLIO VERSAMENTI")),
             It.Is<IEnumerable<string>>(rec => rec.Contains("mario@example.com"))
         ), Times.Once);

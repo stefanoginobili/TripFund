@@ -33,9 +33,29 @@ public static class ReceiptGenerator
         foreach (var c in memberContributions)
         {
             var currency = trip.Currencies.TryGetValue(c.Currency, out var cur) ? cur : new Currency { Symbol = c.Currency, Decimals = 2 };
-            var localDate = c.Date.ToLocalTime();
             
-            sb.AppendLine($"• Data: {localDate.ToString("dd/MM/yyyy HH:mm", _itCulture)}");
+            DateTime displayDate = c.Date.DateTime;
+            
+            // For robustness, if timezone is present, try to ensure we are showing the time in THAT timezone
+            // although DateTimeOffset.DateTime should already be the "local" time recorded.
+            if (!string.IsNullOrEmpty(c.Timezone))
+            {
+                try
+                {
+                    var tz = TimeZoneInfo.FindSystemTimeZoneById(c.Timezone);
+                    displayDate = TimeZoneInfo.ConvertTime(c.Date, tz).DateTime;
+                }
+                catch
+                {
+                    // Fallback to the recorded DateTime
+                    displayDate = c.Date.DateTime;
+                }
+            }
+
+            var offset = c.Date.Offset;
+            var offsetStr = $"{(offset >= TimeSpan.Zero ? "+" : "-")}{Math.Abs(offset.Hours):D2}:{Math.Abs(offset.Minutes):D2}";
+            
+            sb.AppendLine($"• Data: {displayDate.ToString("dd/MM/yyyy HH:mm", _itCulture)} (UTC{offsetStr})");
             sb.AppendLine($"  Importo: {c.Currency} {c.Split[memberSlug].Amount.ToString("N" + currency.Decimals, _itCulture)}");
             sb.AppendLine();
         }
@@ -66,8 +86,9 @@ public static class ReceiptGenerator
         sb.AppendLine();
         sb.AppendLine("--");
         sb.AppendLine("Inviato automaticamente dall'app TripFund.");
-        sb.AppendLine($"Gli orari sono espressi nel fuso orario \"{TimeZoneInfo.Local.Id}\".");
-        sb.AppendLine("Se pensi ci sia un errore, contatta il coordinatore del gruppo.");
+        
+        sb.AppendLine("Gli orari mostrati sono quelli acquisiti al momento dell'operazione.");
+        sb.AppendLine("In caso di dubbi, contatta il coordinatore del gruppo.");
 
         return sb.ToString();
     }

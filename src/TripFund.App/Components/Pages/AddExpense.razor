@@ -80,6 +80,8 @@
                     <NativeTimePicker Label="Ora" @bind-Value="transactionDate" Class="flex-1" />
                 </div>
 
+                <TimeZoneSelector Label="Fuso Orario" @bind-Value="timezoneId" />
+
                 <div class="info-section">
                     <h3 class="section-header">Partecipanti</h3>
                     <div class="members-split-list">
@@ -198,6 +200,7 @@
     private decimal totalAmount;
     private string description = "";
     private DateTime transactionDate = DateTime.Now;
+    private string timezoneId = TimeZoneInfo.Local.Id;
     private List<MemberSplitInfo> memberSplits = new();
     private List<AttachmentInfo> attachments = new();
     private LocationInfo? locationInfo;
@@ -234,7 +237,16 @@
                     selectedCurrency = tx.Currency;
                     totalAmount = tx.Amount;
                     description = tx.Description;
-                    transactionDate = tx.Date.ToLocalTime();
+                    timezoneId = string.IsNullOrEmpty(tx.Timezone) ? TimeZoneInfo.Local.Id : tx.Timezone;
+                    try
+                    {
+                        var tz = TimeZoneInfo.FindSystemTimeZoneById(timezoneId);
+                        transactionDate = TimeZoneInfo.ConvertTimeFromUtc(tx.Date.UtcDateTime, tz);
+                    }
+                    catch
+                    {
+                        transactionDate = tx.Date.LocalDateTime;
+                    }
                     locationInfo = tx.Location;
                     
                     foreach (var m in memberSplits)
@@ -258,6 +270,7 @@
             if (editingInfo == null)
             {
                 totalAmount = 0;
+                timezoneId = TimeZoneInfo.Local.Id;
                 if (!string.IsNullOrEmpty(currency) && config.Currencies.ContainsKey(currency))
                 {
                     selectedCurrency = currency;
@@ -585,11 +598,25 @@
             processedNewAttachments.Add((info, $"Attachment-{maxNum:D2}{info.Extension}"));
         }
 
+        TimeZoneInfo tz;
+        try
+        {
+            tz = TimeZoneInfo.FindSystemTimeZoneById(timezoneId);
+        }
+        catch
+        {
+            tz = TimeZoneInfo.Local;
+        }
+        
+        var offset = tz.GetUtcOffset(transactionDate);
+        var finalDate = new DateTimeOffset(DateTime.SpecifyKind(transactionDate, DateTimeKind.Unspecified), offset);
+
         var transaction = new Transaction
         {
             Id = editingInfo?.Transaction?.Id ?? TransactionIdGenerator.GenerateId(),
             Type = "expense",
-            Date = transactionDate.ToUniversalTime(),
+            Date = finalDate,
+            Timezone = timezoneId,
             Currency = selectedCurrency,
             Amount = totalAmount,
             Description = description,

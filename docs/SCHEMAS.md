@@ -55,7 +55,8 @@ This file is stored inside the specific version folder of the trip's `transactio
 {
   "id": "20260325T143000Z-a1b2c3d4",
   "type": "expense",
-  "date": "2026-03-25T14:30:00Z",
+  "date": "2026-03-25T14:30:00+02:00",
+  "timezone": "Europe/Paris",
   "createdAt": "2026-03-25T14:30:00Z",
   "updatedAt": "2026-03-26T11:20:00Z",
   "currency": "ARS",

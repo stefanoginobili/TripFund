@@ -66,8 +66,9 @@
                     @FormatAmountWithCode(transaction.Amount, transaction.Currency)
                 </h2>
                 <p class="transaction-desc">@(string.IsNullOrWhiteSpace(transaction.Description) ? (transaction.Type == "expense" ? "Spesa" : "Versamento") : transaction.Description)</p>
-                <p class="transaction-meta">@transaction.Date.ToLocalTime().ToString("g")</p>
-                <p class="transaction-meta">Creato da @transaction.Author</p>
+                <p class="transaction-meta">@GetDisplayDate(transaction)</p>
+                <p class="transaction-meta tz-name">@GetTimeZoneDisplayName(transaction)</p>
+                <p class="transaction-meta author-line">Registrato da @transaction.Author</p>
             </div>
 
             <div class="info-section">
@@ -259,6 +260,51 @@
         return $"{currencyCode} {amount.ToString("N2")}";
     }
 
+    private string GetDisplayDate(Transaction tx)
+    {
+        DateTimeOffset displayDate;
+        if (string.IsNullOrEmpty(tx.Timezone))
+        {
+            displayDate = tx.Date.ToLocalTime();
+        }
+        else
+        {
+            try
+            {
+                var tz = TimeZoneInfo.FindSystemTimeZoneById(tx.Timezone);
+                displayDate = TimeZoneInfo.ConvertTime(tx.Date, tz);
+            }
+            catch
+            {
+                displayDate = tx.Date.ToLocalTime();
+            }
+        }
+
+        var offset = displayDate.Offset;
+        var sign = offset.Ticks >= 0 ? "+" : "-";
+        var offsetStr = $"(UTC{sign}{Math.Abs(offset.Hours):D2}:{Math.Abs(offset.Minutes):D2})";
+        
+        return $"{displayDate.ToString("dd/MM/yyyy HH:mm")} {offsetStr}";
+    }
+
+    private string GetTimeZoneDisplayName(Transaction tx)
+    {
+        if (string.IsNullOrEmpty(tx.Timezone))
+        {
+            return TimeZoneInfo.Local.Id;
+        }
+
+        try
+        {
+            var tz = TimeZoneInfo.FindSystemTimeZoneById(tx.Timezone);
+            return tz.Id;
+        }
+        catch
+        {
+            return tx.Timezone;
+        }
+    }
+
     private class AttachmentPreview
     {
         public string FileName { get; set; } = "";
@@ -417,6 +463,15 @@
         font-size: 0.9rem;
         color: #6C757D;
         margin: 0;
+    }
+
+    .tz-name {
+        font-size: 0.8rem;
+        opacity: 0.8;
+    }
+
+    .author-line {
+        margin-top: 0.5rem !important;
     }
 
     .info-section {
