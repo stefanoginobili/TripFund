@@ -67,7 +67,7 @@
                 </h2>
                 <p class="transaction-desc">@(string.IsNullOrWhiteSpace(transaction.Description) ? (transaction.Type == "expense" ? "Spesa" : "Versamento") : transaction.Description)</p>
                 <p class="transaction-meta">@GetDisplayDate(transaction)</p>
-                <p class="transaction-meta tz-name">@GetTimeZoneDisplayName(transaction)</p>
+                <p class="transaction-meta tz-name">orario di @GetTimeZoneDisplayName(transaction)</p>
                 <p class="transaction-meta author-line">Registrato da @transaction.Author</p>
             </div>
 

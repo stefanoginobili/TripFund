@@ -140,15 +140,15 @@ namespace TripFund.App.Utilities
 
         public static string GetFormattedOffset(TimeZoneInfo tz, DateTimeOffset date)
         {
-            var ianaId = tz.Id;
-            var cityName = GetItalianCityName(ianaId);
+            var offset = tz.GetUtcOffset(date);
             
-            if (ianaId.Equals("UTC", StringComparison.OrdinalIgnoreCase))
+            if (offset == TimeSpan.Zero)
             {
                 return "(UTC)";
             }
             
-            return $"(ora di {cityName})";
+            var sign = offset >= TimeSpan.Zero ? "+" : "-";
+            return $"(UTC{sign}{Math.Abs(offset.Hours):D2}:{Math.Abs(offset.Minutes):D2})";
         }
     }
 }
