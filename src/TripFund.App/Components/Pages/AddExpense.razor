@@ -310,7 +310,7 @@
         try
         {
             await Storage.SaveTransactionAsync(tripSlug, editingInfo.Transaction, deviceId, isDelete: true);
-            Nav.NavigateTo($"/trip/{tripSlug}?currency={selectedCurrency}");
+            await GoBack();
         }
         catch (Exception ex)
         {
@@ -320,7 +320,8 @@
 
     private async Task GoBack()
     {
-        await JSRuntime.InvokeVoidAsync("history.back");
+        Nav.NavigateTo($"/trip/{tripSlug}?currency={selectedCurrency}");
+        await Task.CompletedTask;
     }
 
     private string GetCurrencySymbol()

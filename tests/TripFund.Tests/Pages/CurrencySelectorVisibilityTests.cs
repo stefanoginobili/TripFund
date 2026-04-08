@@ -100,7 +100,7 @@ public class CurrencySelectorVisibilityTests : BunitContext
     }
 
     [Fact]
-    public async Task AddContribution_Save_ShouldGoBack()
+    public async Task AddContribution_Save_ShouldNavigateBackWithCurrency()
     {
         // Arrange
         var tripSlug = "test-trip";
@@ -111,8 +111,8 @@ public class CurrencySelectorVisibilityTests : BunitContext
         };
         _storageMock.Setup(s => s.GetTripConfigAsync(tripSlug)).ReturnsAsync(config);
         
-        // Mock JS Interop for history.back
-        var historyBackHandler = JSInterop.SetupVoid("history.back");
+        var nav = Services.GetRequiredService<NavigationManager>();
+        nav.NavigateTo($"/trip/{tripSlug}/add-contribution?currency=EUR");
 
         var cut = Render<AddContribution>(parameters => parameters.Add(p => p.tripSlug, tripSlug));
 
@@ -130,6 +130,31 @@ public class CurrencySelectorVisibilityTests : BunitContext
         await cut.Find(".submit-btn").ClickAsync();
 
         // Assert
-        historyBackHandler.Invocations.Should().NotBeEmpty();
+        nav.Uri.Should().Contain($"/trip/{tripSlug}?currency=EUR");
+    }
+
+    [Fact]
+    public async Task AddContribution_Back_ShouldNavigateToMemberDashboardWhenMemberPresent()
+    {
+        // Arrange
+        var tripSlug = "test-trip";
+        var memberSlug = "mario";
+        var config = new TripConfig
+        {
+            Currencies = new Dictionary<string, Currency> { { "USD", new Currency { Symbol = "$" } } },
+            Members = new Dictionary<string, User> { { memberSlug, new User { Name = "Mario" } } }
+        };
+        _storageMock.Setup(s => s.GetTripConfigAsync(tripSlug)).ReturnsAsync(config);
+        
+        var nav = Services.GetRequiredService<NavigationManager>();
+        nav.NavigateTo($"/trip/{tripSlug}/add-contribution?member={memberSlug}&currency=USD");
+
+        var cut = Render<AddContribution>(parameters => parameters.Add(p => p.tripSlug, tripSlug));
+
+        // Act
+        await cut.Find("header .icon-btn").ClickAsync();
+
+        // Assert
+        nav.Uri.Should().Contain($"/trip/{tripSlug}/member/{memberSlug}?currency=USD");
     }
 }

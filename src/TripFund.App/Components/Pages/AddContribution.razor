@@ -290,7 +290,7 @@
         try
         {
             await Storage.SaveTransactionAsync(tripSlug, editingTransaction, deviceId, isDelete: true);
-            Nav.NavigateTo($"/trip/{tripSlug}?currency={selectedCurrency}");
+            await GoBack();
         }
         catch (Exception ex)
         {
@@ -300,7 +300,15 @@
 
     private async Task GoBack()
     {
-        await JSRuntime.InvokeVoidAsync("history.back");
+        if (!string.IsNullOrEmpty(member))
+        {
+            Nav.NavigateTo($"/trip/{tripSlug}/member/{member}?currency={selectedCurrency}");
+        }
+        else
+        {
+            Nav.NavigateTo($"/trip/{tripSlug}?currency={selectedCurrency}");
+        }
+        await Task.CompletedTask;
     }
 
     private void OnAmountChanged(ChangeEventArgs e)
