@@ -1,6 +1,6 @@
 @page "/trip/{tripSlug}"
 
-<div class="dashboard-page">
+<div class="app-page">
     <header class="app-header">
         <button class="icon-btn" @onclick='() => Nav.NavigateTo("/")'>
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -21,8 +21,8 @@
                 @if (isMenuOpen)
                 {
                     <div class="popover-overlay" @onclick="ToggleMenu"></div>
-                    <div class="dropdown-menu-custom">
-                        <button class="dropdown-item" @onclick='() => Nav.NavigateTo($"/trip/{tripSlug}/edit")'>
+                    <div class="dropdown-menu-vibe">
+                        <button class="dropdown-item-vibe" @onclick='() => Nav.NavigateTo($"/trip/{tripSlug}/edit")'>
                             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="me-2">
                                 <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
                                 <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
@@ -83,7 +83,7 @@
 
             <!-- MEMBERS SECTION -->
             <section class="info-section">
-                <h3 class="section-header">PARTECIPANTI</h3>
+                <h3 class="section-header-vibe">PARTECIPANTI</h3>
                 <div class="members-list">
                     @if (!membersStats.Any())
                     {
@@ -99,7 +99,7 @@
                                     <span>Quota versata: @FormatCurrency(m.TotalContributed, selectedCurrency)</span>
                                 </div>
                             </div>
-                            <div class="member-balance @(m.RemainingBalance < 0 ? "negative" : "positive")">
+                            <div class="member-balance @(m.RemainingBalance < 0 ? "text-danger" : "text-success")">
                                 @FormatCurrency(m.RemainingBalance, selectedCurrency)
                             </div>
                         </div>
@@ -109,7 +109,7 @@
 
             <!-- TRANSACTIONS SECTION -->
             <section class="info-section">
-                <h3 class="section-header">TRANSAZIONI</h3>
+                <h3 class="section-header-vibe">TRANSAZIONI</h3>
                 <div class="transactions-list">
                     @{
                         var displayTx = transactions.Where(x => x.Currency == selectedCurrency).OrderByDescending(x => x.Date).ToList();
@@ -152,7 +152,7 @@
                                 <div class="transaction-meta">@secondLineText</div>
                                 <div class="transaction-meta">@GetDisplayDate(t)</div>
                             </div>
-                            <div class="transaction-amount @(t.Type == "expense" ? "negative" : "positive")">
+                            <div class="transaction-amount @(t.Type == "expense" ? "text-danger" : "text-success")">
                                 @FormatCurrency(t.Amount, t.Currency)
                             </div>
                         </div>
@@ -164,109 +164,8 @@
 </div>
 
 <style>
-    .dashboard-page {
-        background-color: #F8FBF9;
-        min-height: 100vh;
-        display: flex;
-        flex-direction: column;
-    }
-
-    .app-header {
-        position: sticky;
-        top: 0;
-        z-index: 999;
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        padding: 1rem 1.5rem;
-        background-color: #FFFFFF;
-        border-bottom: 1px solid #F0F0F0;
-    }
-
-    .header-title {
-        font-size: 1.25rem;
-        font-weight: 700;
-        color: #1A3C2F;
-        margin: 0;
-    }
-
-    .header-actions {
-        display: flex;
-        align-items: center;
-        position: relative;
-    }
-
-    .icon-btn {
-        background: none;
-        border: none;
-        color: #1A3C2F;
-        padding: 0.5rem;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-    }
-
-    .dropdown-menu-custom {
-        position: absolute;
-        top: 100%;
-        right: 0;
-        background-color: #FFFFFF;
-        border-radius: 12px;
-        box-shadow: 0 8px 24px rgba(0,0,0,0.12);
-        padding: 0.5rem;
-        z-index: 1101;
-        min-width: 150px;
-        display: flex;
-        flex-direction: column;
-        border: 1px solid #F0F0F0;
-    }
-
-    .dropdown-item {
-        background: none;
-        border: none;
-        padding: 0.75rem 1rem;
-        text-align: left;
-        font-weight: 600;
-        font-size: 0.95rem;
-        color: #1A3C2F;
-        display: flex;
-        align-items: center;
-        border-radius: 8px;
-        width: 100%;
-        white-space: nowrap;
-    }
-
-    .dropdown-item:hover:not(:disabled) {
-        background-color: #F8FBF9;
-    }
-
     .me-2 {
         margin-right: 0.5rem !important;
-    }
-
-    .content {
-        padding: 1.5rem;
-        display: flex;
-        flex-direction: column;
-        gap: 1.5rem;
-    }
-
-    .info-section {
-        background-color: transparent;
-        border-radius: 0;
-        padding: 0;
-        box-shadow: none;
-        width: 100%;
-        margin-bottom: 1.5rem;
-    }
-
-    .section-header {
-        font-size: 0.8rem;
-        font-weight: 800;
-        color: #20563C;
-        letter-spacing: 0.1em;
-        margin-bottom: 1rem;
-        text-transform: uppercase;
     }
 
     .summary-card {
@@ -361,7 +260,7 @@
     }
 
     .member-row, .transaction-row {
-        background-color: #F8FBF9;
+        background-color: #FFFFFF;
         padding: 1rem;
         border-radius: 16px;
         display: flex;
@@ -381,7 +280,7 @@
         margin-right: 1rem;
         width: 48px;
         height: 48px;
-        background-color: #FFFFFF;
+        background-color: #F8FBF9;
         border-radius: 50%;
         display: flex;
         align-items: center;
@@ -409,27 +308,10 @@
         font-size: 1.1rem;
     }
 
-    .positive { color: #20563C; }
-    .negative { color: #DC3545; }
-
     .transaction-icon {
         width: 40px;
         height: 40px;
-        border-radius: 12px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
         margin-right: 1rem;
-    }
-
-    .contrib-icon {
-        background-color: #D6EDE2;
-        color: #20563C;
-    }
-
-    .expense-icon {
-        background-color: #FCE8E8;
-        color: #DC3545;
     }
 
     .transaction-info {
@@ -456,15 +338,5 @@
         font-style: italic;
         text-align: center;
         padding: 1rem;
-    }
-
-    .popover-overlay {
-        position: fixed;
-        top: 0;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        background: transparent;
-        z-index: 1100;
     }
 </style>

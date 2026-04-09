@@ -1,6 +1,6 @@
 @page "/trip/{tripSlug}/add-expense"
 
-<div class="add-transaction-page">
+<div class="app-page">
     <header class="app-header">
         <button class="icon-btn" @onclick="GoBack">
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -22,9 +22,9 @@
                     </button>
                     @if (isMenuOpen)
                     {
-                        <div class="popover-overlay-menu" @onclick="ToggleMenu"></div>
-                        <div class="dropdown-menu-custom">
-                            <button class="dropdown-item text-danger" @onclick="DeleteTransaction">
+                        <div class="popover-overlay" @onclick="ToggleMenu"></div>
+                        <div class="dropdown-menu-vibe">
+                            <button class="dropdown-item-vibe text-danger" @onclick="DeleteTransaction">
                                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="me-2">
                                     <polyline points="3 6 5 6 21 6"></polyline>
                                     <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
@@ -42,7 +42,6 @@
     {
         <LoadingSpinner />
     }
-
     else
     {
         @if (config.Currencies.Count > 1)
@@ -51,8 +50,8 @@
         }
 
         <div class="content">
-            <div class="form-container">
-                <div class="amount-tile">
+            <div class="form-container-vibe">
+                <div class="amount-tile amount-tile-expense">
                     <div class="tile-icon">
                         <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                             <polyline points="23 18 13.5 8.5 8.5 13.5 1 6"></polyline>
@@ -66,9 +65,9 @@
                     </div>
                 </div>
 
-                <div class="form-group">
-                    <label>Descrizione</label>
-                    <input type="text" class="form-control" @bind="description" placeholder="es. Cena a Buenos Aires" />
+                <div class="form-group-vibe">
+                    <label class="form-label-vibe">Descrizione</label>
+                    <input type="text" class="form-control-vibe" @bind="description" placeholder="es. Cena a Buenos Aires" />
                 </div>
 
                 <div class="datetime-row">
@@ -79,7 +78,7 @@
                 <TimeZoneSelector Label="Fuso Orario" @bind-Value="timezoneId" />
 
                 <div class="info-section">
-                    <h3 class="section-header">Partecipanti</h3>
+                    <h3 class="section-header-vibe">Partecipanti</h3>
                     <div class="members-split-list">
                         @foreach (var member in memberSplits)
                         {
@@ -111,7 +110,7 @@
                 </div>
 
                 <div class="info-section">
-                    <h3 class="section-header">Allegati</h3>
+                    <h3 class="section-header-vibe">Allegati</h3>
                     <div class="attachments-row">
                         @foreach (var att in attachments)
                         {
@@ -122,23 +121,23 @@
                         }
                     </div>
                     <div class="attachment-actions-dashed">
-                        <div class="add-attachment-dashed" @onclick="CapturePhoto">
+                        <button class="btn-dashed-vibe" style="flex: 1;" @onclick="CapturePhoto">
                             <div class="dashed-btn-content">
                                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="me-2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path><circle cx="12" cy="13" r="4"></circle></svg>
                                 <span>Foto</span>
                             </div>
-                        </div>
-                        <div class="add-attachment-dashed" @onclick="PickFile">
+                        </button>
+                        <button class="btn-dashed-vibe" style="flex: 1;" @onclick="PickFile">
                             <div class="dashed-btn-content">
                                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="me-2"><path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"></path><polyline points="13 2 13 9 20 9"></polyline></svg>
                                 <span>File</span>
                             </div>
-                        </div>
+                        </button>
                     </div>
                 </div>
 
                 <div class="info-section">
-                    <h3 class="section-header">Luogo</h3>
+                    <h3 class="section-header-vibe">Luogo</h3>
                     @if (locationInfo != null)
                     {
                         <div class="location-card">
@@ -152,7 +151,7 @@
                     }
                     else
                     {
-                        <div class="add-location-dashed @(isLocating ? "locating" : "")" @onclick="FetchLocation">
+                        <button class="btn-dashed-vibe @(isLocating ? "locating" : "")" @onclick="FetchLocation" disabled="@isLocating">
                             <div class="dashed-btn-content">
                                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="me-2">
                                     @if (isLocating)
@@ -168,16 +167,16 @@
                                 </svg>
                                 <span>@(isLocating ? "Acquisizione..." : "Aggiungi posizione")</span>
                             </div>
-                        </div>
+                        </button>
                     }
                 </div>
 
                 @if (!string.IsNullOrEmpty(errorMessage))
                 {
-                    <p class="error-message">@errorMessage</p>
+                    <p class="text-danger fw-bold" style="text-align: center;">@errorMessage</p>
                 }
 
-                <button class="submit-btn" @onclick="HandleSubmit" disabled="@(isSubmitting || isLocating)">
+                <button class="btn-primary-vibe mt-2 mb-4" @onclick="HandleSubmit" disabled="@(isSubmitting || isLocating)">
                     @(isSubmitting ? "Salvataggio..." : "Salva")
                 </button>
             </div>
@@ -186,142 +185,7 @@
 </div>
 
 <style>
-    /* Reuse some styles from AddContribution */
-    .add-transaction-page { background-color: #F8FBF9; min-height: 100vh; display: flex; flex-direction: column; }
-    .app-header {
-        position: sticky;
-        top: 0;
-        z-index: 999;
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        padding: 1rem 1.5rem;
-        background-color: #FFFFFF;
-        border-bottom: 1px solid #F0F0F0;
-    }
-    .header-title {
-        position: absolute;
-        left: 50%;
-        transform: translateX(-50%);
-        font-size: 1.25rem;
-        font-weight: 800;
-        color: #1A3C2F;
-        margin: 0;
-        text-align: center;
-        width: 60%;
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-    }
-    .icon-btn { background: none; border: none; color: #1A3C2F; padding: 0.5rem; display: flex; align-items: center; justify-content: center; }
-    
-    .header-actions {
-        display: flex;
-        align-items: center;
-        position: relative;
-    }
-
-    .dropdown-menu-custom {
-        position: absolute;
-        top: 100%;
-        right: 0;
-        background-color: #FFFFFF;
-        border-radius: 12px;
-        box-shadow: 0 8px 24px rgba(0,0,0,0.12);
-        padding: 0.5rem;
-        z-index: 1101;
-        min-width: 150px;
-        display: flex;
-        flex-direction: column;
-        border: 1px solid #F0F0F0;
-    }
-
-    .dropdown-item {
-        background: none; border: none; padding: 0.75rem 1rem; text-align: left; font-weight: 600; font-size: 0.95rem; color: #1A3C2F; display: flex; align-items: center; border-radius: 8px; width: 100%; white-space: nowrap;
-    }
-
-    .dropdown-item:hover:not(:disabled) {
-        background-color: #F8FBF9;
-    }
-
-    .text-danger {
-        color: #DC3545 !important;
-    }
-
-    .popover-overlay-menu {
-        position: fixed;
-        top: 0;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        background: transparent;
-        z-index: 1100;
-    }
-
-    .spacer { width: 36px; }
-    .content { padding: 1.5rem; flex: 1; }
-    .form-container { display: flex; flex-direction: column; gap: 1.5rem; }
-    
-    .amount-tile {
-        background-color: #FCE8E8;
-        border: none;
-        border-radius: 28px;
-        padding: 1.75rem 1rem;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        gap: 0.25rem;
-        margin-bottom: 0.5rem;
-        box-shadow: 0 4px 12px rgba(220, 53, 69, 0.05);
-    }
-
-    .tile-icon {
-        color: #DC3545;
-        margin-bottom: 0.5rem;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-    }
-
-    .tile-label {
-        font-size: 0.7rem;
-        font-weight: 800;
-        color: #DC3545;
-        letter-spacing: 0.15em;
-        text-transform: uppercase;
-    }
-
-    .amount-section { display: flex; align-items: center; justify-content: center; gap: 0.5rem; padding: 0.5rem 0; }
-    .currency-symbol { font-size: 2.75rem; font-weight: 700; color: #DC3545; }
-    .amount-input { border: none; background: none; font-size: 3.75rem; font-weight: 700; color: #DC3545; width: 100%; max-width: 300px; text-align: center; outline: none; }
-
-    .form-group { display: flex; flex-direction: column; gap: 0.5rem; }
-    .form-group label { font-size: 0.75rem; font-weight: 800; color: #1A3C2F; letter-spacing: 0.05em; text-transform: uppercase; }
-    .form-control { padding: 0.8rem 1rem; border-radius: 12px; border: 1px solid #E0E0E0; background-color: #FFFFFF; font-size: 1rem; outline: none; }
-    
-    .flex-1 { flex: 1; }
     .datetime-row { display: flex; gap: 1rem; }
-    .datetime-picker-box { background-color: #F1F3F5; border-radius: 16px; padding: 0.85rem 1rem; display: flex; align-items: center; gap: 0.75rem; position: relative; cursor: pointer; min-height: 56px; }
-    .datetime-value { font-size: 1.1rem; font-weight: 700; color: #1A3C2F; }
-    .hidden-picker { position: absolute; top: 0; left: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; }
-    
-    .info-section {
-        background-color: transparent;
-        border-radius: 0;
-        padding: 0;
-        box-shadow: none;
-        width: 100%;
-        margin-bottom: 1.5rem;
-    }
-
-    .section-header {
-        font-size: 0.8rem;
-        font-weight: 800;
-        color: #20563C;
-        letter-spacing: 0.1em;
-        margin-bottom: 1rem;
-        text-transform: uppercase;
-    }
 
     .members-split-list { display: flex; flex-direction: column; gap: 0.5rem; }
     .member-split-row { background-color: #FFFFFF; padding: 0.75rem 1rem; border-radius: 16px; display: flex; flex-direction: column; gap: 0.75rem; box-shadow: 0 2px 8px rgba(0,0,0,0.02); }
@@ -345,36 +209,7 @@
     .remove-btn { background: none; border: none; font-size: 1.2rem; line-height: 1; color: inherit; padding: 0; }
     
     .attachment-actions-dashed { display: flex; gap: 0.75rem; }
-    .add-attachment-dashed {
-        flex: 1;
-        border: 2px dashed #D1D9E0;
-        border-radius: 32px;
-        padding: 0.75rem;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        cursor: pointer;
-        transition: all 0.3s ease;
-        background-color: transparent;
-        color: #6C757D;
-        font-weight: 600;
-    }
 
-    .add-location-dashed {
-        border: 2px dashed #D1D9E0;
-        border-radius: 32px;
-        padding: 1rem;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        cursor: pointer;
-        transition: all 0.3s ease;
-        background-color: transparent;
-        width: 100%;
-        color: #6C757D;
-        font-weight: 600;
-    }
-    .add-location-dashed.locating { opacity: 0.6; cursor: default; }
     .dashed-btn-content { display: flex; align-items: center; justify-content: center; }
     .location-card { background-color: #FFFFFF; padding: 0.75rem 1rem; border-radius: 16px; display: flex; align-items: center; gap: 0.75rem; box-shadow: 0 2px 8px rgba(0,0,0,0.02); }
     .location-details { flex: 1; display: flex; flex-direction: column; gap: 4px; }
@@ -382,7 +217,9 @@
     .location-input:focus { border-color: #20563C; }
     .location-coords { font-size: 0.75rem; color: #6C757D; }
 
-    .submit-btn { background-color: #20563C; color: #FFFFFF; border: none; padding: 1rem; border-radius: 16px; font-weight: 700; font-size: 1.1rem; margin-top: 1rem; box-shadow: 0 4px 12px rgba(32, 86, 60, 0.2); }
-    .submit-btn:disabled { opacity: 0.6; }
-    .error-message { color: #DC3545; font-size: 0.9rem; text-align: center; }
+    .btn-dashed-vibe.locating { opacity: 0.6; cursor: default; }
+
+    .me-2 { margin-right: 0.5rem; }
+    .mt-2 { margin-top: 0.5rem; }
+    .mb-4 { margin-bottom: 2rem; }
 </style>

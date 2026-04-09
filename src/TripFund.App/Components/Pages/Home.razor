@@ -1,10 +1,10 @@
 @page "/"
 
-<div class="home-page">
+<div class="app-page">
     <header class="app-header">
         <div class="spacer"></div>
         <h1 class="brand-name">TripFund</h1>
-        <button class="settings-btn" @onclick="NavigateToSettings">
+        <button class="icon-btn" @onclick="NavigateToSettings">
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#20563C" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.1a2 2 0 0 1-1-1.72v-.51a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"></path>
                 <circle cx="12" cy="12" r="3"></circle>
@@ -33,7 +33,7 @@
                 @if (currentTrips.Any())
                 {
                     <section class="info-section">
-                        <h3 class="section-header">IN CORSO</h3>
+                        <h3 class="section-header-vibe">IN CORSO</h3>
                         <div class="trips-grid">
                             @foreach (var item in currentTrips)
                             {
@@ -46,7 +46,7 @@
                 @if (futureTrips.Any())
                 {
                     <section class="info-section">
-                        <h3 class="section-header">FUTURI</h3>
+                        <h3 class="section-header-vibe">FUTURI</h3>
                         <div class="trips-grid">
                             @foreach (var item in futureTrips)
                             {
@@ -59,7 +59,7 @@
                 @if (pastTrips.Any())
                 {
                     <section class="info-section">
-                        <h3 class="section-header">PASSATI</h3>
+                        <h3 class="section-header-vibe">PASSATI</h3>
                         <div class="trips-grid">
                             @foreach (var item in pastTrips)
                             {
@@ -73,8 +73,8 @@
     </div>
 
     <footer class="footer">
-        <button class="btn-create" @onclick="NavigateToCreate">Crea viaggio</button>
-        <button class="btn-add" @onclick="HandleJoinTrip">Aggiungi viaggio esistente</button>
+        <button class="btn-primary-vibe" @onclick="NavigateToCreate">Crea viaggio</button>
+        <button class="btn-secondary-vibe" @onclick="HandleJoinTrip">Aggiungi viaggio esistente</button>
     </footer>
 </div>
 
@@ -102,24 +102,6 @@
 }
 
 <style>
-    .home-page {
-        background-color: #F8FBF9;
-        display: flex;
-        flex-direction: column;
-    }
-
-    .app-header {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        padding: 1rem 1.5rem;
-        background-color: #FFFFFF;
-        border-bottom: 1px solid #F0F0F0;
-        position: sticky;
-        top: 0;
-        z-index: 999;
-    }
-
     .brand-name {
         font-size: 1.5rem;
         font-weight: 700;
@@ -128,21 +110,6 @@
     }
 
     .spacer { width: 40px; }
-
-    .settings-btn {
-        background: none;
-        border: none;
-        color: #495057;
-        padding: 0.5rem;
-        display: flex;
-    }
-
-    .content {
-        padding: 1.5rem;
-        display: flex;
-        flex-direction: column;
-        gap: 1.25rem;
-    }
 
     .page-title {
         font-size: 2rem;
@@ -155,24 +122,6 @@
         display: flex;
         flex-direction: column;
         gap: 1.5rem;
-    }
-
-    .info-section {
-        background-color: transparent;
-        border-radius: 0;
-        padding: 0;
-        box-shadow: none;
-        width: 100%;
-        margin-bottom: 0.5rem;
-    }
-
-    .section-header {
-        font-size: 0.75rem;
-        font-weight: 800;
-        color: #20563C;
-        letter-spacing: 0.1em;
-        margin-bottom: 0.75rem;
-        text-transform: uppercase;
     }
 
     .trips-grid {
@@ -258,22 +207,7 @@
         gap: 0.75rem;
     }
 
-    .btn-create {
-        background-color: #20563C;
-        color: #FFFFFF;
-        border: none;
-        border-radius: 20px;
-        padding: 1.1rem;
-        font-size: 1.1rem;
-        font-weight: 700;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        gap: 0.75rem;
-        box-shadow: 0 4px 12px rgba(32, 86, 60, 0.2);
-    }
-
-    .btn-add {
+    .btn-secondary-vibe {
         background-color: #FFFFFF;
         color: #1A3C2F;
         border: 1px solid #E9ECEF;
@@ -286,6 +220,10 @@
         justify-content: center;
         gap: 0.75rem;
         box-shadow: 0 2px 8px rgba(0, 0, 0, 0.02);
+    }
+
+    .btn-secondary-vibe:active {
+        transform: scale(0.98);
     }
 
     .status-text, .empty-state {

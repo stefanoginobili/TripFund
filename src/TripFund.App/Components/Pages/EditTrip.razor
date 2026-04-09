@@ -1,6 +1,6 @@
 @page "/trip/{tripSlug}/edit"
 
-<div class="edit-trip-page">
+<div class="app-page">
     <header class="app-header">
         <button class="icon-btn" @onclick='async () => await JSRuntime.InvokeVoidAsync("history.back")'>
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#20563C" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -20,8 +20,8 @@
             @if (isHeaderMenuOpen)
             {
                 <div class="popover-overlay" @onclick="ToggleHeaderMenu" @onclick:stopPropagation></div>
-                <div class="dropdown-menu-custom" @onclick:stopPropagation>
-                    <div class="dropdown-item-custom text-danger" @onclick="HandleDelete">
+                <div class="dropdown-menu-vibe" @onclick:stopPropagation>
+                    <div class="dropdown-item-vibe text-danger" @onclick="HandleDelete">
                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="me-2">
                             <polyline points="3 6 5 6 21 6"></polyline>
                             <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
@@ -54,7 +54,7 @@
             <!-- PARTICIPANTS SECTION -->
             <section class="info-section">
                 <div class="section-header-row">
-                    <h3 class="section-header">PARTECIPANTI</h3>
+                    <h3 class="section-header-vibe">PARTECIPANTI</h3>
                 </div>
 
                 <div class="members-list">
@@ -153,17 +153,17 @@
                                         bool isLast = index == keys.Count - 1;
 
                                         <div class="popover-overlay" @onclick="() => openMenuMemberSlug = null" @onclick:stopPropagation></div>
-                                        <div class="dropdown-menu-custom" @onclick:stopPropagation>
-                                            <div class="dropdown-item-custom" @onclick="async () => { openMenuMemberSlug = null; await StartEditMember(member.Key, member.Value); }">
+                                        <div class="dropdown-menu-vibe" @onclick:stopPropagation>
+                                            <div class="dropdown-item-vibe" @onclick="async () => { openMenuMemberSlug = null; await StartEditMember(member.Key, member.Value); }">
                                                 Modifica
                                             </div>
-                                            <div class="dropdown-item-custom @(isFirst ? "disabled" : "")" @onclick="() => { if(!isFirst) { openMenuMemberSlug = null; MoveMemberUp(member.Key); } }">
+                                            <div class="dropdown-item-vibe @(isFirst ? "disabled" : "")" @onclick="() => { if(!isFirst) { openMenuMemberSlug = null; MoveMemberUp(member.Key); } }">
                                                 Sposta su
                                             </div>
-                                            <div class="dropdown-item-custom @(isLast ? "disabled" : "")" @onclick="() => { if(!isLast) { openMenuMemberSlug = null; MoveMemberDown(member.Key); } }">
+                                            <div class="dropdown-item-vibe @(isLast ? "disabled" : "")" @onclick="() => { if(!isLast) { openMenuMemberSlug = null; MoveMemberDown(member.Key); } }">
                                                 Sposta giù
                                             </div>
-                                            <div class="dropdown-item-custom text-danger" @onclick="async () => { openMenuMemberSlug = null; await ConfirmDeleteMember(member.Key); }">
+                                            <div class="dropdown-item-vibe text-danger" @onclick="async () => { openMenuMemberSlug = null; await ConfirmDeleteMember(member.Key); }">
                                                 Elimina
                                             </div>
                                         </div>
@@ -262,73 +262,13 @@
                 }
             </div>
 
-            <button class="save-btn-large" @onclick="HandleSave">Salva</button>
+            <button class="btn-primary-vibe" @onclick="HandleSave">Salva</button>
         </div>
     }
 </div>
 
 <style>
-    .edit-trip-page {
-        background-color: #F8FBF9;
-        min-height: 100vh;
-        display: flex;
-        flex-direction: column;
-        font-family: 'Open Sans', sans-serif;
-    }
-
-    .app-header {
-        position: sticky;
-        top: 0;
-        z-index: 999;
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        padding: 1rem 1.5rem;
-        background-color: #FFFFFF;
-        border-bottom: 1px solid #F0F0F0;
-    }
-
-    .header-title {
-        position: absolute;
-        left: 50%;
-        transform: translateX(-50%);
-        font-size: 1.25rem;
-        font-weight: 700;
-        color: #1A3C2F;
-        margin: 0;
-        text-align: center;
-        width: 60%;
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-    }
-
-    .header-actions {
-        position: relative;
-    }
-
-    .header-dropdown {
-        position: absolute;
-        top: 100%;
-        right: 0;
-        background-color: #FFFFFF;
-        border-radius: 12px;
-        box-shadow: 0 8px 24px rgba(0,0,0,0.12);
-        z-index: 1101;
-        min-width: 180px;
-        overflow: hidden;
-        border: 1px solid #F0F0F0;
-        margin-top: 0.5rem;
-    }
-
-    .icon-btn {
-        background: none;
-        border: none;
-        padding: 0.5rem;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-    }
+    .me-2 { margin-right: 0.5rem; }
 
     .content {
         padding: 1.5rem;
@@ -337,120 +277,11 @@
         gap: 1.5rem;
     }
 
-    .info-section {
-        background-color: transparent;
-        border-radius: 0;
-        padding: 0;
-        box-shadow: none;
-        width: 100%;
-        margin-bottom: 1.5rem;
-    }
-
-    .section-header {
-        font-size: 0.8rem;
-        font-weight: 800;
-        color: #20563C;
-        letter-spacing: 0.1em;
-        margin-bottom: 1rem;
-        text-transform: uppercase;
-    }
-
     .section-header-row {
         display: flex;
         justify-content: space-between;
         align-items: center;
         margin-bottom: 1.5rem;
-    }
-
-    .status-badge {
-        background-color: #D6EDE2;
-        color: #20563C;
-        font-size: 0.75rem;
-        font-weight: 700;
-        padding: 0.25rem 0.75rem;
-        border-radius: 20px;
-    }
-
-    .form-group {
-        margin-bottom: 1.25rem;
-    }
-
-    .form-group label {
-        display: block;
-        font-size: 0.85rem;
-        font-weight: 600;
-        color: #1A3C2F;
-        margin-bottom: 0.5rem;
-    }
-
-    .input-wrapper {
-        background-color: #F0F2F5;
-        border-radius: 12px;
-        padding: 0.75rem 1rem;
-        display: flex;
-        align-items: center;
-    }
-
-    .input-wrapper input, .input-wrapper textarea {
-        background: none;
-        border: none;
-        width: 100%;
-        font-size: 1rem;
-        color: #1A3C2F;
-        outline: none;
-    }
-
-    .input-wrapper.read-only {
-        background-color: #E9ECEF;
-        color: #6C757D;
-    }
-
-    .input-wrapper.read-only input {
-        color: #6C757D;
-        font-style: italic;
-    }
-
-    .lock-icon {
-        color: #ADB5BD;
-        margin-left: 0.5rem;
-    }
-
-    .row-group {
-        display: flex;
-        gap: 1rem;
-    }
-
-    .flex-1 { flex: 1; }
-
-    .date-picker-wrapper {
-        background-color: #E9ECEF;
-        border-radius: 16px;
-        padding: 0.85rem 1.25rem;
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        position: relative;
-        cursor: pointer;
-    }
-
-    .date-display {
-        font-size: 1rem;
-        font-weight: 700;
-        color: #1A3C2F;
-    }
-
-    .calendar-icon {
-        color: #8E9AAF;
-    }
-
-    .native-date-input {
-        position: absolute;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        opacity: 0;
-        cursor: pointer;
     }
 
     .members-list {
@@ -621,22 +452,6 @@
         padding: 0;
     }
 
-    .save-btn-large {
-        width: 100%;
-        background-color: #20563C;
-        color: #FFFFFF;
-        border: none;
-        border-radius: 16px;
-        padding: 1rem;
-        font-weight: 700;
-        font-size: 1.1rem;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        margin-bottom: 2rem;
-        box-shadow: 0 8px 24px rgba(32, 86, 60, 0.2);
-    }
-
     .emoji-picker-popover {
         position: absolute;
         top: 70px;
@@ -664,46 +479,6 @@
         cursor: pointer;
         padding: 0.5rem;
         margin: -0.5rem;
-    }
-
-    .dropdown-menu-custom {
-        position: absolute;
-        top: 100%;
-        right: 0;
-        background-color: #FFFFFF;
-        border-radius: 12px;
-        box-shadow: 0 8px 24px rgba(0,0,0,0.12);
-        padding: 0.5rem;
-        z-index: 1101;
-        min-width: 150px;
-        border: 1px solid #F0F0F0;
-        margin-top: 0.5rem;
-        display: flex;
-        flex-direction: column;
-    }
-
-    .dropdown-item-custom {
-        padding: 0.75rem 1rem;
-        font-size: 0.95rem;
-        font-weight: 600;
-        color: #1A3C2F;
-        cursor: pointer;
-        transition: background-color 0.2s;
-        display: flex;
-        align-items: center;
-        border-radius: 8px;
-        width: 100%;
-        white-space: nowrap;
-    }
-
-    .dropdown-item-custom:hover {
-        background-color: #F8FBF9;
-    }
-
-    .dropdown-item-custom.disabled {
-        opacity: 0.5;
-        cursor: default;
-        pointer-events: none;
     }
 
     .emoji-grid {
@@ -746,5 +521,34 @@
         z-index: 1000;
     }
 
-    .text-danger { color: #DC3545 !important; }
+    .action-buttons {
+        display: flex;
+        gap: 0.5rem;
+    }
+
+    .confirm-btn, .cancel-btn {
+        background-color: #F1F3F5;
+        border: none;
+        border-radius: 12px;
+        width: 44px;
+        height: 44px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.2s;
+    }
+
+    .confirm-btn { color: #20563C; }
+    .cancel-btn { color: #6C757D; }
+
+    .confirm-btn:active { background-color: #D6EDE2; }
+    .cancel-btn:active { background-color: #E9ECEF; }
+
+    .dropdown-item-vibe.disabled {
+        opacity: 0.5;
+        cursor: default;
+        pointer-events: none;
+    }
+
+    .dashed-btn-content { display: flex; align-items: center; justify-content: center; }
 </style>

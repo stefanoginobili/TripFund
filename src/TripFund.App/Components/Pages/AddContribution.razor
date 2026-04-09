@@ -1,6 +1,6 @@
 @page "/trip/{tripSlug}/add-contribution"
 
-<div class="add-transaction-page">
+<div class="app-page">
     <header class="app-header">
         <button class="icon-btn" @onclick="GoBack">
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -22,9 +22,9 @@
                     </button>
                     @if (isMenuOpen)
                     {
-                        <div class="popover-overlay-menu" @onclick="ToggleMenu"></div>
-                        <div class="dropdown-menu-custom">
-                            <button class="dropdown-item text-danger" @onclick="DeleteTransaction">
+                        <div class="popover-overlay" @onclick="ToggleMenu"></div>
+                        <div class="dropdown-menu-vibe">
+                            <button class="dropdown-item-vibe text-danger" @onclick="DeleteTransaction">
                                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="me-2">
                                     <polyline points="3 6 5 6 21 6"></polyline>
                                     <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
@@ -42,7 +42,6 @@
     {
         <LoadingSpinner />
     }
-
     else
     {
         @if (config.Currencies.Count > 1)
@@ -51,8 +50,8 @@
         }
 
         <div class="content">
-            <div class="form-container">
-                <div class="amount-tile">
+            <div class="form-container-vibe">
+                <div class="amount-tile amount-tile-contribution">
                     <div class="tile-icon">
                         <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                             <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline>
@@ -66,9 +65,9 @@
                     </div>
                 </div>
 
-                <div class="form-group">
-                    <label>Descrizione</label>
-                    <input type="text" class="form-control" @bind="description" placeholder="es. Versamento iniziale" />
+                <div class="form-group-vibe">
+                    <label class="form-label-vibe">Descrizione</label>
+                    <input type="text" class="form-control-vibe" @bind="description" placeholder="es. Versamento iniziale" />
                 </div>
 
                 <div class="datetime-row">
@@ -78,8 +77,8 @@
 
                 <TimeZoneSelector Label="Fuso Orario" @bind-Value="timezoneId" />
 
-                <div class="form-group">
-                    <label>Partecipante</label>
+                <div class="form-group-vibe">
+                    <label class="form-label-vibe">Partecipante</label>
                     <div class="custom-member-selector @(isMemberSelectorOpen ? "open" : "")" @onclick="ToggleMemberSelector">
                         @if (string.IsNullOrEmpty(selectedMemberSlug))
                         {
@@ -142,10 +141,10 @@
 
                 @if (!string.IsNullOrEmpty(errorMessage))
                 {
-                    <p class="error-message">@errorMessage</p>
+                    <p class="text-danger fw-bold" style="text-align: center;">@errorMessage</p>
                 }
 
-                <button class="submit-btn" @onclick="HandleSubmit" disabled="@isSubmitting">
+                <button class="btn-primary-vibe mt-2 mb-4" @onclick="HandleSubmit" disabled="@isSubmitting">
                     @(isSubmitting ? "Salvataggio..." : "Salva")
                 </button>
             </div>
@@ -154,208 +153,7 @@
 </div>
 
 <style>
-    .add-transaction-page {
-        background-color: #F8FBF9;
-        min-height: 100vh;
-        display: flex;
-        flex-direction: column;
-    }
-
-    .app-header {
-        position: sticky;
-        top: 0;
-        z-index: 999;
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        padding: 1rem 1.5rem;
-        background-color: #FFFFFF;
-        border-bottom: 1px solid #F0F0F0;
-    }
-
-    .header-title {
-        position: absolute;
-        left: 50%;
-        transform: translateX(-50%);
-        font-size: 1.25rem;
-        font-weight: 800;
-        color: #1A3C2F;
-        margin: 0;
-        text-align: center;
-        width: 60%;
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-    }
-
-    .icon-btn {
-        background: none;
-        border: none;
-        color: #1A3C2F;
-        padding: 0.5rem;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-    }
-
-    .header-actions {
-        display: flex;
-        align-items: center;
-        position: relative;
-    }
-
-    .dropdown-menu-custom {
-        position: absolute;
-        top: 100%;
-        right: 0;
-        background-color: #FFFFFF;
-        border-radius: 12px;
-        box-shadow: 0 8px 24px rgba(0,0,0,0.12);
-        padding: 0.5rem;
-        z-index: 1101;
-        min-width: 150px;
-        display: flex;
-        flex-direction: column;
-        border: 1px solid #F0F0F0;
-    }
-
-    .dropdown-item {
-        background: none;
-        border: none;
-        padding: 0.75rem 1rem;
-        text-align: left;
-        font-weight: 600;
-        font-size: 0.95rem;
-        color: #1A3C2F;
-        display: flex;
-        align-items: center;
-        border-radius: 8px;
-        width: 100%;
-        white-space: nowrap;
-    }
-
-    .dropdown-item:hover:not(:disabled) {
-        background-color: #F8FBF9;
-    }
-
-    .text-danger {
-        color: #DC3545 !important;
-    }
-
-    .popover-overlay-menu {
-        position: fixed;
-        top: 0;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        background: transparent;
-        z-index: 1100;
-    }
-
-    .spacer { width: 36px; }
-    .content {
-        padding: 1.5rem;
-        flex: 1;
-    }
-
-    .form-container {
-        display: flex;
-        flex-direction: column;
-        gap: 1.5rem;
-    }
-
-    .amount-tile {
-        background-color: #D6EDE2;
-        border: none;
-        border-radius: 28px;
-        padding: 1.75rem 1rem;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        gap: 0.25rem;
-        margin-bottom: 0.5rem;
-        box-shadow: 0 4px 12px rgba(32, 86, 60, 0.05);
-    }
-
-    .tile-icon {
-        color: #20563C;
-        margin-bottom: 0.5rem;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-    }
-
-    .tile-label {
-        font-size: 0.7rem;
-        font-weight: 800;
-        color: #20563C;
-        letter-spacing: 0.15em;
-        text-transform: uppercase;
-    }
-
-    .amount-section {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        gap: 0.5rem;
-        padding: 0.5rem 0;
-    }
-
-    .currency-symbol {
-        font-size: 2.75rem;
-        font-weight: 700;
-        color: #20563C;
-    }
-
-    .amount-input {
-        border: none;
-        background: none;
-        font-size: 3.75rem;
-        font-weight: 700;
-        color: #20563C;
-        width: 100%;
-        max-width: 300px;
-        text-align: center;
-        outline: none;
-    }
-
-    .tile-label-bottom {
-        font-size: 0.7rem;
-        font-weight: 800;
-        color: #8E9191;
-        letter-spacing: 0.08em;
-        text-transform: uppercase;
-        margin-top: -0.25rem;
-    }
-
-    .form-group {
-        display: flex;
-        flex-direction: column;
-        gap: 0.5rem;
-    }
-
-    .form-group label {
-        font-size: 0.75rem;
-        font-weight: 800;
-        color: #1A3C2F;
-        letter-spacing: 0.05em;
-        text-transform: uppercase;
-    }
-
-    .form-control {
-        padding: 0.8rem 1rem;
-        border-radius: 12px;
-        border: 1px solid #E0E0E0;
-        background-color: #FFFFFF;
-        font-size: 1rem;
-        outline: none;
-    }
-
-    .flex-1 { flex: 1; }
     .datetime-row { display: flex; gap: 1rem; }
-    .datetime-picker-box { background-color: #F1F3F5; border-radius: 16px; padding: 0.85rem 1rem; display: flex; align-items: center; gap: 0.75rem; position: relative; cursor: pointer; min-height: 56px; }
-    .datetime-value { font-size: 1.1rem; font-weight: 700; color: #1A3C2F; }
-    .hidden-picker { position: absolute; top: 0; left: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; }
 
     .custom-member-selector {
         position: relative;
@@ -463,31 +261,7 @@
         margin-left: auto;
     }
 
-    .popover-overlay {
-        position: fixed;
-        top: 0;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        background: rgba(0,0,0,0.05);
-        z-index: 1000;
-    }
-
-    .error-message {
-        color: #DC3545;
-        font-size: 0.9rem;
-        text-align: center;
-    }
-
-    .submit-btn {
-        background-color: #20563C;
-        color: #FFFFFF;
-        border: none;
-        padding: 1rem;
-        border-radius: 16px;
-        font-weight: 700;
-        font-size: 1.1rem;
-        margin-top: 1rem;
-        box-shadow: 0 4px 12px rgba(32, 86, 60, 0.2);
-    }
+    .mt-2 { margin-top: 0.5rem; }
+    .mb-4 { margin-bottom: 2rem; }
+    .me-2 { margin-right: 0.5rem; }
 </style>

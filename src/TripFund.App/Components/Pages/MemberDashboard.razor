@@ -1,6 +1,6 @@
 @page "/trip/{tripSlug}/member/{memberSlug}"
 
-<div class="dashboard-page">
+<div class="app-page">
     <header class="app-header">
         <button class="icon-btn" @onclick='() => Nav.NavigateTo($"/trip/{tripSlug}?currency={selectedCurrency}")'>
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -20,9 +20,9 @@
                 </button>
                 @if (isMenuOpen)
                 {
-                    <div class="popover-overlay-menu" @onclick="ToggleMenu"></div>
-                    <div class="dropdown-menu-custom">
-                        <button class="dropdown-item" @onclick="SendSummaryEmail" disabled="@(!HasContributions || string.IsNullOrWhiteSpace(member?.Email))">
+                    <div class="popover-overlay" @onclick="ToggleMenu"></div>
+                    <div class="dropdown-menu-vibe">
+                        <button class="dropdown-item-vibe" @onclick="SendSummaryEmail" disabled="@(!HasContributions || string.IsNullOrWhiteSpace(member?.Email))">
                             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="me-2">
                                 <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
                                 <polyline points="22,6 12,13 2,6"></polyline>
@@ -59,7 +59,7 @@
             <div class="summary-card">
                 <p class="summary-label">Saldo</p>
                 <h2 class="summary-total">@FormatCurrency(remainingBalance, selectedCurrency)</h2>
-                <p class="summary-sub">Totale versato: <strong>@FormatCurrency(totalContributed, selectedCurrency)</strong></p>
+                <p class="summary-sub">Totale versato: <strong class="fw-bold">@FormatCurrency(totalContributed, selectedCurrency)</strong></p>
                 
                 <div class="progress-container">
                     <div class="progress-bar-bg">
@@ -83,7 +83,7 @@
             </div>
 
             <div class="info-section">
-                <h3 class="section-header">TRANSAZIONI</h3>
+                <h3 class="section-header-vibe">TRANSAZIONI</h3>
                 <div class="transactions-list">
                     @if (!userTransactions.Any())
                     {
@@ -106,7 +106,7 @@
                                 <div class="transaction-desc">@(string.IsNullOrWhiteSpace(t.OriginalTx.Description) ? (t.OriginalTx.Type == "expense" ? "Spesa" : "Versamento") : t.OriginalTx.Description)</div>
                                 <div class="transaction-meta">@GetDisplayDate(t.OriginalTx)</div>
                             </div>
-                            <div class="transaction-amount @(t.OriginalTx.Type == "expense" ? "negative" : "positive")">
+                            <div class="transaction-amount @(t.OriginalTx.Type == "expense" ? "text-danger" : "text-success")">
                                 @FormatCurrency(t.UserAmount, t.OriginalTx.Currency)
                             </div>
                         </div>
@@ -118,107 +118,6 @@
 </div>
 
 <style>
-    .dashboard-page {
-        background-color: #F8FBF9;
-        min-height: 100vh;
-        display: flex;
-        flex-direction: column;
-    }
-
-    .app-header {
-        position: sticky;
-        top: 0;
-        z-index: 999;
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        padding: 1rem 1.5rem;
-        background-color: #FFFFFF;
-        border-bottom: 1px solid #F0F0F0;
-    }
-
-    .header-title {
-        position: absolute;
-        left: 50%;
-        transform: translateX(-50%);
-        font-size: 1.25rem;
-        font-weight: 700;
-        color: #1A3C2F;
-        margin: 0;
-        text-align: center;
-        width: 60%;
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-    }
-
-    .icon-btn {
-        background: none;
-        border: none;
-        color: #1A3C2F;
-        padding: 0.5rem;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-    }
-
-    .header-actions {
-        display: flex;
-        align-items: center;
-        position: relative;
-    }
-
-    .dropdown-menu-custom {
-        position: absolute;
-        top: 100%;
-        right: 0;
-        background-color: #FFFFFF;
-        border-radius: 12px;
-        box-shadow: 0 8px 24px rgba(0,0,0,0.12);
-        padding: 0.5rem;
-        z-index: 1101;
-        min-width: 200px;
-        display: flex;
-        flex-direction: column;
-        border: 1px solid #F0F0F0;
-    }
-
-    .dropdown-item {
-        background: none;
-        border: none;
-        padding: 0.75rem 1rem;
-        text-align: left;
-        font-weight: 600;
-        font-size: 0.95rem;
-        color: #1A3C2F;
-        display: flex;
-        align-items: center;
-        border-radius: 8px;
-        width: 100%;
-        white-space: nowrap;
-    }
-
-    .dropdown-item:hover:not(:disabled) {
-        background-color: #F8FBF9;
-    }
-
-    .dropdown-item:disabled {
-        opacity: 0.5;
-        cursor: not-allowed;
-    }
-
-    .popover-overlay-menu {
-        position: fixed;
-        top: 0;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        background: transparent;
-        z-index: 1100;
-    }
-
-    .spacer { width: 36px; }
-
     .member-profile {
         display: flex;
         flex-direction: column;
@@ -228,19 +127,9 @@
     }
 
     .member-profile.missing-member .profile-avatar,
-    .member-profile.missing-member .profile-name,
-    .member-profile.missing-member .trip-name {
+    .member-profile.missing-member .profile-name {
         filter: grayscale(100%);
         opacity: 0.6;
-    }
-
-    .trip-name {
-        font-size: 1.75rem;
-        font-weight: 800;
-        color: #20563C;
-        margin-bottom: 1.25rem;
-        text-align: center;
-        line-height: 1.2;
     }
 
     .profile-avatar {
@@ -269,16 +158,11 @@
         margin: 0;
     }
 
-    .content {
-        padding: 1.5rem;
-    }
-
     .summary-card {
         background: linear-gradient(135deg, #20563C 0%, #1A3C2F 100%);
         border-radius: 24px;
         padding: 1.5rem;
         color: #FFFFFF;
-        margin-bottom: 1.5rem;
         box-shadow: 0 8px 24px rgba(32, 86, 60, 0.2);
     }
 
@@ -332,7 +216,6 @@
     .quick-actions {
         display: flex;
         gap: 1rem;
-        margin-bottom: 2rem;
     }
 
     .action-btn {
@@ -360,24 +243,6 @@
         color: #20563C;
     }
 
-    .info-section {
-        background-color: transparent;
-        border-radius: 0;
-        padding: 0;
-        box-shadow: none;
-        width: 100%;
-        margin-bottom: 1.5rem;
-    }
-
-    .section-header {
-        font-size: 0.8rem;
-        font-weight: 800;
-        color: #20563C;
-        letter-spacing: 0.1em;
-        margin-bottom: 1rem;
-        text-transform: uppercase;
-    }
-
     .transactions-list {
         display: flex;
         flex-direction: column;
@@ -385,7 +250,7 @@
     }
 
     .transaction-row {
-        background-color: #F8FBF9;
+        background-color: #FFFFFF;
         padding: 1rem;
         border-radius: 16px;
         display: flex;
@@ -398,21 +263,7 @@
     .transaction-icon {
         width: 40px;
         height: 40px;
-        border-radius: 12px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
         margin-right: 1rem;
-    }
-
-    .contrib-icon {
-        background-color: #D6EDE2;
-        color: #20563C;
-    }
-
-    .expense-icon {
-        background-color: #FCE8E8;
-        color: #DC3545;
     }
 
     .transaction-info {
@@ -434,13 +285,12 @@
         font-weight: 700;
     }
 
-    .positive { color: #20563C; }
-    .negative { color: #DC3545; }
-
     .empty-text {
         color: #6C757D;
         font-style: italic;
         text-align: center;
         padding: 1rem;
     }
+
+    .me-2 { margin-right: 0.5rem; }
 </style>

@@ -1,8 +1,8 @@
 @page "/create-trip"
 
-<div class="create-trip-page">
+<div class="app-page">
     <header class="app-header">
-        <button class="back-btn" @onclick='async () => await JSRuntime.InvokeVoidAsync("history.back")'>
+        <button class="icon-btn" @onclick='async () => await JSRuntime.InvokeVoidAsync("history.back")'>
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <line x1="19" y1="12" x2="5" y2="12"></line>
                 <polyline points="12 19 5 12 12 5"></polyline>
@@ -24,66 +24,14 @@
 
         @if (!string.IsNullOrEmpty(error))
         {
-            <div class="error-msg">@error</div>
+            <div class="text-danger fw-bold text-center mt-3">@error</div>
         }
 
-        <button class="save-btn-large" @onclick="HandleCreate">Crea</button>
+        <button class="btn-primary-vibe mt-4 mb-4" @onclick="HandleCreate">Crea</button>
     </div>
 </div>
 
 <style>
-    .create-trip-page {
-        background-color: #F8FBF9;
-        min-height: 100vh;
-        display: flex;
-        flex-direction: column;
-    }
-
-    .app-header {
-        position: sticky;
-        top: 0;
-        z-index: 999;
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        padding: 1rem 1.5rem;
-        background-color: #FFFFFF;
-        border-bottom: 1px solid #F0F0F0;
-    }
-
-    .header-title {
-        position: absolute;
-        left: 50%;
-        transform: translateX(-50%);
-        font-size: 1.25rem;
-        font-weight: 700;
-        color: #1A3C2F;
-        margin: 0;
-        text-align: center;
-        width: 60%;
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-    }
-
-    .back-btn, .menu-btn {
-        background: none;
-        border: none;
-        color: #1A3C2F;
-        padding: 0.5rem;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-    }
-
-    .content {
-        flex: 1;
-        padding: 1.5rem;
-        display: flex;
-        flex-direction: column;
-        gap: 1.5rem;
-    }
-
     .hero-section {
         text-align: center;
     }
@@ -117,33 +65,8 @@
         color: #6C757D;
     }
 
-    .form-container-vibe {
-        display: flex;
-        flex-direction: column;
-        gap: 1.5rem;
-    }
-
-    .error-msg {
-        color: #DC3545;
-        font-size: 0.85rem;
-        margin-top: 1rem;
-        text-align: center;
-        font-weight: 600;
-    }
-
-    .save-btn-large {
-        width: 100%;
-        background-color: #20563C;
-        color: #FFFFFF;
-        border: none;
-        border-radius: 16px;
-        padding: 1.1rem;
-        font-weight: 700;
-        font-size: 1.1rem;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        margin-bottom: 2rem;
-        box-shadow: 0 8px 24px rgba(32, 86, 60, 0.2);
-    }
+    .mt-3 { margin-top: 1rem; }
+    .mt-4 { margin-top: 1.5rem; }
+    .mb-4 { margin-bottom: 2rem; }
+    .text-center { text-align: center; }
 </style>

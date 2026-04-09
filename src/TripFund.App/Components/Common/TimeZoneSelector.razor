@@ -1,7 +1,7 @@
 @namespace TripFund.App.Components.Common
 
-<div class="form-group @Class">
-    <label>@Label</label>
+<div class="form-group-vibe @Class">
+    <label class="form-label-vibe">@Label</label>
     <div class="custom-tz-selector @(_isOpen ? "open" : "")" @onclick="ToggleDropdown">
         @if (string.IsNullOrEmpty(Value))
         {
@@ -196,15 +196,5 @@
     .check-icon {
         margin-left: auto;
         flex-shrink: 0;
-    }
-
-    .popover-overlay {
-        position: fixed;
-        top: 0;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        background: rgba(0,0,0,0.05);
-        z-index: 1000;
     }
 </style>

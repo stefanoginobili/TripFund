@@ -1,104 +1,60 @@
 <section class="info-section">
-    <h3 class="section-header">INFORMAZIONI GENERALI</h3>
+    <h3 class="section-header-vibe">INFORMAZIONI GENERALI</h3>
     
-    <div class="form-group">
-        <label>Nome Viaggio</label>
-        <div class="input-wrapper">
-            <input type="text" value="@Name" @oninput="OnNameInput" placeholder="es. Patagonia 2026" />
+    <div class="form-container-vibe">
+    
+        <div class="form-group-vibe">
+            <label class="form-label-vibe">Nome Viaggio</label>
+            <input type="text" class="form-control-vibe" value="@Name" @oninput="OnNameInput" placeholder="es. Patagonia 2026" />
         </div>
-    </div>
 
-    <div class="form-group">
-        <label>Slug</label>
-        <div class="input-wrapper read-only">
-            <input type="text" value="@Slug" readonly />
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="lock-icon">
-                <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
-                <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
-            </svg>
+        <div class="form-group-vibe">
+            <label class="form-label-vibe">Slug</label>
+            <div class="input-wrapper read-only">
+                <input type="text" class="form-control-vibe" value="@Slug" readonly />
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="lock-icon">
+                    <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                    <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                </svg>
+            </div>
         </div>
-    </div>
 
-    <div class="row-group">
-        <NativeDatePicker Label="Data Inizio" @bind-Value="StartDate" Class="flex-1" />
-        <NativeDatePicker Label="Data Fine" @bind-Value="EndDate" Class="flex-1" />
-    </div>
+        <div class="row-group">
+            <NativeDatePicker Label="Data Inizio" @bind-Value="StartDate" Class="flex-1" />
+            <NativeDatePicker Label="Data Fine" @bind-Value="EndDate" Class="flex-1" />
+        </div>
 
-    @if (!string.IsNullOrEmpty(dateError))
-    {
-        <div class="date-validation-error">@dateError</div>
-    }
+        @if (!string.IsNullOrEmpty(dateError))
+        {
+            <div class="text-danger fw-bold small mb-2">@dateError</div>
+        }
 
-    <div class="form-group">
-        <label>Descrizione</label>
-        <div class="input-wrapper">
-            <textarea value="@Description" @oninput="OnDescriptionInput" placeholder="Aggiungi una descrizione..." rows="3"></textarea>
+        <div class="form-group-vibe">
+            <label class="form-label-vibe">Descrizione</label>
+            <textarea class="form-control-vibe" value="@Description" @oninput="OnDescriptionInput" placeholder="Aggiungi una descrizione..." rows="3"></textarea>
         </div>
     </div>
 </section>
 
 <style>
-    .info-section {
-        background-color: transparent;
-        border-radius: 0;
-        padding: 0;
-        box-shadow: none;
-        width: 100%;
-        margin-bottom: 1.5rem;
-    }
-
-    .section-header {
-        font-size: 0.8rem;
-        font-weight: 800;
-        color: #20563C;
-        letter-spacing: 0.1em;
-        margin-bottom: 1rem;
-        text-transform: uppercase;
-    }
-
-    .form-group {
-        margin-bottom: 1.25rem;
-    }
-
-    .form-group label {
-        display: block;
-        font-size: 0.85rem;
-        font-weight: 600;
-        color: #1A3C2F;
-        margin-bottom: 0.5rem;
-    }
 
     .input-wrapper {
-        background-color: #F0F2F5;
-        border-radius: 12px;
-        padding: 0.75rem 1rem;
+        position: relative;
         display: flex;
         align-items: center;
     }
 
-    .input-wrapper input, .input-wrapper textarea {
-        background: none;
-        border: none;
-        width: 100%;
-        font-size: 1rem;
-        color: #1A3C2F;
-        outline: none;
-        font-family: inherit;
-    }
-
-    .input-wrapper.read-only {
+    .input-wrapper.read-only .form-control-vibe {
         background-color: #E9ECEF;
         color: #6C757D;
-    }
-
-    .input-wrapper.read-only input {
-        color: #6C757D;
         font-style: italic;
+        padding-right: 3rem;
     }
 
     .lock-icon {
+        position: absolute;
+        right: 1rem;
         color: #ADB5BD;
-        margin-left: 0.5rem;
     }
 
     .row-group {
@@ -106,13 +62,6 @@
         gap: 1rem;
     }
 
-    .flex-1 { flex: 1; }
-
-    .date-validation-error {
-        color: #DC3545;
-        font-size: 0.75rem;
-        font-weight: 600;
-        margin-top: -0.5rem;
-        margin-bottom: 1rem;
-    }
+    .small { font-size: 0.75rem; }
+    .mb-2 { margin-bottom: 0.5rem; }
 </style>

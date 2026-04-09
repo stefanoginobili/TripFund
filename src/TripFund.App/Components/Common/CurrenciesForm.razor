@@ -1,5 +1,5 @@
 <section class="info-section">
-    <h3 class="section-header">CASSE DEL VIAGGIO</h3>
+    <h3 class="section-header-vibe">CASSE DEL VIAGGIO</h3>
     <div class="currencies-list">
         @foreach (var curr in Currencies)
         {
@@ -77,17 +77,17 @@
                                 bool isLast = index == keys.Count - 1;
 
                                 <div class="popover-overlay" @onclick="() => openMenuCurrencyCode = null" @onclick:stopPropagation></div>
-                                <div class="dropdown-menu-custom" @onclick:stopPropagation>
-                                    <div class="dropdown-item-custom" @onclick="() => { openMenuCurrencyCode = null; StartEditCurrency(curr.Key, curr.Value); }">
+                                <div class="dropdown-menu-vibe" @onclick:stopPropagation>
+                                    <div class="dropdown-item-vibe" @onclick="() => { openMenuCurrencyCode = null; StartEditCurrency(curr.Key, curr.Value); }">
                                         Modifica
                                     </div>
-                                    <div class="dropdown-item-custom @(isFirst ? "disabled" : "")" @onclick="async () => { if(!isFirst) { openMenuCurrencyCode = null; await MoveCurrencyUp(curr.Key); } }">
+                                    <div class="dropdown-item-vibe @(isFirst ? "disabled" : "")" @onclick="async () => { if(!isFirst) { openMenuCurrencyCode = null; await MoveCurrencyUp(curr.Key); } }">
                                         Sposta su
                                     </div>
-                                    <div class="dropdown-item-custom @(isLast ? "disabled" : "")" @onclick="async () => { if(!isLast) { openMenuCurrencyCode = null; await MoveCurrencyDown(curr.Key); } }">
+                                    <div class="dropdown-item-vibe @(isLast ? "disabled" : "")" @onclick="async () => { if(!isLast) { openMenuCurrencyCode = null; await MoveCurrencyDown(curr.Key); } }">
                                         Sposta giù
                                     </div>
-                                    <div class="dropdown-item-custom text-danger" @onclick="async () => { openMenuCurrencyCode = null; await ConfirmDeleteCurrency(curr.Key); }">
+                                    <div class="dropdown-item-vibe text-danger" @onclick="async () => { openMenuCurrencyCode = null; await ConfirmDeleteCurrency(curr.Key); }">
                                         Elimina
                                     </div>
                                 </div>
@@ -171,24 +171,6 @@
 </section>
 
 <style>
-    .info-section {
-        background-color: transparent;
-        border-radius: 0;
-        padding: 0;
-        box-shadow: none;
-        width: 100%;
-        margin-bottom: 1.5rem;
-    }
-
-    .section-header {
-        font-size: 0.8rem;
-        font-weight: 800;
-        color: #20563C;
-        letter-spacing: 0.1em;
-        margin-bottom: 1rem;
-        text-transform: uppercase;
-    }
-
     .currencies-list {
         display: flex;
         flex-direction: column;
@@ -240,48 +222,10 @@
         margin: -0.5rem;
     }
 
-    .dropdown-menu-custom {
-        position: absolute;
-        top: 100%;
-        right: 0;
-        background-color: #FFFFFF;
-        border-radius: 12px;
-        box-shadow: 0 8px 24px rgba(0,0,0,0.12);
-        padding: 0.5rem;
-        z-index: 1101;
-        min-width: 150px;
-        border: 1px solid #F0F0F0;
-        margin-top: 0.5rem;
-        display: flex;
-        flex-direction: column;
-    }
-
-    .dropdown-item-custom {
-        padding: 0.75rem 1rem;
-        font-size: 0.95rem;
-        font-weight: 600;
-        color: #1A3C2F;
-        cursor: pointer;
-        transition: background-color 0.2s;
-        display: flex;
-        align-items: center;
-        border-radius: 8px;
-        width: 100%;
-        white-space: nowrap;
-    }
-
-    .dropdown-item-custom:hover {
-        background-color: #F8FBF9;
-    }
-
-    .dropdown-item-custom.disabled {
+    .dropdown-item-vibe.disabled {
         color: #ADB5BD;
         cursor: default;
         background-color: transparent !important;
-    }
-
-    .text-danger {
-        color: #DC3545 !important;
     }
 
     .currency-edit-container {
@@ -420,4 +364,6 @@
 
     .error-container { text-align: center; }
     .error-text { color: #DC3545; font-size: 0.85rem; font-weight: 600; }
+    .me-2 { margin-right: 0.5rem; }
+    .mt-2 { margin-top: 0.5rem; }
 </style>
