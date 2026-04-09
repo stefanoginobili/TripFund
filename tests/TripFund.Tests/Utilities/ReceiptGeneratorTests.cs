@@ -44,7 +44,6 @@ public class ReceiptGeneratorTests
 
         // Assert
         result.Should().Contain("Data: 27/10/2023 12:30 (UTC+02:00)");
-        result.Should().Contain("Gli orari mostrati sono quelli acquisiti al momento dell'operazione.");
     }
 
     [Fact]

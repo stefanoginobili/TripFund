@@ -23,9 +23,8 @@ public static class ReceiptGenerator
             .ToList();
 
         var sb = new StringBuilder();
-        sb.AppendLine($"Ciao {member.Name},");
-        sb.AppendLine();
-        sb.AppendLine($"Ecco il riepilogo aggiornato di tutti i tuoi versamenti per la cassa comune del viaggio \"{trip.Name}\":");
+        sb.AppendLine($"Ciao {member.Name},"); 
+        sb.AppendLine($"ecco il riepilogo aggiornato di tutti i tuoi versamenti per la cassa comune del viaggio \"{trip.Name}\".");
         sb.AppendLine();
         sb.AppendLine("--- DETTAGLIO VERSAMENTI ---");
         sb.AppendLine();
@@ -79,14 +78,9 @@ public static class ReceiptGenerator
         }
 
         sb.AppendLine();
-        sb.AppendLine("-----------------------------------");
         sb.AppendLine();
-        sb.AppendLine("Grazie per la tua quota.");
-        sb.AppendLine();
-        sb.AppendLine("--");
+        sb.AppendLine("---");
         sb.AppendLine("Inviato automaticamente dall'app TripFund.");
-        
-        sb.AppendLine("Gli orari mostrati sono quelli acquisiti al momento dell'operazione.");
         sb.AppendLine("In caso di dubbi, contatta il coordinatore del gruppo.");
 
         return sb.ToString();
