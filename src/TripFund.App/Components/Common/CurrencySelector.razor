@@ -13,11 +13,6 @@
     </div>
 </div>
 
-@code {
-    [Parameter] public IEnumerable<string> Currencies { get; set; } = Enumerable.Empty<string>();
-    [Parameter] public string SelectedCurrency { get; set; } = "";
-    [Parameter] public EventCallback<string> OnCurrencySelected { get; set; }
-}
 <style>
     .currency-selector-container {
         display: flex;

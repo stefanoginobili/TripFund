@@ -1,6 +1,3 @@
-@using TripFund.App.Services
-@inject INativeDatePickerService DatePickerService
-
 <div class="form-group @Class">
     @if (!string.IsNullOrEmpty(Label))
     {
@@ -15,37 +12,6 @@
         <input type="time" class="hidden-native-input" value="@Value.ToString("HH:mm")" @onchange="OnInputChanged" readonly="@isAndroid" />
     </div>
 </div>
-
-@code {
-    [Parameter] public DateTime Value { get; set; }
-    [Parameter] public EventCallback<DateTime> ValueChanged { get; set; }
-    [Parameter] public string? Label { get; set; }
-    [Parameter] public string? Class { get; set; }
-
-    private bool isAndroid = DeviceInfo.Current.Platform == DevicePlatform.Android;
-
-    private async Task HandleClick()
-    {
-        if (isAndroid)
-        {
-            var result = await DatePickerService.ShowTimePickerAsync(Value);
-            if (result.HasValue)
-            {
-                var newValue = Value.Date.Add(result.Value);
-                await ValueChanged.InvokeAsync(newValue);
-            }
-        }
-    }
-
-    private async Task OnInputChanged(ChangeEventArgs e)
-    {
-        if (!isAndroid && TimeSpan.TryParse(e.Value?.ToString(), out var time))
-        {
-            var newValue = Value.Date.Add(time);
-            await ValueChanged.InvokeAsync(newValue);
-        }
-    }
-}
 
 <style>
     /* Reuse styles or define if missing */

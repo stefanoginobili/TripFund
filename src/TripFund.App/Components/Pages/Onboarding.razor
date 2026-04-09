@@ -1,9 +1,4 @@
 @page "/onboarding"
-@using TripFund.App.Models
-@using TripFund.App.Services
-@using TripFund.App.Utilities
-@inject LocalTripStorageService Storage
-@inject NavigationManager Nav
 
 <div class="onboarding-page">
     <header class="app-header">
@@ -59,26 +54,6 @@
     </div>
 
 </div>
-
-@code {
-    private string authorName = string.Empty;
-    private string deviceIdSuffix = Guid.NewGuid().ToString("n").Substring(0, 8);
-    private string DeviceId => $"{SlugUtility.GenerateSlug(authorName).Trim('-')}-{deviceIdSuffix}".Trim('-');
-
-    private async Task SaveSettings()
-    {
-        if (string.IsNullOrWhiteSpace(authorName)) return;
-
-        var settings = new AppSettings
-        {
-            AuthorName = authorName,
-            DeviceId = DeviceId
-        };
-
-        await Storage.SaveAppSettingsAsync(settings);
-        Nav.NavigateTo("/");
-    }
-}
 
 <style>
     .onboarding-page {
