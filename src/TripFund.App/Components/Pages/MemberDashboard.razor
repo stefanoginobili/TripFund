@@ -65,9 +65,9 @@
 
         <div class="content">
             <div class="summary-card">
-                <p class="summary-label">Totale versato</p>
-                <h2 class="summary-total">@FormatCurrency(totalContributed, selectedCurrency)</h2>
-                <p class="summary-sub">@(isExceeded ? "Eccedenza" : "Saldo"): <strong>@FormatCurrency(remainingBalance, selectedCurrency)</strong></p>
+                <p class="summary-label">Saldo</p>
+                <h2 class="summary-total">@FormatCurrency(remainingBalance, selectedCurrency)</h2>
+                <p class="summary-sub">Totale versato: <strong>@FormatCurrency(totalContributed, selectedCurrency)</strong></p>
                 
                 <div class="progress-container">
                     <div class="progress-bar-bg">

@@ -393,10 +393,10 @@ public class DashboardTests : BunitContext
         var profile = cut.Find(".member-profile");
         profile.InnerHtml.Should().NotContain("Test Trip"); // Should not be in profile anymore
         
-        var summaryTotal = cut.Find(".summary-total").TextContent; // Totale versato
+        var summaryTotal = cut.Find(".summary-sub").TextContent; // Totale versato
         summaryTotal.Should().Contain("300");
 
-        var summarySub = cut.Find(".summary-sub").TextContent; // Saldo
+        var summarySub = cut.Find(".summary-total").TextContent; // Saldo
         summarySub.Should().Contain("250");
 
         var transactionRows = cut.FindAll(".transaction-row");
@@ -536,8 +536,8 @@ public class DashboardTests : BunitContext
         var cut = Render<MemberDashboard>(p => p.Add(x => x.tripSlug, tripSlug).Add(x => x.memberSlug, memberSlug));
 
         // Assert
-        cut.Find(".summary-label").TextContent.Should().Contain("Totale versato");
-        cut.Find(".summary-sub").TextContent.Should().Contain("Eccedenza");
+        cut.Find(".summary-sub").TextContent.Should().Contain("Totale versato");
+        cut.Find(".summary-label").TextContent.Should().Contain("Saldo");
         cut.Find(".progress-bar-fill").ClassName.Should().Contain("warning");
     }
 
