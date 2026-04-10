@@ -29,6 +29,9 @@ namespace TripFund.App.Components.Pages
 
         private List<MemberStats> membersStats = new();
 
+        private Transaction? selectedTransaction;
+        private bool isTransactionModalOpen = false;
+
         protected override async Task OnInitializedAsync()
         {
             config = await Storage.GetTripConfigAsync(tripSlug);
@@ -53,6 +56,24 @@ namespace TripFund.App.Components.Pages
         {
             selectedCurrency = currencyCode;
             CalculateStats();
+        }
+
+        private void OpenTransactionModal(Transaction t)
+        {
+            selectedTransaction = t;
+            isTransactionModalOpen = true;
+        }
+
+        private void CloseTransactionModal()
+        {
+            isTransactionModalOpen = false;
+        }
+
+        private void EditTransaction(Transaction t)
+        {
+            isTransactionModalOpen = false;
+            var route = t.Type == "contribution" ? "add-contribution" : "add-expense";
+            Nav.NavigateTo($"/trip/{tripSlug}/{route}?edit={t.Id}&currency={selectedCurrency}");
         }
 
         private void CalculateStats()

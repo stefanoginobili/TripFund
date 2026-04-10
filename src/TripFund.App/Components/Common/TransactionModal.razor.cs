@@ -4,64 +4,53 @@ using TripFund.App.Models;
 using TripFund.App.Services;
 using TripFund.App.Utilities;
 
-namespace TripFund.App.Components.Pages
+namespace TripFund.App.Components.Common
 {
-    public partial class TransactionDetail
+    public partial class TransactionModal
     {
         [Inject] private LocalTripStorageService Storage { get; set; } = default!;
         [Inject] private NavigationManager Nav { get; set; } = default!;
-        [Inject] private IAlertService Alerts { get; set; } = default!;
         [Inject] private IJSRuntime JSRuntime { get; set; } = default!;
         [Inject] private IThumbnailService Thumbnails { get; set; } = default!;
 
-        [Parameter] public string tripSlug { get; set; } = "";
-        [Parameter] public string transactionId { get; set; } = "";
-        [SupplyParameterFromQuery] public string? currency { get; set; }
+        [Parameter] public bool IsVisible { get; set; }
+        [Parameter] public Transaction? Transaction { get; set; }
+        [Parameter] public TripConfig? Config { get; set; }
+        [Parameter] public string TripSlug { get; set; } = "";
+        [Parameter] public EventCallback OnClose { get; set; }
+        [Parameter] public EventCallback<Transaction> OnEdit { get; set; }
 
-        private TripConfig? config;
-        private Transaction? transaction;
-        private string deviceId = "";
-        private bool isMenuOpen = false;
         private bool canEdit = true;
         private List<AttachmentPreview> previews = new();
 
-        protected override async Task OnInitializedAsync()
+        protected override async Task OnParametersSetAsync()
         {
-            config = await Storage.GetTripConfigAsync(tripSlug);
-            transaction = await Storage.GetLatestTransactionVersionAsync(tripSlug, transactionId);
-
-            if (transaction != null && config != null)
+            if (IsVisible && Transaction != null && Config != null)
             {
-                canEdit = transaction.Split.Keys.All(slug => config.Members.ContainsKey(slug));
+                canEdit = Transaction.Split.Keys.All(slug => Config.Members.ContainsKey(slug));
                 await LoadPreviews();
-            }
-
-            var settings = await Storage.GetAppSettingsAsync();
-            if (settings != null)
-            {
-                deviceId = settings.DeviceId;
             }
         }
 
         private async Task LoadPreviews()
         {
-            if (transaction == null) return;
+            if (Transaction == null) return;
             previews.Clear();
 
             TimeZoneInfo tz;
             try
             {
-                tz = string.IsNullOrEmpty(transaction.Timezone) ? TimeZoneInfo.Local : TimeZoneInfo.FindSystemTimeZoneById(transaction.Timezone);
+                tz = string.IsNullOrEmpty(Transaction.Timezone) ? TimeZoneInfo.Local : TimeZoneInfo.FindSystemTimeZoneById(Transaction.Timezone);
             }
             catch
             {
                 tz = TimeZoneInfo.Local;
             }
 
-            foreach (var att in transaction.Attachments)
+            foreach (var att in Transaction.Attachments)
             {
                 var fileName = att.Name;
-                var path = await Storage.GetAttachmentPath(tripSlug, transactionId, fileName);
+                var path = await Storage.GetAttachmentPath(TripSlug, Transaction.Id, fileName);
                 
                 var localizedTime = TimeZoneInfo.ConvertTimeFromUtc(att.CreatedAt, tz);
                 var preview = new AttachmentPreview 
@@ -73,7 +62,6 @@ namespace TripFund.App.Components.Pages
                 if (!string.IsNullOrEmpty(path))
                 {
                     var ext = Path.GetExtension(fileName).ToLower();
-                    // Try to get native thumbnail first (covers images and documents on supporting platforms)
                     var nativeThumb = await Thumbnails.GetThumbnailBase64Async(path);
                     if (!string.IsNullOrEmpty(nativeThumb))
                     {
@@ -82,7 +70,6 @@ namespace TripFund.App.Components.Pages
                     }
                     else if (ext == ".jpg" || ext == ".jpeg" || ext == ".png" || ext == ".gif" || ext == ".webp")
                     {
-                        // Fallback for images if native generator failed but it is an image
                         try
                         {
                             var bytes = await File.ReadAllBytesAsync(path);
@@ -97,15 +84,26 @@ namespace TripFund.App.Components.Pages
             }
         }
 
-        private void ToggleMenu() => isMenuOpen = !isMenuOpen;
+        private async Task Close()
+        {
+            await OnClose.InvokeAsync();
+        }
+
+        private async Task Edit()
+        {
+            if (Transaction != null)
+            {
+                await OnEdit.InvokeAsync(Transaction);
+            }
+        }
 
         private async Task OpenMap()
         {
-            if (transaction?.Location != null)
+            if (Transaction?.Location != null)
             {
-                await Map.Default.OpenAsync(transaction.Location.Latitude, transaction.Location.Longitude, new MapLaunchOptions
+                await Map.Default.OpenAsync(Transaction.Location.Latitude, Transaction.Location.Longitude, new MapLaunchOptions
                 {
-                    Name = transaction.Location.Name,
+                    Name = Transaction.Location.Name,
                     NavigationMode = NavigationMode.None
                 });
             }
@@ -113,7 +111,8 @@ namespace TripFund.App.Components.Pages
 
         private async Task OpenAttachment(string fileName)
         {
-            var path = await Storage.GetAttachmentPath(tripSlug, transactionId, fileName);
+            if (Transaction == null) return;
+            var path = await Storage.GetAttachmentPath(TripSlug, Transaction.Id, fileName);
             if (!string.IsNullOrEmpty(path))
             {
                 await Launcher.Default.OpenAsync(new OpenFileRequest
@@ -123,18 +122,9 @@ namespace TripFund.App.Components.Pages
             }
         }
 
-        private void EditTransaction()
-        {
-            isMenuOpen = false;
-            if (transaction == null || !canEdit) return;
-            
-            var route = transaction.Type == "contribution" ? "add-contribution" : "add-expense";
-            Nav.NavigateTo($"/trip/{tripSlug}/{route}?edit={transactionId}&currency={currency}");
-        }
-
         private string FormatCurrency(decimal amount, string currencyCode)
         {
-            if (config != null && config.Currencies.TryGetValue(currencyCode, out var c))
+            if (Config != null && Config.Currencies.TryGetValue(currencyCode, out var c))
             {
                 string format = c.Decimals > 0 ? "N" + c.Decimals : "N0";
                 return $"{c.Symbol} {amount.ToString(format)}";
@@ -144,7 +134,7 @@ namespace TripFund.App.Components.Pages
 
         private string FormatAmountWithCode(decimal amount, string currencyCode)
         {
-            if (config != null && config.Currencies.TryGetValue(currencyCode, out var c))
+            if (Config != null && Config.Currencies.TryGetValue(currencyCode, out var c))
             {
                 string format = c.Decimals > 0 ? "N" + c.Decimals : "N0";
                 return $"{currencyCode} {amount.ToString(format)}";

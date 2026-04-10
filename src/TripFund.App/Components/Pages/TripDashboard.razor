@@ -136,7 +136,7 @@
                             secondLineText = $"Quota versata da {(config.Members.TryGetValue(payerSlug, out var member) ? member.Name : payerSlug)}";
                         }
 
-                        <div class="transaction-row" @onclick='() => Nav.NavigateTo($"/trip/{tripSlug}/transaction/{t.Id}?currency={selectedCurrency}")'>
+                        <div class="transaction-row" @onclick="() => OpenTransactionModal(t)">
                             <div class="transaction-icon @(t.Type == "expense" ? "expense-icon" : "contrib-icon")">
                                 @if(t.Type == "expense")
                                 {
@@ -162,6 +162,13 @@
         </div>
     }
 </div>
+
+<TransactionModal IsVisible="@isTransactionModalOpen" 
+                  Transaction="@selectedTransaction" 
+                  Config="@config" 
+                  TripSlug="@tripSlug"
+                  OnClose="CloseTransactionModal"
+                  OnEdit="EditTransaction" />
 
 <style>
     .me-2 {

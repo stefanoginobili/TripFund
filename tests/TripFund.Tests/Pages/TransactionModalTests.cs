@@ -1,7 +1,7 @@
 using Bunit;
 using Microsoft.Extensions.DependencyInjection;
 using Moq;
-using TripFund.App.Components.Pages;
+using TripFund.App.Components.Common;
 using TripFund.App.Models;
 using TripFund.App.Services;
 using FluentAssertions;
@@ -9,13 +9,13 @@ using Microsoft.AspNetCore.Components;
 
 namespace TripFund.Tests.Pages;
 
-public class TransactionDetailTests : BunitContext
+public class TransactionModalTests : BunitContext
 {
     private readonly Mock<LocalTripStorageService> _storageMock;
     private readonly Mock<IAlertService> _alertMock;
     private readonly Mock<IThumbnailService> _thumbnailMock;
 
-    public TransactionDetailTests()
+    public TransactionModalTests()
     {
         var itCulture = new System.Globalization.CultureInfo("it-IT");
         System.Globalization.CultureInfo.DefaultThreadCurrentCulture = itCulture;
@@ -30,11 +30,10 @@ public class TransactionDetailTests : BunitContext
     }
 
     [Fact]
-    public void TransactionDetail_ShouldDisplayMissingMembersWithGrayscaleAndQuestionMark()
+    public void TransactionModal_ShouldDisplayMissingMembersWithGrayscaleAndQuestionMark()
     {
         // Arrange
         var tripSlug = "test-trip";
-        var transactionId = "trans-123";
         
         var config = new TripConfig 
         { 
@@ -48,7 +47,7 @@ public class TransactionDetailTests : BunitContext
         };
         var transaction = new Transaction 
         { 
-            Id = transactionId, 
+            Id = "trans-123", 
             Amount = 100, 
             Currency = "EUR", 
             Description = "Test",
@@ -59,12 +58,11 @@ public class TransactionDetailTests : BunitContext
             }
         };
 
-        _storageMock.Setup(s => s.GetTripConfigAsync(tripSlug)).ReturnsAsync(config);
-        _storageMock.Setup(s => s.GetLatestTransactionVersionAsync(tripSlug, transactionId)).ReturnsAsync(transaction);
-
-        var cut = Render<TransactionDetail>(parameters => parameters
-            .Add(p => p.tripSlug, tripSlug)
-            .Add(p => p.transactionId, transactionId)
+        var cut = Render<TransactionModal>(parameters => parameters
+            .Add(p => p.IsVisible, true)
+            .Add(p => p.Transaction, transaction)
+            .Add(p => p.Config, config)
+            .Add(p => p.TripSlug, tripSlug)
         );
 
         // Assert
@@ -81,11 +79,10 @@ public class TransactionDetailTests : BunitContext
     }
 
     [Fact]
-    public void TransactionDetail_ShouldShowCurrencyCodeInsteadOfSymbol()
+    public void TransactionModal_ShouldShowCurrencyCodeInsteadOfSymbol()
     {
         // Arrange
         var tripSlug = "test-trip";
-        var transactionId = "trans-123";
         
         var config = new TripConfig 
         { 
@@ -95,19 +92,18 @@ public class TransactionDetailTests : BunitContext
         };
         var transaction = new Transaction 
         { 
-            Id = transactionId, 
+            Id = "trans-123", 
             Amount = 123.45m, 
             Currency = "EUR", 
             Description = "Dinner",
             Split = new Dictionary<string, SplitInfo>()
         };
 
-        _storageMock.Setup(s => s.GetTripConfigAsync(tripSlug)).ReturnsAsync(config);
-        _storageMock.Setup(s => s.GetLatestTransactionVersionAsync(tripSlug, transactionId)).ReturnsAsync(transaction);
-
-        var cut = Render<TransactionDetail>(parameters => parameters
-            .Add(p => p.tripSlug, tripSlug)
-            .Add(p => p.transactionId, transactionId)
+        var cut = Render<TransactionModal>(parameters => parameters
+            .Add(p => p.IsVisible, true)
+            .Add(p => p.Transaction, transaction)
+            .Add(p => p.Config, config)
+            .Add(p => p.TripSlug, tripSlug)
         );
 
         // Assert
@@ -117,11 +113,10 @@ public class TransactionDetailTests : BunitContext
     }
 
     [Fact]
-    public async Task TransactionDetail_ShouldDisableEditIfMemberIsMissing()
+    public async Task TransactionModal_ShouldDisableEditIfMemberIsMissing()
     {
         // Arrange
         var tripSlug = "test-trip";
-        var transactionId = "trans-123";
         
         var config = new TripConfig 
         { 
@@ -135,7 +130,7 @@ public class TransactionDetailTests : BunitContext
         };
         var transaction = new Transaction 
         { 
-            Id = transactionId, 
+            Id = "trans-123", 
             Amount = 100, 
             Currency = "EUR", 
             Description = "Test",
@@ -146,36 +141,29 @@ public class TransactionDetailTests : BunitContext
             }
         };
 
-        _storageMock.Setup(s => s.GetTripConfigAsync(tripSlug)).ReturnsAsync(config);
-        _storageMock.Setup(s => s.GetLatestTransactionVersionAsync(tripSlug, transactionId)).ReturnsAsync(transaction);
-
-        var cut = Render<TransactionDetail>(parameters => parameters
-            .Add(p => p.tripSlug, tripSlug)
-            .Add(p => p.transactionId, transactionId)
+        var cut = Render<TransactionModal>(parameters => parameters
+            .Add(p => p.IsVisible, true)
+            .Add(p => p.Transaction, transaction)
+            .Add(p => p.Config, config)
+            .Add(p => p.TripSlug, tripSlug)
         );
 
-        // Act
-        // Open menu
-        var menuBtn = cut.Find("header .dropdown button.icon-btn");
-        await cut.InvokeAsync(() => menuBtn.Click());
-
         // Assert
-        var editBtn = cut.FindAll(".dropdown-item-vibe").First(b => b.InnerHtml.Contains("Modifica"));
+        var editBtn = cut.Find(".edit-btn-vibe");
         editBtn.HasAttribute("disabled").Should().BeTrue();
     }
 
     [Fact]
-    public void TransactionDetail_ShouldShowAttachmentsInGrid()
+    public void TransactionModal_ShouldShowAttachmentsInGrid()
     {
         // Arrange
         var tripSlug = "test-trip";
-        var transactionId = "trans-123";
         
         var config = new TripConfig { Id = "1", Name = "Test Trip" };
         var now = new DateTime(2026, 4, 10, 10, 30, 0, DateTimeKind.Utc);
         var transaction = new Transaction 
         { 
-            Id = transactionId, 
+            Id = "trans-123", 
             Amount = 100, 
             Currency = "EUR", 
             Description = "Test",
@@ -188,17 +176,17 @@ public class TransactionDetailTests : BunitContext
             Split = new Dictionary<string, SplitInfo>()
         };
 
-        _storageMock.Setup(s => s.GetTripConfigAsync(tripSlug)).ReturnsAsync(config);
-        _storageMock.Setup(s => s.GetLatestTransactionVersionAsync(tripSlug, transactionId)).ReturnsAsync(transaction);
         _storageMock.Setup(s => s.GetAttachmentPath(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>()))
             .ReturnsAsync((string ts, string tid, string fn) => $"fake/path/{fn}");
         
         _thumbnailMock.Setup(t => t.GetThumbnailBase64Async(It.Is<string>(s => s.Contains("receipt1.jpg"))))
             .ReturnsAsync("data:image/jpeg;base64,fake");
 
-        var cut = Render<TransactionDetail>(parameters => parameters
-            .Add(p => p.tripSlug, tripSlug)
-            .Add(p => p.transactionId, transactionId)
+        var cut = Render<TransactionModal>(parameters => parameters
+            .Add(p => p.IsVisible, true)
+            .Add(p => p.Transaction, transaction)
+            .Add(p => p.Config, config)
+            .Add(p => p.TripSlug, tripSlug)
         );
 
         // Assert
@@ -222,11 +210,10 @@ public class TransactionDetailTests : BunitContext
     }
 
     [Fact]
-    public void TransactionDetail_ShouldDisplayDateInStoredTimezone()
+    public void TransactionModal_ShouldDisplayDateInStoredTimezone()
     {
         // Arrange
         var tripSlug = "test-trip";
-        var transactionId = "trans-123";
         
         var config = new TripConfig 
         { 
@@ -239,7 +226,7 @@ public class TransactionDetailTests : BunitContext
         var date = new DateTimeOffset(2024, 5, 10, 10, 0, 0, TimeSpan.Zero);
         var transaction = new Transaction 
         { 
-            Id = transactionId, 
+            Id = "trans-123", 
             Amount = 100, 
             Currency = "EUR", 
             Date = date,
@@ -247,12 +234,11 @@ public class TransactionDetailTests : BunitContext
             Split = new Dictionary<string, SplitInfo>()
         };
 
-        _storageMock.Setup(s => s.GetTripConfigAsync(tripSlug)).ReturnsAsync(config);
-        _storageMock.Setup(s => s.GetLatestTransactionVersionAsync(tripSlug, transactionId)).ReturnsAsync(transaction);
-
-        var cut = Render<TransactionDetail>(parameters => parameters
-            .Add(p => p.tripSlug, tripSlug)
-            .Add(p => p.transactionId, transactionId)
+        var cut = Render<TransactionModal>(parameters => parameters
+            .Add(p => p.IsVisible, true)
+            .Add(p => p.Transaction, transaction)
+            .Add(p => p.Config, config)
+            .Add(p => p.TripSlug, tripSlug)
         );
 
         // Assert

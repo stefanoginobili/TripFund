@@ -91,7 +91,7 @@
                     }
                     @foreach (var t in userTransactions.OrderByDescending(x => x.OriginalTx.Date))
                     {
-                        <div class="transaction-row" @onclick='() => Nav.NavigateTo($"/trip/{tripSlug}/transaction/{t.OriginalTx.Id}?currency={selectedCurrency}")'>
+                        <div class="transaction-row" @onclick="() => OpenTransactionModal(t.OriginalTx)">
                             <div class="transaction-icon @(t.OriginalTx.Type == "expense" ? "expense-icon" : "contrib-icon")">
                                 @if(t.OriginalTx.Type == "expense")
                                 {
@@ -116,6 +116,13 @@
         </div>
     }
 </div>
+
+<TransactionModal IsVisible="@isTransactionModalOpen" 
+                  Transaction="@selectedTransaction" 
+                  Config="@config" 
+                  TripSlug="@tripSlug"
+                  OnClose="CloseTransactionModal"
+                  OnEdit="EditTransaction" />
 
 <style>
     .member-profile {
