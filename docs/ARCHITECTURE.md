@@ -28,7 +28,7 @@ Inside each `[TripSlug]` folder, data is partitioned into two distinct domains, 
 2. **Transactions:** `[AppData]/trips/[TripSlug]/transactions/[TransactionID]/`
     - **TransactionID Format:** `yyyyMMddTHHmmssZ-[guidprefix]` (e.g., `20260325T143000Z-a1b2c3d4`). The prefix is the first 8 characters of a standard GUID.
     - **Is Versioned:** YES.
-    - **Attachment Rule:** All non-JSON files (images, PDFs) MUST be renamed upon import to `Attachment-[num].[extension]`. Original filenames MUST be discarded to prevent collisions.
+    - **Attachment Rule:** All non-JSON files (images, PDFs) MUST be renamed upon import to `ATT_[timestamp].[extension]` to avoid collisions. `[timestamp]` format must be `yyyyMMddTHH:mm:ssZ` (UTC). Original filenames and attachment timestamp MUST be stored in the `data.json` file.
 
 ## 3. The Versioned Storage Engine
 The application utilizes an append-only, soft-deletion storage engine. When a folder is designated as "Versioned" (like Metadata or specific Transactions), its active state is determined by its sub-folders.
