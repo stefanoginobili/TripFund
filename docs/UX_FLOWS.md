@@ -8,13 +8,13 @@ This document strictly defines the user flows and UI layouts. **All UI text must
 - **Bottom:** Two main buttons: "Crea nuovo viaggio" and "Aggiungi viaggio esistente".
 
 ## 2. Join Existing Trip
-- **Action:** Opens a Google Drive folder picker.
-- **Result:** Upon selecting a valid folder, the app registers the trip in `known_trips.json` and navigates to the **Trip Dashboard** (Flow 4).
+- **Action:** User selects a sync provider (e.g., Google Drive, Dropbox, Git) and provides the required parameters (e.g., selects a folder or enters a repository URL).
+- **Result:** Upon successful configuration, the app registers the trip in `known_trips.json`, syncs the initial data, and navigates to the **Trip Dashboard** (Flow 4).
 
 ## 3. Create New Trip
-- **Step A (Drive Picker):** User selects a parent folder on Google Drive.
+- **Step A (Sync Configuration):** User selects a sync provider and configures the remote destination (e.g., selects a parent folder on Google Drive where the new trip folder will be created).
 - **Step B (Initial Data Form):** A dialog to input Name, Slug (auto-calculated from Name but editable; regex: `^[a-z0-9-_]+$`), Dates, and at least one Currency. **Crucial:** Slugs must be unique globally across the user's trips.
-- **Result:** Creates the trip folder, generates `trip_config.json`, registers it locally, and navigates to the **Trip Dashboard** (Flow 4).
+- **Result:** Creates the trip folder locally and on the remote provider, generates `trip_config.json`, registers it locally, and navigates to the **Trip Dashboard** (Flow 4).
 
 ## 4. Trip Dashboard
 - **Top Bar:** Back button (left), Edit pencil icon ✏️ (right) leading to **Edit Trip** (Flow 5).

@@ -101,16 +101,34 @@ This file is stored in the root of the app's local storage. It acts purely as a 
 {
   "trips": {
     "patagonia-2026": {
-      "driveFolderId": "drive-folder-xyz"
+      "createdAt": "2026-05-01T13:30:00Z",
+      "sync": {
+        "provider": "google-drive",
+        "parameters": {
+          "folderId": "abcdef1234567890"
+        },
+        "lastSync": "2026-05-23T13:45:00Z",
+        "hasConflicts": false
+      }
     },
     "giappone-2027": {
-      "driveFolderId": "drive-folder-abc"
+      "createdAt": "2026-04-01T13:30:00Z",
+      "sync": {
+        "provider": "git",
+        "parameters": {
+          "repository": "https://github.com/mario/giappone.git"
+        },
+        "lastSync": "2026-05-05T13:45:00Z",
+        "hasConflicts": false
+      }
     }
   }
 }
 ```
 
-Note: The keys in the `trips` dictionary ("patagonia-2026", "giappone-2027") are the actual names of the local folders (the URL-safe slugs of the trip names). To display the Home Page, the app iterates through these keys, accesses each folder, and reads the `trip_config.json` inside to get the `name` and `startDate`/`endDate` for the UI.
+* Note 1: The keys in the `trips` dictionary ("patagonia-2026", "giappone-2027") are the actual names of the local folders (the URL-safe slugs of the trip names). To display the Home Page, the app iterates through these keys, accesses each folder, and reads the `trip_config.json` inside to get the `name` and `startDate`/`endDate` for the UI.
+* Note 2: The `sync.provider` property defines the implementation to use to sync the trip with a remote server. `sync.parameters` is a key/value dictionary containing the configuration required by the provider. They are usually provided by the user when adding a trip and after he choosen the sync provider for the trip.
+* Note 3. The `hasConflicts` flags summarized if any of the versioned folder under the trip has an active conflict state.
 
 ## 4. Global App Settings (`app_settings.json`)
 This file is stored in the root of the app's local storage (next to `known_trips.json`). It stores global device preferences.

@@ -66,7 +66,15 @@ namespace TripFund.App.Components.Pages
 
             await Storage.SaveTripConfigAsync(tripSlug, tripConfig, settings?.DeviceId ?? "unknown");
 
-            registry.Trips[tripSlug] = new TripRegistryEntry { DriveFolderId = folder.Id };
+            registry.Trips[tripSlug] = new TripRegistryEntry 
+            { 
+                CreatedAt = DateTime.UtcNow,
+                Sync = new SyncConfig 
+                { 
+                    Provider = "google-drive", 
+                    Parameters = new Dictionary<string, string> { { "folderId", folder.Id } } 
+                } 
+            };
             await Storage.SaveTripRegistryAsync(registry);
 
             Nav.NavigateTo($"/trip/{tripSlug}");

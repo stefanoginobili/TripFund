@@ -57,7 +57,10 @@ public class TripManagementTests : BunitContext
 
         // Assert
         _storageMock.Verify(s => s.SaveTripConfigAsync("new-trip", It.Is<TripConfig>(c => c.Name == "New Trip" && c.Currencies.ContainsKey("USD")), "mario", It.IsAny<bool>()), Times.Once);
-        _storageMock.Verify(s => s.SaveTripRegistryAsync(It.Is<LocalTripRegistry>(r => r.Trips.ContainsKey("new-trip"))), Times.Once);
+        _storageMock.Verify(s => s.SaveTripRegistryAsync(It.Is<LocalTripRegistry>(r => 
+            r.Trips.ContainsKey("new-trip") && 
+            r.Trips["new-trip"].Sync.Provider == "google-drive" &&
+            r.Trips["new-trip"].Sync.Parameters["folderId"] == "drive-123")), Times.Once);
     }
 
     [Fact]
@@ -243,6 +246,9 @@ public class TripManagementTests : BunitContext
 
         // Assert
         _storageMock.Verify(s => s.SaveTripConfigAsync("existing-trip", It.IsAny<TripConfig>(), It.IsAny<string>(), It.IsAny<bool>()), Times.Once);
-        _storageMock.Verify(s => s.SaveTripRegistryAsync(It.Is<LocalTripRegistry>(r => r.Trips.ContainsKey("existing-trip"))), Times.Once);
+        _storageMock.Verify(s => s.SaveTripRegistryAsync(It.Is<LocalTripRegistry>(r => 
+            r.Trips.ContainsKey("existing-trip") && 
+            r.Trips["existing-trip"].Sync.Provider == "google-drive" &&
+            r.Trips["existing-trip"].Sync.Parameters["folderId"] == "drive-456")), Times.Once);
     }
 }

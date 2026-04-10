@@ -12,12 +12,13 @@ A cross-platform mobile app (Android/iOS) to manage a "Shared Wallet" (la "cassa
    - Must support attachments (receipt images/PDFs), location (GPS coordinates), and location name.
 4. **Dashboard:** Displays overall fund status, expected vs. paid quotas per member, remaining balance per member, and total expenses.
 5. **Offline-First:** The app must be fully functional without an internet connection.
-6. **Trip Management & Home Page:** The app opens on a Home Page listing all configured trips. 
-   - All known trips are displayed in a single, unified list. The app uses a lightweight local registry just to locate the trip folders, and reads the actual trip data (name, dates) directly from each trip's configuration.
+6. **Multi-Provider Sync:** Supports multiple synchronization providers (e.g., Google Drive, Dropbox, Git) to keep trip data in sync across different devices. Each trip can be configured with its own sync provider and parameters.
+7. **Trip Management & Home Page:** The app opens on a Home Page listing all configured trips. 
+   - All known trips are displayed in a single, unified list. The app uses a lightweight local registry just to locate the trip folders and their sync configuration, and reads the actual trip data (name, dates) directly from each trip's configuration.
    - At the bottom of the list, two main actions are available: "Crea nuovo viaggio" and "Aggiungi viaggio esistente".
    - Users can edit trip details (name, description, dates, currencies, expected quotas).
    - Trip members must have an email address (for receiving receipts) and a simple Emoji avatar (to visually identify them in the UI).
-7. **App User Identity & Settings:** The physical user of the app is completely decoupled from the "Trip Members". 
+8. **App User Identity & Settings:** The physical user of the app is completely decoupled from the "Trip Members". 
    - On the very first launch, the app asks the user for their Name (e.g., "Mario Mobile"). 
    - This name is saved in a global app settings file and is used purely as an informational signature (`author`) on any transaction created from that device.
    - A global Settings page allows the user to change this name at any time.

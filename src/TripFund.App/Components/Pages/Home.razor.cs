@@ -87,7 +87,15 @@ namespace TripFund.App.Components.Pages
             }
 
             var registry = await Storage.GetTripRegistryAsync();
-            registry.Trips[slug] = new TripRegistryEntry { DriveFolderId = folder.Id };
+            registry.Trips[slug] = new TripRegistryEntry 
+            { 
+                CreatedAt = DateTime.UtcNow,
+                Sync = new SyncConfig 
+                { 
+                    Provider = "google-drive", 
+                    Parameters = new Dictionary<string, string> { { "folderId", folder.Id } } 
+                } 
+            };
             await Storage.SaveTripRegistryAsync(registry);
 
             NavigateToTrip(slug);

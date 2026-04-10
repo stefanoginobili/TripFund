@@ -1,3 +1,5 @@
+using System;
+using System.Collections.Generic;
 using System.Text.Json.Serialization;
 
 namespace TripFund.App.Models;
@@ -10,6 +12,24 @@ public class LocalTripRegistry
 
 public class TripRegistryEntry
 {
-    [JsonPropertyName("driveFolderId")]
-    public string DriveFolderId { get; set; } = string.Empty;
+    [JsonPropertyName("createdAt")]
+    public DateTime CreatedAt { get; set; }
+
+    [JsonPropertyName("sync")]
+    public SyncConfig Sync { get; set; } = new();
+}
+
+public class SyncConfig
+{
+    [JsonPropertyName("provider")]
+    public string Provider { get; set; } = string.Empty;
+
+    [JsonPropertyName("parameters")]
+    public Dictionary<string, string> Parameters { get; set; } = new();
+
+    [JsonPropertyName("lastSync")]
+    public DateTime? LastSync { get; set; }
+
+    [JsonPropertyName("hasConflicts")]
+    public bool HasConflicts { get; set; }
 }

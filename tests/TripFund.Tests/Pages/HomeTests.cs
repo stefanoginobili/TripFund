@@ -44,9 +44,9 @@ public class HomeTests : BunitContext
     {
         // Arrange
         var registry = new LocalTripRegistry();
-        registry.Trips.Add("current", new TripRegistryEntry { DriveFolderId = "1" });
-        registry.Trips.Add("future", new TripRegistryEntry { DriveFolderId = "2" });
-        registry.Trips.Add("past", new TripRegistryEntry { DriveFolderId = "3" });
+        registry.Trips.Add("current", new TripRegistryEntry { Sync = new SyncConfig { Provider = "google-drive", Parameters = new() { { "folderId", "1" } } } });
+        registry.Trips.Add("future", new TripRegistryEntry { Sync = new SyncConfig { Provider = "google-drive", Parameters = new() { { "folderId", "2" } } } });
+        registry.Trips.Add("past", new TripRegistryEntry { Sync = new SyncConfig { Provider = "google-drive", Parameters = new() { { "folderId", "3" } } } });
 
         var today = DateTime.Today;
         
