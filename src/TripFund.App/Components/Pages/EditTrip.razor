@@ -40,6 +40,7 @@
     else
     {
         <div class="content">
+            <SyncStatusBar TripSlug="@tripSlug" OnSyncCompleted="OnSyncCompleted" />
             <!-- GENERAL INFO SECTION -->
             <GeneralInfoForm @bind-Name="config.Name"
                              @bind-Slug="tripSlug"

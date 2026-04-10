@@ -73,6 +73,21 @@ namespace TripFund.App.Components.Pages
             }
         }
 
+        private async Task OnSyncCompleted()
+        {
+            config = await Storage.GetTripConfigAsync(tripSlug);
+            if (config != null)
+            {
+                allTransactions = await Storage.GetTransactionsAsync(tripSlug);
+                if (config.Members.TryGetValue(memberSlug, out var m))
+                {
+                    member = m;
+                }
+                CalculateStats();
+                StateHasChanged();
+            }
+        }
+
         private void SelectCurrency(string currencyCode)
         {
             selectedCurrency = currencyCode;

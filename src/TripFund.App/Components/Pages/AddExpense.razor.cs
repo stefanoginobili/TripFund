@@ -303,6 +303,12 @@ namespace TripFund.App.Components.Pages
             return 2;
         }
 
+        private async Task OnSyncCompleted()
+        {
+            config = await Storage.GetTripConfigAsync(tripSlug);
+            StateHasChanged();
+        }
+
         private void SelectCurrency(string currencyCode)
         {
             if (editingInfo == null) selectedCurrency = currencyCode;

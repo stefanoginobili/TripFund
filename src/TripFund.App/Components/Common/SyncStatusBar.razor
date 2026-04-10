@@ -1,0 +1,180 @@
+@using TripFund.App.Services
+@using TripFund.App.Models
+@inject LocalTripStorageService Storage
+@inject ISyncService Sync
+@implements IDisposable
+
+@if (!string.IsNullOrEmpty(remoteStorageProvider))
+{
+    <div class="sync-status-container">
+        <div class="sync-status-card">
+            <div class="sync-indicator">
+                <img src="images/@(remoteStorageProvider).svg" width="20" height="20" alt="@remoteStorageProvider" />
+            </div>
+            @if (isSyncing)
+            {
+                <span class="sync-text syncing">Sincronizzazione in corso...</span>
+            }
+            else
+            {
+                <span class="sync-text">@GetRelativeSyncTime(lastSync)</span>
+            }
+            <button class="sync-now-btn @(isSyncing ? "spinning" : "")" @onclick="TriggerSync" disabled="@isSyncing">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M23 4v6h-6"></path>
+                    <path d="M1 20v-6h6"></path>
+                    <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+                </svg>
+            </button>
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter] public string TripSlug { get; set; } = "";
+    [Parameter] public EventCallback OnSyncCompleted { get; set; }
+
+    private string? remoteStorageProvider;
+    private DateTime? lastSync;
+    private bool isSyncing = false;
+    private System.Timers.Timer? refreshTimer;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        await LoadSyncStatus();
+    }
+
+    private async Task LoadSyncStatus()
+    {
+        var registry = await Storage.GetTripRegistryAsync();
+        if (registry?.Trips != null && registry.Trips.TryGetValue(TripSlug, out var entry))
+        {
+            remoteStorageProvider = entry.RemoteStorage?.Provider;
+            lastSync = entry.RemoteStorage?.LastSync;
+        }
+
+        if (refreshTimer == null)
+        {
+            refreshTimer = new System.Timers.Timer(30000); // 30 seconds
+            refreshTimer.Elapsed += (s, e) => InvokeAsync(StateHasChanged);
+            refreshTimer.AutoReset = true;
+            refreshTimer.Enabled = true;
+        }
+    }
+
+    private async Task TriggerSync()
+    {
+        if (isSyncing) return;
+        isSyncing = true;
+        StateHasChanged();
+
+        try
+        {
+            await Sync.SyncAsync(TripSlug);
+            await LoadSyncStatus();
+            await OnSyncCompleted.InvokeAsync();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Sync failed: {ex.Message}");
+        }
+        finally
+        {
+            isSyncing = false;
+            StateHasChanged();
+        }
+    }
+
+    private string GetRelativeSyncTime(DateTime? syncTime)
+    {
+        if (!syncTime.HasValue) return "Mai sincronizzato";
+        
+        string relative;
+        var diff = DateTime.Now - syncTime.Value;
+        if (diff.TotalMinutes < 60)
+        {
+            int minutes = (int)diff.TotalMinutes;
+            if (minutes < 1) relative = "meno di un minuto fa";
+            else if (minutes == 1) relative = "un minuto fa";
+            else relative = $"{minutes} minuti fa";
+        }
+        else
+        {
+            int hours = (int)diff.TotalHours;
+            if (hours <= 1) relative = "più di un'ora fa";
+            else relative = $"più di {hours} ore fa";
+        }
+
+        return $"Sincronizzato {relative}";
+    }
+
+    public void Dispose()
+    {
+        if (refreshTimer != null)
+        {
+            refreshTimer.Stop();
+            refreshTimer.Dispose();
+        }
+    }
+}
+
+<style>
+    .sync-status-card {
+        display: flex;
+        align-items: center;
+        background-color: #FFFFFF;
+        padding: 0.75rem 1rem;
+        border-radius: 16px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.02);
+        border: 1px solid #F0F0F0;
+    }
+
+    .sync-text {
+        flex: 1;
+        text-align: center;
+        font-size: 0.9rem;
+        color: #6C757D;
+    }
+
+    .sync-text.syncing {
+        font-weight: 600;
+        color: #20563C;
+    }
+
+    .sync-indicator {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 32px;
+        height: 32px;
+        background-color: #F8FBF9;
+        border-radius: 8px;
+        border: 1px solid #E9ECEF;
+    }
+
+    .sync-now-btn {
+        background: transparent;
+        border: none;
+        color: #20563C;
+        padding: 4px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        transition: color 0.2s;
+    }
+
+    .sync-now-btn:disabled {
+        color: #ADB5BD;
+        cursor: default;
+    }
+
+    .sync-now-btn.spinning svg {
+        animation: spin 1s linear infinite;
+    }
+
+    @@keyframes spin {
+        from { transform: rotate(0deg); }
+        to { transform: rotate(360deg); }
+    }
+</style>

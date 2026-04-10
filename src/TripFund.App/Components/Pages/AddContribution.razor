@@ -44,12 +44,12 @@
     }
     else
     {
-        @if (config.Currencies.Count > 1)
-        {
-            <CurrencySelector Currencies="@(new[] { selectedCurrency })" SelectedCurrency="@selectedCurrency" OnCurrencySelected="SelectCurrency" />
-        }
-
         <div class="content">
+            <SyncStatusBar TripSlug="@tripSlug" OnSyncCompleted="OnSyncCompleted" />
+            @if (config.Currencies.Count > 1)
+            {
+                <CurrencySelector Currencies="@(new[] { selectedCurrency })" SelectedCurrency="@selectedCurrency" OnCurrencySelected="SelectCurrency" />
+            }
             <div class="form-container-vibe">
                 <div class="amount-tile amount-tile-contribution">
                     <div class="tile-icon">

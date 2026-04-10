@@ -50,12 +50,12 @@
             }
         </div>
 
-        @if (config.Currencies.Count > 1)
-        {
-            <CurrencySelector Currencies="config.Currencies.Keys" SelectedCurrency="@selectedCurrency" OnCurrencySelected="SelectCurrency"/>
-        }
-
         <div class="content">
+            <SyncStatusBar TripSlug="@tripSlug" OnSyncCompleted="OnSyncCompleted" />
+            @if (config.Currencies.Count > 1)
+            {
+                <CurrencySelector Currencies="config.Currencies.Keys" SelectedCurrency="@selectedCurrency" OnCurrencySelected="SelectCurrency"/>
+            }
             <div class="summary-card">
                 <p class="summary-label">Saldo</p>
                 <h2 class="summary-total">@FormatCurrency(remainingBalance, selectedCurrency)</h2>

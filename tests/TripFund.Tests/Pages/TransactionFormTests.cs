@@ -38,6 +38,7 @@ public class TransactionFormTests : BunitContext
         Services.AddSingleton(_emailMock.Object);
         Services.AddSingleton(_datePickerMock.Object);
         Services.AddSingleton(_thumbnailMock.Object);
+        Services.AddSingleton(new Mock<ISyncService>().Object);
 
         // Mock JS Interop for scrolling (called in OnAfterRender)
         JSInterop.SetupVoid("headerLogic.scrollIntoView", _ => true);
@@ -45,6 +46,7 @@ public class TransactionFormTests : BunitContext
         // Mock AppSettings
         var settings = new AppSettings { AuthorName = "Test Author", DeviceId = "test-author" };
         _storageMock.Setup(s => s.GetAppSettingsAsync()).ReturnsAsync(settings);
+        _storageMock.Setup(s => s.GetTripRegistryAsync()).ReturnsAsync(new LocalTripRegistry());
     }
 
     [Fact]

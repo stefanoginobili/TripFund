@@ -32,6 +32,7 @@ public class EmailReceiptTests : BunitContext
         Services.AddSingleton(_emailMock.Object);
         Services.AddSingleton(_alertMock.Object);
         Services.AddSingleton(new Mock<INativeDatePickerService>().Object);
+        Services.AddSingleton(new Mock<ISyncService>().Object);
 
         // Mock JS Interop for scrolling (called in OnAfterRender)
         JSInterop.SetupVoid("headerLogic.scrollIntoView", _ => true);
@@ -39,6 +40,7 @@ public class EmailReceiptTests : BunitContext
         // Mock AppSettings
         var settings = new AppSettings { AuthorName = "Test Author", DeviceId = "test-author" };
         _storageMock.Setup(s => s.GetAppSettingsAsync()).ReturnsAsync(settings);
+        _storageMock.Setup(s => s.GetTripRegistryAsync()).ReturnsAsync(new LocalTripRegistry());
     }
 
     [Fact]

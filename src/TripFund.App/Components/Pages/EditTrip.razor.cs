@@ -199,6 +199,12 @@ namespace TripFund.App.Components.Pages
             newMemberAvatar = "👤";
         }
 
+        private async Task OnSyncCompleted()
+        {
+            config = await Storage.GetTripConfigAsync(tripSlug);
+            StateHasChanged();
+        }
+
         private void MoveMemberUp(string slug)
         {
             if (config == null) return;

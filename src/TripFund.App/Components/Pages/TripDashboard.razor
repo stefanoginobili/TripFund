@@ -42,38 +42,14 @@
 
     else
     {
-        @if (!string.IsNullOrEmpty(remoteStorageProvider))
-        {
-            <div class="sync-status-container">
-                <div class="sync-status-card">
-                    <div class="sync-indicator">
-                        <img src="images/@(remoteStorageProvider).svg" width="20" height="20" alt="@remoteStorageProvider" />
-                    </div>
-                    @if (isSyncing)
-                    {
-                        <span class="sync-text syncing">Sincronizzazione in corso...</span>
-                    }
-                    else
-                    {
-                        <span class="sync-text">@GetRelativeSyncTime(lastSync)</span>
-                    }
-                    <button class="sync-now-btn @(isSyncing ? "spinning" : "")" @onclick="TriggerSync" disabled="@isSyncing">
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M23 4v6h-6"></path>
-                            <path d="M1 20v-6h6"></path>
-                            <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
-                        </svg>
-                    </button>
-                </div>
-            </div>
-        }
-
-        @if (config.Currencies.Count > 1)
-        {
-            <CurrencySelector Currencies="config.Currencies.Keys" SelectedCurrency="@selectedCurrency" OnCurrencySelected="SelectCurrency" />
-        }
-
         <div class="content">
+            <SyncStatusBar TripSlug="@tripSlug" OnSyncCompleted="OnSyncCompleted" />
+
+            @if (config.Currencies.Count > 1)
+            {
+                <CurrencySelector Currencies="config.Currencies.Keys" SelectedCurrency="@selectedCurrency" OnCurrencySelected="SelectCurrency" />
+            }
+
             <div class="summary-card">
                 <p class="summary-label">Saldo</p>
                 <h2 class="summary-total">@FormatCurrency(totalRemaining, selectedCurrency)</h2>
@@ -381,64 +357,5 @@
 
     .no-bottom-padding {
         padding-bottom: 0 !important;
-    }
-
-    .sync-status-card {
-        display: flex;
-        align-items: center;
-        background-color: #FFFFFF;
-        padding: 0.75rem 1rem;
-        border-radius: 16px;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.02);
-        border: 1px solid #F0F0F0;
-    }
-
-    .sync-text {
-        flex: 1;
-        text-align: center;
-        font-size: 0.9rem;
-        color: #6C757D;
-    }
-
-    .sync-text.syncing {
-        font-weight: 600;
-        color: #20563C;
-    }
-
-    .sync-indicator {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        width: 32px;
-        height: 32px;
-        background-color: #F8FBF9;
-        border-radius: 8px;
-        border: 1px solid #E9ECEF;
-    }
-
-    .sync-now-btn {
-        background: transparent;
-        border: none;
-        color: #20563C;
-        padding: 4px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        cursor: pointer;
-        transition: color 0.2s;
-    }
-
-    .sync-now-btn:disabled {
-        color: #ADB5BD;
-        cursor: default;
-    }
-
-    .sync-now-btn.spinning svg {
-        animation: spin 1s linear infinite;
-    }
-
-    @@keyframes spin {
-        from { transform: rotate(0deg); }
-        to { transform: rotate(360deg); }
     }
 </style>
