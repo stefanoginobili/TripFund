@@ -27,6 +27,8 @@ public class CurrencySelectorVisibilityTests : BunitContext
         _datePickerMock = new Mock<INativeDatePickerService>();
         _thumbnailMock = new Mock<IThumbnailService>();
         
+        _storageMock.Setup(s => s.GetTripRegistryAsync()).ReturnsAsync(new LocalTripRegistry());
+        
         Services.AddSingleton(_storageMock.Object);
         Services.AddSingleton(_alertMock.Object);
         Services.AddSingleton(_emailMock.Object);

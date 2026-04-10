@@ -10,6 +10,12 @@
         </button>
         <h1 class="header-title">@config?.Name</h1>
         <div class="header-actions">
+            @if (!string.IsNullOrEmpty(syncProvider))
+            {
+                <div class="sync-indicator">
+                    <img src="images/@(syncProvider).svg" width="20" height="20" title="Sync: @syncProvider" />
+                </div>
+            }
             <div class="dropdown">
                 <button class="icon-btn" @onclick="ToggleMenu">
                     <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -345,5 +351,23 @@
         font-style: italic;
         text-align: center;
         padding: 1rem;
+    }
+
+    .header-actions {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .sync-indicator {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 32px;
+        height: 32px;
+        background-color: #FFFFFF;
+        border-radius: 8px;
+        border: 1px solid #E9ECEF;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
     }
 </style>

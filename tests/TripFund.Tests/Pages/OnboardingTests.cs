@@ -31,7 +31,7 @@ public class OnboardingTests : BunitContext
 
         // Assert
         cut.Find("h1").TextContent.Should().Be("TripFund");
-        cut.Find("h2").TextContent.Should().Be("Benvenuto in TripFund");
+        cut.Find("h2").TextContent.Should().Be("Welcome on board");
     }
 
     [Fact]

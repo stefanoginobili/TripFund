@@ -21,7 +21,7 @@
         <MauiXamlInflator>SourceGen</MauiXamlInflator>
 
         <!-- Display name -->
-        <ApplicationTitle>TripFund.App</ApplicationTitle>
+        <ApplicationTitle>TripFund</ApplicationTitle>
 
         <!-- App Identifier -->
         <ApplicationId>com.stefanoginobili.tripfund.app</ApplicationId>
@@ -42,14 +42,13 @@
 
     <ItemGroup>
         <!-- App Icon -->
-        <MauiIcon Include="Resources\AppIcon\appicon.svg" ForegroundFile="Resources\AppIcon\appiconfg.svg" Color="#20563C" />
+        <MauiIcon Include="Resources\AppIcon\appicon.svg" Color="#20563C" BaseSize="512,512" />
 
         <!-- Splash Screen -->
-        <MauiSplashScreen Include="Resources\Splash\splash.svg" Color="#20563C" BaseSize="128,128" />
+        <MauiSplashScreen Include="Resources\Splash\splash.svg" Color="#20563C" BaseSize="512,512" />
 
         <!-- Images -->
         <MauiImage Include="Resources\Images\*" />
-        <MauiImage Update="Resources\Images\dotnet_bot.svg" BaseSize="168,208" />
 
         <!-- Custom Fonts -->
         <MauiFont Include="Resources\Fonts\*" />

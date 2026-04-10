@@ -22,6 +22,7 @@ public class DashboardTests : BunitContext
         System.Globalization.CultureInfo.DefaultThreadCurrentUICulture = itCulture;
 
         _storageMock = new Mock<LocalTripStorageService>("dummy_path");
+        _storageMock.Setup(s => s.GetTripRegistryAsync()).ReturnsAsync(new LocalTripRegistry());
         Services.AddSingleton(_storageMock.Object);
         Services.AddSingleton(new Mock<IEmailService>().Object);
         Services.AddSingleton(new Mock<IAlertService>().Object);

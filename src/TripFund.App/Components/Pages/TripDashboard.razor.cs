@@ -17,6 +17,7 @@ namespace TripFund.App.Components.Pages
         
         private TripConfig? config;
         private List<Transaction> transactions = new();
+        private string? syncProvider;
         
         private string selectedCurrency = "";
         private bool isMenuOpen = false;
@@ -35,6 +36,13 @@ namespace TripFund.App.Components.Pages
         protected override async Task OnInitializedAsync()
         {
             config = await Storage.GetTripConfigAsync(tripSlug);
+            
+            var registry = await Storage.GetTripRegistryAsync();
+            if (registry.Trips.TryGetValue(tripSlug, out var entry))
+            {
+                syncProvider = entry.Sync?.Provider;
+            }
+
             if (config != null)
             {
                 if (!string.IsNullOrEmpty(currency) && config.Currencies.ContainsKey(currency))
