@@ -12,6 +12,7 @@ namespace TripFund.App.Components.Pages
         [Inject] private NavigationManager Nav { get; set; } = default!;
         [Inject] private IJSRuntime JSRuntime { get; set; } = default!;
         [Inject] private IAlertService Alerts { get; set; } = default!;
+        [Inject] private IThumbnailService Thumbnails { get; set; } = default!;
 
         [Parameter] public string tripSlug { get; set; } = "";
         [SupplyParameterFromQuery] public string? currency { get; set; }
@@ -85,7 +86,42 @@ namespace TripFund.App.Components.Pages
 
                         foreach (var att in tx.Attachments)
                         {
-                            attachments.Add(new AttachmentInfo { FileName = att, IsExisting = true });
+                            var info = new AttachmentInfo 
+                            { 
+                                FileName = att.Name, 
+                                OriginalName = att.OriginalName, 
+                                CreatedAt = att.CreatedAt, 
+                                IsExisting = true 
+                            };
+                            
+                            var tz = TimeZoneInfo.Local;
+                            try { tz = TimeZoneInfo.FindSystemTimeZoneById(timezoneId); } catch { }
+                            var localizedTime = TimeZoneInfo.ConvertTimeFromUtc(att.CreatedAt, tz);
+                            info.DisplayTimestamp = localizedTime.ToString("dd/MM/yyyy HH:mm");
+
+                            var path = await Storage.GetAttachmentPath(tripSlug, edit, att.Name);
+                            if (!string.IsNullOrEmpty(path))
+                            {
+                                var ext = Path.GetExtension(att.Name).ToLower();
+                                var nativeThumb = await Thumbnails.GetThumbnailBase64Async(path);
+                                if (!string.IsNullOrEmpty(nativeThumb))
+                                {
+                                    info.PreviewUrl = nativeThumb;
+                                    info.IsImage = true;
+                                }
+                                else if (new[] { ".jpg", ".jpeg", ".png", ".gif", ".webp" }.Contains(ext))
+                                {
+                                    try
+                                    {
+                                        var bytes = await File.ReadAllBytesAsync(path);
+                                        info.PreviewUrl = $"data:image/{ext.TrimStart('.')};base64,{Convert.ToBase64String(bytes)}";
+                                        info.IsImage = true;
+                                    }
+                                    catch { }
+                                }
+                            }
+
+                            attachments.Add(info);
                         }
                     }
                 }
@@ -108,11 +144,6 @@ namespace TripFund.App.Components.Pages
                     RecalculateSplit();
                 }
             }
-        }
-
-        private void SelectCurrency(string currencyCode)
-        {
-            if (editingInfo == null) selectedCurrency = currencyCode;
         }
 
         private void ToggleMenu() => isMenuOpen = !isMenuOpen;
@@ -165,11 +196,27 @@ namespace TripFund.App.Components.Pages
             return 2;
         }
 
-        private string GetStep()
+        private void SelectCurrency(string currencyCode)
         {
-            int decimals = GetDecimals();
-            if (decimals <= 0) return "1";
-            return (1 / Math.Pow(10, decimals)).ToString(System.Globalization.CultureInfo.InvariantCulture);
+            if (editingInfo == null) selectedCurrency = currencyCode;
+        }
+
+        private void OnTimezoneChanged(string newTzId)
+        {
+            timezoneId = newTzId;
+            UpdateAttachmentTimestamps();
+        }
+
+        private void UpdateAttachmentTimestamps()
+        {
+            var tz = TimeZoneInfo.Local;
+            try { tz = TimeZoneInfo.FindSystemTimeZoneById(timezoneId); } catch { }
+
+            foreach (var info in attachments)
+            {
+                var localizedTime = TimeZoneInfo.ConvertTimeFromUtc(info.CreatedAt, tz);
+                info.DisplayTimestamp = localizedTime.ToString("dd/MM/yyyy HH:mm");
+            }
         }
 
         private void OnAmountChanged(ChangeEventArgs e)
@@ -261,7 +308,16 @@ namespace TripFund.App.Components.Pages
                 var photo = await MediaPicker.Default.CapturePhotoAsync();
                 if (photo != null)
                 {
-                    attachments.Add(new AttachmentInfo { FileName = photo.FileName, Stream = await photo.OpenReadAsync(), Extension = Path.GetExtension(photo.FileName) });
+                    var info = new AttachmentInfo 
+                    { 
+                        FileName = photo.FileName, 
+                        OriginalName = photo.FileName, 
+                        CreatedAt = DateTime.UtcNow, 
+                        Stream = await photo.OpenReadAsync(), 
+                        Extension = Path.GetExtension(photo.FileName) 
+                    };
+                    await GeneratePreviewAsync(info);
+                    attachments.Add(info);
                 }
             }
             catch (Exception ex)
@@ -277,12 +333,42 @@ namespace TripFund.App.Components.Pages
                 var result = await FilePicker.Default.PickAsync();
                 if (result != null)
                 {
-                    attachments.Add(new AttachmentInfo { FileName = result.FileName, Stream = await result.OpenReadAsync(), Extension = Path.GetExtension(result.FileName) });
+                    var info = new AttachmentInfo 
+                    { 
+                        FileName = result.FileName, 
+                        OriginalName = result.FileName, 
+                        CreatedAt = DateTime.UtcNow, 
+                        Stream = await result.OpenReadAsync(), 
+                        Extension = Path.GetExtension(result.FileName) 
+                    };
+                    await GeneratePreviewAsync(info);
+                    attachments.Add(info);
                 }
             }
             catch (Exception ex)
             {
                 errorMessage = "Errore durante la selezione del file: " + ex.Message;
+            }
+        }
+
+        private async Task GeneratePreviewAsync(AttachmentInfo info)
+        {
+            var tz = TimeZoneInfo.Local;
+            try { tz = TimeZoneInfo.FindSystemTimeZoneById(timezoneId); } catch { }
+            var localizedTime = TimeZoneInfo.ConvertTimeFromUtc(info.CreatedAt, tz);
+            info.DisplayTimestamp = localizedTime.ToString("dd/MM/yyyy HH:mm");
+
+            if (new[] { ".jpg", ".jpeg", ".png", ".gif", ".webp" }.Contains(info.Extension.ToLower()))
+            {
+                try
+                {
+                    using var ms = new MemoryStream();
+                    await info.Stream.CopyToAsync(ms);
+                    info.Stream.Position = 0; // Reset for later use
+                    info.PreviewUrl = $"data:image/{info.Extension.TrimStart('.').ToLower()};base64,{Convert.ToBase64String(ms.ToArray())}";
+                    info.IsImage = true;
+                }
+                catch { }
             }
         }
 
@@ -294,23 +380,8 @@ namespace TripFund.App.Components.Pages
         private string GetAttachmentDisplayName(AttachmentInfo att)
         {
             if (att.IsExisting) return att.FileName;
-
-            // For new attachments, we preview what the name WILL be
-            var existing = attachments.Where(a => a.IsExisting).Select(a => a.FileName).ToList();
-            int maxNum = 0;
-            var regex = new System.Text.RegularExpressions.Regex(@"^Attachment-(?<num>\d+)\..*$");
-            foreach (var name in existing)
-            {
-                var m = regex.Match(name);
-                if (m.Success && int.TryParse(m.Groups["num"].Value, out int n) && n > maxNum) maxNum = n;
-            }
-
-            // Find position of this item among new attachments
-            var newOnes = attachments.Where(a => !a.IsExisting).ToList();
-            int index = newOnes.IndexOf(att);
-            if (index < 0) return att.FileName;
-
-            return $"Attachment-{(maxNum + index + 1):D2}{att.Extension}";
+            var timestamp = att.CreatedAt.ToUniversalTime().ToString("yyyyMMddTHHmmssZ");
+            return $"ATT_{timestamp}{att.Extension}";
         }
 
         private async Task FetchLocation()
@@ -399,27 +470,19 @@ namespace TripFund.App.Components.Pages
                 return;
             }
 
-            var existingAttachments = attachments.Where(a => a.IsExisting).Select(a => a.FileName).ToList();
-            
-            // Find max NN from existing attachments
-            int maxNum = 0;
-            var attachmentRegex = new System.Text.RegularExpressions.Regex(@"^Attachment-(?<num>\d+)\..*$");
-            foreach (var att in existingAttachments)
-            {
-                var match = attachmentRegex.Match(att);
-                if (match.Success && int.TryParse(match.Groups["num"].Value, out int n))
-                {
-                    if (n > maxNum) maxNum = n;
-                }
-            }
-
             var newAttachmentsToProcess = attachments.Where(a => !a.IsExisting).ToList();
             var processedNewAttachments = new List<(AttachmentInfo info, string newName)>();
             
             foreach (var info in newAttachmentsToProcess)
             {
-                maxNum++;
-                processedNewAttachments.Add((info, $"Attachment-{maxNum:D2}{info.Extension}"));
+                var newName = GetAttachmentDisplayName(info);
+                if (processedNewAttachments.Any(p => p.newName == newName))
+                {
+                    errorMessage = "Due allegati non possono avere lo stesso timestamp (secondo). Caricali a distanza di un secondo.";
+                    isSubmitting = false;
+                    return;
+                }
+                processedNewAttachments.Add((info, newName));
             }
 
             TimeZoneInfo tz;
@@ -435,6 +498,26 @@ namespace TripFund.App.Components.Pages
             var offset = tz.GetUtcOffset(transactionDate);
             var finalDate = new DateTimeOffset(DateTime.SpecifyKind(transactionDate, DateTimeKind.Unspecified), offset);
 
+            var txAttachments = new List<TransactionAttachment>();
+            foreach (var att in attachments.Where(a => a.IsExisting))
+            {
+                txAttachments.Add(new TransactionAttachment
+                {
+                    Name = att.FileName,
+                    OriginalName = att.OriginalName,
+                    CreatedAt = att.CreatedAt
+                });
+            }
+            foreach (var na in processedNewAttachments)
+            {
+                txAttachments.Add(new TransactionAttachment
+                {
+                    Name = na.newName,
+                    OriginalName = na.info.OriginalName,
+                    CreatedAt = na.info.CreatedAt
+                });
+            }
+
             var transaction = new Transaction
             {
                 Id = editingInfo?.Transaction?.Id ?? TransactionIdGenerator.GenerateId(),
@@ -447,7 +530,7 @@ namespace TripFund.App.Components.Pages
                 Author = authorName,
                 Split = splitDict,
                 Location = locationInfo,
-                Attachments = existingAttachments.Concat(processedNewAttachments.Select(na => na.newName)).ToList()
+                Attachments = txAttachments
             };
 
             var attachmentsDict = new Dictionary<string, byte[]>();
@@ -484,6 +567,11 @@ namespace TripFund.App.Components.Pages
         private class AttachmentInfo
         {
             public string FileName { get; set; } = "";
+            public string OriginalName { get; set; } = "";
+            public DateTime CreatedAt { get; set; }
+            public string DisplayTimestamp { get; set; } = "";
+            public string? PreviewUrl { get; set; }
+            public bool IsImage { get; set; }
             public string Extension { get; set; } = "";
             public Stream Stream { get; set; } = Stream.Null;
             public bool IsExisting { get; set; }

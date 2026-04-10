@@ -217,7 +217,8 @@ public class LocalTripStorageService
                 {
                     // Find attachments that are in the previous version but NOT in the new transaction.Attachments
                     deletedFiles = latest.Attachments
-                        .Where(a => !transaction.Attachments.Contains(a))
+                        .Where(a => !transaction.Attachments.Any(ta => ta.Name == a.Name))
+                        .Select(a => a.Name)
                         .ToList();
                 }
             }
@@ -274,7 +275,8 @@ public class LocalTripStorageService
             // We take the first one as a baseline for what might have been deleted
             var baseline = conflicts.Values.First();
             deletedFiles = baseline.Attachments
-                .Where(a => !resolvedTransaction.Attachments.Contains(a))
+                .Where(a => !resolvedTransaction.Attachments.Any(ta => ta.Name == a.Name))
+                .Select(a => a.Name)
                 .ToList();
         }
 

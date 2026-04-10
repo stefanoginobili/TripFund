@@ -75,7 +75,7 @@
                     <NativeTimePicker Label="Ora" @bind-Value="transactionDate" Class="flex-1" />
                 </div>
 
-                <TimeZoneSelector Label="Fuso Orario" @bind-Value="timezoneId" />
+                <TimeZoneSelector Label="Fuso Orario" Value="@timezoneId" ValueChanged="OnTimezoneChanged" />
 
                 <div class="info-section">
                     <h3 class="section-header-vibe">Partecipanti</h3>
@@ -111,12 +111,33 @@
 
                 <div class="info-section">
                     <h3 class="section-header-vibe">Allegati</h3>
-                    <div class="attachments-row">
+                    <div class="attachments-grid">
                         @foreach (var att in attachments)
                         {
-                            <div class="attachment-pill">
-                                <span>@GetAttachmentDisplayName(att)</span>
-                                <button class="remove-btn" @onclick="() => RemoveAttachment(att)">×</button>
+                            <div class="attachment-preview-wrapper">
+                                <div class="attachment-square">
+                                    @if (att.IsImage && !string.IsNullOrEmpty(att.PreviewUrl))
+                                    {
+                                        <img src="@att.PreviewUrl" alt="@att.OriginalName" />
+                                    }
+                                    else
+                                    {
+                                        <div class="file-icon-placeholder">
+                                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                <path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"></path>
+                                                <polyline points="13 2 13 9 20 9"></polyline>
+                                            </svg>
+                                            <span class="file-ext">@((string.IsNullOrEmpty(att.Extension) ? Path.GetExtension(att.FileName) : att.Extension).TrimStart('.').ToUpper())</span>
+                                        </div>
+                                    }
+                                </div>
+                                <button class="remove-bullet" @onclick="() => RemoveAttachment(att)">
+                                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="4" stroke-linecap="round" stroke-linejoin="round">
+                                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                                    </svg>
+                                </button>
+                                <div class="attachment-name">@att.DisplayTimestamp</div>
                             </div>
                         }
                     </div>
@@ -204,9 +225,16 @@
     .switch-handle { width: 18px; height: 18px; background-color: #FFFFFF; border-radius: 50%; transition: transform 0.2s; }
     .switch.on .switch-handle { transform: translateX(18px); }
 
-    .attachments-row { display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center; margin-bottom: 0.75rem; }
-    .attachment-pill { background-color: #D6EDE2; color: #20563C; padding: 0.4rem 0.8rem; border-radius: 20px; font-size: 0.85rem; font-weight: 600; display: flex; align-items: center; gap: 0.5rem; }
-    .remove-btn { background: none; border: none; font-size: 1.2rem; line-height: 1; color: inherit; padding: 0; }
+    .attachments-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 1rem; }
+    .attachment-preview-wrapper { display: flex; flex-direction: column; gap: 6px; position: relative; }
+    .attachment-square { aspect-ratio: 1 / 1; width: 100%; background-color: #FFFFFF; border: 1px solid #E0E0E0; border-radius: 12px; overflow: hidden; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 8px rgba(0,0,0,0.02); position: relative; }
+    .attachment-square img { width: 100%; height: 100%; object-fit: cover; }
+    .file-icon-placeholder { display: flex; flex-direction: column; align-items: center; color: #6C757D; }
+    .file-ext { font-size: 0.6rem; font-weight: 800; margin-top: 2px; }
+    .attachment-name { font-size: 0.7rem; color: #6C757D; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-align: center; }
+
+    .remove-bullet { position: absolute; top: -6px; right: -6px; width: 22px; height: 22px; background-color: #DC3545; border-radius: 50%; border: 2px solid #FFFFFF; display: flex; align-items: center; justify-content: center; cursor: pointer; padding: 0; box-shadow: 0 2px 4px rgba(0,0,0,0.1); z-index: 10; }
+    .remove-bullet:active { transform: scale(0.9); }
     
     .attachment-actions-dashed { display: flex; gap: 0.75rem; }
 

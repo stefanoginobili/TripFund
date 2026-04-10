@@ -172,13 +172,19 @@ public class TransactionDetailTests : BunitContext
         var transactionId = "trans-123";
         
         var config = new TripConfig { Id = "1", Name = "Test Trip" };
+        var now = new DateTime(2026, 4, 10, 10, 30, 0, DateTimeKind.Utc);
         var transaction = new Transaction 
         { 
             Id = transactionId, 
             Amount = 100, 
             Currency = "EUR", 
             Description = "Test",
-            Attachments = new List<string> { "receipt1.jpg", "doc1.pdf" },
+            Timezone = "UTC",
+            Attachments = new List<TransactionAttachment> 
+            { 
+                new TransactionAttachment { Name = "receipt1.jpg", OriginalName = "my_receipt.jpg", CreatedAt = now },
+                new TransactionAttachment { Name = "doc1.pdf", OriginalName = "my_doc.pdf", CreatedAt = now.AddMinutes(5) }
+            },
             Split = new Dictionary<string, SplitInfo>()
         };
 
@@ -202,16 +208,16 @@ public class TransactionDetailTests : BunitContext
         var previewWrappers = cut.FindAll(".attachment-preview-wrapper");
         previewWrappers.Should().HaveCount(2);
 
-        // Name without extension in the caption
-        cut.FindAll(".attachment-name")[0].TextContent.Should().Be("receipt1");
-        cut.FindAll(".attachment-name")[1].TextContent.Should().Be("doc1");
+        // Display timestamp (localized to UTC as per transaction.Timezone)
+        cut.FindAll(".attachment-name")[0].TextContent.Should().Be("10/04/2026 10:30");
+        cut.FindAll(".attachment-name")[1].TextContent.Should().Be("10/04/2026 10:35");
         
         // Full name should still be in the HTML as alt text for images
         var img = cut.Find("img");
         img.GetAttribute("alt").Should().Be("receipt1.jpg");
         
         // Check for PDF extension in placeholder
-        var pdfWrapper = previewWrappers.First(w => w.QuerySelector(".attachment-name")!.TextContent == "doc1");
+        var pdfWrapper = previewWrappers.First(w => w.QuerySelector(".attachment-name")!.TextContent == "10/04/2026 10:35");
         pdfWrapper.QuerySelector(".file-ext")!.TextContent.Should().Be("PDF");
     }
 

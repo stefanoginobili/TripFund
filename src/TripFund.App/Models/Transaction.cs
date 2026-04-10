@@ -41,7 +41,19 @@ public class Transaction
     public LocationInfo? Location { get; set; }
 
     [JsonPropertyName("attachments")]
-    public List<string> Attachments { get; set; } = new();
+    public List<TransactionAttachment> Attachments { get; set; } = new();
+}
+
+public class TransactionAttachment
+{
+    [JsonPropertyName("name")]
+    public string Name { get; set; } = string.Empty;
+
+    [JsonPropertyName("originalName")]
+    public string OriginalName { get; set; } = string.Empty;
+
+    [JsonPropertyName("createdAt")]
+    public DateTime CreatedAt { get; set; }
 }
 
 public class SplitInfo

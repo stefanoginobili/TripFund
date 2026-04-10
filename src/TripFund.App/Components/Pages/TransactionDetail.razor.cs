@@ -47,10 +47,29 @@ namespace TripFund.App.Components.Pages
         {
             if (transaction == null) return;
             previews.Clear();
-            foreach (var fileName in transaction.Attachments)
+
+            TimeZoneInfo tz;
+            try
             {
+                tz = string.IsNullOrEmpty(transaction.Timezone) ? TimeZoneInfo.Local : TimeZoneInfo.FindSystemTimeZoneById(transaction.Timezone);
+            }
+            catch
+            {
+                tz = TimeZoneInfo.Local;
+            }
+
+            foreach (var att in transaction.Attachments)
+            {
+                var fileName = att.Name;
                 var path = await Storage.GetAttachmentPath(tripSlug, transactionId, fileName);
-                var preview = new AttachmentPreview { FileName = fileName };
+                
+                var localizedTime = TimeZoneInfo.ConvertTimeFromUtc(att.CreatedAt, tz);
+                var preview = new AttachmentPreview 
+                { 
+                    FileName = fileName, 
+                    OriginalName = att.OriginalName,
+                    DisplayTimestamp = localizedTime.ToString("dd/MM/yyyy HH:mm")
+                };
                 if (!string.IsNullOrEmpty(path))
                 {
                     var ext = Path.GetExtension(fileName).ToLower();
@@ -175,6 +194,8 @@ namespace TripFund.App.Components.Pages
         private class AttachmentPreview
         {
             public string FileName { get; set; } = "";
+            public string OriginalName { get; set; } = "";
+            public string DisplayTimestamp { get; set; } = "";
             public string? PreviewUrl { get; set; }
             public bool IsImage { get; set; }
         }

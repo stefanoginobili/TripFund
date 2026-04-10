@@ -17,6 +17,7 @@ public class CurrencySelectorVisibilityTests : BunitContext
     private readonly Mock<IAlertService> _alertMock;
     private readonly Mock<IEmailService> _emailMock;
     private readonly Mock<INativeDatePickerService> _datePickerMock;
+    private readonly Mock<IThumbnailService> _thumbnailMock;
 
     public CurrencySelectorVisibilityTests()
     {
@@ -24,11 +25,13 @@ public class CurrencySelectorVisibilityTests : BunitContext
         _alertMock = new Mock<IAlertService>();
         _emailMock = new Mock<IEmailService>();
         _datePickerMock = new Mock<INativeDatePickerService>();
+        _thumbnailMock = new Mock<IThumbnailService>();
         
         Services.AddSingleton(_storageMock.Object);
         Services.AddSingleton(_alertMock.Object);
         Services.AddSingleton(_emailMock.Object);
         Services.AddSingleton(_datePickerMock.Object);
+        Services.AddSingleton(_thumbnailMock.Object);
 
         JSInterop.SetupVoid("headerLogic.scrollIntoView", _ => true);
         JSInterop.SetupVoid("headerLogic.selectText", _ => true);

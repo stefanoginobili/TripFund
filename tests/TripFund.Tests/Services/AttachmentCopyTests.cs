@@ -34,7 +34,11 @@ public class AttachmentCopyTests : IDisposable
         { 
             Id = transactionId, 
             Description = "Initial",
-            Attachments = new List<string> { "attachment_1.jpg", "attachment_2.png" }
+            Attachments = new List<TransactionAttachment> 
+            { 
+                new TransactionAttachment { Name = "attachment_1.jpg", OriginalName = "original_1.jpg", CreatedAt = DateTime.UtcNow },
+                new TransactionAttachment { Name = "attachment_2.png", OriginalName = "original_2.png", CreatedAt = DateTime.UtcNow }
+            }
         };
 
         var attachments = new Dictionary<string, byte[]>
@@ -58,7 +62,12 @@ public class AttachmentCopyTests : IDisposable
         { 
             Id = transactionId, 
             Description = "Updated",
-            Attachments = new List<string> { "attachment_1.jpg", "attachment_2.png", "attachment_3.pdf" }
+            Attachments = new List<TransactionAttachment> 
+            { 
+                new TransactionAttachment { Name = "attachment_1.jpg", OriginalName = "original_1.jpg", CreatedAt = t1.Attachments[0].CreatedAt },
+                new TransactionAttachment { Name = "attachment_2.png", OriginalName = "original_2.png", CreatedAt = t1.Attachments[1].CreatedAt },
+                new TransactionAttachment { Name = "attachment_3.pdf", OriginalName = "original_3.pdf", CreatedAt = DateTime.UtcNow }
+            }
         };
         var newAttachments = new Dictionary<string, byte[]>
         {
@@ -89,7 +98,11 @@ public class AttachmentCopyTests : IDisposable
         { 
             Id = transactionId, 
             Description = "Initial",
-            Attachments = new List<string> { "keep.jpg", "delete.png" }
+            Attachments = new List<TransactionAttachment> 
+            { 
+                new TransactionAttachment { Name = "keep.jpg", OriginalName = "keep.jpg", CreatedAt = DateTime.UtcNow },
+                new TransactionAttachment { Name = "delete.png", OriginalName = "delete.png", CreatedAt = DateTime.UtcNow }
+            }
         };
 
         var attachments = new Dictionary<string, byte[]>
@@ -105,7 +118,10 @@ public class AttachmentCopyTests : IDisposable
         { 
             Id = transactionId, 
             Description = "Updated",
-            Attachments = new List<string> { "keep.jpg" }
+            Attachments = new List<TransactionAttachment> 
+            { 
+                new TransactionAttachment { Name = "keep.jpg", OriginalName = "keep.jpg", CreatedAt = t1.Attachments[0].CreatedAt }
+            }
         };
 
         await _service.SaveTransactionAsync(tripSlug, t2, "device1");

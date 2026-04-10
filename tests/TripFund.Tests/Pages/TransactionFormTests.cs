@@ -19,6 +19,7 @@ public class TransactionFormTests : BunitContext
     private readonly Mock<IAlertService> _alertMock;
     private readonly Mock<IEmailService> _emailMock;
     private readonly Mock<INativeDatePickerService> _datePickerMock;
+    private readonly Mock<IThumbnailService> _thumbnailMock;
 
     public TransactionFormTests()
     {
@@ -30,11 +31,13 @@ public class TransactionFormTests : BunitContext
         _alertMock = new Mock<IAlertService>();
         _emailMock = new Mock<IEmailService>();
         _datePickerMock = new Mock<INativeDatePickerService>();
+        _thumbnailMock = new Mock<IThumbnailService>();
         
         Services.AddSingleton(_storageMock.Object);
         Services.AddSingleton(_alertMock.Object);
         Services.AddSingleton(_emailMock.Object);
         Services.AddSingleton(_datePickerMock.Object);
+        Services.AddSingleton(_thumbnailMock.Object);
 
         // Mock JS Interop for scrolling (called in OnAfterRender)
         JSInterop.SetupVoid("headerLogic.scrollIntoView", _ => true);
@@ -435,18 +438,29 @@ public class TransactionFormTests : BunitContext
         
         var existing1 = System.Activator.CreateInstance(attachmentInfoType!);
         attachmentInfoType!.GetProperty("FileName")!.SetValue(existing1, "old_style_guid.jpg");
+        attachmentInfoType!.GetProperty("OriginalName")!.SetValue(existing1, "original_old.jpg");
+        attachmentInfoType!.GetProperty("CreatedAt")!.SetValue(existing1, DateTime.UtcNow);
         attachmentInfoType!.GetProperty("IsExisting")!.SetValue(existing1, true);
         attachmentsList.Add(existing1);
 
         // Add 1 existing attachment with conforming name Attachment-07.png
         var existing2 = System.Activator.CreateInstance(attachmentInfoType!);
         attachmentInfoType!.GetProperty("FileName")!.SetValue(existing2, "Attachment-07.png");
+        attachmentInfoType!.GetProperty("OriginalName")!.SetValue(existing2, "original_07.png");
+        attachmentInfoType!.GetProperty("CreatedAt")!.SetValue(existing2, DateTime.UtcNow);
         attachmentInfoType!.GetProperty("IsExisting")!.SetValue(existing2, true);
         attachmentsList.Add(existing2);
 
         // Add 2 NEW attachments
+        var now1 = DateTime.UtcNow;
+        var now2 = now1.AddSeconds(2);
+        var nowStr1 = now1.ToString("yyyyMMddTHHmmssZ");
+        var nowStr2 = now2.ToString("yyyyMMddTHHmmssZ");
+
         var new1 = System.Activator.CreateInstance(attachmentInfoType!);
         attachmentInfoType!.GetProperty("FileName")!.SetValue(new1, "photo.jpg");
+        attachmentInfoType!.GetProperty("OriginalName")!.SetValue(new1, "photo.jpg");
+        attachmentInfoType!.GetProperty("CreatedAt")!.SetValue(new1, now1);
         attachmentInfoType!.GetProperty("Extension")!.SetValue(new1, ".jpg");
         attachmentInfoType!.GetProperty("IsExisting")!.SetValue(new1, false);
         attachmentInfoType!.GetProperty("Stream")!.SetValue(new1, new MemoryStream(new byte[] { 1 }));
@@ -454,6 +468,8 @@ public class TransactionFormTests : BunitContext
 
         var new2 = System.Activator.CreateInstance(attachmentInfoType!);
         attachmentInfoType!.GetProperty("FileName")!.SetValue(new2, "doc.pdf");
+        attachmentInfoType!.GetProperty("OriginalName")!.SetValue(new2, "doc.pdf");
+        attachmentInfoType!.GetProperty("CreatedAt")!.SetValue(new2, now2); // Different timestamp
         attachmentInfoType!.GetProperty("Extension")!.SetValue(new2, ".pdf");
         attachmentInfoType!.GetProperty("IsExisting")!.SetValue(new2, false);
         attachmentInfoType!.GetProperty("Stream")!.SetValue(new2, new MemoryStream(new byte[] { 2 }));
@@ -467,12 +483,12 @@ public class TransactionFormTests : BunitContext
         // Assert
         savedTransaction.Should().NotBeNull();
         savedTransaction!.Attachments.Should().HaveCount(4);
-        savedTransaction.Attachments.Should().Contain("old_style_guid.jpg");
-        savedTransaction.Attachments.Should().Contain("Attachment-07.png");
+        savedTransaction.Attachments.Any(a => a.Name == "old_style_guid.jpg").Should().BeTrue();
+        savedTransaction.Attachments.Any(a => a.Name == "Attachment-07.png").Should().BeTrue();
         
-        // New ones should be 08 and 09
-        savedTransaction.Attachments.Should().Contain("Attachment-08.jpg");
-        savedTransaction.Attachments.Should().Contain("Attachment-09.pdf");
+        // New ones should be ATT_... format
+        savedTransaction.Attachments.Any(a => a.Name == $"ATT_{nowStr1}.jpg").Should().BeTrue();
+        savedTransaction.Attachments.Any(a => a.Name == $"ATT_{nowStr2}.pdf").Should().BeTrue();
     }
 
     [Fact]
