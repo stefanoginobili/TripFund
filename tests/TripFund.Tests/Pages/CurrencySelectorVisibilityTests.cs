@@ -34,6 +34,7 @@ public class CurrencySelectorVisibilityTests : BunitContext
         Services.AddSingleton(_emailMock.Object);
         Services.AddSingleton(_datePickerMock.Object);
         Services.AddSingleton(_thumbnailMock.Object);
+        Services.AddSingleton(new Mock<ISyncService>().Object);
 
         JSInterop.SetupVoid("headerLogic.scrollIntoView", _ => true);
         JSInterop.SetupVoid("headerLogic.selectText", _ => true);

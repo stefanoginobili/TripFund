@@ -142,7 +142,7 @@ public class ModelSerializationTests
           ""trips"": {
             ""patagonia-2026"": {
               ""createdAt"": ""2026-05-01T13:30:00Z"",
-              ""sync"": {
+              ""remoteStorage"": {
                 ""provider"": ""google-drive"",
                 ""parameters"": {
                   ""folderId"": ""abcdef1234567890""
@@ -153,7 +153,7 @@ public class ModelSerializationTests
             },
             ""giappone-2027"": {
               ""createdAt"": ""2026-04-01T13:30:00Z"",
-              ""sync"": {
+              ""remoteStorage"": {
                 ""provider"": ""git"",
                 ""parameters"": {
                   ""repository"": ""https://github.com/mario/giappone.git""
@@ -174,10 +174,10 @@ public class ModelSerializationTests
         registry.Should().NotBeNull();
         registry!.Trips.Should().HaveCount(2);
         registry.Trips.Should().ContainKey("patagonia-2026");
-        registry.Trips["patagonia-2026"].Sync.Provider.Should().Be("google-drive");
-        registry.Trips["patagonia-2026"].Sync.Parameters["folderId"].Should().Be("abcdef1234567890");
-        registry.Trips["giappone-2027"].Sync.Provider.Should().Be("git");
-        registry.Trips["giappone-2027"].Sync.Parameters["repository"].Should().Be("https://github.com/mario/giappone.git");
+        registry.Trips["patagonia-2026"].RemoteStorage.Provider.Should().Be("google-drive");
+        registry.Trips["patagonia-2026"].RemoteStorage.Parameters["folderId"].Should().Be("abcdef1234567890");
+        registry.Trips["giappone-2027"].RemoteStorage.Provider.Should().Be("git");
+        registry.Trips["giappone-2027"].RemoteStorage.Parameters["repository"].Should().Be("https://github.com/mario/giappone.git");
 
         deserializedAgain.Should().BeEquivalentTo(registry);
     }

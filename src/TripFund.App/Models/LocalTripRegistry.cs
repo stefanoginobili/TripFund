@@ -15,11 +15,11 @@ public class TripRegistryEntry
     [JsonPropertyName("createdAt")]
     public DateTime CreatedAt { get; set; }
 
-    [JsonPropertyName("sync")]
-    public SyncConfig Sync { get; set; } = new();
+    [JsonPropertyName("remoteStorage")]
+    public RemoteStorageConfig? RemoteStorage { get; set; }
 }
 
-public class SyncConfig
+public class RemoteStorageConfig
 {
     [JsonPropertyName("provider")]
     public string Provider { get; set; } = string.Empty;

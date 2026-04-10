@@ -10,13 +10,13 @@ using Microsoft.AspNetCore.Components;
 
 namespace TripFund.Tests.Pages;
 
-public class SyncProviderSelectorTests : BunitContext
+public class RemoteStorageSelectorTests : BunitContext
 {
     private readonly Mock<LocalTripStorageService> _storageMock;
     private readonly Mock<ISyncService> _syncMock;
     private readonly Mock<IAlertService> _alertMock;
 
-    public SyncProviderSelectorTests()
+    public RemoteStorageSelectorTests()
     {
         _storageMock = new Mock<LocalTripStorageService>("dummy_path");
         _syncMock = new Mock<ISyncService>();
@@ -30,7 +30,7 @@ public class SyncProviderSelectorTests : BunitContext
     public void Selector_ShouldRenderProvidersInitially()
     {
         // Act
-        var cut = Render<SyncProviderSelector>(parameters => parameters
+        var cut = Render<RemoteStorageSelector>(parameters => parameters
             .Add(p => p.IsVisible, true)
         );
 
@@ -44,7 +44,7 @@ public class SyncProviderSelectorTests : BunitContext
     public void Selector_GoogleDrive_ShouldShowForm()
     {
         // Arrange
-        var cut = Render<SyncProviderSelector>(parameters => parameters
+        var cut = Render<RemoteStorageSelector>(parameters => parameters
             .Add(p => p.IsVisible, true)
         );
 
@@ -61,7 +61,7 @@ public class SyncProviderSelectorTests : BunitContext
     public void Selector_Git_ShouldShowForm()
     {
         // Arrange
-        var cut = Render<SyncProviderSelector>(parameters => parameters
+        var cut = Render<RemoteStorageSelector>(parameters => parameters
             .Add(p => p.IsVisible, true)
         );
 
@@ -91,7 +91,7 @@ public class SyncProviderSelectorTests : BunitContext
         cut.Find(".btn-primary-vibe").Click();
 
         // Assert - Selector visible
-        cut.FindComponent<SyncProviderSelector>().Instance.IsVisible.Should().BeTrue();
+        cut.FindComponent<RemoteStorageSelector>().Instance.IsVisible.Should().BeTrue();
 
         // Act - Select Git and fill form
         cut.FindAll(".provider-item")[1].Click();

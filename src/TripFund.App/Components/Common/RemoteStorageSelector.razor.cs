@@ -3,12 +3,12 @@ using TripFund.App.Models;
 
 namespace TripFund.App.Components.Common
 {
-    public partial class SyncProviderSelector
+    public partial class RemoteStorageSelector
     {
         [Parameter] public bool IsVisible { get; set; }
         [Parameter] public bool IsJoining { get; set; }
         [Parameter] public EventCallback OnClose { get; set; }
-        [Parameter] public EventCallback<SyncProviderSelection> OnSelectionCompleted { get; set; }
+        [Parameter] public EventCallback<RemoteStorageSelection> OnSelectionCompleted { get; set; }
 
         private string? selectedProvider;
         private string folderUrl = "";
@@ -19,7 +19,7 @@ namespace TripFund.App.Components.Common
         {
             if (selectedProvider == "google-drive") return "Google Drive";
             if (selectedProvider == "git") return "Git";
-            return "Seleziona Provider";
+            return "Seleziona Archivio";
         }
 
         private void SelectProvider(string provider)
@@ -51,7 +51,7 @@ namespace TripFund.App.Components.Common
                 parameters["pat"] = gitPat;
             }
 
-            var selection = new SyncProviderSelection
+            var selection = new RemoteStorageSelection
             {
                 Provider = selectedProvider ?? "",
                 Parameters = parameters

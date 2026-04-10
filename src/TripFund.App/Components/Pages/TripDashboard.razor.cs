@@ -18,7 +18,7 @@ namespace TripFund.App.Components.Pages
         
         private TripConfig? config;
         private List<Transaction> transactions = new();
-        private string? syncProvider;
+        private string? remoteStorageProvider;
         private DateTime? lastSync;
         private System.Timers.Timer? refreshTimer;
         private bool isSyncing = false;
@@ -44,8 +44,8 @@ namespace TripFund.App.Components.Pages
             var registry = await Storage.GetTripRegistryAsync();
             if (registry.Trips.TryGetValue(tripSlug, out var entry))
             {
-                syncProvider = entry.Sync?.Provider;
-                lastSync = entry.Sync?.LastSync;
+                remoteStorageProvider = entry.RemoteStorage?.Provider;
+                lastSync = entry.RemoteStorage?.LastSync;
             }
 
             if (config != null)
@@ -120,7 +120,7 @@ namespace TripFund.App.Components.Pages
                 var registry = await Storage.GetTripRegistryAsync();
                 if (registry.Trips.TryGetValue(tripSlug, out var entry))
                 {
-                    lastSync = entry.Sync?.LastSync;
+                    lastSync = entry.RemoteStorage?.LastSync;
                 }
                 
                 CalculateStats();

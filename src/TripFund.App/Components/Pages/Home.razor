@@ -77,11 +77,10 @@
         <button class="btn-secondary-vibe" @onclick="HandleJoinTripClick">Aggiungi viaggio esistente</button>
     </footer>
 
-    <SyncProviderSelector IsVisible="showSyncSelector" 
+    <RemoteStorageSelector IsVisible="showSyncSelector"
                           IsJoining="isJoining"
-                          OnClose="() => showSyncSelector = false" 
-                          OnSelectionCompleted="HandleSyncSelectionCompleted" />
-</div>
+                          OnClose="() => showSyncSelector = false"
+                          OnSelectionCompleted="HandleSyncSelectionCompleted" /></div>
 
 @code {
     private RenderFragment RenderTripCard(TripListItem item, string icon, bool isGray, bool isHighlighted) => __builder => {

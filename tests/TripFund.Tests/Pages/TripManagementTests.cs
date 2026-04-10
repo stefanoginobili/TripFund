@@ -62,8 +62,9 @@ public class TripManagementTests : BunitContext
         _storageMock.Verify(s => s.SaveTripConfigAsync("new-trip", It.Is<TripConfig>(c => c.Name == "New Trip" && c.Currencies.ContainsKey("USD")), "mario", It.IsAny<bool>()), Times.Once);
         _storageMock.Verify(s => s.SaveTripRegistryAsync(It.Is<LocalTripRegistry>(r => 
             r.Trips.ContainsKey("new-trip") && 
-            r.Trips["new-trip"].Sync.Provider == "google-drive" &&
-            r.Trips["new-trip"].Sync.Parameters["folderUrl"] == "https://drive.google.com/test")), Times.Once);
+            r.Trips["new-trip"].RemoteStorage != null &&
+            r.Trips["new-trip"].RemoteStorage!.Provider == "google-drive" &&
+            r.Trips["new-trip"].RemoteStorage!.Parameters["folderUrl"] == "https://drive.google.com/test")), Times.Once);
     }
 
     [Fact]

@@ -102,7 +102,7 @@ This file is stored in the root of the app's local storage. It acts purely as a 
   "trips": {
     "patagonia-2026": {
       "createdAt": "2026-05-01T13:30:00Z",
-      "sync": {
+      "remoteStorage": {
         "provider": "google-drive",
         "parameters": {
           "folderId": "abcdef1234567890"
@@ -113,7 +113,7 @@ This file is stored in the root of the app's local storage. It acts purely as a 
     },
     "giappone-2027": {
       "createdAt": "2026-04-01T13:30:00Z",
-      "sync": {
+      "remoteStorage": {
         "provider": "git",
         "parameters": {
           "repository": "https://github.com/mario/giappone.git"
@@ -127,7 +127,7 @@ This file is stored in the root of the app's local storage. It acts purely as a 
 ```
 
 * Note 1: The keys in the `trips` dictionary ("patagonia-2026", "giappone-2027") are the actual names of the local folders (the URL-safe slugs of the trip names). To display the Home Page, the app iterates through these keys, accesses each folder, and reads the `trip_config.json` inside to get the `name` and `startDate`/`endDate` for the UI.
-* Note 2: The `sync.provider` property defines the implementation to use to sync the trip with a remote server. `sync.parameters` is a key/value dictionary containing the configuration required by the provider. They are usually provided by the user when adding a trip and after he choosen the sync provider for the trip.
+* Note 2: The `remoteStorage.provider` property defines the implementation to use to sync the trip with a remote storage. `remoteStorage.parameters` is a key/value dictionary containing the configuration required by the provider. They are usually provided by the user when adding a trip and after they have chosen the remote storage provider for the trip.
 * Note 3. The `hasConflicts` flags summarized if any of the versioned folder under the trip has an active conflict state.
 
 ## 4. Global App Settings (`app_settings.json`)

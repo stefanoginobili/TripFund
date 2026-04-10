@@ -76,24 +76,24 @@ namespace TripFund.App.Components.Pages
 
             await Storage.SaveTripConfigAsync(tripSlug, tripConfig, settings?.DeviceId ?? "unknown");
 
-            var syncParameters = new Dictionary<string, string>();
+            var remoteStorageParameters = new Dictionary<string, string>();
             if (Provider == "google-drive")
             {
-                syncParameters["folderUrl"] = FolderUrl ?? "";
+                remoteStorageParameters["folderUrl"] = FolderUrl ?? "";
             }
             else if (Provider == "git")
             {
-                syncParameters["repository"] = Repository ?? "";
-                syncParameters["pat"] = Pat ?? "";
+                remoteStorageParameters["repository"] = Repository ?? "";
+                remoteStorageParameters["pat"] = Pat ?? "";
             }
 
             registry.Trips[tripSlug] = new TripRegistryEntry 
             { 
                 CreatedAt = DateTime.UtcNow,
-                Sync = new SyncConfig 
+                RemoteStorage = new RemoteStorageConfig 
                 { 
                     Provider = Provider, 
-                    Parameters = syncParameters
+                    Parameters = remoteStorageParameters
                 } 
             };
             await Storage.SaveTripRegistryAsync(registry);

@@ -5,19 +5,19 @@
 - **Framework:** .NET MAUI Blazor Hybrid (HTML/CSS/C#).
 - **Data Format:** Human-readable JSON. Collections MUST utilize `Dictionary<string, object>` rather than arrays to facilitate key-based $O(1)$ lookups and simplified merge operations.
 - **Local Storage:** Append-only, folder-based versioning system.
-- **Remote Sync:** Multi-provider support (Google Drive, Dropbox, Git, etc.). Acts purely as a synchronization layer; providers do not process logic.
+- **Remote Storage:** Multi-provider support (Google Drive, Dropbox, Git, etc.). Acts purely as a synchronization layer; providers do not process logic.
 
 ## 2. File System Architecture
 All application data resides locally. The absolute source of truth for the offline-first UI is the local file system.
 
 ### 2.1. Global App Data Level
 - **Location:** Application's root data directory.
-- **`known_trips.json`:** A lightweight master registry powering the Home Page. It contains references to every joined/created trip, mapping the local `[TripSlug]` to its specific sync provider and configuration parameters.
+- **`known_trips.json`:** A lightweight master registry powering the Home Page. It contains references to every joined/created trip, mapping the local `[TripSlug]` to its specific remote storage provider and configuration parameters.
 
 ### 2.2. Trip Level
 - **Structure:** `[AppData]/trips/[TripSlug]/`
 - **Versioning:** This root folder is **NOT** versioned.
-- **Remote Sync Mapping:** Each trip maps to a remote storage location managed by the selected sync provider (e.g., a shared folder in Google Drive, a Git repository, etc.). Permissions and access control rely on the provider's native security model. Unhandled API errors MUST gracefully display a standard error without preemptively blocking UI interactions.
+- **Remote Storage Mapping:** Each trip maps to a remote storage location managed by the selected remote storage provider (e.g., a shared folder in Google Drive, a Git repository, etc.). Permissions and access control rely on the provider's native security model. Unhandled API errors MUST gracefully display a standard error without preemptively blocking UI interactions.
 
 ### 2.3. Trip Data Directories
 Inside each `[TripSlug]` folder, data is partitioned into two distinct domains, both governed by the Versioned Storage Engine:

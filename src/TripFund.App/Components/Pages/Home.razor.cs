@@ -25,7 +25,7 @@ namespace TripFund.App.Components.Pages
         }
 
         private void NavigateToSettings() => Nav.NavigateTo("/settings");
-        private void NavigateToCreate(SyncProviderSelection selection) 
+        private void NavigateToCreate(RemoteStorageSelection selection) 
         {
             var uri = $"/create-trip?provider={selection.Provider}";
             foreach (var p in selection.Parameters)
@@ -48,7 +48,7 @@ namespace TripFund.App.Components.Pages
             showSyncSelector = true;
         }
 
-        private async Task HandleSyncSelectionCompleted(SyncProviderSelection selection)
+        private async Task HandleSyncSelectionCompleted(RemoteStorageSelection selection)
         {
             showSyncSelector = false;
 
@@ -103,7 +103,7 @@ namespace TripFund.App.Components.Pages
             isLoading = false;
         }
 
-        private async Task HandleJoinTrip(SyncProviderSelection selection)
+        private async Task HandleJoinTrip(RemoteStorageSelection selection)
         {
             var remoteConfig = await Sync.GetRemoteTripConfigAsync(selection.Provider, selection.Parameters);
             
@@ -133,7 +133,7 @@ namespace TripFund.App.Components.Pages
             registry.Trips[slug] = new TripRegistryEntry 
             { 
                 CreatedAt = DateTime.UtcNow,
-                Sync = new SyncConfig 
+                RemoteStorage = new RemoteStorageConfig 
                 { 
                     Provider = selection.Provider, 
                     Parameters = selection.Parameters

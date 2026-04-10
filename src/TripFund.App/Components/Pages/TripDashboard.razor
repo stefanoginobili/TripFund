@@ -42,12 +42,12 @@
 
     else
     {
-        @if (!string.IsNullOrEmpty(syncProvider))
+        @if (!string.IsNullOrEmpty(remoteStorageProvider))
         {
-            <div class="content no-bottom-padding">
+            <div class="sync-status-container">
                 <div class="sync-status-card">
                     <div class="sync-indicator">
-                        <img src="images/@(syncProvider).svg" width="20" height="20" alt="@syncProvider" />
+                        <img src="images/@(remoteStorageProvider).svg" width="20" height="20" alt="@remoteStorageProvider" />
                     </div>
                     @if (isSyncing)
                     {

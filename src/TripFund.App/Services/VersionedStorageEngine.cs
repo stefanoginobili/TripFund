@@ -84,7 +84,6 @@ public class VersionedStorageEngine
     {
         var versions = GetVersionFolders(rootPath);
         int nextSeq = (versions.Count == 0) ? 1 : versions.Max(v => v.Sequence) + 1;
-        
         string folderName = $"{nextSeq:D3}_{kind.ToString().ToLower()}_{deviceId}";
         string newDirPath = Path.Combine(rootPath, folderName);
         Directory.CreateDirectory(newDirPath);

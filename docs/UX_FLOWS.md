@@ -8,7 +8,7 @@ This document strictly defines the user flows and UI layouts. **All UI text must
 - **Bottom:** Two main buttons: "Crea nuovo viaggio" and "Aggiungi viaggio esistente".
 
 ## 2. Join Existing Trip
-- **Action:** User selects a sync provider (e.g., Google Drive, Git) and provides the required parameters.
+- **Action:** User selects a remote storage provider (e.g., Google Drive, Git) and provides the required parameters.
 - **Remote Validation:** The app attempts to locate the `metadata` versioned folder in the specified remote location.
   - If the `metadata` folder is missing, an error alert is shown: "Impossibile trovare i dati del viaggio nella posizione specificata."
 - **Confirmation Modal:** If found, the app reads the latest `trip_config.json` from the remote metadata and displays a confirmation modal:
@@ -17,7 +17,7 @@ This document strictly defines the user flows and UI layouts. **All UI text must
 - **Result:** Upon confirmation, the app registers the trip in `known_trips.json`, syncs the metadata and transaction history locally, and navigates to the **Trip Dashboard** (Flow 4).
 
 ## 3. Create New Trip
-- **Step A (Sync Configuration):** User selects a sync provider (e.g., Google Drive, Git) and provides the required parameters.
+- **Step A (Remote Storage Configuration):** User selects a remote storage provider (e.g., Google Drive, Git) and provides the required parameters.
 - **Remote Validation:** The app ensures that the specified remote location exists and is empty.
   - If the location does not exist or contains any files/folders, an error alert is shown: "La posizione remota deve esistere ed essere vuota."
 - **Step B (Initial Data Form):** If validation passes, the app proceeds to the form to input Name, Slug, Dates, and Currencies.

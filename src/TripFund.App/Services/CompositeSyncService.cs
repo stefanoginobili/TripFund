@@ -46,19 +46,19 @@ public class CompositeSyncService : ISyncService
     public async Task SyncAsync(string tripSlug)
     {
         var registry = await _storage.GetTripRegistryAsync();
-        if (registry.Trips.TryGetValue(tripSlug, out var entry))
+        if (registry.Trips.TryGetValue(tripSlug, out var entry) && entry.RemoteStorage != null)
         {
-            if (entry.Sync.Provider == "google-drive")
+            if (entry.RemoteStorage.Provider == "google-drive")
             {
                 await _drive.SyncAsync(tripSlug);
             }
-            else if (entry.Sync.Provider == "git")
+            else if (entry.RemoteStorage.Provider == "git")
             {
                 await _git.SyncAsync(tripSlug);
             }
 
             // Update last sync time
-            entry.Sync.LastSync = DateTime.Now;
+            entry.RemoteStorage.LastSync = DateTime.Now;
             await _storage.SaveTripRegistryAsync(registry);
         }
     }
