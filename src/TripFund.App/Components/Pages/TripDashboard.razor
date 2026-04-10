@@ -42,14 +42,9 @@
 
     else
     {
-        @if (config.Currencies.Count > 1)
+        @if (!string.IsNullOrEmpty(syncProvider))
         {
-            <CurrencySelector Currencies="config.Currencies.Keys" SelectedCurrency="@selectedCurrency" OnCurrencySelected="SelectCurrency" />
-        }
-
-        <div class="content">
-            @if (!string.IsNullOrEmpty(syncProvider))
-            {
+            <div class="content no-bottom-padding">
                 <div class="sync-status-card">
                     <div class="sync-indicator">
                         <img src="images/@(syncProvider).svg" width="20" height="20" alt="@syncProvider" />
@@ -70,8 +65,15 @@
                         </svg>
                     </button>
                 </div>
-            }
+            </div>
+        }
 
+        @if (config.Currencies.Count > 1)
+        {
+            <CurrencySelector Currencies="config.Currencies.Keys" SelectedCurrency="@selectedCurrency" OnCurrencySelected="SelectCurrency" />
+        }
+
+        <div class="content">
             <div class="summary-card">
                 <p class="summary-label">Saldo</p>
                 <h2 class="summary-total">@FormatCurrency(totalRemaining, selectedCurrency)</h2>
@@ -375,6 +377,10 @@
         display: flex;
         align-items: center;
         gap: 0.5rem;
+    }
+
+    .no-bottom-padding {
+        padding-bottom: 0 !important;
     }
 
     .sync-status-card {
