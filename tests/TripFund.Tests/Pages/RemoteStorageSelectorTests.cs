@@ -88,7 +88,7 @@ public class RemoteStorageSelectorTests : BunitContext
         var cut = Render<Home>();
 
         // Act - Click "Crea viaggio"
-        cut.Find(".btn-primary-vibe").Click();
+        cut.Find(".action-link").Click();
 
         // Assert - Selector visible
         cut.FindComponent<RemoteStorageSelector>().Instance.IsVisible.Should().BeTrue();
@@ -117,7 +117,7 @@ public class RemoteStorageSelectorTests : BunitContext
         var cut = Render<Home>();
 
         // Act - Click "Crea viaggio"
-        cut.Find(".btn-primary-vibe").Click();
+        cut.Find(".action-link").Click();
         
         // Select Google Drive and submit
         cut.FindAll(".provider-item")[0].Click();
@@ -139,7 +139,7 @@ public class RemoteStorageSelectorTests : BunitContext
         var cut = Render<Home>();
 
         // Act - Click "Aggiungi viaggio esistente"
-        cut.Find(".btn-secondary-vibe").Click();
+        cut.Find(".action-link.secondary").Click();
         
         // Select Google Drive and submit
         cut.FindAll(".provider-item")[0].Click();
@@ -165,7 +165,7 @@ public class RemoteStorageSelectorTests : BunitContext
         var cut = Render<Home>();
 
         // Act - Click "Aggiungi viaggio esistente"
-        cut.Find(".btn-secondary-vibe").Click();
+        cut.Find(".action-link.secondary").Click();
         
         // Select Git and submit
         cut.FindAll(".provider-item")[1].Click();

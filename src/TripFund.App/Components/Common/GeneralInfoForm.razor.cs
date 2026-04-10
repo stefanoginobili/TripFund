@@ -26,6 +26,18 @@ namespace TripFund.App.Components.Common
 
         private string dateError = "";
 
+        private async Task OnStartDateChanged(DateTime val)
+        {
+            StartDate = val;
+            await StartDateChanged.InvokeAsync(val);
+        }
+
+        private async Task OnEndDateChanged(DateTime val)
+        {
+            EndDate = val;
+            await EndDateChanged.InvokeAsync(val);
+        }
+
         private async Task OnNameInput(ChangeEventArgs e)
         {
             var newName = e.Value?.ToString() ?? "";

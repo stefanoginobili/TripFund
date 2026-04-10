@@ -45,7 +45,6 @@
     else
     {
         <div class="content">
-            <SyncStatusBar TripSlug="@tripSlug" OnSyncCompleted="OnSyncCompleted" />
             @if (config.Currencies.Count > 1)
             {
                 <CurrencySelector Currencies="@(new[] { selectedCurrency })" SelectedCurrency="@selectedCurrency" OnCurrencySelected="SelectCurrency" />

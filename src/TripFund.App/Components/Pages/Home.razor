@@ -73,8 +73,8 @@
     </div>
 
     <footer class="footer">
-        <button class="btn-primary-vibe" @onclick="HandleCreateTripClick">Crea viaggio</button>
-        <button class="btn-secondary-vibe" @onclick="HandleJoinTripClick">Aggiungi viaggio esistente</button>
+        <button class="action-link" @onclick="HandleCreateTripClick">Crea nuovo viaggio</button>
+        <button class="action-link secondary" @onclick="HandleJoinTripClick">Aggiungi viaggio esistente</button>
     </footer>
 
     <RemoteStorageSelector IsVisible="showSyncSelector"
@@ -146,14 +146,15 @@
         width: 100%;
     }
 
-    .trip-card:active {
-        transform: scale(0.98);
-    }
-
     .trip-card.active-trip {
-        border: 2px solid #20563C;
+        border: 3px solid #20563C;
+        background-color: #E9F2EE;
     }
 
+    .trip-card.active-trip .member-badge {
+        background-color: #FFFFFF;
+    }
+    
     .trip-card.grayscale {
         filter: grayscale(1);
         opacity: 0.8;
@@ -177,7 +178,7 @@
         font-size: 1.25rem;
         box-shadow: 0 2px 6px rgba(0,0,0,0.05);
     }
-
+    
     .member-badge {
         background-color: #E9F2EE;
         color: #20563C;
@@ -191,8 +192,8 @@
     }
 
     .trip-name {
-        font-size: 1.15rem;
-        font-weight: 700;
+        font-size: 1.5rem;
+        font-weight: 800;
         color: #1A3C2F;
         margin: 0 0 0.15rem 0;
     }
@@ -205,29 +206,38 @@
 
     .footer {
         margin-top: 1rem;
-        padding: 0 1.5rem 2rem 1.5rem;
+        padding: 0 1.5rem 2.5rem 1.5rem;
         display: flex;
         flex-direction: column;
-        gap: 0.75rem;
-    }
-
-    .btn-secondary-vibe {
-        background-color: #FFFFFF;
-        color: #1A3C2F;
-        border: 1px solid #E9ECEF;
-        border-radius: 20px;
-        padding: 1.1rem;
-        font-size: 1.1rem;
-        font-weight: 700;
-        display: flex;
+        gap: 0.5rem;
         align-items: center;
-        justify-content: center;
-        gap: 0.75rem;
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.02);
     }
 
-    .btn-secondary-vibe:active {
-        transform: scale(0.98);
+    .action-link {
+        background: none;
+        border: none;
+        color: #20563C;
+        font-weight: 700;
+        font-size: 1.1rem;
+        padding: 0.5rem;
+        cursor: pointer;
+        text-decoration: underline;
+        transition: opacity 0.2s;
+    }
+
+    .action-link:active {
+        opacity: 0.6;
+    }
+
+    .action-link.secondary {
+        color: #6C757D;
+        font-weight: 600;
+        font-size: 0.9rem;
+        text-decoration: none;
+    }
+
+    .action-link.secondary:hover {
+        text-decoration: underline;
     }
 
     .status-text, .empty-state {

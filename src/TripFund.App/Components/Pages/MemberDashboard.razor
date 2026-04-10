@@ -51,7 +51,6 @@
         </div>
 
         <div class="content">
-            <SyncStatusBar TripSlug="@tripSlug" OnSyncCompleted="OnSyncCompleted" />
             @if (config.Currencies.Count > 1)
             {
                 <CurrencySelector Currencies="config.Currencies.Keys" SelectedCurrency="@selectedCurrency" OnCurrencySelected="SelectCurrency"/>

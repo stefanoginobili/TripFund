@@ -45,7 +45,6 @@
     else
     {
         <div class="content">
-            <SyncStatusBar TripSlug="@tripSlug" OnSyncCompleted="OnSyncCompleted" />
             @if (config.Currencies.Count > 1)
             {
                 <CurrencySelector Currencies="@(new[] { selectedCurrency })" SelectedCurrency="@selectedCurrency" OnCurrencySelected="SelectCurrency" />
@@ -227,8 +226,8 @@
 
     .attachments-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 1rem; }
     .attachment-preview-wrapper { display: flex; flex-direction: column; gap: 6px; position: relative; }
-    .attachment-square { aspect-ratio: 1 / 1; width: 100%; background-color: #FFFFFF; border: 1px solid #E0E0E0; border-radius: 12px; overflow: hidden; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 8px rgba(0,0,0,0.02); position: relative; }
-    .attachment-square img { width: 100%; height: 100%; object-fit: cover; }
+    .attachment-square { aspect-ratio: 1 / 1; width: 100%; background-color: #C0C0C0; border: 1px solid #E0E0E0; border-radius: 12px; overflow: hidden; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 8px rgba(0,0,0,0.02); position: relative; }
+    .attachment-square img { width: 100%; height: 100%; object-fit: contain; }
     .file-icon-placeholder { display: flex; flex-direction: column; align-items: center; color: #6C757D; }
     .file-ext { font-size: 0.6rem; font-weight: 800; margin-top: 2px; }
     .attachment-name { font-size: 0.7rem; color: #6C757D; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-align: center; }

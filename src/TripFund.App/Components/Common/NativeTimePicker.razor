@@ -9,7 +9,7 @@
             <polyline points="12 6 12 12 16 14"></polyline>
         </svg>
         <span class="picker-value">@Value.ToString("HH:mm")</span>
-        <input type="time" class="hidden-native-input" value="@Value.ToString("HH:mm")" @onchange="OnInputChanged" readonly="@isAndroid" />
+        <input type="time" class="hidden-native-input" value="@Value.ToString("HH:mm", System.Globalization.CultureInfo.InvariantCulture)" @onchange="OnInputChanged" readonly="@isAndroid" />
     </div>
 </div>
 

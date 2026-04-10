@@ -95,6 +95,33 @@ public class ThumbnailService : IThumbnailService
             if (fileExtension == ".jpg" || fileExtension == ".jpeg" || fileExtension == ".png" || fileExtension == ".gif" || fileExtension == ".webp")
             {
                 bitmap = await BitmapFactory.DecodeFileAsync(filePath);
+                
+                // Handle EXIF orientation
+                if (bitmap != null && (fileExtension == ".jpg" || fileExtension == ".jpeg"))
+                {
+                    try
+                    {
+                        var exif = new ExifInterface(filePath);
+                        int orientation = exif.GetAttributeInt(ExifInterface.TagOrientation, (int)Orientation.Normal);
+                        int rotation = 0;
+                        switch (orientation)
+                        {
+                            case (int)Orientation.Rotate90: rotation = 90; break;
+                            case (int)Orientation.Rotate180: rotation = 180; break;
+                            case (int)Orientation.Rotate270: rotation = 270; break;
+                        }
+
+                        if (rotation != 0)
+                        {
+                            var matrix = new Matrix();
+                            matrix.PostRotate(rotation);
+                            var rotated = Bitmap.CreateBitmap(bitmap, 0, 0, bitmap.Width, bitmap.Height, matrix, true);
+                            bitmap.Recycle();
+                            bitmap = rotated;
+                        }
+                    }
+                    catch { /* Ignore EXIF errors */ }
+                }
             }
             
             // If bitmap is still null and it's API 29+, try ThumbnailUtils
@@ -117,7 +144,10 @@ public class ThumbnailService : IThumbnailService
             // Scale down to thumbnail size if too large
             if (bitmap.Width > 400 || bitmap.Height > 400)
             {
-                var scaled = Bitmap.CreateScaledBitmap(bitmap, 200, 200, true);
+                float ratio = Math.Min(200f / bitmap.Width, 200f / bitmap.Height);
+                int targetWidth = (int)(bitmap.Width * ratio);
+                int targetHeight = (int)(bitmap.Height * ratio);
+                var scaled = Bitmap.CreateScaledBitmap(bitmap, targetWidth, targetHeight, true);
                 bitmap.Recycle();
                 bitmap = scaled;
             }

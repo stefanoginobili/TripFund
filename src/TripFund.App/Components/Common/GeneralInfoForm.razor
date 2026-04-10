@@ -20,8 +20,8 @@
         </div>
 
         <div class="row-group">
-            <NativeDatePicker Label="Data Inizio" @bind-Value="StartDate" Class="flex-1" />
-            <NativeDatePicker Label="Data Fine" @bind-Value="EndDate" Class="flex-1" />
+            <NativeDatePicker Label="Data Inizio" Value="StartDate" ValueChanged="OnStartDateChanged" Class="flex-1" />
+            <NativeDatePicker Label="Data Fine" Value="EndDate" ValueChanged="OnEndDateChanged" Class="flex-1" />
         </div>
 
         @if (!string.IsNullOrEmpty(dateError))

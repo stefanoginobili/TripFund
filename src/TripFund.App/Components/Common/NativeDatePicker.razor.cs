@@ -38,7 +38,7 @@ namespace TripFund.App.Components.Common
 
         private async Task OnInputChanged(ChangeEventArgs e)
         {
-            if (!isAndroid && DateTime.TryParse(e.Value?.ToString(), out var date))
+            if (!isAndroid && DateTime.TryParseExact(e.Value?.ToString(), "yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture, System.Globalization.DateTimeStyles.None, out var date))
             {
                 var newValue = new DateTime(date.Year, date.Month, date.Day, Value.Hour, Value.Minute, Value.Second);
                 await ValueChanged.InvokeAsync(newValue);

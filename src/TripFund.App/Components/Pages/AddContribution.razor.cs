@@ -195,12 +195,6 @@ namespace TripFund.App.Components.Pages
                 .Sum(t => t.Amount);
         }
 
-        private async Task OnSyncCompleted()
-        {
-            config = await Storage.GetTripConfigAsync(tripSlug);
-            StateHasChanged();
-        }
-
         private void SelectCurrency(string currencyCode)
         {
             if (editingTransaction == null)

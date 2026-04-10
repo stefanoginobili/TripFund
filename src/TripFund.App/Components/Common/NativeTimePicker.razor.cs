@@ -30,7 +30,7 @@ namespace TripFund.App.Components.Common
 
         private async Task OnInputChanged(ChangeEventArgs e)
         {
-            if (!isAndroid && TimeSpan.TryParse(e.Value?.ToString(), out var time))
+            if (!isAndroid && TimeSpan.TryParse(e.Value?.ToString(), System.Globalization.CultureInfo.InvariantCulture, out var time))
             {
                 var newValue = Value.Date.Add(time);
                 await ValueChanged.InvokeAsync(newValue);
