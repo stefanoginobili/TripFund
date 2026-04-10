@@ -20,7 +20,7 @@
                          @bind-Description="description"
                          IsCreate="true" />
 
-        <CurrenciesForm @bind-Currencies="currencies" />
+        <CurrenciesForm @bind-Currencies="currencies" OpenNewCurrencyOnOpen="true" />
 
         @if (!string.IsNullOrEmpty(error))
         {

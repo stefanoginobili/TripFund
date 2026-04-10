@@ -19,10 +19,7 @@ namespace TripFund.App.Components.Pages
         private DateTime endDate = DateTime.Today.AddDays(7);
         private string error = "";
 
-        private Dictionary<string, Currency> currencies = new()
-        {
-            { "EUR", new Currency { Symbol = "€", Name = "EUR", ExpectedQuotaPerMember = 500, Decimals = 2 } }
-        };
+        private Dictionary<string, Currency> currencies = new();
 
         private async Task HandleCreate()
         {

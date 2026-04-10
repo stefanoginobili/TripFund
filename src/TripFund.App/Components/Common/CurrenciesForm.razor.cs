@@ -13,6 +13,7 @@ namespace TripFund.App.Components.Common
 
         [Parameter] public Dictionary<string, Currency> Currencies { get; set; } = new();
         [Parameter] public EventCallback<Dictionary<string, Currency>> CurrenciesChanged { get; set; }
+        [Parameter] public bool OpenNewCurrencyOnOpen { get; set; } = false;
 
         private string error = "";
         private string newCurrCode = "";
@@ -22,6 +23,14 @@ namespace TripFund.App.Components.Common
         private bool isAddingCurrency = false;
         private string? openMenuCurrencyCode = null;
         private string? editingCurrencyCode = null;
+
+        protected override void OnInitialized()
+        {
+            if (OpenNewCurrencyOnOpen || Currencies == null || Currencies.Count == 0)
+            {
+                isAddingCurrency = true;
+            }
+        }
 
         private async Task AddOrUpdateCurrency()
         {

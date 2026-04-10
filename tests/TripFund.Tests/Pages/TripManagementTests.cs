@@ -46,12 +46,17 @@ public class TripManagementTests : BunitContext
         // Find the Name input in GeneralInfoForm
         cut.Find("input[placeholder='es. Patagonia 2026']").Input("New Trip");
         
+        // Add a currency (expanded by default now)
+        cut.Find("input[placeholder='EUR']").Change("USD");
+        cut.Find("input[placeholder='1000']").Change("500");
+        await cut.Find(".confirm-btn").ClickAsync();
+        
         // Slug should be generated automatically: "new-trip"
         
         await cut.Find(".btn-primary-vibe").ClickAsync();
 
         // Assert
-        _storageMock.Verify(s => s.SaveTripConfigAsync("new-trip", It.Is<TripConfig>(c => c.Name == "New Trip"), "mario", It.IsAny<bool>()), Times.Once);
+        _storageMock.Verify(s => s.SaveTripConfigAsync("new-trip", It.Is<TripConfig>(c => c.Name == "New Trip" && c.Currencies.ContainsKey("USD")), "mario", It.IsAny<bool>()), Times.Once);
         _storageMock.Verify(s => s.SaveTripRegistryAsync(It.Is<LocalTripRegistry>(r => r.Trips.ContainsKey("new-trip"))), Times.Once);
     }
 
