@@ -410,6 +410,104 @@ public class TransactionFormTests : BunitContext
     }
 
     [Fact]
+    public void AddContribution_WhenNavigatingFromMemberDashboard_ShouldPresetRemainingQuota()
+    {
+        // Arrange
+        var tripSlug = "test-trip";
+        var memberSlug = "mario";
+        var currencyCode = "EUR";
+        
+        var config = new TripConfig
+        {
+            Id = "123",
+            Name = "Test Trip",
+            Currencies = new Dictionary<string, Currency> 
+            { 
+                { currencyCode, new Currency { Symbol = "€", ExpectedQuotaPerMember = 500, Decimals = 2 } } 
+            },
+            Members = new Dictionary<string, User>
+            {
+                { memberSlug, new User { Name = "Mario", Avatar = "M" } }
+            }
+        };
+
+        var transactions = new List<Transaction>
+        {
+            new Transaction
+            {
+                Id = "t1",
+                Type = "contribution",
+                Currency = currencyCode,
+                Amount = 200,
+                Split = new Dictionary<string, SplitInfo> { { memberSlug, new SplitInfo { Amount = 200 } } }
+            }
+        };
+
+        _storageMock.Setup(s => s.GetTripConfigAsync(tripSlug)).ReturnsAsync(config);
+        _storageMock.Setup(s => s.GetTransactionsAsync(tripSlug)).ReturnsAsync(transactions);
+
+        var nav = Services.GetRequiredService<NavigationManager>();
+        nav.NavigateTo($"/trip/{tripSlug}/add-contribution?member={memberSlug}&currency={currencyCode}");
+
+        // Act
+        var cut = Render<AddContribution>(parameters => parameters.Add(p => p.tripSlug, tripSlug));
+
+        // Assert
+        // Expected: 500 (quota) - 200 (already contributed) = 300
+        var amountInput = cut.Find(".amount-input");
+        amountInput.GetAttribute("value").Should().Be("300,00");
+    }
+
+    [Fact]
+    public void AddContribution_WhenQuotaAlreadyReached_ShouldPresetZero()
+    {
+        // Arrange
+        var tripSlug = "test-trip";
+        var memberSlug = "mario";
+        var currencyCode = "EUR";
+        
+        var config = new TripConfig
+        {
+            Id = "123",
+            Name = "Test Trip",
+            Currencies = new Dictionary<string, Currency> 
+            { 
+                { currencyCode, new Currency { Symbol = "€", ExpectedQuotaPerMember = 500, Decimals = 2 } } 
+            },
+            Members = new Dictionary<string, User>
+            {
+                { memberSlug, new User { Name = "Mario", Avatar = "M" } }
+            }
+        };
+
+        var transactions = new List<Transaction>
+        {
+            new Transaction
+            {
+                Id = "t1",
+                Type = "contribution",
+                Currency = currencyCode,
+                Amount = 600,
+                Split = new Dictionary<string, SplitInfo> { { memberSlug, new SplitInfo { Amount = 600 } } }
+            }
+        };
+
+        _storageMock.Setup(s => s.GetTripConfigAsync(tripSlug)).ReturnsAsync(config);
+        _storageMock.Setup(s => s.GetTransactionsAsync(tripSlug)).ReturnsAsync(transactions);
+
+        var nav = Services.GetRequiredService<NavigationManager>();
+        nav.NavigateTo($"/trip/{tripSlug}/add-contribution?member={memberSlug}&currency={currencyCode}");
+
+        // Act
+        var cut = Render<AddContribution>(parameters => parameters.Add(p => p.tripSlug, tripSlug));
+
+        // Assert
+        // Expected: 500 (quota) - 600 (already contributed) = -100 -> should be 0
+        var amountInput = cut.Find(".amount-input");
+        amountInput.GetAttribute("value").Should().Be("0,00");
+    }
+
+    [Fact]
     public async Task AddExpense_Submit_ShouldUseNumberedAttachmentNaming()
     {
         // Arrange

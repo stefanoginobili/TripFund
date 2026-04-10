@@ -26,7 +26,7 @@ This document strictly defines the user flows and UI layouts. **All UI text must
 ## 4. Trip Dashboard
 - **Top Bar:** Back button (left), Edit pencil icon ✏️ (right) leading to **Edit Trip** (Flow 5).
 - **Header:** Horizontal currency selector (max 3 currencies). Selecting a currency changes the context of the entire page.
-- **Summary:** Large display of the Total Remaining Balance (Saldo) and, slightly smaller, the Total Contributed (Totale versato) in the selected currency.
+- **Summary:** Large display of the Total Remaining Balance (Saldo) and, slightly smaller, the Total Contributed (Quota versata) in the selected currency.
 - **Progress Bar:** A visual progress bar immediately below the summary showing the overall funding status. 
   - `Target (100%) = expectedQuotaPerMember * Number of Members`
   - `Current Progress = Total Contributed by all members`

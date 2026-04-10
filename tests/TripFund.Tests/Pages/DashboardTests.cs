@@ -96,7 +96,7 @@ public class DashboardTests : BunitContext
         summaryTotal.Should().Contain("200"); // Saldo
 
         var summarySub = cut.Find(".summary-sub").TextContent;
-        summarySub.Should().Contain("300"); // Totale versato
+        summarySub.Should().Contain("300"); // Quota versata
 
         var memberRows = cut.FindAll(".member-row");
         memberRows.Should().HaveCount(2);
@@ -329,7 +329,7 @@ public class DashboardTests : BunitContext
         var cut = Render<TripDashboard>(parameters => parameters.Add(p => p.tripSlug, tripSlug));
 
         // JPY should show 50.001 (rounded by N0 in it-IT, where . is thousands separator)
-        var summarySub = cut.Find(".summary-sub").TextContent; // Totale versato
+        var summarySub = cut.Find(".summary-sub").TextContent; // Quota versata
 
         // We check for absence of decimal part
         summarySub.Should().NotContain(",75");
@@ -485,7 +485,7 @@ public class DashboardTests : BunitContext
         var profile = cut.Find(".member-profile");
         profile.InnerHtml.Should().NotContain("Test Trip"); // Should not be in profile anymore
         
-        var summaryTotal = cut.Find(".summary-sub").TextContent; // Totale versato
+        var summaryTotal = cut.Find(".summary-sub").TextContent; // Quota versata
         summaryTotal.Should().Contain("300");
 
         var summarySub = cut.Find(".summary-total").TextContent; // Saldo
@@ -628,7 +628,7 @@ public class DashboardTests : BunitContext
         var cut = Render<MemberDashboard>(p => p.Add(x => x.tripSlug, tripSlug).Add(x => x.memberSlug, memberSlug));
 
         // Assert
-        cut.Find(".summary-sub").TextContent.Should().Contain("Totale versato");
+        cut.Find(".summary-sub").TextContent.Should().Contain("Quota versata");
         cut.Find(".summary-label").TextContent.Should().Contain("Saldo");
         cut.Find(".progress-bar-fill").ClassName.Should().Contain("warning");
     }

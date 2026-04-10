@@ -27,6 +27,7 @@ namespace TripFund.App.Components.Pages
         private string selectedCurrency = "";
         private string selectedMemberSlug = "";
         private decimal amount;
+        private bool isAmountDirty = false;
         private string description = "Versamento in cassa";
         private DateTime transactionDate = DateTime.Now;
         private string timezoneId = TimeZoneInfo.Local.Id;
@@ -41,7 +42,7 @@ namespace TripFund.App.Components.Pages
         protected override async Task OnInitializedAsync()
         {
             config = await Storage.GetTripConfigAsync(tripSlug);
-            allTransactions = await Storage.GetTransactionsAsync(tripSlug);
+            allTransactions = await Storage.GetTransactionsAsync(tripSlug) ?? new();
             var settings = await Storage.GetAppSettingsAsync();
             deviceId = settings?.DeviceId ?? "unknown";
             authorName = settings?.AuthorName ?? "Unknown";
@@ -68,6 +69,7 @@ namespace TripFund.App.Components.Pages
                             transactionDate = editingTransaction.Date.LocalDateTime;
                         }
                         selectedMemberSlug = editingTransaction.Split.Keys.FirstOrDefault() ?? "";
+                        isAmountDirty = true;
                     }
                 }
 
@@ -88,7 +90,27 @@ namespace TripFund.App.Components.Pages
                     {
                         selectedMemberSlug = member;
                     }
+
+                    SetDefaultAmount();
                 }
+            }
+        }
+
+        private void SetDefaultAmount()
+        {
+            if (isAmountDirty || config == null || allTransactions == null || string.IsNullOrEmpty(selectedCurrency) || string.IsNullOrEmpty(selectedMemberSlug))
+            {
+                return;
+            }
+
+            if (config.Currencies.TryGetValue(selectedCurrency, out var currencyConfig))
+            {
+                var target = currencyConfig.ExpectedQuotaPerMember;
+                var contributed = allTransactions
+                    .Where(t => t.Type == "contribution" && t.Currency == selectedCurrency && t.Split.ContainsKey(selectedMemberSlug))
+                    .Sum(t => t.Amount);
+
+                amount = Math.Max(0, target - contributed);
             }
         }
 
@@ -162,6 +184,7 @@ namespace TripFund.App.Components.Pages
         {
             selectedMemberSlug = slug;
             isMemberSelectorOpen = false;
+            if (editingTransaction == null) SetDefaultAmount();
         }
 
         private decimal GetMemberTotal(string slug)
@@ -174,7 +197,11 @@ namespace TripFund.App.Components.Pages
 
         private void SelectCurrency(string currencyCode)
         {
-            if (editingTransaction == null) selectedCurrency = currencyCode;
+            if (editingTransaction == null)
+            {
+                selectedCurrency = currencyCode;
+                SetDefaultAmount();
+            }
         }
 
         private void ToggleMenu() => isMenuOpen = !isMenuOpen;
@@ -218,6 +245,7 @@ namespace TripFund.App.Components.Pages
 
         private void OnAmountChanged(ChangeEventArgs e)
         {
+            isAmountDirty = true;
             var input = e.Value?.ToString()?.Replace(".", ",");
             if (decimal.TryParse(input, out decimal val))
             {
