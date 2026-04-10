@@ -34,6 +34,9 @@ namespace TripFund.App.Components.Common
 
         private async Task AddOrUpdateCurrency()
         {
+            newCurrCode = newCurrCode?.Trim() ?? "";
+            newCurrSymbol = newCurrSymbol?.Trim() ?? "";
+
             if (string.IsNullOrWhiteSpace(newCurrCode)) return;
             string code = newCurrCode.ToUpperInvariant();
 
@@ -67,6 +70,16 @@ namespace TripFund.App.Components.Common
             {
                 newCurrDecimals = System.Math.Clamp(val, 0, 4);
             }
+        }
+
+        private void TrimCode()
+        {
+            newCurrCode = newCurrCode?.Trim() ?? "";
+        }
+
+        private void TrimSymbol()
+        {
+            newCurrSymbol = newCurrSymbol?.Trim() ?? "";
         }
 
         private void OnQuotaChanged(ChangeEventArgs e)

@@ -5,7 +5,7 @@
     
         <div class="form-group-vibe">
             <label class="form-label-vibe">Nome Viaggio</label>
-            <input type="text" class="form-control-vibe" value="@Name" @oninput="OnNameInput" placeholder="es. Patagonia 2026" />
+            <input type="text" class="form-control-vibe" value="@Name" @oninput="OnNameInput" @onblur="TrimName" placeholder="es. Patagonia 2026" />
         </div>
 
         <div class="form-group-vibe">
@@ -31,7 +31,7 @@
 
         <div class="form-group-vibe">
             <label class="form-label-vibe">Descrizione</label>
-            <textarea class="form-control-vibe" value="@Description" @oninput="OnDescriptionInput" placeholder="Aggiungi una descrizione..." rows="3"></textarea>
+            <textarea class="form-control-vibe" value="@Description" @oninput="OnDescriptionInput" @onblur="TrimDescription" placeholder="Aggiungi una descrizione..." rows="3"></textarea>
         </div>
     </div>
 </section>

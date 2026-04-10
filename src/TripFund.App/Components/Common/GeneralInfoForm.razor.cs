@@ -46,5 +46,25 @@ namespace TripFund.App.Components.Common
             Description = val;
             await DescriptionChanged.InvokeAsync(val);
         }
+
+        private async Task TrimName()
+        {
+            var trimmed = Name?.Trim() ?? "";
+            if (Name != trimmed)
+            {
+                Name = trimmed;
+                await NameChanged.InvokeAsync(Name);
+            }
+        }
+
+        private async Task TrimDescription()
+        {
+            var trimmed = Description?.Trim() ?? "";
+            if (Description != trimmed)
+            {
+                Description = trimmed;
+                await DescriptionChanged.InvokeAsync(Description);
+            }
+        }
     }
 }

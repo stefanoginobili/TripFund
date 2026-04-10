@@ -67,7 +67,7 @@
 
                 <div class="form-group-vibe">
                     <label class="form-label-vibe">Descrizione</label>
-                    <input type="text" class="form-control-vibe" @bind="description" placeholder="es. Cena a Buenos Aires" />
+                    <input type="text" class="form-control-vibe" @bind="description" @onblur="TrimDescription" placeholder="es. Cena a Buenos Aires" />
                 </div>
 
                 <div class="datetime-row">
@@ -164,7 +164,7 @@
                         <div class="location-card">
                             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>
                             <div class="location-details">
-                                <input type="text" class="location-input" @bind="locationInfo.Name" placeholder="Nome del luogo" />
+                                <input type="text" class="location-input" @bind="locationInfo.Name" @onblur="TrimLocation" placeholder="Nome del luogo" />
                                 <div class="location-coords">@locationInfo.Latitude.ToString("F6"), @locationInfo.Longitude.ToString("F6")</div>
                             </div>
                             <button class="remove-btn" @onclick="() => locationInfo = null">×</button>
@@ -197,7 +197,7 @@
                     <p class="text-danger fw-bold" style="text-align: center;">@errorMessage</p>
                 }
 
-                <button class="btn-primary-vibe mt-2 mb-4" @onclick="HandleSubmit" disabled="@(isSubmitting || isLocating)">
+                <button class="btn-primary-vibe mt-2 mb-4" @onclick="HandleSubmit" disabled="@(isSubmitting || isLocating || !HasChanges())">
                     @(isSubmitting ? "Salvataggio..." : "Salva")
                 </button>
             </div>

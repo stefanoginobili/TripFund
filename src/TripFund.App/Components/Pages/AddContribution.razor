@@ -67,7 +67,7 @@
 
                 <div class="form-group-vibe">
                     <label class="form-label-vibe">Descrizione</label>
-                    <input type="text" class="form-control-vibe" @bind="description" placeholder="es. Versamento iniziale" />
+                    <input type="text" class="form-control-vibe" @bind="description" @onblur="TrimDescription" placeholder="es. Versamento iniziale" />
                 </div>
 
                 <div class="datetime-row">
@@ -144,7 +144,7 @@
                     <p class="text-danger fw-bold" style="text-align: center;">@errorMessage</p>
                 }
 
-                <button class="btn-primary-vibe mt-2 mb-4" @onclick="HandleSubmit" disabled="@isSubmitting">
+                <button class="btn-primary-vibe mt-2 mb-4" @onclick="HandleSubmit" disabled="@(isSubmitting || !HasChanges())">
                     @(isSubmitting ? "Salvataggio..." : "Salva")
                 </button>
             </div>

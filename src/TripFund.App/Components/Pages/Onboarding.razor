@@ -21,7 +21,7 @@
             <div class="form-group-vibe mb-4">
                 <label for="authorName" class="form-label-vibe">Nome Autore</label>
                 <input type="text" id="authorName" class="form-control-vibe" 
-                       @bind="authorName" @bind:event="oninput" 
+                       @bind="authorName" @bind:event="oninput" @onblur="TrimAuthorName"
                        placeholder="es. Mario Rossi" />
             </div>
 

@@ -25,7 +25,7 @@
                             </div>
                             <div class="new-curr-col">
                                 <label>SIMBOLO</label>
-                                <input type="text" @bind="newCurrSymbol" placeholder="€" />
+                                <input type="text" @bind="newCurrSymbol" @onblur="TrimSymbol" placeholder="€" />
                             </div>
                             <div class="new-curr-col">
                                 <label>DECIMALI</label>
@@ -127,12 +127,13 @@
                 <div class="new-currency-grid">
                     <div class="new-curr-col">
                         <label>CODICE</label>
-                        <input type="text" @bind="newCurrCode" placeholder="EUR" />
+                        <input type="text" @bind="newCurrCode" @onblur="TrimCode" placeholder="EUR" />
                     </div>
                     <div class="new-curr-col">
                         <label>SIMBOLO</label>
-                        <input type="text" @bind="newCurrSymbol" placeholder="€" />
+                        <input type="text" @bind="newCurrSymbol" @onblur="TrimSymbol" placeholder="€" />
                     </div>
+
                     <div class="new-curr-col">
                         <label>DECIMALI</label>
                         <input type="text" inputmode="numeric" value="@newCurrDecimals" @onchange="OnDecimalsChanged" onfocus="headerLogic.selectText(this)" />

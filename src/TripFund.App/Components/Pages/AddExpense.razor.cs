@@ -20,6 +20,7 @@ namespace TripFund.App.Components.Pages
 
         private TripConfig? config;
         private LocalTripStorageService.TransactionVersionInfo? editingInfo;
+        private string? originalTxJson;
         private string selectedCurrency = "";
         private decimal totalAmount;
         private string description = "";
@@ -58,6 +59,7 @@ namespace TripFund.App.Components.Pages
                     if (editingInfo != null && editingInfo.Transaction != null && editingInfo.Transaction.Type == "expense")
                     {
                         var tx = editingInfo.Transaction;
+                        originalTxJson = System.Text.Json.JsonSerializer.Serialize(tx);
                         selectedCurrency = tx.Currency;
                         totalAmount = tx.Amount;
                         description = tx.Description;
@@ -71,7 +73,12 @@ namespace TripFund.App.Components.Pages
                         {
                             transactionDate = tx.Date.LocalDateTime;
                         }
-                        locationInfo = tx.Location;
+                        locationInfo = tx.Location != null ? new LocationInfo 
+                        { 
+                            Latitude = tx.Location.Latitude, 
+                            Longitude = tx.Location.Longitude, 
+                            Name = tx.Location.Name 
+                        } : null;
                         
                         foreach (var m in memberSplits)
                         {
@@ -144,6 +151,106 @@ namespace TripFund.App.Components.Pages
                     RecalculateSplit();
                 }
             }
+        }
+
+        private bool HasChanges()
+        {
+            if (editingInfo == null) return true; // Always enabled for new
+            if (originalTxJson == null) return true;
+
+            var currentTx = BuildTransaction();
+            
+            // Normalize for comparison
+            currentTx.Description = currentTx.Description?.Trim() ?? "";
+            if (currentTx.Location != null) currentTx.Location.Name = currentTx.Location.Name?.Trim() ?? "";
+
+            var original = System.Text.Json.JsonSerializer.Deserialize<Transaction>(originalTxJson);
+            if (original == null) return true;
+            original.Description = original.Description?.Trim() ?? "";
+            if (original.Location != null) original.Location.Name = original.Location.Name?.Trim() ?? "";
+
+            // Custom comparison because DateTimeOffset might have slight differences or different formatting
+            // and we want to compare the fields carefully.
+            
+            if (currentTx.Amount != original.Amount) return true;
+            if (currentTx.Description != original.Description) return true;
+            if (currentTx.Currency != original.Currency) return true;
+            if (currentTx.Timezone != original.Timezone) return true;
+            
+            // Compare dates with a small tolerance or by formatted string to avoid precision issues
+            if (currentTx.Date.ToUnixTimeSeconds() != original.Date.ToUnixTimeSeconds()) return true;
+
+            // Compare Split
+            if (currentTx.Split.Count != original.Split.Count) return true;
+            foreach (var kvp in currentTx.Split)
+            {
+                if (!original.Split.TryGetValue(kvp.Key, out var originalSplit)) return true;
+                if (kvp.Value.Amount != originalSplit.Amount) return true;
+                if (kvp.Value.Manual != originalSplit.Manual) return true;
+            }
+
+            // Compare Location
+            if (currentTx.Location == null && original.Location != null) return true;
+            if (currentTx.Location != null && original.Location == null) return true;
+            if (currentTx.Location != null && original.Location != null)
+            {
+                if (currentTx.Location.Latitude != original.Location.Latitude) return true;
+                if (currentTx.Location.Longitude != original.Location.Longitude) return true;
+                if (currentTx.Location.Name != original.Location.Name) return true;
+            }
+
+            // Compare Attachments (names)
+            if (currentTx.Attachments.Count != original.Attachments.Count) return true;
+            var currentAttNames = currentTx.Attachments.Select(a => a.Name).OrderBy(n => n);
+            var originalAttNames = original.Attachments.Select(a => a.Name).OrderBy(n => n);
+            if (!currentAttNames.SequenceEqual(originalAttNames)) return true;
+
+            return false;
+        }
+
+        private Transaction BuildTransaction()
+        {
+            var included = memberSplits.Where(m => m.IsIncluded).ToList();
+            var splitDict = new Dictionary<string, SplitInfo>();
+            foreach (var m in included)
+            {
+                splitDict[m.Slug] = new SplitInfo 
+                { 
+                    Amount = m.IsAuto ? m.CalculatedAmount : m.ManualAmount, 
+                    Manual = !m.IsAuto 
+                };
+            }
+
+            TimeZoneInfo tz;
+            try { tz = TimeZoneInfo.FindSystemTimeZoneById(timezoneId); } catch { tz = TimeZoneInfo.Local; }
+            var offset = tz.GetUtcOffset(transactionDate);
+            var finalDate = new DateTimeOffset(DateTime.SpecifyKind(transactionDate, DateTimeKind.Unspecified), offset);
+
+            var txAttachments = new List<TransactionAttachment>();
+            foreach (var att in attachments)
+            {
+                txAttachments.Add(new TransactionAttachment
+                {
+                    Name = att.IsExisting ? att.FileName : GetAttachmentDisplayName(att),
+                    OriginalName = att.OriginalName,
+                    CreatedAt = att.CreatedAt
+                });
+            }
+
+            return new Transaction
+            {
+                Id = editingInfo?.Transaction?.Id ?? "",
+                Type = "expense",
+                Date = finalDate,
+                Timezone = timezoneId,
+                Currency = selectedCurrency,
+                Amount = totalAmount,
+                Description = description,
+                Author = authorName,
+                Split = splitDict,
+                Location = locationInfo != null ? new LocationInfo { Latitude = locationInfo.Latitude, Longitude = locationInfo.Longitude, Name = locationInfo.Name } : null,
+                Attachments = txAttachments
+            };
         }
 
         private void ToggleMenu() => isMenuOpen = !isMenuOpen;
@@ -226,6 +333,19 @@ namespace TripFund.App.Components.Pages
             {
                 totalAmount = Math.Round(val, GetDecimals());
                 RecalculateSplit();
+            }
+        }
+
+        private void TrimDescription()
+        {
+            description = description?.Trim() ?? "";
+        }
+
+        private void TrimLocation()
+        {
+            if (locationInfo != null)
+            {
+                locationInfo.Name = locationInfo.Name?.Trim() ?? "";
             }
         }
 
@@ -444,6 +564,9 @@ namespace TripFund.App.Components.Pages
         {
             errorMessage = "";
             
+            description = description?.Trim() ?? "";
+            if (locationInfo != null) locationInfo.Name = locationInfo.Name?.Trim() ?? "";
+
             if (totalAmount <= 0) { errorMessage = "Importo non valido."; return; }
             if (string.IsNullOrWhiteSpace(description)) { errorMessage = "Inserire una descrizione."; return; }
             

@@ -22,6 +22,7 @@ namespace TripFund.App.Components.Pages
 
         private TripConfig? config;
         private Transaction? editingTransaction;
+        private string? originalTxJson;
         private List<Transaction> allTransactions = new();
         private string selectedCurrency = "";
         private string selectedMemberSlug = "";
@@ -52,6 +53,7 @@ namespace TripFund.App.Components.Pages
                     editingTransaction = await Storage.GetLatestTransactionVersionAsync(tripSlug, edit);
                     if (editingTransaction != null && editingTransaction.Type == "contribution")
                     {
+                        originalTxJson = System.Text.Json.JsonSerializer.Serialize(editingTransaction);
                         selectedCurrency = editingTransaction.Currency;
                         amount = editingTransaction.Amount;
                         description = editingTransaction.Description;
@@ -88,6 +90,54 @@ namespace TripFund.App.Components.Pages
                     }
                 }
             }
+        }
+
+        private bool HasChanges()
+        {
+            if (editingTransaction == null) return true; // Always enabled for new
+            if (originalTxJson == null) return true;
+
+            var currentTx = BuildTransaction();
+            currentTx.Description = currentTx.Description?.Trim() ?? "";
+
+            var original = System.Text.Json.JsonSerializer.Deserialize<Transaction>(originalTxJson);
+            if (original == null) return true;
+            original.Description = original.Description?.Trim() ?? "";
+
+            if (currentTx.Amount != original.Amount) return true;
+            if (currentTx.Description != original.Description) return true;
+            if (currentTx.Currency != original.Currency) return true;
+            if (currentTx.Timezone != original.Timezone) return true;
+            if (currentTx.Date.ToUnixTimeSeconds() != original.Date.ToUnixTimeSeconds()) return true;
+
+            // Compare Split (for contribution it's just one member)
+            if (currentTx.Split.Count != original.Split.Count) return true;
+            var currentMember = currentTx.Split.Keys.FirstOrDefault();
+            var originalMember = original.Split.Keys.FirstOrDefault();
+            if (currentMember != originalMember) return true;
+
+            return false;
+        }
+
+        private Transaction BuildTransaction()
+        {
+            TimeZoneInfo tz;
+            try { tz = TimeZoneInfo.FindSystemTimeZoneById(timezoneId); } catch { tz = TimeZoneInfo.Local; }
+            var offset = tz.GetUtcOffset(transactionDate);
+            var finalDate = new DateTimeOffset(DateTime.SpecifyKind(transactionDate, DateTimeKind.Unspecified), offset);
+
+            return new Transaction
+            {
+                Id = editingTransaction?.Id ?? "",
+                Type = "contribution",
+                Date = finalDate,
+                Timezone = timezoneId,
+                Currency = selectedCurrency,
+                Amount = amount,
+                Description = description,
+                Author = authorName,
+                Split = new Dictionary<string, SplitInfo> { { selectedMemberSlug, new SplitInfo { Amount = amount, Manual = true } } }
+            };
         }
 
         private void ToggleMemberSelector()
@@ -175,6 +225,11 @@ namespace TripFund.App.Components.Pages
             }
         }
 
+        private void TrimDescription()
+        {
+            description = description?.Trim() ?? "";
+        }
+
         private string GetCurrencySymbol()
         {
             if (config != null && config.Currencies.TryGetValue(selectedCurrency, out var c))
@@ -205,6 +260,8 @@ namespace TripFund.App.Components.Pages
             errorMessage = "";
 
             if (config == null) return;
+
+            description = description?.Trim() ?? "";
 
             if (amount <= 0)
             {

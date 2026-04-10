@@ -98,13 +98,13 @@
                                         </div>
                                         <div class="name-col">
                                             <label>NOME</label>
-                                            <input type="text" @bind="newMemberName" placeholder="Esempio: Andrea" />
+                                            <input type="text" @bind="newMemberName" @onblur="TrimMemberName" placeholder="Esempio: Andrea" />
                                         </div>
                                     </div>
 
                                     <div class="member-form-full-row">
                                         <label>EMAIL</label>
-                                        <input type="email" @bind="newMemberEmail" placeholder="andrea@esempio.com" />
+                                        <input type="email" @bind="newMemberEmail" @onblur="TrimMemberEmail" placeholder="andrea@esempio.com" />
                                     </div>
 
                                     <div class="member-form-footer">
@@ -222,13 +222,13 @@
                                 </div>
                                 <div class="name-col">
                                     <label>NOME</label>
-                                    <input type="text" @bind="newMemberName" placeholder="Esempio: Andrea" @oninput="OnNewMemberNameInput" />
+                                    <input type="text" @bind="newMemberName" @oninput="OnNewMemberNameInput" @onblur="TrimMemberName" placeholder="Esempio: Andrea" />
                                 </div>
                             </div>
 
                             <div class="member-form-full-row">
                                 <label>EMAIL</label>
-                                <input type="email" @bind="newMemberEmail" placeholder="andrea@esempio.com" />
+                                <input type="email" @bind="newMemberEmail" @onblur="TrimMemberEmail" placeholder="andrea@esempio.com" />
                             </div>
 
                             <div class="member-form-footer">
@@ -262,7 +262,7 @@
                 }
             </div>
 
-            <button class="btn-primary-vibe" @onclick="HandleSave">Salva</button>
+            <button class="btn-primary-vibe" @onclick="HandleSave" disabled="@(!HasChanges())">Salva</button>
         </div>
     }
 </div>

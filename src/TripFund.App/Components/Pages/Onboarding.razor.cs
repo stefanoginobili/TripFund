@@ -14,8 +14,14 @@ namespace TripFund.App.Components.Pages
         private string deviceIdSuffix = Guid.NewGuid().ToString("n").Substring(0, 8);
         private string DeviceId => $"{SlugUtility.GenerateSlug(authorName).Trim('-')}-{deviceIdSuffix}".Trim('-');
 
+        private void TrimAuthorName()
+        {
+            authorName = authorName?.Trim() ?? "";
+        }
+
         private async Task SaveSettings()
         {
+            authorName = authorName?.Trim() ?? "";
             if (string.IsNullOrWhiteSpace(authorName)) return;
 
             var settings = new AppSettings

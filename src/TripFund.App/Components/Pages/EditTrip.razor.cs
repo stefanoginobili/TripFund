@@ -16,6 +16,7 @@ namespace TripFund.App.Components.Pages
         [Parameter] public string tripSlug { get; set; } = "";
 
         private TripConfig? config;
+        private string? originalConfigJson;
         private string error = "";
         private string deviceId = "";
         private string authorName = "";
@@ -41,9 +42,72 @@ namespace TripFund.App.Components.Pages
         protected override async Task OnInitializedAsync()
         {
             config = await Storage.GetTripConfigAsync(tripSlug);
+            if (config != null)
+            {
+                originalConfigJson = System.Text.Json.JsonSerializer.Serialize(config);
+            }
             var settings = await Storage.GetAppSettingsAsync();
             deviceId = settings?.DeviceId ?? "";
             authorName = settings?.AuthorName ?? "";
+        }
+
+        private bool HasChanges()
+        {
+            if (config == null || originalConfigJson == null) return false;
+            
+            // Trim values before comparison to ensure manual restoration to original trimmed value is detected
+            var currentConfig = new TripConfig
+            {
+                Id = config.Id,
+                Name = config.Name?.Trim() ?? "",
+                Description = config.Description?.Trim() ?? "",
+                StartDate = config.StartDate,
+                EndDate = config.EndDate,
+                Currencies = config.Currencies.ToDictionary(k => k.Key, v => new Currency 
+                { 
+                    Symbol = v.Value.Symbol?.Trim() ?? "", 
+                    Name = v.Value.Name?.Trim() ?? "", 
+                    Decimals = v.Value.Decimals, 
+                    ExpectedQuotaPerMember = v.Value.ExpectedQuotaPerMember 
+                }),
+                Members = config.Members.ToDictionary(k => k.Key, v => new User 
+                { 
+                    Name = v.Value.Name?.Trim() ?? "", 
+                    Email = v.Value.Email?.Trim() ?? "", 
+                    Avatar = v.Value.Avatar 
+                })
+            };
+
+            var currentJson = System.Text.Json.JsonSerializer.Serialize(currentConfig);
+            
+            // We also need to compare against a "normalized" original
+            var original = System.Text.Json.JsonSerializer.Deserialize<TripConfig>(originalConfigJson);
+            if (original == null) return false;
+            
+            var normalizedOriginal = new TripConfig
+            {
+                Id = original.Id,
+                Name = original.Name?.Trim() ?? "",
+                Description = original.Description?.Trim() ?? "",
+                StartDate = original.StartDate,
+                EndDate = original.EndDate,
+                Currencies = original.Currencies.ToDictionary(k => k.Key, v => new Currency 
+                { 
+                    Symbol = v.Value.Symbol?.Trim() ?? "", 
+                    Name = v.Value.Name?.Trim() ?? "", 
+                    Decimals = v.Value.Decimals, 
+                    ExpectedQuotaPerMember = v.Value.ExpectedQuotaPerMember 
+                }),
+                Members = original.Members.ToDictionary(k => k.Key, v => new User 
+                { 
+                    Name = v.Value.Name?.Trim() ?? "", 
+                    Email = v.Value.Email?.Trim() ?? "", 
+                    Avatar = v.Value.Avatar 
+                })
+            };
+            var normalizedOriginalJson = System.Text.Json.JsonSerializer.Serialize(normalizedOriginal);
+
+            return currentJson != normalizedOriginalJson;
         }
 
         private void ToggleEmojiPicker() => showEmojiPicker = !showEmojiPicker;
@@ -60,9 +124,23 @@ namespace TripFund.App.Components.Pages
             newMemberSlug = SlugUtility.GenerateSlug(newMemberName);
         }
 
+        private void TrimMemberName()
+        {
+            newMemberName = newMemberName?.Trim() ?? "";
+        }
+
+        private void TrimMemberEmail()
+        {
+            newMemberEmail = newMemberEmail?.Trim() ?? "";
+        }
+
         private void AddMember()
         {
             if (config == null) return;
+            var trimmedName = newMemberName.Trim();
+            var trimmedEmail = newMemberEmail.Trim();
+            
+            if (string.IsNullOrWhiteSpace(trimmedName)) { error = "Il nome è obbligatorio."; return; }
             if (string.IsNullOrWhiteSpace(newMemberSlug)) { error = "Lo slug è obbligatorio."; return; }
             
             // If not editing, check for duplicates
@@ -74,8 +152,8 @@ namespace TripFund.App.Components.Pages
 
             config.Members[newMemberSlug] = new User
             {
-                Name = newMemberName,
-                Email = newMemberEmail,
+                Name = trimmedName,
+                Email = string.IsNullOrWhiteSpace(trimmedEmail) ? null : trimmedEmail,
                 Avatar = string.IsNullOrWhiteSpace(newMemberAvatar) ? "👤" : newMemberAvatar
             };
 
@@ -183,6 +261,24 @@ namespace TripFund.App.Components.Pages
         private async Task HandleSave()
         {
             if (config == null) return;
+            
+            // Trim all strings
+            config.Name = config.Name?.Trim() ?? "";
+            config.Description = config.Description?.Trim() ?? "";
+            
+            foreach (var curr in config.Currencies.Values)
+            {
+                curr.Symbol = curr.Symbol?.Trim() ?? "";
+                curr.Name = curr.Name?.Trim() ?? "";
+            }
+
+            foreach (var member in config.Members.Values)
+            {
+                member.Name = member.Name?.Trim() ?? "";
+                member.Email = member.Email?.Trim();
+                if (string.IsNullOrWhiteSpace(member.Email)) member.Email = null;
+            }
+
             if (string.IsNullOrWhiteSpace(config.Name)) { error = "Il nome è obbligatorio."; return; }
             if (config.Currencies.Count == 0) { error = "Aggiungi almeno una valuta."; return; }
 

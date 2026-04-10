@@ -21,8 +21,22 @@ namespace TripFund.App.Components.Pages
 
         private Dictionary<string, Currency> currencies = new();
 
+        private void TrimName()
+        {
+            tripName = tripName?.Trim() ?? "";
+        }
+
+        private void TrimDescription()
+        {
+            description = description?.Trim() ?? "";
+        }
+
         private async Task HandleCreate()
         {
+            tripName = tripName?.Trim() ?? "";
+            tripSlug = tripSlug?.Trim() ?? "";
+            description = description?.Trim() ?? "";
+
             if (string.IsNullOrWhiteSpace(tripName)) { error = "Il nome è obbligatorio."; return; }
             if (string.IsNullOrWhiteSpace(tripSlug)) { error = "Lo slug è obbligatorio."; return; }
             if (currencies.Count == 0) { error = "Aggiungi almeno una valuta."; return; }
