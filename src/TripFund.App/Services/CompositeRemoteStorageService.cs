@@ -57,9 +57,13 @@ public class CompositeRemoteStorageService : IRemoteStorageService
                 await _git.SynchronizeAsync(tripSlug);
             }
 
-            // Update last sync time
-            entry.RemoteStorage.LastSynchronized = DateTime.Now;
-            await _storage.SaveTripRegistryAsync(registry);
+            // Reload registry to get updates from the provider (hasConflicts, readonly)
+            registry = await _storage.GetTripRegistryAsync();
+            if (registry.Trips.TryGetValue(tripSlug, out var updatedEntry) && updatedEntry.RemoteStorage != null)
+            {
+                updatedEntry.RemoteStorage.LastSynchronized = DateTime.Now;
+                await _storage.SaveTripRegistryAsync(registry);
+            }
         }
     }
 }

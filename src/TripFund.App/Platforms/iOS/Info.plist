@@ -46,5 +46,18 @@
     <array>
         <string>mailto</string>
     </array>
+    <key>CFBundleURLTypes</key>
+    <array>
+        <dict>
+            <key>CFBundleURLName</key>
+            <string>Google Drive Auth</string>
+            <key>CFBundleURLSchemes</key>
+            <array>
+                <string>com.stefanoginobili.tripfund.app</string>
+            </array>
+            <key>CFBundleTypeRole</key>
+            <string>Editor</string>
+        </dict>
+    </array>
 </dict>
 </plist>

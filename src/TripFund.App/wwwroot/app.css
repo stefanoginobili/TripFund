@@ -113,6 +113,25 @@ html, body, #app {
     cursor: not-allowed;
 }
 
+.btn-secondary-vibe {
+    width: 100%;
+    background-color: #E9F2EE;
+    color: #20563C;
+    border: none;
+    border-radius: 16px;
+    padding: 1.1rem;
+    font-weight: 700;
+    font-size: 1.1rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+}
+
+.btn-secondary-vibe:active {
+    background-color: #D6EDE2;
+}
+
 .btn-dashed-vibe {
     border: 2px dashed #D1D9E0;
     border-radius: 32px;
