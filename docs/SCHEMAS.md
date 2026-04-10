@@ -108,7 +108,8 @@ This file is stored in the root of the app's local storage. It acts purely as a 
           "folderId": "abcdef1234567890"
         },
         "lastSynchronized": "2026-05-23T13:45:00Z",
-        "hasConflicts": false
+        "hasConflicts": false,
+        "readonly": false
       }
     },
     "giappone-2027": {
@@ -119,7 +120,8 @@ This file is stored in the root of the app's local storage. It acts purely as a 
           "repository": "https://github.com/mario/giappone.git"
         },
         "lastSynchronized": "2026-05-05T13:45:00Z",
-        "hasConflicts": false
+        "hasConflicts": false,
+        "readonly": true
       }
     }
   }

@@ -32,4 +32,7 @@ public class RemoteStorageConfig
 
     [JsonPropertyName("hasConflicts")]
     public bool HasConflicts { get; set; }
+
+    [JsonPropertyName("readonly")]
+    public bool Readonly { get; set; }
 }

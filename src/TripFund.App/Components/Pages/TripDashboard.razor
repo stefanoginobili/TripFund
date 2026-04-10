@@ -22,7 +22,7 @@
                 {
                     <div class="popover-overlay" @onclick="ToggleMenu"></div>
                     <div class="dropdown-menu-vibe">
-                        <button class="dropdown-item-vibe" @onclick='() => Nav.NavigateTo($"/trip/{tripSlug}/edit")'>
+                        <button class="dropdown-item-vibe" @onclick='() => Nav.NavigateTo($"/trip/{tripSlug}/edit")' disabled="@isReadonly">
                             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="me-2">
                                 <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
                                 <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
@@ -67,14 +67,14 @@
             </div>
 
             <div class="quick-actions">
-                <button class="action-btn contribute-btn" @onclick='() => Nav.NavigateTo($"/trip/{tripSlug}/add-contribution?currency={selectedCurrency}")'>
+                <button class="action-btn contribute-btn" @onclick='() => Nav.NavigateTo($"/trip/{tripSlug}/add-contribution?currency={selectedCurrency}")' disabled="@isReadonly">
                     <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline>
                         <polyline points="17 6 23 6 23 12"></polyline>
                     </svg>
                     Registra Versamento
                 </button>
-                <button class="action-btn expense-btn" @onclick='() => Nav.NavigateTo($"/trip/{tripSlug}/add-expense?currency={selectedCurrency}")'>
+                <button class="action-btn expense-btn" @onclick='() => Nav.NavigateTo($"/trip/{tripSlug}/add-expense?currency={selectedCurrency}")' disabled="@isReadonly">
                     <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <polyline points="23 18 13.5 8.5 8.5 13.5 1 6"></polyline>
                         <polyline points="17 18 23 18 23 12"></polyline>
@@ -237,19 +237,15 @@
         gap: 1rem;
     }
 
-    .action-btn {
-        flex: 1;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        gap: 0.5rem;
-        padding: 1rem;
-        border-radius: 20px;
-        border: none;
-        font-weight: 600;
-        font-size: 0.9rem;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+    .action-btn:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+    }
+
+    .dropdown-item-vibe:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+        background-color: transparent;
     }
 
     .contribute-btn {

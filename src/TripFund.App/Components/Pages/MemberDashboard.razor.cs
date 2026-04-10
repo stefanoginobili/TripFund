@@ -26,6 +26,7 @@ namespace TripFund.App.Components.Pages
         private string selectedCurrency = "";
         private bool isMissing = false;
         private bool isMenuOpen = false;
+        private bool isReadonly = false;
         
         private decimal totalContributed = 0;
         private decimal remainingBalance = 0;
@@ -41,6 +42,13 @@ namespace TripFund.App.Components.Pages
         protected override async Task OnInitializedAsync()
         {
             config = await Storage.GetTripConfigAsync(tripSlug);
+            
+            var registry = await Storage.GetTripRegistryAsync();
+            if (registry != null && registry.Trips.TryGetValue(tripSlug, out var entry))
+            {
+                isReadonly = entry.RemoteStorage?.Readonly ?? false;
+            }
+
             if (config != null)
             {
                 allTransactions = await Storage.GetTransactionsAsync(tripSlug);

@@ -21,6 +21,7 @@ namespace TripFund.App.Components.Common
         [Parameter] public EventCallback<Transaction> OnEdit { get; set; }
 
         private bool canEdit = true;
+        private bool isReadonly = false;
         private List<AttachmentPreview> previews = new();
 
         protected override async Task OnParametersSetAsync()
@@ -28,6 +29,13 @@ namespace TripFund.App.Components.Common
             if (IsVisible && Transaction != null && Config != null)
             {
                 canEdit = Transaction.Split.Keys.All(slug => Config.Members.ContainsKey(slug));
+                
+                var registry = await Storage.GetTripRegistryAsync();
+                if (registry != null && registry.Trips.TryGetValue(TripSlug, out var entry))
+                {
+                    isReadonly = entry.RemoteStorage?.Readonly ?? false;
+                }
+                
                 await LoadPreviews();
             }
         }

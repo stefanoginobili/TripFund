@@ -11,14 +11,20 @@
             <div class="sync-indicator">
                 <img src="images/@(remoteStorageProvider).svg" width="20" height="20" alt="@remoteStorageProvider" />
             </div>
-            @if (isSyncing)
-            {
-                <span class="sync-text syncing">Sincronizzazione in corso...</span>
-            }
-            else
-            {
-                <span class="sync-text">@GetRelativeSyncTime(lastSynchronized)</span>
-            }
+            <div class="sync-info">
+                @if (isSyncing)
+                {
+                    <span class="sync-text syncing">Sincronizzazione in corso...</span>
+                }
+                else
+                {
+                    <span class="sync-text">@GetRelativeSyncTime(lastSynchronized)</span>
+                }
+                @if (isReadonly)
+                {
+                    <span class="sync-text readonly-label">Sola lettura</span>
+                }
+            </div>
             <button class="sync-now-btn @(isSyncing ? "spinning" : "")" @onclick="TriggerSync" disabled="@isSyncing">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                     <path d="M23 4v6h-6"></path>
@@ -36,6 +42,7 @@
 
     private string? remoteStorageProvider;
     private DateTime? lastSynchronized;
+    private bool isReadonly = false;
     private bool isSyncing = false;
     private System.Timers.Timer? refreshTimer;
 
@@ -51,6 +58,7 @@
         {
             remoteStorageProvider = entry.RemoteStorage?.Provider;
             lastSynchronized = entry.RemoteStorage?.LastSynchronized;
+            isReadonly = entry.RemoteStorage?.Readonly ?? false;
         }
 
         if (refreshTimer == null)
@@ -129,11 +137,22 @@
         border: 1px solid #F0F0F0;
     }
 
-    .sync-text {
+    .sync-info {
         flex: 1;
-        text-align: center;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+    }
+
+    .sync-text {
         font-size: 0.9rem;
         color: #6C757D;
+    }
+
+    .readonly-label {
+        font-weight: 700;
+        color: #DC3545;
+        font-size: 0.8rem;
     }
 
     .sync-text.syncing {
