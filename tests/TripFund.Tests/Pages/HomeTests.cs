@@ -69,7 +69,7 @@ public class HomeTests : BunitContext
 
         // Assert
         // Sections
-        cut.FindAll(".section-header").Select(e => e.TextContent).Should().Contain(new[] { "IN CORSO", "FUTURI", "PASSATI" });
+        cut.FindAll(".section-header-vibe").Select(e => e.TextContent).Should().Contain(new[] { "IN CORSO", "FUTURI", "PASSATI" });
 
         // Icons
         cut.FindAll(".trip-icon").Select(e => e.TextContent).Should().Contain(new[] { "🛫", "🕒", "🏁" });

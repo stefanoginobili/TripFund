@@ -48,7 +48,7 @@ public class TripManagementTests : BunitContext
         
         // Slug should be generated automatically: "new-trip"
         
-        await cut.Find(".save-btn-large").ClickAsync();
+        await cut.Find(".btn-primary-vibe").ClickAsync();
 
         // Assert
         _storageMock.Verify(s => s.SaveTripConfigAsync("new-trip", It.Is<TripConfig>(c => c.Name == "New Trip"), "mario", It.IsAny<bool>()), Times.Once);
@@ -77,7 +77,7 @@ public class TripManagementTests : BunitContext
         var nameInput = cut.Find("input[placeholder='es. Patagonia 2026']");
         nameInput.Input("Updated Name");
 
-        await cut.Find(".save-btn-large").ClickAsync();
+        await cut.Find(".btn-primary-vibe").ClickAsync();
 
         // Assert
         _storageMock.Verify(s => s.SaveTripConfigAsync(tripSlug, It.Is<TripConfig>(c => c.Name == "Updated Name"), It.IsAny<string>(), It.IsAny<bool>()), Times.Once);
@@ -118,7 +118,7 @@ public class TripManagementTests : BunitContext
         await cut.Find(".confirm-btn").ClickAsync();
 
         // Save
-        await cut.Find(".save-btn-large").ClickAsync();
+        await cut.Find(".btn-primary-vibe").ClickAsync();
 
         // Assert
         _storageMock.Verify(s => s.SaveTripConfigAsync(tripSlug, It.Is<TripConfig>(c => 
@@ -216,7 +216,7 @@ public class TripManagementTests : BunitContext
         await cut.Find(".header-actions button.icon-btn").ClickAsync();
         
         // Now click Delete
-        await cut.Find(".dropdown-item-custom.text-danger").ClickAsync();
+        await cut.Find(".dropdown-item-vibe.text-danger").ClickAsync();
 
         // Assert
         _alertMock.Verify(a => a.ConfirmAsync("Elimina Viaggio", It.IsAny<string>(), "Elimina", "Annulla"), Times.Once);
@@ -234,7 +234,7 @@ public class TripManagementTests : BunitContext
         var cut = Render<Home>();
 
         // Act
-        await cut.Find("button.btn-add").ClickAsync();
+        await cut.Find(".btn-secondary-vibe").ClickAsync();
 
         // Assert
         _storageMock.Verify(s => s.SaveTripConfigAsync("existing-trip", It.IsAny<TripConfig>(), It.IsAny<string>(), It.IsAny<bool>()), Times.Once);

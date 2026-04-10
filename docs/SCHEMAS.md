@@ -79,8 +79,16 @@ This file is stored inside the specific version folder of the trip's `transactio
     "name": "Restaurante El Gaucho"
   },
   "attachments": [
-    "Attachment-01.jpg",
-    "Attachment-02.pdf"
+    {
+      "name": "ATT_20260406T133421Z.jpg",
+      "originalName": "PXL_20260406_133421_Z.jpg",
+      "createdAt": "2026-04-06T13:34:21Z"
+    },
+    {
+      "name": "ATT_20260406T135000Z.pdf",
+      "originalName": "my_receipt.pdf",
+      "createdAt": "2026-04-06T13:50:00Z"
+    }
   ]
 }
 ```

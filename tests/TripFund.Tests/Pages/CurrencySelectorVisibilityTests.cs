@@ -191,7 +191,7 @@ public class CurrencySelectorVisibilityTests : BunitContext
         marioItem.Click();
 
         // Submit
-        await cut.Find(".submit-btn").ClickAsync();
+        await cut.Find(".btn-primary-vibe").ClickAsync();
 
         // Assert
         nav.Uri.Should().Contain($"/trip/{tripSlug}?currency=EUR");

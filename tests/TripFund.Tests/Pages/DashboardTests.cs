@@ -324,14 +324,14 @@ public class DashboardTests : BunitContext
         menuBtn.InnerHtml.Should().Contain("<circle"); // SVG for three dots
 
         // Menu should be closed initially
-        cut.FindAll(".dropdown-menu-custom").Should().BeEmpty();
+        cut.FindAll(".dropdown-menu-vibe").Should().BeEmpty();
 
         // Act - Open menu
         menuBtn.Click();
 
         // Assert - Menu should be open
-        AngleSharp.Dom.IElement dropdown = cut.FindAll(".dropdown-menu-custom").First();
-        AngleSharp.Dom.IElement? editBtn = dropdown.QuerySelector(".dropdown-item");
+        AngleSharp.Dom.IElement dropdown = cut.FindAll(".dropdown-menu-vibe").First();
+        AngleSharp.Dom.IElement? editBtn = dropdown.QuerySelector(".dropdown-item-vibe");
         editBtn.Should().NotBeNull();
         editBtn!.TextContent.Should().Contain("Modifica");
     }
@@ -586,14 +586,14 @@ public class DashboardTests : BunitContext
         menuBtn.InnerHtml.Should().Contain("<circle");
 
         // Menu should be closed initially
-        cut.FindAll(".dropdown-menu-custom").Should().BeEmpty();
+        cut.FindAll(".dropdown-menu-vibe").Should().BeEmpty();
 
         // Act - Open menu
         menuBtn.Click();
 
         // Assert - Menu should be open
-        var dropdown = cut.Find(".dropdown-menu-custom");
-        var summaryBtn = dropdown.QuerySelector(".dropdown-item");
+        var dropdown = cut.Find(".dropdown-menu-vibe");
+        var summaryBtn = dropdown.QuerySelector(".dropdown-item-vibe");
         summaryBtn.Should().NotBeNull();
         summaryBtn!.TextContent.Should().Contain("Riepilogo Versamenti");
         summaryBtn.HasAttribute("disabled").Should().BeFalse();
@@ -639,7 +639,7 @@ public class DashboardTests : BunitContext
         cut.Find(".header-actions .icon-btn").Click();
 
         // Assert - Button should be disabled
-        var summaryBtn = cut.Find(".dropdown-item");
+        var summaryBtn = cut.Find(".dropdown-item-vibe");
         summaryBtn.HasAttribute("disabled").Should().BeTrue();
     }
 
@@ -685,7 +685,7 @@ public class DashboardTests : BunitContext
         cut.Find(".header-actions .icon-btn").Click();
 
         // Assert - Button should be disabled
-        var summaryBtn = cut.Find(".dropdown-item");
+        var summaryBtn = cut.Find(".dropdown-item-vibe");
         summaryBtn.HasAttribute("disabled").Should().BeTrue();
     }
 }

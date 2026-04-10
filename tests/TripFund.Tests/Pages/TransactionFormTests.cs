@@ -273,7 +273,7 @@ public class TransactionFormTests : BunitContext
         marioRow.QuerySelector(".split-amount-input")!.Change("40");
 
         // Submit
-        await cut.Find(".submit-btn").ClickAsync();
+        await cut.Find(".btn-primary-vibe").ClickAsync();
 
         // Assert
         savedTransaction.Should().NotBeNull();
@@ -317,7 +317,7 @@ public class TransactionFormTests : BunitContext
         marioItem.Click();
 
         // Submit
-        await cut.Find(".submit-btn").ClickAsync();
+        await cut.Find(".btn-primary-vibe").ClickAsync();
 
         // Assert
         savedTransaction.Should().NotBeNull();
@@ -358,7 +358,7 @@ public class TransactionFormTests : BunitContext
         marioItem.Click();
 
         // Submit
-        await cut.Find(".submit-btn").ClickAsync();
+        await cut.Find(".btn-primary-vibe").ClickAsync();
 
         // Assert
         savedTransaction.Should().NotBeNull();
@@ -399,7 +399,7 @@ public class TransactionFormTests : BunitContext
         marioItem.Click();
 
         // Submit
-        await cut.Find(".submit-btn").ClickAsync();
+        await cut.Find(".btn-primary-vibe").ClickAsync();
 
         // Assert
         savedTransaction.Should().NotBeNull();
@@ -462,7 +462,7 @@ public class TransactionFormTests : BunitContext
         // Act
         cut.Find(".amount-input").Change("10");
         cut.Find("input[placeholder='es. Cena a Buenos Aires']").Change("Test Attachments");
-        await cut.Find(".submit-btn").ClickAsync();
+        await cut.Find(".btn-primary-vibe").ClickAsync();
 
         // Assert
         savedTransaction.Should().NotBeNull();
@@ -508,7 +508,7 @@ public class TransactionFormTests : BunitContext
         timePicker.Change("15:30");
 
         // Submit
-        await cut.Find(".submit-btn").ClickAsync();
+        await cut.Find(".btn-primary-vibe").ClickAsync();
 
         // Assert
         savedTransaction.Should().NotBeNull();
@@ -555,7 +555,7 @@ public class TransactionFormTests : BunitContext
         utcItem.Click();
 
         // Submit
-        await cut.Find(".submit-btn").ClickAsync();
+        await cut.Find(".btn-primary-vibe").ClickAsync();
 
         // Assert
         savedTransaction.Should().NotBeNull();
@@ -605,7 +605,7 @@ public class TransactionFormTests : BunitContext
         var tzItem = cut.FindAll(".dropdown-tz-item").First(i => i.QuerySelector(".tz-selector-name")!.TextContent == tzId);
         tzItem.Click();
         // Submit - This is where it used to crash
-        await cut.Find(".submit-btn").ClickAsync();
+        await cut.Find(".btn-primary-vibe").ClickAsync();
 
         // Assert
         savedTransaction.Should().NotBeNull();
@@ -640,7 +640,7 @@ public class TransactionFormTests : BunitContext
         menuBtn.Click();
 
         // Click delete
-        var deleteBtn = cut.Find(".dropdown-item.text-danger");
+        var deleteBtn = cut.Find(".dropdown-item-vibe.text-danger");
         deleteBtn.Click();
 
         // Assert

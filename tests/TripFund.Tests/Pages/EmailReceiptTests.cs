@@ -82,7 +82,7 @@ public class EmailReceiptTests : BunitContext
         marioItem.Click();
 
         // Submit
-        await cut.Find(".submit-btn").ClickAsync();
+        await cut.Find(".btn-primary-vibe").ClickAsync();
 
         // Assert
         // 1. Verify Alert was shown
@@ -129,7 +129,7 @@ public class EmailReceiptTests : BunitContext
         marioItem.Click();
 
         // Submit
-        await cut.Find(".submit-btn").ClickAsync();
+        await cut.Find(".btn-primary-vibe").ClickAsync();
 
         // Assert
         // 1. Verify Alert was shown

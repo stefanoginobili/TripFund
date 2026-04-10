@@ -160,7 +160,7 @@ public class TransactionDetailTests : BunitContext
         await cut.InvokeAsync(() => menuBtn.Click());
 
         // Assert
-        var editBtn = cut.FindAll(".dropdown-item").First(b => b.InnerHtml.Contains("Modifica"));
+        var editBtn = cut.FindAll(".dropdown-item-vibe").First(b => b.InnerHtml.Contains("Modifica"));
         editBtn.HasAttribute("disabled").Should().BeTrue();
     }
 
