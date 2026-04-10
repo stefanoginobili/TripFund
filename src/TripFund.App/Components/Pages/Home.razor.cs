@@ -8,13 +8,16 @@ namespace TripFund.App.Components.Pages
     public partial class Home
     {
         [Inject] private LocalTripStorageService Storage { get; set; } = default!;
-        [Inject] private IDriveService Drive { get; set; } = default!;
+        [Inject] private ISyncService Sync { get; set; } = default!;
         [Inject] private NavigationManager Nav { get; set; } = default!;
+        [Inject] private IAlertService Alert { get; set; } = default!;
 
         private List<TripListItem> currentTrips = new();
         private List<TripListItem> futureTrips = new();
         private List<TripListItem> pastTrips = new();
         private bool isLoading = true;
+        private bool showSyncSelector = false;
+        private bool isJoining = false;
 
         protected override async Task OnInitializedAsync()
         {
@@ -22,8 +25,48 @@ namespace TripFund.App.Components.Pages
         }
 
         private void NavigateToSettings() => Nav.NavigateTo("/settings");
-        private void NavigateToCreate() => Nav.NavigateTo("/create-trip");
+        private void NavigateToCreate(SyncProviderSelection selection) 
+        {
+            var uri = $"/create-trip?provider={selection.Provider}";
+            foreach (var p in selection.Parameters)
+            {
+                uri += $"&{p.Key}={Uri.EscapeDataString(p.Value)}";
+            }
+            Nav.NavigateTo(uri);
+        }
         private void NavigateToTrip(string slug) => Nav.NavigateTo($"/trip/{slug}");
+
+        private void HandleCreateTripClick()
+        {
+            isJoining = false;
+            showSyncSelector = true;
+        }
+
+        private void HandleJoinTripClick()
+        {
+            isJoining = true;
+            showSyncSelector = true;
+        }
+
+        private async Task HandleSyncSelectionCompleted(SyncProviderSelection selection)
+        {
+            showSyncSelector = false;
+
+            if (isJoining)
+            {
+                await HandleJoinTrip(selection);
+            }
+            else
+            {
+                var isEmpty = await Sync.IsRemoteLocationEmptyAsync(selection.Provider, selection.Parameters);
+                if (!isEmpty)
+                {
+                    await Alert.ShowAlertAsync("Errore", "La posizione remota deve esistere ed essere vuota.");
+                    return;
+                }
+                NavigateToCreate(selection);
+            }
+        }
 
         private async Task LoadTrips()
         {
@@ -60,30 +103,30 @@ namespace TripFund.App.Components.Pages
             isLoading = false;
         }
 
-        private async Task HandleJoinTrip()
+        private async Task HandleJoinTrip(SyncProviderSelection selection)
         {
-            var folder = await Drive.PickFolderAsync();
-            if (folder == null) return;
+            var remoteConfig = await Sync.GetRemoteTripConfigAsync(selection.Provider, selection.Parameters);
+            
+            if (remoteConfig == null)
+            {
+                await Alert.ShowAlertAsync("Errore", "Impossibile trovare i dati del viaggio nella posizione specificata.");
+                return;
+            }
 
-            string slug = SlugUtility.GenerateSlug(folder.Name);
+            var confirmed = await Alert.ConfirmAsync("Conferma", 
+                $"Vuoi aggiungere il viaggio {remoteConfig.Name} dal {remoteConfig.StartDate:dd/MM/yyyy} al {remoteConfig.EndDate:dd/MM/yyyy}?",
+                "Conferma", "Annulla");
+
+            if (!confirmed) return;
+
+            string slug = SlugUtility.GenerateSlug(remoteConfig.Name);
             var existingConfig = await Storage.GetTripConfigAsync(slug);
             
             if (existingConfig == null)
             {
-                existingConfig = new TripConfig
-                {
-                    Id = Guid.NewGuid().ToString(),
-                    Name = folder.Name,
-                    StartDate = DateTime.Today,
-                    EndDate = DateTime.Today.AddDays(7),
-                    CreatedAt = DateTime.UtcNow,
-                    Currencies = new Dictionary<string, Currency> { 
-                        { "EUR", new Currency { Symbol = "€", Name = "Euro", ExpectedQuotaPerMember = 500 } } 
-                    }
-                };
                 var settings = await Storage.GetAppSettingsAsync();
                 var deviceId = settings?.DeviceId ?? "unknown";
-                await Storage.SaveTripConfigAsync(slug, existingConfig, deviceId);
+                await Storage.SaveTripConfigAsync(slug, remoteConfig, deviceId);
             }
 
             var registry = await Storage.GetTripRegistryAsync();
@@ -92,8 +135,8 @@ namespace TripFund.App.Components.Pages
                 CreatedAt = DateTime.UtcNow,
                 Sync = new SyncConfig 
                 { 
-                    Provider = "google-drive", 
-                    Parameters = new Dictionary<string, string> { { "folderId", folder.Id } } 
+                    Provider = selection.Provider, 
+                    Parameters = selection.Parameters
                 } 
             };
             await Storage.SaveTripRegistryAsync(registry);

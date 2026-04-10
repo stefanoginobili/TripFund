@@ -149,7 +149,7 @@ public class TransactionModalTests : BunitContext
         );
 
         // Assert
-        var editBtn = cut.Find(".edit-btn-vibe");
+        var editBtn = cut.Find(".edit-action-link");
         editBtn.HasAttribute("disabled").Should().BeTrue();
     }
 

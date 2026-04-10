@@ -1,0 +1,232 @@
+@using TripFund.App.Models
+@using TripFund.App.Utilities
+
+@if (IsVisible)
+{
+    <div class="modal-backdrop-vibe" @onclick="Close">
+        <div class="modal-sheet-vibe" @onclick:stopPropagation="true">
+            <header class="modal-header-vibe">
+                <h2 class="modal-title-vibe">@GetTitle()</h2>
+                <button class="close-btn-vibe" @onclick="Close">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                </button>
+            </header>
+
+            <div class="modal-body-vibe">
+                @if (selectedProvider == null)
+                {
+                    <div class="provider-list">
+                        <div class="provider-item" @onclick='() => SelectProvider("google-drive")'>
+                            <div class="provider-logo">
+                                <svg viewBox="0 0 24 24" width="32" height="32">
+                                    <path d="M15.385 4.75H21.3L14.043 17.25H8.13L15.385 4.75Z" fill="#FFC107" />
+                                    <path d="M8.615 4.75L2.7 14.75L5.8 20.25L11.715 10.25L8.615 4.75Z" fill="#2196F3" />
+                                    <path d="M12.427 10.25L9.327 15.75L12.427 21.25H21.3L24.4 15.75L12.427 10.25Z" fill="#4CAF50" />
+                                </svg>
+                            </div>
+                            <div class="provider-info">
+                                <div class="provider-name">Google Drive</div>
+                            </div>
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polyline points="9 18 15 12 9 6"></polyline>
+                            </svg>
+                        </div>
+
+                        <div class="provider-item" @onclick='() => SelectProvider("git")'>
+                            <div class="provider-logo">
+                                <svg viewBox="0 0 24 24" width="32" height="32">
+                                    <path d="M2.6,13.1l9.3,9.3c0.6,0.6,1.5,0.6,2.1,0l9.3-9.3c0.6-0.6,0.6-1.5,0-2.1l-9.3-9.3c-0.6-0.6-1.5-0.6-2.1,0L2.6,11 C2,11.6,2,12.5,2.6,13.1z M15,10.2c0,0.7-0.6,1.3-1.3,1.3c-0.1,0-0.2,0-0.3,0l-1.3,1.3c0,0.1,0,0.2,0,0.3c0,0.7-0.6,1.3-1.3,1.3 s-1.3-0.6-1.3-1.3c0-0.6,0.4-1.1,0.9-1.2V9.4c-0.5-0.1-0.9-0.6-0.9-1.2c0-0.7,0.6-1.3,1.3-1.3s1.3,0.6,1.3,1.3 c0,0.6-0.4,1.1-0.9,1.2v2.5c0.1,0,0.2,0,0.3,0L13.7,11c0-0.1,0-0.2,0-0.3c0-0.7,0.6-1.3,1.3-1.3S15,9.5,15,10.2z" fill="#F05032" />
+                                </svg>
+                            </div>
+                            <div class="provider-info">
+                                <div class="provider-name">Git</div>
+                            </div>
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polyline points="9 18 15 12 9 6"></polyline>
+                            </svg>
+                        </div>
+                    </div>
+                }
+                else if (selectedProvider == "google-drive")
+                {
+                    <div class="provider-form">
+                        <div class="mb-3">
+                            <label class="form-label-vibe">URL della cartella</label>
+                            <input type="text" class="form-control-vibe" @bind="folderUrl" placeholder="https://drive.google.com/drive/folders/..." />
+                        </div>
+                        <div class="d-flex gap-2">
+                            <button class="btn-secondary-vibe flex-1" @onclick="Back">Indietro</button>
+                            <button class="btn-primary-vibe flex-2" @onclick="Complete" disabled="@(string.IsNullOrWhiteSpace(folderUrl))">Conferma</button>
+                        </div>
+                    </div>
+                }
+                else if (selectedProvider == "git")
+                {
+                    <div class="provider-form">
+                        <div class="mb-3">
+                            <label class="form-label-vibe">URL del repository</label>
+                            <input type="text" class="form-control-vibe" @bind="repoUrl" placeholder="https://github.com/username/repo.git" />
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label-vibe">PAT (Personal Access Token)</label>
+                            <input type="password" class="form-control-vibe" @bind="gitPat" placeholder="ghp_xxxxxxxxxxxx" />
+                        </div>
+                        <div class="d-flex gap-2">
+                            <button class="btn-secondary-vibe flex-1" @onclick="Back">Indietro</button>
+                            <button class="btn-primary-vibe flex-2" @onclick="Complete" disabled="@(string.IsNullOrWhiteSpace(repoUrl) || string.IsNullOrWhiteSpace(gitPat))">Conferma</button>
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+}
+
+<style>
+    .modal-backdrop-vibe {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.5);
+        display: flex;
+        align-items: flex-end;
+        justify-content: center;
+        z-index: 1000;
+        backdrop-filter: blur(4px);
+    }
+
+    .modal-sheet-vibe {
+        width: 100%;
+        max-width: 600px;
+        background-color: #F8FBF9;
+        border-top-left-radius: 32px;
+        border-top-right-radius: 32px;
+        display: flex;
+        flex-direction: column;
+        max-height: 90vh;
+        animation: slide-up 0.3s ease-out;
+        box-shadow: 0 -8px 32px rgba(0, 0, 0, 0.1);
+    }
+
+    @@keyframes slide-up {
+        from { transform: translateY(100%); }
+        to { transform: translateY(0); }
+    }
+
+    .modal-header-vibe {
+        padding: 1.5rem;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        border-bottom: 1px solid rgba(0,0,0,0.05);
+    }
+
+    .modal-title-vibe {
+        font-size: 1.25rem;
+        font-weight: 700;
+        color: #1A3C2F;
+        margin: 0;
+    }
+
+    .close-btn-vibe {
+        background: none;
+        border: none;
+        color: #6C757D;
+        cursor: pointer;
+        padding: 4px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 50%;
+        transition: background-color 0.2s;
+    }
+
+    .modal-body-vibe {
+        flex: 1;
+        overflow-y: auto;
+        padding: 1.5rem 1.5rem 3rem;
+    }
+
+    .provider-list {
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+    }
+
+    .provider-item {
+        background-color: #FFFFFF;
+        padding: 1rem;
+        border-radius: 16px;
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        cursor: pointer;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.02);
+        border: 1px solid #F0F0F0;
+        transition: transform 0.1s;
+    }
+
+    .provider-item:active {
+        transform: scale(0.98);
+    }
+
+    .provider-logo {
+        width: 48px;
+        height: 48px;
+        background-color: #F8FBF9;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .provider-info {
+        flex: 1;
+    }
+
+    .provider-name {
+        font-weight: 700;
+        color: #1A3C2F;
+        font-size: 1.1rem;
+    }
+
+    .provider-form {
+        display: flex;
+        flex-direction: column;
+        gap: 1.5rem;
+    }
+
+    .form-label-vibe {
+        display: block;
+        font-weight: 600;
+        color: #1A3C2F;
+        margin-bottom: 0.5rem;
+        font-size: 0.9rem;
+    }
+
+    .form-control-vibe {
+        width: 100%;
+        padding: 0.8rem 1rem;
+        border-radius: 12px;
+        border: 1px solid #E0E0E0;
+        background-color: #FFFFFF;
+        font-size: 1rem;
+    }
+
+    .form-control-vibe:focus {
+        outline: none;
+        border-color: #20563C;
+        box-shadow: 0 0 0 3px rgba(32, 86, 60, 0.1);
+    }
+
+    .mb-3 { margin-bottom: 1rem; }
+    .d-flex { display: flex; }
+    .gap-2 { gap: 0.5rem; }
+    .flex-1 { flex: 1; }
+    .flex-2 { flex: 2; }
+</style>

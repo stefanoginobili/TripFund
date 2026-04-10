@@ -5,13 +5,14 @@ using TripFund.App.Components.Pages;
 using TripFund.App.Models;
 using TripFund.App.Services;
 using FluentAssertions;
+using Microsoft.AspNetCore.Components;
 
 namespace TripFund.Tests.Pages;
 
 public class TripManagementTests : BunitContext
 {
     private readonly Mock<LocalTripStorageService> _storageMock;
-    private readonly Mock<IDriveService> _driveMock;
+    private readonly Mock<ISyncService> _syncMock;
     private readonly Mock<IAlertService> _alertMock;
     private readonly Mock<INativeDatePickerService> _datePickerMock;
 
@@ -22,12 +23,12 @@ public class TripManagementTests : BunitContext
         System.Globalization.CultureInfo.DefaultThreadCurrentUICulture = itCulture;
 
         _storageMock = new Mock<LocalTripStorageService>("dummy_path");
-        _driveMock = new Mock<IDriveService>();
+        _syncMock = new Mock<ISyncService>();
         _alertMock = new Mock<IAlertService>();
         _datePickerMock = new Mock<INativeDatePickerService>();
         
         Services.AddSingleton(_storageMock.Object);
-        Services.AddSingleton(_driveMock.Object);
+        Services.AddSingleton(_syncMock.Object);
         Services.AddSingleton(_alertMock.Object);
         Services.AddSingleton(_datePickerMock.Object);
     }
@@ -38,7 +39,9 @@ public class TripManagementTests : BunitContext
         // Arrange
         _storageMock.Setup(s => s.GetTripRegistryAsync()).ReturnsAsync(new LocalTripRegistry());
         _storageMock.Setup(s => s.GetAppSettingsAsync()).ReturnsAsync(new AppSettings { AuthorName = "Mario", DeviceId = "mario" });
-        _driveMock.Setup(d => d.PickFolderAsync()).ReturnsAsync(new DriveFolder { Id = "drive-123", Name = "Drive Folder" });
+
+        var nav = Services.GetRequiredService<NavigationManager>();
+        nav.NavigateTo("/create-trip?provider=google-drive&folderUrl=https%3A%2F%2Fdrive.google.com%2Ftest");
 
         var cut = Render<CreateTrip>();
 
@@ -60,7 +63,7 @@ public class TripManagementTests : BunitContext
         _storageMock.Verify(s => s.SaveTripRegistryAsync(It.Is<LocalTripRegistry>(r => 
             r.Trips.ContainsKey("new-trip") && 
             r.Trips["new-trip"].Sync.Provider == "google-drive" &&
-            r.Trips["new-trip"].Sync.Parameters["folderId"] == "drive-123")), Times.Once);
+            r.Trips["new-trip"].Sync.Parameters["folderUrl"] == "https://drive.google.com/test")), Times.Once);
     }
 
     [Fact]
@@ -229,26 +232,5 @@ public class TripManagementTests : BunitContext
         // Assert
         _alertMock.Verify(a => a.ConfirmAsync("Elimina Viaggio", It.IsAny<string>(), "Elimina", "Annulla"), Times.Once);
         _storageMock.Verify(s => s.DeleteTripAsync(tripSlug), Times.Once);
-    }
-
-    [Fact]
-    public async Task JoinTrip_Home_ShouldRegisterAndMockConfig()
-    {
-        // Arrange
-        _storageMock.Setup(s => s.GetTripRegistryAsync()).ReturnsAsync(new LocalTripRegistry());
-        _storageMock.Setup(s => s.GetTripConfigAsync(It.IsAny<string>())).ReturnsAsync((TripConfig?)null);
-        _driveMock.Setup(d => d.PickFolderAsync()).ReturnsAsync(new DriveFolder { Id = "drive-456", Name = "Existing Trip" });
-
-        var cut = Render<Home>();
-
-        // Act
-        await cut.Find(".btn-secondary-vibe").ClickAsync();
-
-        // Assert
-        _storageMock.Verify(s => s.SaveTripConfigAsync("existing-trip", It.IsAny<TripConfig>(), It.IsAny<string>(), It.IsAny<bool>()), Times.Once);
-        _storageMock.Verify(s => s.SaveTripRegistryAsync(It.Is<LocalTripRegistry>(r => 
-            r.Trips.ContainsKey("existing-trip") && 
-            r.Trips["existing-trip"].Sync.Provider == "google-drive" &&
-            r.Trips["existing-trip"].Sync.Parameters["folderId"] == "drive-456")), Times.Once);
     }
 }

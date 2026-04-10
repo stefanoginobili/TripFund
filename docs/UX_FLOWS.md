@@ -8,13 +8,20 @@ This document strictly defines the user flows and UI layouts. **All UI text must
 - **Bottom:** Two main buttons: "Crea nuovo viaggio" and "Aggiungi viaggio esistente".
 
 ## 2. Join Existing Trip
-- **Action:** User selects a sync provider (e.g., Google Drive, Dropbox, Git) and provides the required parameters (e.g., selects a folder or enters a repository URL).
-- **Result:** Upon successful configuration, the app registers the trip in `known_trips.json`, syncs the initial data, and navigates to the **Trip Dashboard** (Flow 4).
+- **Action:** User selects a sync provider (e.g., Google Drive, Git) and provides the required parameters.
+- **Remote Validation:** The app attempts to locate the `metadata` versioned folder in the specified remote location.
+  - If the `metadata` folder is missing, an error alert is shown: "Impossibile trovare i dati del viaggio nella posizione specificata."
+- **Confirmation Modal:** If found, the app reads the latest `trip_config.json` from the remote metadata and displays a confirmation modal:
+  - Text: "Vuoi aggiungere il viaggio {Name} dal {StartDate} al {EndDate}?"
+  - Buttons: "Annulla" (closes modal), "Conferma" (proceeds).
+- **Result:** Upon confirmation, the app registers the trip in `known_trips.json`, syncs the metadata and transaction history locally, and navigates to the **Trip Dashboard** (Flow 4).
 
 ## 3. Create New Trip
-- **Step A (Sync Configuration):** User selects a sync provider and configures the remote destination (e.g., selects a parent folder on Google Drive where the new trip folder will be created).
-- **Step B (Initial Data Form):** A dialog to input Name, Slug (auto-calculated from Name but editable; regex: `^[a-z0-9-_]+$`), Dates, and at least one Currency. **Crucial:** Slugs must be unique globally across the user's trips.
-- **Result:** Creates the trip folder locally and on the remote provider, generates `trip_config.json`, registers it locally, and navigates to the **Trip Dashboard** (Flow 4).
+- **Step A (Sync Configuration):** User selects a sync provider (e.g., Google Drive, Git) and provides the required parameters.
+- **Remote Validation:** The app ensures that the specified remote location exists and is empty.
+  - If the location does not exist or contains any files/folders, an error alert is shown: "La posizione remota deve esistere ed essere vuota."
+- **Step B (Initial Data Form):** If validation passes, the app proceeds to the form to input Name, Slug, Dates, and Currencies.
+- **Result:** Creates the trip configuration locally, registers it, and prepares the remote folder for future syncs.
 
 ## 4. Trip Dashboard
 - **Top Bar:** Back button (left), Edit pencil icon ✏️ (right) leading to **Edit Trip** (Flow 5).

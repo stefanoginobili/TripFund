@@ -25,6 +25,8 @@ public class DashboardTests : BunitContext
         Services.AddSingleton(_storageMock.Object);
         Services.AddSingleton(new Mock<IEmailService>().Object);
         Services.AddSingleton(new Mock<IAlertService>().Object);
+        Services.AddSingleton(new Mock<IThumbnailService>().Object);
+        Services.AddSingleton(new Mock<ISyncService>().Object);
     }
 
     [Fact]

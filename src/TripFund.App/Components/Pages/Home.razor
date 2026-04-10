@@ -73,9 +73,14 @@
     </div>
 
     <footer class="footer">
-        <button class="btn-primary-vibe" @onclick="NavigateToCreate">Crea viaggio</button>
-        <button class="btn-secondary-vibe" @onclick="HandleJoinTrip">Aggiungi viaggio esistente</button>
+        <button class="btn-primary-vibe" @onclick="HandleCreateTripClick">Crea viaggio</button>
+        <button class="btn-secondary-vibe" @onclick="HandleJoinTripClick">Aggiungi viaggio esistente</button>
     </footer>
+
+    <SyncProviderSelector IsVisible="showSyncSelector" 
+                          IsJoining="isJoining"
+                          OnClose="() => showSyncSelector = false" 
+                          OnSelectionCompleted="HandleSyncSelectionCompleted" />
 </div>
 
 @code {
