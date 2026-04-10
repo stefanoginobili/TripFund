@@ -21,6 +21,8 @@ public static class MauiProgram
 				fonts.AddFont("OpenSans-Regular.ttf", "OpenSansRegular");
 			});
 
+		builder.Services.AddMauiBlazorWebView();
+
 		builder.Services.AddSingleton<Services.LocalTripStorageService>();
 		builder.Services.AddSingleton<Services.GoogleDriveRemoteStorageService>();
 		builder.Services.AddSingleton<Services.GitRemoteStorageService>();
