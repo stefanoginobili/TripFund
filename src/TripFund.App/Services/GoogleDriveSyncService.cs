@@ -33,4 +33,10 @@ public class GoogleDriveSyncService : ISyncService
         }
         return Task.FromResult(false);
     }
+
+    public async Task SyncAsync(string tripSlug)
+    {
+        // Placeholder for real sync logic (Task 09)
+        await Task.Delay(3000);
+    }
 }

@@ -6,6 +6,7 @@ public interface ISyncService
 {
     Task<TripConfig?> GetRemoteTripConfigAsync(string provider, Dictionary<string, string> parameters);
     Task<bool> IsRemoteLocationEmptyAsync(string provider, Dictionary<string, string> parameters);
+    Task SyncAsync(string tripSlug);
 }
 
 public class SyncFolder

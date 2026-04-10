@@ -6,11 +6,12 @@ using TripFund.App.Utilities;
 
 namespace TripFund.App.Components.Pages
 {
-    public partial class TripDashboard
+    public partial class TripDashboard : IDisposable
     {
         [Inject] private LocalTripStorageService Storage { get; set; } = default!;
         [Inject] private NavigationManager Nav { get; set; } = default!;
         [Inject] private IJSRuntime JSRuntime { get; set; } = default!;
+        [Inject] private ISyncService Sync { get; set; } = default!;
 
         [Parameter] public string tripSlug { get; set; } = "";
         [SupplyParameterFromQuery] public string? currency { get; set; }
@@ -18,6 +19,9 @@ namespace TripFund.App.Components.Pages
         private TripConfig? config;
         private List<Transaction> transactions = new();
         private string? syncProvider;
+        private DateTime? lastSync;
+        private System.Timers.Timer? refreshTimer;
+        private bool isSyncing = false;
         
         private string selectedCurrency = "";
         private bool isMenuOpen = false;
@@ -41,6 +45,7 @@ namespace TripFund.App.Components.Pages
             if (registry.Trips.TryGetValue(tripSlug, out var entry))
             {
                 syncProvider = entry.Sync?.Provider;
+                lastSync = entry.Sync?.LastSync;
             }
 
             if (config != null)
@@ -55,10 +60,82 @@ namespace TripFund.App.Components.Pages
                 }
                 transactions = await Storage.GetTransactionsAsync(tripSlug);
                 CalculateStats();
+
+                // Setup auto-refresh for sync label
+                refreshTimer = new System.Timers.Timer(30000); // 30 seconds
+                refreshTimer.Elapsed += (s, e) => InvokeAsync(StateHasChanged);
+                refreshTimer.AutoReset = true;
+                refreshTimer.Enabled = true;
             }
         }
 
+        public void Dispose()
+        {
+            if (refreshTimer != null)
+            {
+                refreshTimer.Stop();
+                refreshTimer.Dispose();
+            }
+        }
+
+        private string GetRelativeSyncTime(DateTime? syncTime)
+        {
+            if (!syncTime.HasValue) return "Mai sincronizzato";
+            
+            string relative;
+            var diff = DateTime.Now - syncTime.Value;
+            if (diff.TotalMinutes < 60)
+            {
+                int minutes = (int)diff.TotalMinutes;
+                if (minutes < 1) relative = "meno di un minuto fa";
+                else if (minutes == 1) relative = "un minuto fa";
+                else relative = $"{minutes} minuti fa";
+            }
+            else
+            {
+                int hours = (int)diff.TotalHours;
+                if (hours <= 1) relative = "più di un'ora fa";
+                else relative = $"più di {hours} ore fa";
+            }
+
+            return $"Sincronizzato {relative}";
+        }
+
         private void ToggleMenu() => isMenuOpen = !isMenuOpen;
+
+        private async Task TriggerSync()
+        {
+            if (isSyncing) return;
+            isSyncing = true;
+            StateHasChanged();
+
+            try
+            {
+                await Sync.SyncAsync(tripSlug);
+                
+                // Refresh data
+                config = await Storage.GetTripConfigAsync(tripSlug);
+                transactions = await Storage.GetTransactionsAsync(tripSlug);
+                
+                var registry = await Storage.GetTripRegistryAsync();
+                if (registry.Trips.TryGetValue(tripSlug, out var entry))
+                {
+                    lastSync = entry.Sync?.LastSync;
+                }
+                
+                CalculateStats();
+            }
+            catch (Exception ex)
+            {
+                // In a real app we might show an alert
+                Console.WriteLine($"Sync failed: {ex.Message}");
+            }
+            finally
+            {
+                isSyncing = false;
+                StateHasChanged();
+            }
+        }
 
         private void SelectCurrency(string currencyCode)
         {

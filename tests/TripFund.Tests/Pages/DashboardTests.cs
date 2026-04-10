@@ -127,6 +127,95 @@ public class DashboardTests : BunitContext
         marioRow.InnerHtml.Should().Contain("0"); // Versato
     }
 
+    [Theory]
+    [InlineData(0, "Sincronizzato meno di un minuto fa")]
+    [InlineData(1, "Sincronizzato un minuto fa")]
+    [InlineData(5, "Sincronizzato 5 minuti fa")]
+    [InlineData(60, "Sincronizzato più di un'ora fa")]
+    [InlineData(120, "Sincronizzato più di 2 ore fa")]
+    public void TripDashboard_ShouldFormatSyncTimeCorrectly(int minutesAgo, string expectedText)
+    {
+        // Arrange
+        var tripSlug = "test-trip";
+        var config = new TripConfig { Id = "1", Name = "Test Trip", Currencies = new Dictionary<string, Currency> { { "EUR", new Currency { Symbol = "€" } } } };
+        var lastSync = DateTime.Now.AddMinutes(-minutesAgo);
+        var registry = new LocalTripRegistry
+        {
+            Trips = new Dictionary<string, TripRegistryEntry>
+            {
+                { tripSlug, new TripRegistryEntry { Sync = new SyncConfig { Provider = "git", LastSync = lastSync } } }
+            }
+        };
+
+        _storageMock.Setup(s => s.GetTripConfigAsync(tripSlug)).ReturnsAsync(config);
+        _storageMock.Setup(s => s.GetTransactionsAsync(tripSlug)).ReturnsAsync(new List<Transaction>());
+        _storageMock.Setup(s => s.GetTripRegistryAsync()).ReturnsAsync(registry);
+
+        // Act
+        var cut = Render<TripDashboard>(parameters => parameters.Add(p => p.tripSlug, tripSlug));
+
+        // Assert
+        var syncText = cut.Find(".sync-text").TextContent;
+        syncText.Should().Be(expectedText);
+    }
+
+    [Fact]
+    public void TripDashboard_ShouldShowMaiSincronizzatoWhenLastSyncIsNull()
+    {
+        // Arrange
+        var tripSlug = "test-trip";
+        var config = new TripConfig { Id = "1", Name = "Test Trip", Currencies = new Dictionary<string, Currency> { { "EUR", new Currency { Symbol = "€" } } } };
+        var registry = new LocalTripRegistry
+        {
+            Trips = new Dictionary<string, TripRegistryEntry>
+            {
+                { tripSlug, new TripRegistryEntry { Sync = new SyncConfig { Provider = "git", LastSync = null } } }
+            }
+        };
+
+        _storageMock.Setup(s => s.GetTripConfigAsync(tripSlug)).ReturnsAsync(config);
+        _storageMock.Setup(s => s.GetTransactionsAsync(tripSlug)).ReturnsAsync(new List<Transaction>());
+        _storageMock.Setup(s => s.GetTripRegistryAsync()).ReturnsAsync(registry);
+
+        // Act
+        var cut = Render<TripDashboard>(parameters => parameters.Add(p => p.tripSlug, tripSlug));
+
+        // Assert
+        var syncText = cut.Find(".sync-text").TextContent;
+        syncText.Should().Be("Mai sincronizzato");
+    }
+
+    [Fact]
+    public async Task TripDashboard_ShouldTriggerSyncWhenButtonClicked()
+    {
+        // Arrange
+        var tripSlug = "test-trip";
+        var syncMock = new Mock<ISyncService>();
+        Services.AddSingleton(syncMock.Object);
+
+        var config = new TripConfig { Id = "1", Name = "Test Trip", Currencies = new Dictionary<string, Currency> { { "EUR", new Currency { Symbol = "€" } } } };
+        var registry = new LocalTripRegistry
+        {
+            Trips = new Dictionary<string, TripRegistryEntry>
+            {
+                { tripSlug, new TripRegistryEntry { Sync = new SyncConfig { Provider = "git" } } }
+            }
+        };
+
+        _storageMock.Setup(s => s.GetTripConfigAsync(tripSlug)).ReturnsAsync(config);
+        _storageMock.Setup(s => s.GetTransactionsAsync(tripSlug)).ReturnsAsync(new List<Transaction>());
+        _storageMock.Setup(s => s.GetTripRegistryAsync()).ReturnsAsync(registry);
+
+        var cut = Render<TripDashboard>(parameters => parameters.Add(p => p.tripSlug, tripSlug));
+
+        // Act
+        var syncBtn = cut.Find(".sync-now-btn");
+        await syncBtn.ClickAsync(new Microsoft.AspNetCore.Components.Web.MouseEventArgs());
+
+        // Assert
+        syncMock.Verify(s => s.SyncAsync(tripSlug), Times.Once);
+    }
+
     [Fact]
     public void TripDashboard_ShouldShowEccedenzaWhenOverBudget()
     {
