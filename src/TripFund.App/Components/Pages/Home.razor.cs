@@ -8,7 +8,7 @@ namespace TripFund.App.Components.Pages
     public partial class Home
     {
         [Inject] private LocalTripStorageService Storage { get; set; } = default!;
-        [Inject] private ISyncService Sync { get; set; } = default!;
+        [Inject] private IRemoteStorageService RemoteStorage { get; set; } = default!;
         [Inject] private NavigationManager Nav { get; set; } = default!;
         [Inject] private IAlertService Alert { get; set; } = default!;
 
@@ -58,7 +58,7 @@ namespace TripFund.App.Components.Pages
             }
             else
             {
-                var isEmpty = await Sync.IsRemoteLocationEmptyAsync(selection.Provider, selection.Parameters);
+                var isEmpty = await RemoteStorage.IsRemoteLocationEmptyAsync(selection.Provider, selection.Parameters);
                 if (!isEmpty)
                 {
                     await Alert.ShowAlertAsync("Errore", "La posizione remota deve esistere ed essere vuota.");
@@ -105,7 +105,7 @@ namespace TripFund.App.Components.Pages
 
         private async Task HandleJoinTrip(RemoteStorageSelection selection)
         {
-            var remoteConfig = await Sync.GetRemoteTripConfigAsync(selection.Provider, selection.Parameters);
+            var remoteConfig = await RemoteStorage.GetRemoteTripConfigAsync(selection.Provider, selection.Parameters);
             
             if (remoteConfig == null)
             {

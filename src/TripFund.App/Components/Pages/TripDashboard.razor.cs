@@ -11,7 +11,7 @@ namespace TripFund.App.Components.Pages
         [Inject] private LocalTripStorageService Storage { get; set; } = default!;
         [Inject] private NavigationManager Nav { get; set; } = default!;
         [Inject] private IJSRuntime JSRuntime { get; set; } = default!;
-        [Inject] private ISyncService Sync { get; set; } = default!;
+        [Inject] private IRemoteStorageService RemoteStorage { get; set; } = default!;
 
         [Parameter] public string tripSlug { get; set; } = "";
         [SupplyParameterFromQuery] public string? currency { get; set; }

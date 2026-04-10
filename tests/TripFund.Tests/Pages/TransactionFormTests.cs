@@ -38,7 +38,7 @@ public class TransactionFormTests : BunitContext
         Services.AddSingleton(_emailMock.Object);
         Services.AddSingleton(_datePickerMock.Object);
         Services.AddSingleton(_thumbnailMock.Object);
-        Services.AddSingleton(new Mock<ISyncService>().Object);
+        Services.AddSingleton(new Mock<IRemoteStorageService>().Object);
 
         // Mock JS Interop for scrolling (called in OnAfterRender)
         JSInterop.SetupVoid("headerLogic.scrollIntoView", _ => true);

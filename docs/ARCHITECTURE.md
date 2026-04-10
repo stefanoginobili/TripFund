@@ -86,5 +86,43 @@ A conflict is actively occurring IF AND ONLY IF there are two or more version su
 **Conflict Override Edge Case:**
 If an out-of-sync client uploads a new version folder (e.g., an `upd` or `del`) that sits alongside an existing `res` folder, the resolution is invalidated. The engine MUST revert the entity to an active Conflict State, requiring a new `res` commit to reconcile the newly introduced thread.
 
-## 4. Time Zones
-- Mapped all IANA TimeZone IDs to their Italian city name in a static class `TimeZoneMapper`. Updated `TimeZoneSelector` to filter by these supported zones and display the Italian city names. Moved the search input to the bottom of the `TimeZoneSelector` list. Formatted transaction timestamps to use Italian timezone names (e.g., "(ora di Roma)"). Updated tests to reflect the new formatting.
+## 5. Remote Storage Synchronization
+The synchronization process ensures the local offline-first storage and the remote provider (Google Drive, Git, etc.) are eventually consistent. This process operates at the folder level, navigating recursively through the `trips/[TripSlug]` structure.
+
+### 5.1. Synchronization Flow
+The process compares the local trip root (`trips/[TripSlug]`) against the remote root defined by the provider-specific parameters. It follows these macro-steps:
+
+1.  **Remote-to-Local Scan (Download Phase):**
+    *   Navigate recursively through all remote folders.
+    *   For each folder existing on remote but missing locally:
+        *   Initiate the **Folder Copying Flow** (see 5.2) to pull it locally.
+    *   If a folder exists locally with a `.synching` suffix:
+        *   Empty the local `.synching` folder and restart the copy from remote.
+
+2.  **Integrity & Conflict Check:**
+    *   Invoke the `VersionedStorageEngine` for the `metadata/` folder and each folder in `transactions/`.
+    *   **If any conflict is detected:** The synchronization process MUST fail immediately to prevent overwriting diverging data. The UI must then guide the user to resolve conflicts locally before re-attempting sync.
+    *   **If no conflicts are found:** Proceed to the next step.
+
+3.  **Local-to-Remote Scan (Upload Phase):**
+    *   Navigate recursively through all local folders.
+    *   For each folder existing locally but missing on remote:
+        *   Initiate the **Folder Copying Flow** (see 5.2) to push it to remote storage.
+    *   If a folder exists remotely with a `.synching` suffix:
+        *   Empty the remote `.synching` folder and restart the copy from local.
+
+### 5.2. Atomic Folder Copying Flow (`.synching` Pattern)
+To handle network interruptions or app crashes during transfer, all folder-copying operations MUST be atomic using a temporary suffix:
+
+*   **Remote to Local:**
+    1.  Create the destination folder locally with a `.synching` suffix (e.g., `002_upd_dev1.synching`).
+    2.  Copy all files from the remote folder into this local `.synching` directory.
+    3.  Once all files are successfully verified, rename the local folder by dropping the `.synching` suffix.
+*   **Local to Remote:**
+    1.  Create the destination folder on the remote storage with a `.synching` suffix.
+    2.  Copy all local files into this remote `.synching` directory.
+    3.  Once the remote provider confirms all files are uploaded, rename the remote folder by dropping the `.synching` suffix.
+
+### 5.3. Error Handling
+*   **Success:** The process is complete only when all recursive scans and copies finish without exceptions.
+*   **Failure:** Any exception (API error, Disk Full, Permission Denied) during the process MUST abort the synchronization and return a descriptive error to the UI. The state of partial transfers is safely managed by the `.synching` suffix logic.

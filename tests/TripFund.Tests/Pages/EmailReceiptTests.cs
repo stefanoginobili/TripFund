@@ -32,7 +32,7 @@ public class EmailReceiptTests : BunitContext
         Services.AddSingleton(_emailMock.Object);
         Services.AddSingleton(_alertMock.Object);
         Services.AddSingleton(new Mock<INativeDatePickerService>().Object);
-        Services.AddSingleton(new Mock<ISyncService>().Object);
+        Services.AddSingleton(new Mock<IRemoteStorageService>().Object);
 
         // Mock JS Interop for scrolling (called in OnAfterRender)
         JSInterop.SetupVoid("headerLogic.scrollIntoView", _ => true);

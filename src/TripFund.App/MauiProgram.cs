@@ -21,11 +21,10 @@ public static class MauiProgram
 				fonts.AddFont("OpenSans-Regular.ttf", "OpenSansRegular");
 			});
 
-		builder.Services.AddMauiBlazorWebView();
 		builder.Services.AddSingleton<Services.LocalTripStorageService>();
-		builder.Services.AddSingleton<Services.GoogleDriveSyncService>();
-		builder.Services.AddSingleton<Services.GitSyncService>();
-		builder.Services.AddSingleton<Services.ISyncService, Services.CompositeSyncService>();
+		builder.Services.AddSingleton<Services.GoogleDriveRemoteStorageService>();
+		builder.Services.AddSingleton<Services.GitRemoteStorageService>();
+		builder.Services.AddSingleton<Services.IRemoteStorageService, Services.CompositeRemoteStorageService>();
 		builder.Services.AddSingleton<Services.IAlertService, Services.MauiAlertService>();
 		builder.Services.AddSingleton<Services.IThumbnailService, Services.ThumbnailService>();
 		builder.Services.AddSingleton<Services.IEmailService, Services.EmailService>();

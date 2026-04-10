@@ -2,21 +2,21 @@ using TripFund.App.Models;
 
 namespace TripFund.App.Services;
 
-public class GitSyncService : ISyncService
+public class GoogleDriveRemoteStorageService : IRemoteStorageService
 {
 
     public Task<TripConfig?> GetRemoteTripConfigAsync(string provider, Dictionary<string, string> parameters)
     {
-        if (provider == "git" && parameters.TryGetValue("repository", out var repo))
+        if (provider == "google-drive" && parameters.TryGetValue("folderUrl", out var url))
         {
-            if (repo.Contains("existing"))
+            if (url.Contains("existing"))
             {
                 return Task.FromResult<TripConfig?>(new TripConfig
                 {
-                    Id = "existing-git-trip",
-                    Name = "Viaggio Esistente Git",
-                    StartDate = DateTime.Today.AddDays(30),
-                    EndDate = DateTime.Today.AddDays(40)
+                    Id = "existing-drive-trip",
+                    Name = "Viaggio Esistente Drive",
+                    StartDate = DateTime.Today.AddDays(10),
+                    EndDate = DateTime.Today.AddDays(20)
                 });
             }
         }
@@ -26,15 +26,15 @@ public class GitSyncService : ISyncService
 
     public Task<bool> IsRemoteLocationEmptyAsync(string provider, Dictionary<string, string> parameters)
     {
-        if (provider == "git" && parameters.TryGetValue("repository", out var repo))
+        if (provider == "google-drive" && parameters.TryGetValue("folderUrl", out var url))
         {
             // Simulate empty only if URL contains "empty"
-            return Task.FromResult(repo.Contains("empty"));
+            return Task.FromResult(url.Contains("empty"));
         }
         return Task.FromResult(false);
     }
 
-    public async Task SyncAsync(string tripSlug)
+    public async Task SynchronizeAsync(string tripSlug)
     {
         // Placeholder for real sync logic (Task 09)
         await Task.Delay(3000);

@@ -13,16 +13,16 @@ namespace TripFund.Tests.Pages;
 public class RemoteStorageSelectorTests : BunitContext
 {
     private readonly Mock<LocalTripStorageService> _storageMock;
-    private readonly Mock<ISyncService> _syncMock;
+    private readonly Mock<IRemoteStorageService> _remoteStorageMock;
     private readonly Mock<IAlertService> _alertMock;
 
     public RemoteStorageSelectorTests()
     {
         _storageMock = new Mock<LocalTripStorageService>("dummy_path");
-        _syncMock = new Mock<ISyncService>();
+        _remoteStorageMock = new Mock<IRemoteStorageService>();
         _alertMock = new Mock<IAlertService>();
         Services.AddSingleton(_storageMock.Object);
-        Services.AddSingleton(_syncMock.Object);
+        Services.AddSingleton(_remoteStorageMock.Object);
         Services.AddSingleton(_alertMock.Object);
     }
 
@@ -81,7 +81,7 @@ public class RemoteStorageSelectorTests : BunitContext
         // Arrange
         _storageMock.Setup(s => s.GetTripRegistryAsync()).ReturnsAsync(new LocalTripRegistry());
         _storageMock.Setup(s => s.GetAppSettingsAsync()).ReturnsAsync(new AppSettings());
-        _syncMock.Setup(s => s.IsRemoteLocationEmptyAsync(It.IsAny<string>(), It.IsAny<Dictionary<string, string>>()))
+        _remoteStorageMock.Setup(s => s.IsRemoteLocationEmptyAsync(It.IsAny<string>(), It.IsAny<Dictionary<string, string>>()))
             .ReturnsAsync(true);
 
         var nav = Services.GetRequiredService<NavigationManager>();
@@ -111,7 +111,7 @@ public class RemoteStorageSelectorTests : BunitContext
     {
         // Arrange
         _storageMock.Setup(s => s.GetTripRegistryAsync()).ReturnsAsync(new LocalTripRegistry());
-        _syncMock.Setup(s => s.IsRemoteLocationEmptyAsync(It.IsAny<string>(), It.IsAny<Dictionary<string, string>>()))
+        _remoteStorageMock.Setup(s => s.IsRemoteLocationEmptyAsync(It.IsAny<string>(), It.IsAny<Dictionary<string, string>>()))
             .ReturnsAsync(false);
 
         var cut = Render<Home>();
@@ -133,7 +133,7 @@ public class RemoteStorageSelectorTests : BunitContext
     {
         // Arrange
         _storageMock.Setup(s => s.GetTripRegistryAsync()).ReturnsAsync(new LocalTripRegistry());
-        _syncMock.Setup(d => d.GetRemoteTripConfigAsync(It.IsAny<string>(), It.IsAny<Dictionary<string, string>>()))
+        _remoteStorageMock.Setup(d => d.GetRemoteTripConfigAsync(It.IsAny<string>(), It.IsAny<Dictionary<string, string>>()))
             .ReturnsAsync((TripConfig?)null);
 
         var cut = Render<Home>();
@@ -156,7 +156,7 @@ public class RemoteStorageSelectorTests : BunitContext
         // Arrange
         var remoteConfig = new TripConfig { Name = "Remote Trip", StartDate = DateTime.Today, EndDate = DateTime.Today.AddDays(1) };
         _storageMock.Setup(s => s.GetTripRegistryAsync()).ReturnsAsync(new LocalTripRegistry());
-        _syncMock.Setup(d => d.GetRemoteTripConfigAsync(It.IsAny<string>(), It.IsAny<Dictionary<string, string>>()))
+        _remoteStorageMock.Setup(d => d.GetRemoteTripConfigAsync(It.IsAny<string>(), It.IsAny<Dictionary<string, string>>()))
             .ReturnsAsync(remoteConfig);
         _alertMock.Setup(a => a.ConfirmAsync(It.IsAny<string>(), It.IsAny<string>(), "Conferma", "Annulla"))
             .ReturnsAsync(true);

@@ -6,7 +6,7 @@
 
 ## .NET MAUI Blazor Hybrid Best Practices
 - **Componentization:** Break down complex UI into small, reusable `.razor` components.
-- **Dependency Injection:** Use DI for all services (StorageService, SyncService, LocationService).
+- **Dependency Injection:** Use DI for all services (StorageService, RemoteStorageService, LocationService).
 - **Separation of Concerns:** Keep C# logic in `@code` blocks or separate `.razor.cs` code-behind files. Do not mix heavy business logic inside HTML.
 - **Async/Await:** All I/O operations (File System, Google Drive API, GPS) must be asynchronous. Do not block the UI thread.
 - **Styling:** Use standard CSS or a lightweight framework (like Bootstrap or Tailwind) integrated via Blazor. Assets will be provided externally.

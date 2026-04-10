@@ -27,7 +27,7 @@ public class DashboardTests : BunitContext
         Services.AddSingleton(new Mock<IEmailService>().Object);
         Services.AddSingleton(new Mock<IAlertService>().Object);
         Services.AddSingleton(new Mock<IThumbnailService>().Object);
-        Services.AddSingleton(new Mock<ISyncService>().Object);
+        Services.AddSingleton(new Mock<IRemoteStorageService>().Object);
     }
 
     [Fact]
@@ -138,12 +138,12 @@ public class DashboardTests : BunitContext
         // Arrange
         var tripSlug = "test-trip";
         var config = new TripConfig { Id = "1", Name = "Test Trip", Currencies = new Dictionary<string, Currency> { { "EUR", new Currency { Symbol = "€" } } } };
-        var lastSync = DateTime.Now.AddMinutes(-minutesAgo);
+        var lastSynchronized = DateTime.Now.AddMinutes(-minutesAgo);
         var registry = new LocalTripRegistry
         {
             Trips = new Dictionary<string, TripRegistryEntry>
             {
-                { tripSlug, new TripRegistryEntry { RemoteStorage = new RemoteStorageConfig { Provider = "git", LastSync = lastSync } } }
+                { tripSlug, new TripRegistryEntry { RemoteStorage = new RemoteStorageConfig { Provider = "git", LastSynchronized = lastSynchronized } } }
             }
         };
 
@@ -160,7 +160,7 @@ public class DashboardTests : BunitContext
     }
 
     [Fact]
-    public void TripDashboard_ShouldShowMaiSincronizzatoWhenLastSyncIsNull()
+    public void TripDashboard_ShouldShowMaiSincronizzatoWhenLastSynchronizedIsNull()
     {
         // Arrange
         var tripSlug = "test-trip";
@@ -169,7 +169,7 @@ public class DashboardTests : BunitContext
         {
             Trips = new Dictionary<string, TripRegistryEntry>
             {
-                { tripSlug, new TripRegistryEntry { RemoteStorage = new RemoteStorageConfig { Provider = "git", LastSync = null } } }
+                { tripSlug, new TripRegistryEntry { RemoteStorage = new RemoteStorageConfig { Provider = "git", LastSynchronized = null } } }
             }
         };
 
@@ -190,8 +190,8 @@ public class DashboardTests : BunitContext
     {
         // Arrange
         var tripSlug = "test-trip";
-        var syncMock = new Mock<ISyncService>();
-        Services.AddSingleton(syncMock.Object);
+        var remoteStorageMock = new Mock<IRemoteStorageService>();
+        Services.AddSingleton(remoteStorageMock.Object);
 
         var config = new TripConfig { Id = "1", Name = "Test Trip", Currencies = new Dictionary<string, Currency> { { "EUR", new Currency { Symbol = "€" } } } };
         var registry = new LocalTripRegistry
@@ -213,7 +213,7 @@ public class DashboardTests : BunitContext
         await syncBtn.ClickAsync(new Microsoft.AspNetCore.Components.Web.MouseEventArgs());
 
         // Assert
-        syncMock.Verify(s => s.SyncAsync(tripSlug), Times.Once);
+        remoteStorageMock.Verify(s => s.SynchronizeAsync(tripSlug), Times.Once);
     }
 
     [Fact]

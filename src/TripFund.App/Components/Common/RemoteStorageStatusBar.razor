@@ -1,7 +1,7 @@
 @using TripFund.App.Services
 @using TripFund.App.Models
 @inject LocalTripStorageService Storage
-@inject ISyncService Sync
+@inject IRemoteStorageService RemoteStorage
 @implements IDisposable
 
 @if (!string.IsNullOrEmpty(remoteStorageProvider))
@@ -17,7 +17,7 @@
             }
             else
             {
-                <span class="sync-text">@GetRelativeSyncTime(lastSync)</span>
+                <span class="sync-text">@GetRelativeSyncTime(lastSynchronized)</span>
             }
             <button class="sync-now-btn @(isSyncing ? "spinning" : "")" @onclick="TriggerSync" disabled="@isSyncing">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -35,7 +35,7 @@
     [Parameter] public EventCallback OnSyncCompleted { get; set; }
 
     private string? remoteStorageProvider;
-    private DateTime? lastSync;
+    private DateTime? lastSynchronized;
     private bool isSyncing = false;
     private System.Timers.Timer? refreshTimer;
 
@@ -50,7 +50,7 @@
         if (registry?.Trips != null && registry.Trips.TryGetValue(TripSlug, out var entry))
         {
             remoteStorageProvider = entry.RemoteStorage?.Provider;
-            lastSync = entry.RemoteStorage?.LastSync;
+            lastSynchronized = entry.RemoteStorage?.LastSynchronized;
         }
 
         if (refreshTimer == null)
@@ -70,7 +70,7 @@
 
         try
         {
-            await Sync.SyncAsync(TripSlug);
+            await RemoteStorage.SynchronizeAsync(TripSlug);
             await LoadSyncStatus();
             await OnSyncCompleted.InvokeAsync();
         }

@@ -2,13 +2,13 @@ using TripFund.App.Models;
 
 namespace TripFund.App.Services;
 
-public class CompositeSyncService : ISyncService
+public class CompositeRemoteStorageService : IRemoteStorageService
 {
-    private readonly GoogleDriveSyncService _drive;
-    private readonly GitSyncService _git;
+    private readonly GoogleDriveRemoteStorageService _drive;
+    private readonly GitRemoteStorageService _git;
     private readonly LocalTripStorageService _storage;
 
-    public CompositeSyncService(GoogleDriveSyncService drive, GitSyncService git, LocalTripStorageService storage)
+    public CompositeRemoteStorageService(GoogleDriveRemoteStorageService drive, GitRemoteStorageService git, LocalTripStorageService storage)
     {
         _drive = drive;
         _git = git;
@@ -43,22 +43,22 @@ public class CompositeSyncService : ISyncService
         return Task.FromResult(false);
     }
 
-    public async Task SyncAsync(string tripSlug)
+    public async Task SynchronizeAsync(string tripSlug)
     {
         var registry = await _storage.GetTripRegistryAsync();
         if (registry.Trips.TryGetValue(tripSlug, out var entry) && entry.RemoteStorage != null)
         {
             if (entry.RemoteStorage.Provider == "google-drive")
             {
-                await _drive.SyncAsync(tripSlug);
+                await _drive.SynchronizeAsync(tripSlug);
             }
             else if (entry.RemoteStorage.Provider == "git")
             {
-                await _git.SyncAsync(tripSlug);
+                await _git.SynchronizeAsync(tripSlug);
             }
 
             // Update last sync time
-            entry.RemoteStorage.LastSync = DateTime.Now;
+            entry.RemoteStorage.LastSynchronized = DateTime.Now;
             await _storage.SaveTripRegistryAsync(registry);
         }
     }

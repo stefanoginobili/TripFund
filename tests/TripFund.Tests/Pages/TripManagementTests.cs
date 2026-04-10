@@ -12,7 +12,7 @@ namespace TripFund.Tests.Pages;
 public class TripManagementTests : BunitContext
 {
     private readonly Mock<LocalTripStorageService> _storageMock;
-    private readonly Mock<ISyncService> _syncMock;
+    private readonly Mock<IRemoteStorageService> _remoteStorageMock;
     private readonly Mock<IAlertService> _alertMock;
     private readonly Mock<INativeDatePickerService> _datePickerMock;
 
@@ -23,12 +23,12 @@ public class TripManagementTests : BunitContext
         System.Globalization.CultureInfo.DefaultThreadCurrentUICulture = itCulture;
 
         _storageMock = new Mock<LocalTripStorageService>("dummy_path");
-        _syncMock = new Mock<ISyncService>();
+        _remoteStorageMock = new Mock<IRemoteStorageService>();
         _alertMock = new Mock<IAlertService>();
         _datePickerMock = new Mock<INativeDatePickerService>();
         
         Services.AddSingleton(_storageMock.Object);
-        Services.AddSingleton(_syncMock.Object);
+        Services.AddSingleton(_remoteStorageMock.Object);
         Services.AddSingleton(_alertMock.Object);
         Services.AddSingleton(_datePickerMock.Object);
     }

@@ -11,7 +11,7 @@ namespace TripFund.Tests.Pages;
 public class HomeTests : BunitContext
 {
     private readonly Mock<LocalTripStorageService> _storageMock;
-    private readonly Mock<ISyncService> _syncMock;
+    private readonly Mock<IRemoteStorageService> _remoteStorageMock;
     private readonly Mock<IAlertService> _alertMock;
 
     public HomeTests()
@@ -21,10 +21,10 @@ public class HomeTests : BunitContext
         System.Globalization.CultureInfo.DefaultThreadCurrentUICulture = itCulture;
 
         _storageMock = new Mock<LocalTripStorageService>("dummy_path");
-        _syncMock = new Mock<ISyncService>();
+        _remoteStorageMock = new Mock<IRemoteStorageService>();
         _alertMock = new Mock<IAlertService>();
         Services.AddSingleton(_storageMock.Object);
-        Services.AddSingleton(_syncMock.Object);
+        Services.AddSingleton(_remoteStorageMock.Object);
         Services.AddSingleton(_alertMock.Object);
     }
 
