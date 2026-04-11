@@ -5,13 +5,11 @@ namespace TripFund.App.Services;
 public class CompositeRemoteStorageService : IRemoteStorageService
 {
     private readonly GoogleDriveRemoteStorageService _drive;
-    private readonly GitRemoteStorageService _git;
     private readonly LocalTripStorageService _storage;
 
-    public CompositeRemoteStorageService(GoogleDriveRemoteStorageService drive, GitRemoteStorageService git, LocalTripStorageService storage)
+    public CompositeRemoteStorageService(GoogleDriveRemoteStorageService drive, LocalTripStorageService storage)
     {
         _drive = drive;
-        _git = git;
         _storage = storage;
     }
 
@@ -20,10 +18,6 @@ public class CompositeRemoteStorageService : IRemoteStorageService
         if (provider == "google-drive")
         {
             return _drive.GetRemoteTripConfigAsync(provider, parameters);
-        }
-        else if (provider == "git")
-        {
-            return _git.GetRemoteTripConfigAsync(provider, parameters);
         }
 
         return Task.FromResult<TripConfig?>(null);
@@ -34,10 +28,6 @@ public class CompositeRemoteStorageService : IRemoteStorageService
         if (provider == "google-drive")
         {
             return _drive.IsRemoteLocationEmptyAsync(provider, parameters);
-        }
-        else if (provider == "git")
-        {
-            return _git.IsRemoteLocationEmptyAsync(provider, parameters);
         }
 
         return Task.FromResult(false);
@@ -51,10 +41,6 @@ public class CompositeRemoteStorageService : IRemoteStorageService
             if (entry.RemoteStorage.Provider == "google-drive")
             {
                 await _drive.SynchronizeAsync(tripSlug);
-            }
-            else if (entry.RemoteStorage.Provider == "git")
-            {
-                await _git.SynchronizeAsync(tripSlug);
             }
 
             // Reload registry to get updates from the provider (hasConflicts, readonly)

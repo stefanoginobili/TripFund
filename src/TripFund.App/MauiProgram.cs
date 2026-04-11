@@ -30,7 +30,6 @@ public static class MauiProgram
 		builder.Services.AddSingleton<Services.LocalTripStorageService>();
 		builder.Services.AddSingleton<Services.IGoogleAuthConfiguration, Services.GoogleAuthConfiguration>();
 		builder.Services.AddSingleton<Services.IWebAuthenticator, Services.MauiWebAuthenticator>();
-		builder.Services.AddSingleton<Services.GitRemoteStorageService>();
 		builder.Services.AddSingleton<Services.IRemoteStorageService, Services.CompositeRemoteStorageService>();
 		builder.Services.AddSingleton<Services.IAlertService, Services.MauiAlertService>();
 		builder.Services.AddSingleton<Services.IThumbnailService, Services.ThumbnailService>();

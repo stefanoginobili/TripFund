@@ -150,17 +150,6 @@ public class ModelSerializationTests
                 ""lastSynchronized"": ""2026-05-23T13:45:00Z"",
                 ""hasConflicts"": false
               }
-            },
-            ""giappone-2027"": {
-              ""createdAt"": ""2026-04-01T13:30:00Z"",
-              ""remoteStorage"": {
-                ""provider"": ""git"",
-                ""parameters"": {
-                  ""repository"": ""https://github.com/mario/giappone.git""
-                },
-                ""lastSynchronized"": ""2026-05-05T13:45:00Z"",
-                ""hasConflicts"": false
-              }
             }
           }
         }";
@@ -172,12 +161,10 @@ public class ModelSerializationTests
 
         // Assert
         registry.Should().NotBeNull();
-        registry!.Trips.Should().HaveCount(2);
+        registry!.Trips.Should().HaveCount(1);
         registry.Trips.Should().ContainKey("patagonia-2026");
         registry.Trips["patagonia-2026"].RemoteStorage!.Provider.Should().Be("google-drive");
         registry.Trips["patagonia-2026"].RemoteStorage!.Parameters["folderId"].Should().Be("abcdef1234567890");
-        registry.Trips["giappone-2027"].RemoteStorage!.Provider.Should().Be("git");
-        registry.Trips["giappone-2027"].RemoteStorage!.Parameters["repository"].Should().Be("https://github.com/mario/giappone.git");
 
         deserializedAgain.Should().BeEquivalentTo(registry);
     }

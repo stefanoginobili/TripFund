@@ -143,7 +143,7 @@ public class DashboardTests : BunitContext
         {
             Trips = new Dictionary<string, TripRegistryEntry>
             {
-                { tripSlug, new TripRegistryEntry { RemoteStorage = new RemoteStorageConfig { Provider = "git", LastSynchronized = lastSynchronized } } }
+                { tripSlug, new TripRegistryEntry { RemoteStorage = new RemoteStorageConfig { Provider = "google-drive", LastSynchronized = lastSynchronized } } }
             }
         };
 
@@ -169,7 +169,7 @@ public class DashboardTests : BunitContext
         {
             Trips = new Dictionary<string, TripRegistryEntry>
             {
-                { tripSlug, new TripRegistryEntry { RemoteStorage = new RemoteStorageConfig { Provider = "git", LastSynchronized = null } } }
+                { tripSlug, new TripRegistryEntry { RemoteStorage = new RemoteStorageConfig { Provider = "google-drive", LastSynchronized = null } } }
             }
         };
 
@@ -198,7 +198,7 @@ public class DashboardTests : BunitContext
         {
             Trips = new Dictionary<string, TripRegistryEntry>
             {
-                { tripSlug, new TripRegistryEntry { RemoteStorage = new RemoteStorageConfig { Provider = "git" } } }
+                { tripSlug, new TripRegistryEntry { RemoteStorage = new RemoteStorageConfig { Provider = "google-drive" } } }
             }
         };
 

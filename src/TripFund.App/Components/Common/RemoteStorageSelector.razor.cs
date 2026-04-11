@@ -12,13 +12,10 @@ namespace TripFund.App.Components.Common
 
         private string? selectedProvider;
         private string folderUrl = "";
-        private string repoUrl = "";
-        private string gitPat = "";
 
         private string GetTitle()
         {
             if (selectedProvider == "google-drive") return "Google Drive";
-            if (selectedProvider == "git") return "Git";
             return "Seleziona Archivio";
         }
 
@@ -45,11 +42,6 @@ namespace TripFund.App.Components.Common
             {
                 parameters["folderUrl"] = folderUrl;
             }
-            else if (selectedProvider == "git")
-            {
-                parameters["repository"] = repoUrl;
-                parameters["pat"] = gitPat;
-            }
 
             var selection = new RemoteStorageSelection
             {
@@ -60,8 +52,6 @@ namespace TripFund.App.Components.Common
             await OnSelectionCompleted.InvokeAsync(selection);
             selectedProvider = null;
             folderUrl = "";
-            repoUrl = "";
-            gitPat = "";
         }
     }
 }

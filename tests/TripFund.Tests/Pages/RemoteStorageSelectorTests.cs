@@ -35,9 +35,8 @@ public class RemoteStorageSelectorTests : BunitContext
         );
 
         // Assert
-        cut.FindAll(".provider-item").Should().HaveCount(2);
+        cut.FindAll(".provider-item").Should().HaveCount(1);
         cut.Find(".provider-item:nth-child(1) .provider-name").TextContent.Should().Be("Google Drive");
-        cut.Find(".provider-item:nth-child(2) .provider-name").TextContent.Should().Be("Git");
     }
 
     [Fact]
@@ -58,24 +57,6 @@ public class RemoteStorageSelectorTests : BunitContext
     }
 
     [Fact]
-    public void Selector_Git_ShouldShowForm()
-    {
-        // Arrange
-        var cut = Render<RemoteStorageSelector>(parameters => parameters
-            .Add(p => p.IsVisible, true)
-        );
-
-        // Act - Click Git
-        cut.FindAll(".provider-item")[1].Click();
-
-        // Assert
-        cut.Find(".modal-title-vibe").TextContent.Should().Be("Git");
-        var labels = cut.FindAll("label.form-label-vibe");
-        labels[0].TextContent.Should().Be("URL del repository");
-        labels[1].TextContent.Should().Be("PAT (Personal Access Token)");
-    }
-
-    [Fact]
     public async Task Home_CreateTrip_ShouldShowSelector_AndNavigate()
     {
         // Arrange
@@ -93,17 +74,15 @@ public class RemoteStorageSelectorTests : BunitContext
         // Assert - Selector visible
         cut.FindComponent<RemoteStorageSelector>().Instance.IsVisible.Should().BeTrue();
 
-        // Act - Select Git and fill form
-        cut.FindAll(".provider-item")[1].Click();
-        cut.FindAll("input")[0].Change("https://github.com/test/repo.git");
-        cut.FindAll("input")[1].Change("secret_pat");
+        // Act - Select Google Drive and fill form
+        cut.FindAll(".provider-item")[0].Click();
+        cut.Find("input").Change("https://drive.google.com/test");
         cut.Find(".btn-primary-vibe.flex-2").Click();
 
         // Assert - Navigation
         nav.Uri.Should().Contain("/create-trip");
-        nav.Uri.Should().Contain("provider=git");
-        nav.Uri.Should().Contain("repository=https%3A%2F%2Fgithub.com%2Ftest%2Frepo.git");
-        nav.Uri.Should().Contain("pat=secret_pat");
+        nav.Uri.Should().Contain("provider=google-drive");
+        nav.Uri.Should().Contain("folderUrl=https%3A%2F%2Fdrive.google.com%2Ftest");
     }
 
     [Fact]
@@ -167,10 +146,9 @@ public class RemoteStorageSelectorTests : BunitContext
         // Act - Click "Aggiungi viaggio esistente"
         cut.Find(".action-link.secondary").Click();
         
-        // Select Git and submit
-        cut.FindAll(".provider-item")[1].Click();
-        cut.FindAll("input")[0].Change("https://github.com/existing");
-        cut.FindAll("input")[1].Change("token");
+        // Select Google Drive and submit
+        cut.FindAll(".provider-item")[0].Click();
+        cut.Find("input").Change("https://drive.google.com/existing");
         cut.Find(".btn-primary-vibe.flex-2").Click();
 
         // Assert

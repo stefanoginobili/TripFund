@@ -30,18 +30,6 @@
                                 <polyline points="9 18 15 12 9 6"></polyline>
                             </svg>
                         </div>
-
-                        <div class="provider-item" @onclick='() => SelectProvider("git")'>
-                            <div class="provider-logo">
-                                <img src="images/git.svg" width="32" height="32" alt="Git" />
-                            </div>
-                            <div class="provider-info">
-                                <div class="provider-name">Git</div>
-                            </div>
-                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <polyline points="9 18 15 12 9 6"></polyline>
-                            </svg>
-                        </div>
                     </div>
                 }
                 else if (selectedProvider == "google-drive")
@@ -54,23 +42,6 @@
                         <div class="d-flex gap-2">
                             <button class="btn-secondary-vibe flex-1" @onclick="Back">Indietro</button>
                             <button class="btn-primary-vibe flex-2" @onclick="Complete" disabled="@(string.IsNullOrWhiteSpace(folderUrl))">Conferma</button>
-                        </div>
-                    </div>
-                }
-                else if (selectedProvider == "git")
-                {
-                    <div class="provider-form">
-                        <div class="mb-3">
-                            <label class="form-label-vibe">URL del repository</label>
-                            <input type="text" class="form-control-vibe" @bind="repoUrl" placeholder="https://github.com/username/repo.git" />
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label-vibe">PAT (Personal Access Token)</label>
-                            <input type="password" class="form-control-vibe" @bind="gitPat" placeholder="ghp_xxxxxxxxxxxx" />
-                        </div>
-                        <div class="d-flex gap-2">
-                            <button class="btn-secondary-vibe flex-1" @onclick="Back">Indietro</button>
-                            <button class="btn-primary-vibe flex-2" @onclick="Complete" disabled="@(string.IsNullOrWhiteSpace(repoUrl) || string.IsNullOrWhiteSpace(gitPat))">Conferma</button>
                         </div>
                     </div>
                 }

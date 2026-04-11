@@ -16,6 +16,7 @@ public class GoogleDriveRemoteStorageTests : IDisposable
     private readonly WireMockServer _server;
     private readonly string _tempPath;
     private readonly Mock<TripFund.App.Services.IWebAuthenticator> _mockAuthenticator;
+    private readonly Mock<TripFund.App.Services.IGoogleAuthConfiguration> _mockConfig;
     private readonly GoogleDriveRemoteStorageService _service;
     private readonly LocalTripStorageService _localStorage;
     private readonly HttpClient _httpClient;
@@ -27,10 +28,13 @@ public class GoogleDriveRemoteStorageTests : IDisposable
         Directory.CreateDirectory(_tempPath);
 
         _mockAuthenticator = new Mock<TripFund.App.Services.IWebAuthenticator>();
+        _mockConfig = new Mock<TripFund.App.Services.IGoogleAuthConfiguration>();
+        _mockConfig.Setup(c => c.GoogleClientId).Returns("fake-client-id");
+        
         _localStorage = new LocalTripStorageService(_tempPath);
         _httpClient = new HttpClient { BaseAddress = new Uri(_server.Urls[0]) };
         
-        _service = new GoogleDriveRemoteStorageService(_httpClient, _mockAuthenticator.Object, _localStorage);
+        _service = new GoogleDriveRemoteStorageService(_httpClient, _mockAuthenticator.Object, _localStorage, _mockConfig.Object);
     }
 
     public void Dispose()
