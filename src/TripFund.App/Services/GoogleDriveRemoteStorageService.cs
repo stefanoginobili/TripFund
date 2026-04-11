@@ -12,6 +12,7 @@ public class GoogleDriveRemoteStorageService : IRemoteStorageService
     private readonly HttpClient _httpClient;
     private readonly IWebAuthenticator _authenticator;
     private readonly LocalTripStorageService _localStorage;
+    private readonly IGoogleAuthConfiguration _config;
     private readonly VersionedStorageEngine _engine = new();
     private string? _accessToken;
     private string? _refreshToken;
@@ -20,11 +21,13 @@ public class GoogleDriveRemoteStorageService : IRemoteStorageService
     public GoogleDriveRemoteStorageService(
         HttpClient httpClient, 
         IWebAuthenticator authenticator, 
-        LocalTripStorageService localStorage)
+        LocalTripStorageService localStorage,
+        IGoogleAuthConfiguration config)
     {
         _httpClient = httpClient;
         _authenticator = authenticator;
         _localStorage = localStorage;
+        _config = config;
     }
 
     public async Task<TripConfig?> GetRemoteTripConfigAsync(string provider, Dictionary<string, string> parameters)
@@ -270,7 +273,7 @@ public class GoogleDriveRemoteStorageService : IRemoteStorageService
         }
 
         var callbackUrl = "com.stefanoginobili.tripfund.app:/oauth2redirect";
-        var authUrl = $"https://accounts.google.com/o/oauth2/v2/auth?client_id={Config.GoogleClientId}&response_type=code&scope=https://www.googleapis.com/auth/drive.file&redirect_uri={Uri.EscapeDataString(callbackUrl)}";
+        var authUrl = $"https://accounts.google.com/o/oauth2/v2/auth?client_id={_config.GoogleClientId}&response_type=code&scope=https://www.googleapis.com/auth/drive.file&redirect_uri={Uri.EscapeDataString(callbackUrl)}";
         
         var result = await _authenticator.AuthenticateAsync(new WebAuthenticatorOptions
         {
@@ -289,7 +292,7 @@ public class GoogleDriveRemoteStorageService : IRemoteStorageService
         var content = new FormUrlEncodedContent(new[]
         {
             new KeyValuePair<string, string>("code", code),
-            new KeyValuePair<string, string>("client_id", Config.GoogleClientId),
+            new KeyValuePair<string, string>("client_id", _config.GoogleClientId),
             new KeyValuePair<string, string>("grant_type", "authorization_code"),
             new KeyValuePair<string, string>("redirect_uri", "com.stefanoginobili.tripfund.app:/oauth2redirect")
         });
@@ -312,7 +315,7 @@ public class GoogleDriveRemoteStorageService : IRemoteStorageService
         var content = new FormUrlEncodedContent(new[]
         {
             new KeyValuePair<string, string>("refresh_token", _refreshToken ?? ""),
-            new KeyValuePair<string, string>("client_id", Config.GoogleClientId),
+            new KeyValuePair<string, string>("client_id", _config.GoogleClientId),
             new KeyValuePair<string, string>("grant_type", "refresh_token")
         });
 
