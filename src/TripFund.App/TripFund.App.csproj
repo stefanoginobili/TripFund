@@ -19,20 +19,6 @@
                <MauiXaml Update="MyPage.xaml" Inflator="Default" /> (reverts to defaults: Runtime for Debug, XamlC for Release)
                <MauiXaml Update="MyPage.xaml" Inflator="Runtime" /> (force runtime inflation) -->
         <MauiXamlInflator>SourceGen</MauiXamlInflator>
-
-        <ApplicationVersion>1</ApplicationVersion>
-        
-        <PropertyGroup Condition="'$(Configuration)' == 'Debug'">
-            <ApplicationTitle>TripFund (Dev)</ApplicationTitle>
-            <ApplicationId>com.stefanoginobili.tripfund.app.dev</ApplicationId>
-            <ApplicationDisplayVersion>1.0-dev</ApplicationDisplayVersion>
-        </PropertyGroup>
-
-        <PropertyGroup Condition="'$(Configuration)' == 'Release'">
-            <ApplicationTitle>TripFund</ApplicationTitle>
-            <ApplicationId>com.stefanoginobili.tripfund.app</ApplicationId>
-            <ApplicationDisplayVersion>1.0</ApplicationDisplayVersion>
-        </PropertyGroup>
         
         <!-- Fix for Android Fast Deployment crash after clearing storage -->
         <EmbedAssembliesIntoApk>true</EmbedAssembliesIntoApk>
@@ -42,6 +28,20 @@
 
         <!-- Bypasses XA0030 error for JDK 25 compatibility -->
         <_SuppressXA0030>true</_SuppressXA0030>
+    </PropertyGroup>
+
+    <PropertyGroup Condition="'$(Configuration)' == 'Debug'">
+        <ApplicationVersion>1</ApplicationVersion>
+        <ApplicationDisplayVersion>1.0-dev</ApplicationDisplayVersion>
+        <ApplicationTitle>TripFund (Dev)</ApplicationTitle>
+        <ApplicationId>com.stefanoginobili.tripfund.app.dev</ApplicationId>
+    </PropertyGroup>
+
+    <PropertyGroup Condition="'$(Configuration)' == 'Release'">
+        <ApplicationVersion>1</ApplicationVersion>
+        <ApplicationDisplayVersion>1.0</ApplicationDisplayVersion>
+        <ApplicationTitle>TripFund</ApplicationTitle>
+        <ApplicationId>com.stefanoginobili.tripfund.app</ApplicationId>
     </PropertyGroup>
 
     <ItemGroup>

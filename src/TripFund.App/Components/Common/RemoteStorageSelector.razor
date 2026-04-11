@@ -19,6 +19,21 @@
                 @if (selectedProvider == null)
                 {
                     <div class="provider-list">
+                        @if (!IsJoining)
+                        {
+                            <div class="provider-item" @onclick='() => SelectProvider("local")'>
+                                <div class="provider-logo">
+                                    <img src="images/file.svg" width="32" height="32" alt="Memoria Locale" />
+                                </div>
+                                <div class="provider-info">
+                                    <div class="provider-name">Memoria Locale</div>
+                                </div>
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <polyline points="9 18 15 12 9 6"></polyline>
+                                </svg>
+                            </div>
+                        }
+
                         <div class="provider-item" @onclick='() => SelectProvider("google-drive")'>
                             <div class="provider-logo">
                                 <img src="images/google-drive.svg" width="32" height="32" alt="Google Drive" />
@@ -35,10 +50,23 @@
                 else if (selectedProvider == "google-drive")
                 {
                     <div class="provider-form">
+                        <div class="help-section-vibe">
+                            <h3 class="help-title-vibe">Come ottenere l'URL della cartella:</h3>
+                            <div class="help-item-vibe">
+                                <strong>Dall'App Google Drive:</strong>
+                                <p>Apri la cartella, tocca i tre puntini (⋮) in alto a destra e seleziona "Copia link".</p>
+                            </div>
+                            <div class="help-item-vibe">
+                                <strong>Dal sito Google Drive:</strong>
+                                <p>Apri la cartella nel browser e copia l'intero URL dalla barra degli indirizzi. Oppure clicca con il tasto destro sulla cartella e seleziona "Condividi" e poi "Copia link".</p>
+                            </div>
+                        </div>
+                        
                         <div class="mb-3">
                             <label class="form-label-vibe">URL della cartella</label>
-                            <input type="text" class="form-control-vibe" @bind="folderUrl" placeholder="https://drive.google.com/drive/folders/..." />
+                            <input type="text" class="form-control-vibe" @bind="folderUrl" @bind:event="oninput" placeholder="https://drive.google.com/drive/folders/..."/>
                         </div>
+
                         <div class="d-flex gap-2">
                             <button class="btn-secondary-vibe flex-1" @onclick="Back">Indietro</button>
                             <button class="btn-primary-vibe flex-2" @onclick="Complete" disabled="@(string.IsNullOrWhiteSpace(folderUrl))">Conferma</button>
@@ -51,6 +79,35 @@
 }
 
 <style>
+    .help-section-vibe {
+        background-color: #E9F2EE;
+        padding: 1rem;
+        border-radius: 16px;
+        margin-bottom: 1.5rem;
+        border: 1px solid rgba(32, 86, 60, 0.1);
+    }
+
+    .help-title-vibe {
+        font-size: 0.95rem;
+        font-weight: 700;
+        color: #20563C;
+        margin-bottom: 0.75rem;
+    }
+
+    .help-item-vibe {
+        font-size: 0.85rem;
+        color: #1A3C2F;
+        line-height: 1.4;
+    }
+
+    .help-item-vibe strong {
+        display: block;
+        margin-top: 0.5rem;
+    }
+
+    .help-item-vibe p {
+        margin: 0.2rem 0 0.5rem 0;
+    }
     .modal-backdrop-vibe {
         position: fixed;
         top: 0;

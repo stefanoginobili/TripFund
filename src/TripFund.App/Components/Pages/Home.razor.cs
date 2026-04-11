@@ -25,12 +25,16 @@ namespace TripFund.App.Components.Pages
         }
 
         private void NavigateToSettings() => Nav.NavigateTo("/settings");
-        private void NavigateToCreate(RemoteStorageSelection selection) 
+        private void NavigateToCreate(RemoteStorageSelection? selection) 
         {
-            var uri = $"/create-trip?provider={selection.Provider}";
-            foreach (var p in selection.Parameters)
+            var uri = "/create-trip";
+            if (selection != null)
             {
-                uri += $"&{p.Key}={Uri.EscapeDataString(p.Value)}";
+                uri += $"?provider={selection.Provider}";
+                foreach (var p in selection.Parameters)
+                {
+                    uri += $"&{p.Key}={Uri.EscapeDataString(p.Value)}";
+                }
             }
             Nav.NavigateTo(uri);
         }
@@ -48,21 +52,25 @@ namespace TripFund.App.Components.Pages
             showSyncSelector = true;
         }
 
-        private async Task HandleSyncSelectionCompleted(RemoteStorageSelection selection)
+        private async Task HandleSyncSelectionCompleted(RemoteStorageSelection? selection)
         {
             showSyncSelector = false;
 
             if (isJoining)
             {
+                if (selection == null) return;
                 await HandleJoinTrip(selection);
             }
             else
             {
-                var isEmpty = await RemoteStorage.IsRemoteLocationEmptyAsync(selection.Provider, selection.Parameters);
-                if (!isEmpty)
+                if (selection != null)
                 {
-                    await Alert.ShowAlertAsync("Errore", "La posizione remota deve esistere ed essere vuota.");
-                    return;
+                    var isEmpty = await RemoteStorage.IsRemoteLocationEmptyAsync(selection.Provider, selection.Parameters);
+                    if (!isEmpty)
+                    {
+                        await Alert.ShowAlertAsync("Errore", "La posizione remota deve esistere ed essere vuota.");
+                        return;
+                    }
                 }
                 NavigateToCreate(selection);
             }

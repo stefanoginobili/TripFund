@@ -32,6 +32,22 @@ public class RemoteStorageSelectorTests : BunitContext
         // Act
         var cut = Render<RemoteStorageSelector>(parameters => parameters
             .Add(p => p.IsVisible, true)
+            .Add(p => p.IsJoining, false)
+        );
+
+        // Assert
+        cut.FindAll(".provider-item").Should().HaveCount(2);
+        cut.Find(".provider-item:nth-child(1) .provider-name").TextContent.Should().Be("Memoria Locale");
+        cut.Find(".provider-item:nth-child(2) .provider-name").TextContent.Should().Be("Google Drive");
+    }
+
+    [Fact]
+    public void Selector_ShouldRenderOnlyGoogleDrive_WhenJoining()
+    {
+        // Act
+        var cut = Render<RemoteStorageSelector>(parameters => parameters
+            .Add(p => p.IsVisible, true)
+            .Add(p => p.IsJoining, true)
         );
 
         // Assert
@@ -45,10 +61,11 @@ public class RemoteStorageSelectorTests : BunitContext
         // Arrange
         var cut = Render<RemoteStorageSelector>(parameters => parameters
             .Add(p => p.IsVisible, true)
+            .Add(p => p.IsJoining, false)
         );
 
-        // Act - Click Google Drive
-        cut.FindAll(".provider-item")[0].Click();
+        // Act - Click Google Drive (second item)
+        cut.FindAll(".provider-item")[1].Click();
 
         // Assert
         cut.Find(".modal-title-vibe").TextContent.Should().Be("Google Drive");
@@ -57,7 +74,7 @@ public class RemoteStorageSelectorTests : BunitContext
     }
 
     [Fact]
-    public async Task Home_CreateTrip_ShouldShowSelector_AndNavigate()
+    public async Task Home_CreateTrip_ShouldShowSelector_AndNavigate_GoogleDrive()
     {
         // Arrange
         _storageMock.Setup(s => s.GetTripRegistryAsync()).ReturnsAsync(new LocalTripRegistry());
@@ -74,15 +91,34 @@ public class RemoteStorageSelectorTests : BunitContext
         // Assert - Selector visible
         cut.FindComponent<RemoteStorageSelector>().Instance.IsVisible.Should().BeTrue();
 
-        // Act - Select Google Drive and fill form
-        cut.FindAll(".provider-item")[0].Click();
-        cut.Find("input").Change("https://drive.google.com/test");
+        // Act - Select Google Drive (second item) and fill form
+        cut.FindAll(".provider-item")[1].Click();
+        await cut.Find("input").InputAsync(new ChangeEventArgs { Value = "https://drive.google.com/test" });
         cut.Find(".btn-primary-vibe.flex-2").Click();
 
         // Assert - Navigation
         nav.Uri.Should().Contain("/create-trip");
         nav.Uri.Should().Contain("provider=google-drive");
         nav.Uri.Should().Contain("folderUrl=https%3A%2F%2Fdrive.google.com%2Ftest");
+    }
+
+    [Fact]
+    public async Task Home_CreateTrip_ShouldNavigate_MemoriaLocale()
+    {
+        // Arrange
+        _storageMock.Setup(s => s.GetTripRegistryAsync()).ReturnsAsync(new LocalTripRegistry());
+        
+        var nav = Services.GetRequiredService<NavigationManager>();
+        var cut = Render<Home>();
+
+        // Act - Click "Crea viaggio"
+        cut.Find(".action-link").Click();
+
+        // Act - Select Memoria Locale (first item)
+        cut.FindAll(".provider-item")[0].Click();
+
+        // Assert - Navigation without parameters
+        nav.Uri.Should().EndWith("/create-trip");
     }
 
     [Fact]
@@ -98,9 +134,9 @@ public class RemoteStorageSelectorTests : BunitContext
         // Act - Click "Crea viaggio"
         cut.Find(".action-link").Click();
         
-        // Select Google Drive and submit
-        cut.FindAll(".provider-item")[0].Click();
-        cut.Find("input").Change("https://drive.google.com/not-empty");
+        // Select Google Drive (second item) and submit
+        cut.FindAll(".provider-item")[1].Click();
+        await cut.Find("input").InputAsync(new ChangeEventArgs { Value = "https://drive.google.com/not-empty" });
         cut.Find(".btn-primary-vibe.flex-2").Click();
 
         // Assert
@@ -120,9 +156,10 @@ public class RemoteStorageSelectorTests : BunitContext
         // Act - Click "Aggiungi viaggio esistente"
         cut.Find(".action-link.secondary").Click();
         
-        // Select Google Drive and submit
+        // Select Google Drive (first and only item when joining) and submit
         cut.FindAll(".provider-item")[0].Click();
-        cut.Find("input").Change("https://drive.google.com/wrong");
+        await cut.Find("input").InputAsync(new ChangeEventArgs { Value = "https://drive.google.com/wrong" });
+
         cut.Find(".btn-primary-vibe.flex-2").Click();
 
         // Assert
@@ -148,7 +185,8 @@ public class RemoteStorageSelectorTests : BunitContext
         
         // Select Google Drive and submit
         cut.FindAll(".provider-item")[0].Click();
-        cut.Find("input").Change("https://drive.google.com/existing");
+        await cut.Find("input").InputAsync(new ChangeEventArgs { Value = "https://drive.google.com/existing" });
+
         cut.Find(".btn-primary-vibe.flex-2").Click();
 
         // Assert

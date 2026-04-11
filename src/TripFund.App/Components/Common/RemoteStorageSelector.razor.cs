@@ -8,7 +8,7 @@ namespace TripFund.App.Components.Common
         [Parameter] public bool IsVisible { get; set; }
         [Parameter] public bool IsJoining { get; set; }
         [Parameter] public EventCallback OnClose { get; set; }
-        [Parameter] public EventCallback<RemoteStorageSelection> OnSelectionCompleted { get; set; }
+        [Parameter] public EventCallback<RemoteStorageSelection?> OnSelectionCompleted { get; set; }
 
         private string? selectedProvider;
         private string folderUrl = "";
@@ -16,12 +16,17 @@ namespace TripFund.App.Components.Common
         private string GetTitle()
         {
             if (selectedProvider == "google-drive") return "Google Drive";
+            if (selectedProvider == "local") return "Memoria Locale";
             return "Seleziona Archivio";
         }
 
         private void SelectProvider(string provider)
         {
             selectedProvider = provider;
+            if (provider == "local")
+            {
+                _ = Complete();
+            }
         }
 
         private void Back()
@@ -37,6 +42,13 @@ namespace TripFund.App.Components.Common
 
         private async Task Complete()
         {
+            if (selectedProvider == "local")
+            {
+                await OnSelectionCompleted.InvokeAsync(null);
+                selectedProvider = null;
+                return;
+            }
+
             var parameters = new Dictionary<string, string>();
             if (selectedProvider == "google-drive")
             {

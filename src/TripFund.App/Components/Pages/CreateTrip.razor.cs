@@ -18,12 +18,6 @@ namespace TripFund.App.Components.Pages
         [Parameter, SupplyParameterFromQuery(Name = "folderUrl")]
         public string? FolderUrl { get; set; }
 
-        [Parameter, SupplyParameterFromQuery(Name = "repository")]
-        public string? Repository { get; set; }
-
-        [Parameter, SupplyParameterFromQuery(Name = "pat")]
-        public string? Pat { get; set; }
-
         private string tripName = "";
         private string tripSlug = "";
         private string description = "";
@@ -52,7 +46,6 @@ namespace TripFund.App.Components.Pages
             if (string.IsNullOrWhiteSpace(tripName)) { error = "Il nome è obbligatorio."; return; }
             if (string.IsNullOrWhiteSpace(tripSlug)) { error = "Lo slug è obbligatorio."; return; }
             if (currencies.Count == 0) { error = "Aggiungi almeno una valuta."; return; }
-            if (string.IsNullOrEmpty(Provider)) { error = "Configurazione sync mancante."; return; }
 
             var registry = await Storage.GetTripRegistryAsync();
             if (registry.Trips.ContainsKey(tripSlug))
@@ -76,25 +69,26 @@ namespace TripFund.App.Components.Pages
 
             await Storage.SaveTripConfigAsync(tripSlug, tripConfig, settings?.DeviceId ?? "unknown");
 
-            var remoteStorageParameters = new Dictionary<string, string>();
-            if (Provider == "google-drive")
+            RemoteStorageConfig? remoteStorage = null;
+            if (!string.IsNullOrEmpty(Provider))
             {
-                remoteStorageParameters["folderUrl"] = FolderUrl ?? "";
-            }
-            else if (Provider == "git")
-            {
-                remoteStorageParameters["repository"] = Repository ?? "";
-                remoteStorageParameters["pat"] = Pat ?? "";
+                var remoteStorageParameters = new Dictionary<string, string>();
+                if (Provider == "google-drive")
+                {
+                    remoteStorageParameters["folderUrl"] = FolderUrl ?? "";
+                }
+
+                remoteStorage = new RemoteStorageConfig 
+                { 
+                    Provider = Provider, 
+                    Parameters = remoteStorageParameters
+                };
             }
 
             registry.Trips[tripSlug] = new TripRegistryEntry 
             { 
                 CreatedAt = DateTime.UtcNow,
-                RemoteStorage = new RemoteStorageConfig 
-                { 
-                    Provider = Provider, 
-                    Parameters = remoteStorageParameters
-                } 
+                RemoteStorage = remoteStorage
             };
             await Storage.SaveTripRegistryAsync(registry);
 
