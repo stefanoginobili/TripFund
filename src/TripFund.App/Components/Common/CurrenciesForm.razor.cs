@@ -18,6 +18,7 @@ namespace TripFund.App.Components.Common
         private string error = "";
         private string newCurrCode = "";
         private string newCurrSymbol = "";
+        private string newCurrQuotaString = "0";
         private decimal newCurrQuota = 0;
         private int newCurrDecimals = 2;
         private bool isAddingCurrency = false;
@@ -29,6 +30,7 @@ namespace TripFund.App.Components.Common
             if (OpenNewCurrencyOnOpen || Currencies == null || Currencies.Count == 0)
             {
                 isAddingCurrency = true;
+                newCurrQuotaString = newCurrQuota.ToString("F" + newCurrDecimals);
             }
         }
 
@@ -36,6 +38,9 @@ namespace TripFund.App.Components.Common
         {
             newCurrCode = newCurrCode?.Trim() ?? "";
             newCurrSymbol = newCurrSymbol?.Trim() ?? "";
+
+            // Ensure the quota is parsed from the current input string
+            ParseQuota(newCurrQuotaString);
 
             if (string.IsNullOrWhiteSpace(newCurrCode)) return;
             string code = newCurrCode.ToUpperInvariant();
@@ -58,6 +63,7 @@ namespace TripFund.App.Components.Common
             newCurrSymbol = "";
             newCurrQuota = 0;
             newCurrDecimals = 2;
+            newCurrQuotaString = newCurrQuota.ToString("F" + newCurrDecimals);
             error = "";
             isAddingCurrency = false;
             editingCurrencyCode = null;
@@ -84,8 +90,14 @@ namespace TripFund.App.Components.Common
 
         private void OnQuotaChanged(ChangeEventArgs e)
         {
-            var input = e.Value?.ToString()?.Replace(".", ",");
-            if (decimal.TryParse(input, out decimal val))
+            newCurrQuotaString = e.Value?.ToString() ?? "";
+            ParseQuota(newCurrQuotaString);
+        }
+
+        private void ParseQuota(string input)
+        {
+            var cleanInput = input?.Replace(".", ",") ?? "";
+            if (decimal.TryParse(cleanInput, out decimal val))
             {
                 newCurrQuota = val;
             }
@@ -105,6 +117,7 @@ namespace TripFund.App.Components.Common
             newCurrSymbol = c.Symbol;
             newCurrDecimals = c.Decimals;
             newCurrQuota = c.ExpectedQuotaPerMember;
+            newCurrQuotaString = newCurrQuota.ToString("F" + newCurrDecimals);
             openMenuCurrencyCode = null;
         }
 
@@ -115,6 +128,7 @@ namespace TripFund.App.Components.Common
             newCurrSymbol = "";
             newCurrDecimals = 2;
             newCurrQuota = 0;
+            newCurrQuotaString = newCurrQuota.ToString("F" + newCurrDecimals);
         }
 
         private async Task MoveCurrencyUp(string code)

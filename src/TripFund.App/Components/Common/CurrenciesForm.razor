@@ -25,26 +25,26 @@
                             </div>
                             <div class="new-curr-col">
                                 <label>SIMBOLO</label>
-                                <input type="text" @bind="newCurrSymbol" @onblur="TrimSymbol" placeholder="€" />
+                                <input type="text" @bind="newCurrSymbol" @bind:event="oninput" @onblur="TrimSymbol" placeholder="€" />
                             </div>
                             <div class="new-curr-col">
                                 <label>DECIMALI</label>
-                                <input type="text" inputmode="numeric" value="@newCurrDecimals" @onchange="OnDecimalsChanged" onfocus="headerLogic.selectText(this)" />
+                                <input type="text" inputmode="numeric" value="@newCurrDecimals" @oninput="OnDecimalsChanged" onfocus="headerLogic.selectText(this)" />
                             </div>
                         </div>
                         
                         <div class="new-currency-footer">
                             <div class="new-curr-col quota-col">
                                 <label>QUOTA</label>
-                                <input type="text" inputmode="decimal" value="@newCurrQuota.ToString("F" + newCurrDecimals)" @onchange="OnQuotaChanged" onfocus="headerLogic.selectText(this)" placeholder="1000" />
+                                <input type="text" inputmode="decimal" value="@newCurrQuotaString" @oninput="OnQuotaChanged" onfocus="headerLogic.selectText(this)" placeholder="1000" />
                             </div>
                             <div class="action-buttons">
-                                <button class="confirm-btn" @onclick="AddOrUpdateCurrency">
+                                <button class="confirm-btn" @onmousedown="AddOrUpdateCurrency" @onclick="AddOrUpdateCurrency">
                                     <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
                                         <polyline points="20 6 9 17 4 12"></polyline>
                                     </svg>
                                 </button>
-                                <button class="cancel-btn" @onclick="CancelCurrencyEdit">
+                                <button class="cancel-btn" @onmousedown="CancelCurrencyEdit" @onclick="CancelCurrencyEdit">
                                     <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                         <line x1="18" y1="6" x2="6" y2="18"></line>
                                         <line x1="6" y1="6" x2="18" y2="18"></line>
@@ -127,31 +127,31 @@
                 <div class="new-currency-grid">
                     <div class="new-curr-col">
                         <label>CODICE</label>
-                        <input type="text" @bind="newCurrCode" @onblur="TrimCode" placeholder="EUR" />
+                        <input type="text" @bind="newCurrCode" @bind:event="oninput" @onblur="TrimCode" placeholder="EUR" />
                     </div>
                     <div class="new-curr-col">
                         <label>SIMBOLO</label>
-                        <input type="text" @bind="newCurrSymbol" @onblur="TrimSymbol" placeholder="€" />
+                        <input type="text" @bind="newCurrSymbol" @bind:event="oninput" @onblur="TrimSymbol" placeholder="€" />
                     </div>
 
                     <div class="new-curr-col">
                         <label>DECIMALI</label>
-                        <input type="text" inputmode="numeric" value="@newCurrDecimals" @onchange="OnDecimalsChanged" onfocus="headerLogic.selectText(this)" />
+                        <input type="text" inputmode="numeric" value="@newCurrDecimals" @oninput="OnDecimalsChanged" onfocus="headerLogic.selectText(this)" />
                     </div>
                 </div>
                 
                 <div class="new-currency-footer">
                     <div class="new-curr-col quota-col">
                         <label>QUOTA</label>
-                        <input type="text" inputmode="decimal" value="@newCurrQuota.ToString("F" + newCurrDecimals)" @onchange="OnQuotaChanged" onfocus="headerLogic.selectText(this)" placeholder="1000" />
+                        <input type="text" inputmode="decimal" value="@newCurrQuotaString" @oninput="OnQuotaChanged" onfocus="headerLogic.selectText(this)" placeholder="1000" />
                     </div>
                     <div class="action-buttons">
-                        <button class="confirm-btn" @onclick="AddOrUpdateCurrency">
+                        <button class="confirm-btn" @onmousedown="AddOrUpdateCurrency" @onclick="AddOrUpdateCurrency">
                             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
                                 <polyline points="20 6 9 17 4 12"></polyline>
                             </svg>
                         </button>
-                        <button class="cancel-btn" @onclick="() => isAddingCurrency = false">
+                        <button class="cancel-btn" @onmousedown="() => isAddingCurrency = false" @onclick="() => isAddingCurrency = false">
                             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                 <line x1="18" y1="6" x2="6" y2="18"></line>
                                 <line x1="6" y1="6" x2="18" y2="18"></line>

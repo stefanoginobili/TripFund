@@ -50,8 +50,8 @@ public class TripManagementTests : BunitContext
         cut.Find("input[placeholder='es. Patagonia 2026']").Input("New Trip");
         
         // Add a currency (expanded by default now)
-        cut.Find("input[placeholder='EUR']").Change("USD");
-        cut.Find("input[placeholder='1000']").Change("500");
+        cut.Find("input[placeholder='EUR']").Input("USD");
+        cut.Find("input[placeholder='1000']").Input("500");
         await cut.Find(".confirm-btn").ClickAsync();
         
         // Slug should be generated automatically: "new-trip"
