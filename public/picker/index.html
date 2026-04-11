@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Seleziona Cartella Drive</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #f8f9fa;
+        }
+        .container {
+            text-align: center;
+            padding: 20px;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+    </style>
+    <script async defer src="https://apis.google.com/js/api.js" onload="onApiLoad()"></script>
+</head>
+<body>
+
+    <div class="container" id="message-container">
+        <h3 id="status-text">Caricamento di Google Picker...</h3>
+        <p>Se il selettore non appare o è stato bloccato come popup, clicca qui sotto:</p>
+        <button onclick="createPicker()" style="padding: 10px 20px; font-size: 16px; cursor: pointer;">Apri Picker</button>
+    </div>
+
+    <script>
+        // 1. Estrai i parametri dall'URL passati dall'app MAUI
+        const urlParams = new URLSearchParams(window.location.search);
+        const accessToken = urlParams.get('token');
+        const apiKey = urlParams.get('key');
+        const appId = urlParams.get('appId');
+        const title = urlParams.get('title') || 'Seleziona Cartella Drive';
+
+        // Schema custom dell'app (es. com.miaapp.auth://picker-callback)
+        const returnScheme = urlParams.get('scheme') || 'app://picker-callback';
+
+        let pickerApiLoaded = false;
+
+        function onApiLoad() {
+            gapi.load('picker', { 'callback': function() {
+                pickerApiLoaded = true;
+                createPicker();
+            }});
+        }
+
+        function createPicker() {
+            if (!pickerApiLoaded) return;
+
+            if (!accessToken || !apiKey) {
+                document.getElementById('status-text').innerText = "Errore: Access Token o API Key mancanti nell'URL.";
+                return;
+            }
+
+            document.getElementById('status-text').innerText = "In attesa della tua selezione...";
+
+            const viewWidth = window.innerWidth || document.documentElement.clientWidth || document.body.clientWidth;
+            const viewHeight = window.innerHeight || document.documentElement.clientHeight || document.body.clientHeight;
+
+            // Configura il Picker per mostrare solo le cartelle
+            const view = new google.picker.DocsView(google.picker.ViewId.FOLDERS)
+                .setIncludeFolders(true)
+                .setSelectFolderEnabled(true)
+                .setMimeTypes('application/vnd.google-apps.folder');
+
+            const picker = new google.picker.PickerBuilder()
+                .addView(view)
+                .setOAuthToken(accessToken)
+                .setDeveloperKey(apiKey)
+                .setAppId(appId)
+                .setCallback(pickerCallback)
+                .setSize(viewWidth, viewHeight)
+                .setLocale('it')
+                .setTitle(title)
+                .build();
+
+            picker.setVisible(true);
+        }
+
+        // 2. Gestisci la risposta e fai il redirect verso l'app nativa
+        function pickerCallback(data) {
+            if (data.action === google.picker.Action.PICKED) {
+                const folder = data.docs[0];
+                const folderId = folder.id;
+                const folderName = encodeURIComponent(folder.name);
+                
+                document.getElementById('status-text').innerText = "Reindirizzamento all'app...";
+                
+                // Rimbalza l'utente dentro l'app MAUI passando i dati
+                window.location.href = `${returnScheme}?folderId=${folderId}&folderName=${folderName}`;
+
+            } else if (data.action === google.picker.Action.CANCEL) {
+                document.getElementById('status-text').innerText = "Selezione annullata. Torno all'app...";
+                window.location.href = `${returnScheme}?cancelled=true`;
+            }
+        }
+    </script>
+</body>
+</html>

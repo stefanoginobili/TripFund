@@ -30,15 +30,28 @@ public class GoogleDriveRemoteStorageService : IRemoteStorageService
         _config = config;
     }
 
+    public async Task<string?> GetAccessTokenAsync()
+    {
+        await EnsureAuthenticatedAsync();
+        return _accessToken;
+    }
+
+    private string? GetFolderIdFromParameters(Dictionary<string, string> parameters)
+    {
+        if (parameters.TryGetValue("folderId", out var folderId)) return folderId;
+        if (parameters.TryGetValue("folderUrl", out var url)) return GetFolderIdFromUrl(url);
+        return null;
+    }
+
     public async Task<TripConfig?> GetRemoteTripConfigAsync(string provider, Dictionary<string, string> parameters)
     {
-        if (provider != "google-drive" || !parameters.TryGetValue("folderUrl", out var url)) return null;
+        if (provider != "google-drive") return null;
 
-        var folderId = GetFolderIdFromUrl(url);
+        var folderId = GetFolderIdFromParameters(parameters);
         if (string.IsNullOrEmpty(folderId)) return null;
 
         await EnsureAuthenticatedAsync();
-
+        
         // 2. Look for metadata/trip_config.json
         var metadataFolderId = await GetChildFolderIdAsync(folderId, "metadata");
         if (string.IsNullOrEmpty(metadataFolderId)) return null;
@@ -54,9 +67,9 @@ public class GoogleDriveRemoteStorageService : IRemoteStorageService
 
     public async Task<bool> IsRemoteLocationEmptyAsync(string provider, Dictionary<string, string> parameters)
     {
-        if (provider != "google-drive" || !parameters.TryGetValue("folderUrl", out var url)) return false;
+        if (provider != "google-drive") return false;
 
-        var folderId = GetFolderIdFromUrl(url);
+        var folderId = GetFolderIdFromParameters(parameters);
         if (string.IsNullOrEmpty(folderId)) return false;
 
         await EnsureAuthenticatedAsync();
@@ -70,10 +83,7 @@ public class GoogleDriveRemoteStorageService : IRemoteStorageService
         var registry = await _localStorage.GetTripRegistryAsync();
         if (!registry.Trips.TryGetValue(tripSlug, out var entry) || entry.RemoteStorage == null) return;
 
-        var folderUrl = entry.RemoteStorage.Parameters.GetValueOrDefault("folderUrl");
-        if (string.IsNullOrEmpty(folderUrl)) return;
-
-        var folderId = GetFolderIdFromUrl(folderUrl);
+        var folderId = GetFolderIdFromParameters(entry.RemoteStorage.Parameters);
         if (string.IsNullOrEmpty(folderId)) return;
 
         await EnsureAuthenticatedAsync();

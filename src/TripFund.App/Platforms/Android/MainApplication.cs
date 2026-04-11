@@ -28,7 +28,8 @@ public class MainApplication : MauiApplication
 		#pragma warning restore CA1422
 
 		base.OnCreate();
-	}
+		}
+
 
 	protected override MauiApp CreateMauiApp() => MauiProgram.CreateMauiApp();
 }

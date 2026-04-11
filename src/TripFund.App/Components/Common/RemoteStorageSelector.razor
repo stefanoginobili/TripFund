@@ -51,25 +51,45 @@
                 {
                     <div class="provider-form">
                         <div class="help-section-vibe">
-                            <h3 class="help-title-vibe">Come ottenere l'URL della cartella:</h3>
+                            <h3 class="help-title-vibe">Accesso a Google Drive:</h3>
                             <div class="help-item-vibe">
-                                <strong>Dall'App Google Drive:</strong>
-                                <p>Apri la cartella, tocca i tre puntini (⋮) in alto a destra e seleziona "Copia link".</p>
-                            </div>
-                            <div class="help-item-vibe">
-                                <strong>Dal sito Google Drive:</strong>
-                                <p>Apri la cartella nel browser e copia l'intero URL dalla barra degli indirizzi. Oppure clicca con il tasto destro sulla cartella e seleziona "Condividi" e poi "Copia link".</p>
+                                <p>Per proteggere la tua privacy, TripFund può accedere solo alle cartelle che selezioni esplicitamente.</p>
+                                <p>Clicca il pulsante qui sotto per scegliere una cartella condivisa o presente nel tuo Drive.</p>
                             </div>
                         </div>
-                        
                         <div class="mb-3">
-                            <label class="form-label-vibe">URL della cartella</label>
-                            <input type="text" class="form-control-vibe" @bind="folderUrl" @bind:event="oninput" placeholder="https://drive.google.com/drive/folders/..."/>
+                            @if (string.IsNullOrEmpty(folderName))
+                            {
+                                @if (isPickerLoading)
+                                {
+                                    <div class="picker-loading-state">
+                                        <div class="spinner-border spinner-border-sm me-2" role="status"></div>
+                                        <span>In attesa del selettore...</span>
+                                        <button class="btn-link-vibe ms-3" @onclick="CancelLoading">Annulla</button>
+                                    </div>
+                                }
+                                else
+                                {
+                                    <button class="btn-picker-vibe" @onclick="OpenPicker">
+                                        <img src="images/google-drive.svg" width="20" height="20" alt="" class="me-2" />
+                                        <span>Seleziona Cartella</span>
+                                    </button>
+                                }
+                            }
+                            else
+                            {
+
+                                <div class="selected-folder-info">
+                                    <img src="images/google-drive.svg" width="20" height="20" alt="" />
+                                    <span class="folder-name-vibe">@folderName</span>
+                                    <button class="btn-link-vibe ms-auto" @onclick="OpenPicker">Cambia</button>
+                                </div>
+                            }
                         </div>
 
                         <div class="d-flex gap-2">
                             <button class="btn-secondary-vibe flex-1" @onclick="Back">Indietro</button>
-                            <button class="btn-primary-vibe flex-2" @onclick="Complete" disabled="@(string.IsNullOrWhiteSpace(folderUrl))">Conferma</button>
+                            <button class="btn-primary-vibe flex-2" @onclick="Complete" disabled="@(string.IsNullOrWhiteSpace(folderId))">Conferma</button>
                         </div>
                     </div>
                 }
@@ -79,6 +99,70 @@
 }
 
 <style>
+    .btn-picker-vibe {
+        width: 100%;
+        padding: 0.8rem 1rem;
+        border-radius: 12px;
+        border: 2px dashed #E0E0E0;
+        background-color: #FFFFFF;
+        color: #1A3C2F;
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.2s;
+        cursor: pointer;
+    }
+
+    .btn-picker-vibe:hover:not(:disabled) {
+        border-color: #20563C;
+        background-color: #F8FBF9;
+    }
+
+    .btn-picker-vibe:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+    }
+
+    .selected-folder-info {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        padding: 0.8rem 1rem;
+        background-color: #F8FBF9;
+        border-radius: 12px;
+        border: 1px solid #20563C;
+    }
+
+    .folder-name-vibe {
+        font-weight: 600;
+        color: #1A3C2F;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .btn-link-vibe {
+        background: none;
+        border: none;
+        color: #20563C;
+        font-weight: 700;
+        font-size: 0.85rem;
+        text-decoration: underline;
+        padding: 0;
+        cursor: pointer;
+    }
+
+    .picker-loading-state {
+        display: flex;
+        align-items: center;
+        padding: 0.8rem 1rem;
+        background-color: #F8FBF9;
+        border-radius: 12px;
+        border: 1px solid #E0E0E0;
+        font-size: 0.9rem;
+        color: #6C757D;
+    }
     .help-section-vibe {
         background-color: #E9F2EE;
         padding: 1rem;

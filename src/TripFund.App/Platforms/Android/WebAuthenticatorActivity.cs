@@ -10,9 +10,9 @@ namespace TripFund.App.Platforms.Android;
               DataScheme = WebAuthenticatorActivity.DataScheme)]
 public class WebAuthenticatorActivity : Microsoft.Maui.Authentication.WebAuthenticatorCallbackActivity
 {
-    #if DEBUG
+#if DEBUG
     public const string DataScheme = "com.stefanoginobili.tripfund.app.dev";
-    #else
+#else
     public const string DataScheme = "com.stefanoginobili.tripfund.app";
-    #endif
+#endif
 }

@@ -3,10 +3,24 @@ namespace TripFund.App.Services;
 public interface IGoogleAuthConfiguration
 {
     string GoogleClientId { get; }
+    string GoogleApiKey { get; }
+    string GoogleAppId { get; }
 }
 
 public class GoogleAuthConfiguration : IGoogleAuthConfiguration
 {
+    public string GoogleAppId
+    {
+        get
+        {
+#if DEBUG
+            return "980516715181";
+#else
+            return "APP_ID_PROD";
+#endif
+        }
+    }
+
     public string GoogleClientId
     {
         get
@@ -25,6 +39,19 @@ public class GoogleAuthConfiguration : IGoogleAuthConfiguration
 #endif
 #else
             return string.Empty;
+#endif
+        }
+    }
+    
+    
+    public string GoogleApiKey
+    {
+        get
+        {
+#if DEBUG   
+            return "AIzaSyAufaGT5nU1LMtAyAzAoqKCqCKFUpL4tE0";
+#else
+            return "DEVELOPER_KEY_PROD";
 #endif
         }
     }
