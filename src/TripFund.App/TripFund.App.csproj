@@ -20,16 +20,20 @@
                <MauiXaml Update="MyPage.xaml" Inflator="Runtime" /> (force runtime inflation) -->
         <MauiXamlInflator>SourceGen</MauiXamlInflator>
 
-        <!-- Display name -->
-        <ApplicationTitle>TripFund</ApplicationTitle>
-
-        <!-- App Identifier -->
-        <ApplicationId>com.stefanoginobili.tripfund.app</ApplicationId>
-
-        <!-- Versions -->
-        <ApplicationDisplayVersion>1.0</ApplicationDisplayVersion>
         <ApplicationVersion>1</ApplicationVersion>
+        
+        <PropertyGroup Condition="'$(Configuration)' == 'Debug'">
+            <ApplicationTitle>TripFund (Dev)</ApplicationTitle>
+            <ApplicationId>com.stefanoginobili.tripfund.app.dev</ApplicationId>
+            <ApplicationDisplayVersion>1.0-dev</ApplicationDisplayVersion>
+        </PropertyGroup>
 
+        <PropertyGroup Condition="'$(Configuration)' == 'Release'">
+            <ApplicationTitle>TripFund</ApplicationTitle>
+            <ApplicationId>com.stefanoginobili.tripfund.app</ApplicationId>
+            <ApplicationDisplayVersion>1.0</ApplicationDisplayVersion>
+        </PropertyGroup>
+        
         <!-- Fix for Android Fast Deployment crash after clearing storage -->
         <EmbedAssembliesIntoApk>true</EmbedAssembliesIntoApk>
 
