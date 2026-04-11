@@ -68,4 +68,9 @@
         <PackageReference Include="Microsoft.Extensions.Logging.Debug" Version="10.0.0" />
     </ItemGroup>
 
+    <Target Name="SwitchInfoPlist" BeforeTargets="BeforeBuild" Condition="'$(TargetFramework)' == 'net9.0-ios'">
+        <Copy SourceFiles="Platforms\iOS\Info.dev.plist" DestinationFiles="Platforms\iOS\Info.plist" Condition="'$(Configuration)' == 'Debug'" OverwriteReadOnlyFiles="true" />
+        <Copy SourceFiles="Platforms\iOS\Info.prod.plist" DestinationFiles="Platforms\iOS\Info.plist" Condition="'$(Configuration)' == 'Release'" OverwriteReadOnlyFiles="true" />
+    </Target>
+
 </Project>

@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>LSRequiresIPhoneOS</key>
+    <true/>
+    <key>UIDeviceFamily</key>
+    <array>
+        <integer>1</integer>
+        <integer>2</integer>
+    </array>
+    <key>UIRequiredDeviceCapabilities</key>
+    <array>
+        <string>arm64</string>
+    </array>
+    <key>UISupportedInterfaceOrientations</key>
+    <array>
+        <string>UIInterfaceOrientationPortrait</string>
+        <string>UIInterfaceOrientationLandscapeLeft</string>
+        <string>UIInterfaceOrientationLandscapeRight</string>
+    </array>
+    <key>UISupportedInterfaceOrientations~ipad</key>
+    <array>
+        <string>UIInterfaceOrientationPortrait</string>
+        <string>UIInterfaceOrientationPortraitUpsideDown</string>
+        <string>UIInterfaceOrientationLandscapeLeft</string>
+        <string>UIInterfaceOrientationLandscapeRight</string>
+    </array>
+    <key>XSAppIconAssets</key>
+    <string>Assets.xcassets/appicon.appiconset</string>
+    <key>UILaunchStoryboardName</key>
+    <string>MauiSplashScreen</string>
+    <key>UISupportsIndirectInputEvents</key>
+    <true/>
+    <key>NSCameraUsageDescription</key>
+    <string>Questa app ha bisogno di accedere alla fotocamera per scattare foto delle ricevute.</string>
+    <key>NSLocationWhenInUseUsageDescription</key>
+    <string>Questa app ha bisogno di accedere alla tua posizione per salvare il luogo della spesa.</string>
+    <key>NSPhotoLibraryAddUsageDescription</key>
+    <string>Questa app ha bisogno di salvare le foto delle ricevute nella tua libreria.</string>
+    <key>NSPhotoLibraryUsageDescription</key>
+    <string>Questa app ha bisogno di accedere alla tua libreria per selezionare le ricevute salvate.</string>
+    <key>UIUserInterfaceStyle</key>
+    <string>Light</string>
+    <key>LSApplicationQueriesSchemes</key>
+    <array>
+        <string>mailto</string>
+    </array>
+    <key>CFBundleURLTypes</key>
+    <array>
+        <dict>
+            <key>CFBundleURLName</key>
+            <string>Google Drive Auth</string>
+            <key>CFBundleURLSchemes</key>
+            <array>
+                <string>com.stefanoginobili.tripfund.app.dev</string>
+            </array>
+            <key>CFBundleTypeRole</key>
+            <string>Editor</string>
+        </dict>
+    </array>
+</dict>
+</plist>

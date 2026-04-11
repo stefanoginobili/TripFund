@@ -272,7 +272,7 @@ public class GoogleDriveRemoteStorageService : IRemoteStorageService
             return;
         }
 
-        var callbackUrl = "com.stefanoginobili.tripfund.app:/oauth2redirect";
+        var callbackUrl = $"{AppInfo.Current.PackageName}:/oauth2redirect";
         var authUrl = $"https://accounts.google.com/o/oauth2/v2/auth?client_id={_config.GoogleClientId}&response_type=code&scope=https://www.googleapis.com/auth/drive.file&redirect_uri={Uri.EscapeDataString(callbackUrl)}";
         
         var result = await _authenticator.AuthenticateAsync(new WebAuthenticatorOptions
@@ -294,7 +294,7 @@ public class GoogleDriveRemoteStorageService : IRemoteStorageService
             new KeyValuePair<string, string>("code", code),
             new KeyValuePair<string, string>("client_id", _config.GoogleClientId),
             new KeyValuePair<string, string>("grant_type", "authorization_code"),
-            new KeyValuePair<string, string>("redirect_uri", "com.stefanoginobili.tripfund.app:/oauth2redirect")
+            new KeyValuePair<string, string>("redirect_uri", $"{AppInfo.Current.PackageName}:/oauth2redirect")
         });
 
         var response = await _httpClient.PostAsync("/oauth2/v4/token", content);
