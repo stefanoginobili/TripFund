@@ -11,6 +11,11 @@ public class UtilityTests
     [InlineData("  Space   Test  ", "space-test")]
     [InlineData("Upper Case", "upper-case")]
     [InlineData("hyphen-ated", "hyphen-ated")]
+    [InlineData("Caffè", "caffe")]
+    [InlineData("Tè", "te")]
+    [InlineData("ù", "u")]
+    [InlineData("à è ì ò ù", "a-e-i-o-u")]
+    [InlineData("Giappone 2027 ù", "giappone-2027-u")]
     public void SlugUtility_GenerateSlug_ShouldReturnCorrectSlug(string input, string expected)
     {
         // Act
