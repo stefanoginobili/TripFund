@@ -36,10 +36,6 @@ public class GoogleDriveRemoteStorageService : IRemoteStorageService
 
         await EnsureAuthenticatedAsync();
 
-        // 1. Check permissions and if it's readonly
-        var folderMeta = await GetDriveItemAsync(folderId);
-        if (folderMeta == null) return null;
-
         // 2. Look for metadata/trip_config.json
         var metadataFolderId = await GetChildFolderIdAsync(folderId, "metadata");
         if (string.IsNullOrEmpty(metadataFolderId)) return null;
@@ -79,11 +75,11 @@ public class GoogleDriveRemoteStorageService : IRemoteStorageService
 
         await EnsureAuthenticatedAsync();
 
-        // Check if root is readonly
-        var rootMeta = await GetDriveItemAsync(folderId);
-        if (rootMeta != null && rootMeta.Capabilities != null && !rootMeta.Capabilities.CanEdit)
+        // Check if root is readonly by trying to write/delete a test file
+        var canWrite = await CheckFolderWritePermissionAsync(folderId);
+        if (entry.RemoteStorage.Readonly != !canWrite)
         {
-            entry.RemoteStorage.Readonly = true;
+            entry.RemoteStorage.Readonly = !canWrite;
             await _localStorage.SaveTripRegistryAsync(registry);
         }
 
@@ -121,6 +117,44 @@ public class GoogleDriveRemoteStorageService : IRemoteStorageService
         if (!entry.RemoteStorage.Readonly)
         {
             await SyncUpAsync(localTripPath, folderId);
+        }
+    }
+
+    private async Task<bool> CheckFolderWritePermissionAsync(string folderId)
+    {
+        try
+        {
+            var settings = await _localStorage.GetAppSettingsAsync();
+            var deviceId = settings?.DeviceId ?? "unknown-device";
+            var fileName = $".rw-test-{deviceId}";
+            
+            // Check if test file already exists
+            var existingFiles = await ListDriveFilesAsync(folderId, $"name = '{fileName}'");
+            if (existingFiles.Any())
+            {
+                // Try to delete existing file to confirm write permission
+                try
+                {
+                    await DeleteDriveFileAsync(existingFiles.First().Id);
+                    return true;
+                }
+                catch
+                {
+                    // If deletion of existing fails, proceed to try creation
+                }
+            }
+
+            // Try to create/upload a new test file
+            var fileId = await CreateDriveFileAsync(folderId, fileName, new byte[] { 0x01 });
+            if (string.IsNullOrEmpty(fileId)) return false;
+            
+            // Try to delete it
+            await DeleteDriveFileAsync(fileId);
+            return true;
+        }
+        catch
+        {
+            return false;
         }
     }
 
@@ -340,6 +374,40 @@ public class GoogleDriveRemoteStorageService : IRemoteStorageService
         var response = await _httpClient.PostAsJsonAsync("/drive/v3/files", body);
         var item = await response.Content.ReadFromJsonAsync<DriveItem>();
         return item?.Id ?? throw new Exception("Failed to create folder");
+    }
+
+    private async Task<string> CreateDriveFileAsync(string parentId, string name, byte[] content)
+    {
+        _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", _accessToken);
+        
+        var metadata = new { name = name, parents = new[] { parentId } };
+        var multipartContent = new MultipartFormDataContent();
+        
+        var metaContent = new StringContent(JsonSerializer.Serialize(metadata));
+        metaContent.Headers.ContentType = new MediaTypeHeaderValue("application/json");
+        multipartContent.Add(metaContent, "metadata");
+
+        var byteContent = new ByteArrayContent(content);
+        byteContent.Headers.ContentType = new MediaTypeHeaderValue("application/octet-stream");
+        multipartContent.Add(byteContent, "media");
+
+        var response = await _httpClient.PostAsync("/upload/drive/v3/files?uploadType=multipart", multipartContent);
+        if (response.IsSuccessStatusCode)
+        {
+            var item = await response.Content.ReadFromJsonAsync<DriveItem>();
+            return item?.Id ?? "";
+        }
+        return "";
+    }
+
+    private async Task DeleteDriveFileAsync(string fileId)
+    {
+        _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", _accessToken);
+        var response = await _httpClient.DeleteAsync($"/drive/v3/files/{fileId}");
+        if (!response.IsSuccessStatusCode)
+        {
+            throw new Exception("Failed to delete file");
+        }
     }
 
     private async Task<string?> GetLatestVersionFolderIdAsync(string folderId)

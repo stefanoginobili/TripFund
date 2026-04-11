@@ -63,10 +63,6 @@ public class GoogleDriveRemoteStorageTests : IDisposable
         var folderId = "folder123";
         var url = $"https://drive.google.com/drive/folders/{folderId}";
         
-        // Mock GetDriveItem (folder meta)
-        _server.Given(Request.Create().WithPath($"/drive/v3/files/{folderId}").UsingGet())
-            .RespondWith(Response.Create().WithStatusCode(200).WithBody(JsonSerializer.Serialize(new { id = folderId, name = "TripFolder", capabilities = new { canEdit = true } })));
-
         // Mock GetChildFolderId (metadata)
         _server.Given(Request.Create().WithPath("/drive/v3/files").WithParam("q", new WildcardMatcher("*'folder123' in parents*metadata*")).UsingGet())
             .RespondWith(Response.Create().WithStatusCode(200).WithBody(JsonSerializer.Serialize(new { files = new[] { new { id = "metaId", name = "metadata" } } })));
@@ -92,12 +88,15 @@ public class GoogleDriveRemoteStorageTests : IDisposable
     }
 
     [Fact]
-    public async Task SynchronizeAsync_ShouldDownloadMissingLocalVersions()
+    public async Task SynchronizeAsync_ShouldSetReadonly_WhenWriteFails()
     {
         // Arrange
         SetupAuth();
         var tripSlug = "my-trip";
         var folderId = "rootId";
+        var deviceId = "test-device";
+        
+        await _localStorage.SaveAppSettingsAsync(new AppSettings { DeviceId = deviceId });
         
         var registry = new LocalTripRegistry();
         registry.Trips[tripSlug] = new TripRegistryEntry
@@ -110,9 +109,102 @@ public class GoogleDriveRemoteStorageTests : IDisposable
         };
         await _localStorage.SaveTripRegistryAsync(registry);
 
-        // Mock Root Meta
-        _server.Given(Request.Create().WithPath($"/drive/v3/files/{folderId}").UsingGet())
-            .RespondWith(Response.Create().WithStatusCode(200).WithBody(JsonSerializer.Serialize(new { id = folderId, capabilities = new { canEdit = true } })));
+        // Mock permission check: list returns nothing, write fails
+        _server.Given(Request.Create().WithPath("/drive/v3/files").WithParam("q", new WildcardMatcher($"*name = '.rw-test-{deviceId}'*")).UsingGet())
+            .RespondWith(Response.Create().WithStatusCode(200).WithBody(JsonSerializer.Serialize(new { files = new DriveItem[] { } })));
+
+        _server.Given(Request.Create().WithPath("/upload/drive/v3/files").WithParam("uploadType", "multipart").UsingPost())
+            .RespondWith(Response.Create().WithStatusCode(403));
+
+        // Mock empty sync response to avoid other failures
+        _server.Given(Request.Create().WithPath("/drive/v3/files").UsingGet())
+            .RespondWith(Response.Create().WithStatusCode(200).WithBody(JsonSerializer.Serialize(new { files = new DriveItem[] { } })));
+
+        // Act
+        await _service.SynchronizeAsync(tripSlug);
+
+        // Assert
+        var updatedRegistry = await _localStorage.GetTripRegistryAsync();
+        updatedRegistry.Trips[tripSlug].RemoteStorage!.Readonly.Should().BeTrue();
+    }
+
+    [Fact]
+    public async Task SynchronizeAsync_ShouldBeWritable_WhenExistingTestFileIsDeleted()
+    {
+        // Arrange
+        SetupAuth();
+        var tripSlug = "my-trip";
+        var folderId = "rootId";
+        var deviceId = "test-device";
+        var existingFileId = "existingId";
+        
+        await _localStorage.SaveAppSettingsAsync(new AppSettings { DeviceId = deviceId });
+        
+        var registry = new LocalTripRegistry();
+        registry.Trips[tripSlug] = new TripRegistryEntry
+        {
+            RemoteStorage = new RemoteStorageConfig
+            {
+                Provider = "google-drive",
+                Parameters = new Dictionary<string, string> { { "folderUrl", $"https://drive.google.com/drive/folders/{folderId}" } }
+            }
+        };
+        await _localStorage.SaveTripRegistryAsync(registry);
+
+        // Mock permission check: list returns existing, delete succeeds
+        _server.Given(Request.Create().WithPath("/drive/v3/files").WithParam("q", new WildcardMatcher($"*name = '.rw-test-{deviceId}'*")).UsingGet())
+            .RespondWith(Response.Create().WithStatusCode(200).WithBody(JsonSerializer.Serialize(new { files = new[] { new { id = existingFileId, name = $".rw-test-{deviceId}" } } })));
+
+        _server.Given(Request.Create().WithPath($"/drive/v3/files/{existingFileId}").UsingDelete())
+            .RespondWith(Response.Create().WithStatusCode(204));
+
+        // Mock metadata folder (for sync down)
+        _server.Given(Request.Create().WithPath("/drive/v3/files").WithParam("q", new WildcardMatcher("*'rootId' in parents*metadata*")).UsingGet())
+            .RespondWith(Response.Create().WithStatusCode(200).WithBody(JsonSerializer.Serialize(new { files = new DriveItem[] { } })));
+
+        // Mock transactions folder (for sync down)
+        _server.Given(Request.Create().WithPath("/drive/v3/files").WithParam("q", new WildcardMatcher("*'rootId' in parents*transactions*")).UsingGet())
+            .RespondWith(Response.Create().WithStatusCode(200).WithBody(JsonSerializer.Serialize(new { files = new DriveItem[] { } })));
+
+        // Act
+        await _service.SynchronizeAsync(tripSlug);
+
+        // Assert
+        var updatedRegistry = await _localStorage.GetTripRegistryAsync();
+        updatedRegistry.Trips[tripSlug].RemoteStorage!.Readonly.Should().BeFalse();
+    }
+
+    [Fact]
+    public async Task SynchronizeAsync_ShouldDownloadMissingLocalVersions()
+    {
+        // Arrange
+        SetupAuth();
+        var tripSlug = "my-trip";
+        var folderId = "rootId";
+        var deviceId = "test-device";
+        
+        await _localStorage.SaveAppSettingsAsync(new AppSettings { DeviceId = deviceId });
+        
+        var registry = new LocalTripRegistry();
+        registry.Trips[tripSlug] = new TripRegistryEntry
+        {
+            RemoteStorage = new RemoteStorageConfig
+            {
+                Provider = "google-drive",
+                Parameters = new Dictionary<string, string> { { "folderUrl", $"https://drive.google.com/drive/folders/{folderId}" } }
+            }
+        };
+        await _localStorage.SaveTripRegistryAsync(registry);
+
+        // Mock permission check success (create and delete)
+        _server.Given(Request.Create().WithPath("/drive/v3/files").WithParam("q", new WildcardMatcher($"*name = '.rw-test-{deviceId}'*")).UsingGet())
+            .RespondWith(Response.Create().WithStatusCode(200).WithBody(JsonSerializer.Serialize(new { files = new DriveItem[] { } })));
+
+        _server.Given(Request.Create().WithPath("/upload/drive/v3/files").WithParam("uploadType", "multipart").UsingPost())
+            .RespondWith(Response.Create().WithStatusCode(200).WithBody(JsonSerializer.Serialize(new { id = "testFileId" })));
+        
+        _server.Given(Request.Create().WithPath("/drive/v3/files/testFileId").UsingDelete())
+            .RespondWith(Response.Create().WithStatusCode(204));
 
         // Mock metadata folder
         _server.Given(Request.Create().WithPath("/drive/v3/files").WithParam("q", new WildcardMatcher("*'rootId' in parents*metadata*")).UsingGet())
@@ -140,6 +232,9 @@ public class GoogleDriveRemoteStorageTests : IDisposable
         // Assert
         var localPath = Path.Combine(_tempPath, "trips", tripSlug, "metadata", "001_new_dev1", "trip_config.json");
         File.Exists(localPath).Should().BeTrue();
+        
+        var updatedRegistry = await _localStorage.GetTripRegistryAsync();
+        updatedRegistry.Trips[tripSlug].RemoteStorage!.Readonly.Should().BeFalse();
     }
 
     private class DriveItem
