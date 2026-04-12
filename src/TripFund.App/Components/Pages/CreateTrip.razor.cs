@@ -15,8 +15,7 @@ namespace TripFund.App.Components.Pages
         [Parameter, SupplyParameterFromQuery(Name = "provider")]
         public string? Provider { get; set; }
 
-        [Parameter, SupplyParameterFromQuery(Name = "folderUrl")]
-        public string? FolderUrl { get; set; }
+        private Dictionary<string, string> remoteStorageParameters = new();
 
         private string tripName = "";
         private string tripSlug = "";
@@ -26,6 +25,20 @@ namespace TripFund.App.Components.Pages
         private string error = "";
 
         private Dictionary<string, Currency> currencies = new();
+
+        protected override void OnInitialized()
+        {
+            var uri = Nav.ToAbsoluteUri(Nav.Uri);
+            var query = Microsoft.AspNetCore.WebUtilities.QueryHelpers.ParseQuery(uri.Query);
+
+            foreach (var kvp in query)
+            {
+                if (kvp.Key != "provider")
+                {
+                    remoteStorageParameters[kvp.Key] = kvp.Value.ToString();
+                }
+            }
+        }
 
         private void TrimName()
         {
@@ -72,12 +85,6 @@ namespace TripFund.App.Components.Pages
             RemoteStorageConfig? remoteStorage = null;
             if (!string.IsNullOrEmpty(Provider))
             {
-                var remoteStorageParameters = new Dictionary<string, string>();
-                if (Provider == "google-drive")
-                {
-                    remoteStorageParameters["folderUrl"] = FolderUrl ?? "";
-                }
-
                 remoteStorage = new RemoteStorageConfig 
                 { 
                     Provider = Provider, 

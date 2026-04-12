@@ -45,6 +45,18 @@
                                 <polyline points="9 18 15 12 9 6"></polyline>
                             </svg>
                         </div>
+
+                        <div class="provider-item" @onclick='() => SelectProvider("onedrive")'>
+                            <div class="provider-logo">
+                                <img src="images/onedrive.svg" width="32" height="32" alt="Microsoft OneDrive" />
+                            </div>
+                            <div class="provider-info">
+                                <div class="provider-name">Microsoft OneDrive</div>
+                            </div>
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polyline points="9 18 15 12 9 6"></polyline>
+                            </svg>
+                        </div>
                     </div>
                 }
                 else if (selectedProvider == "google-drive")
@@ -93,12 +105,64 @@
                         </div>
                     </div>
                 }
+                else if (selectedProvider == "onedrive")
+                {
+                    <div class="provider-form">
+                        <div class="help-section-vibe">
+                            <h3 class="help-title-vibe">Accesso a Microsoft OneDrive:</h3>
+                            <div class="help-item-vibe">
+                                <p>Puoi scegliere qualsiasi cartella nel tuo account Microsoft OneDrive per sincronizzare il tuo viaggio.</p>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            @if (string.IsNullOrEmpty(folderName))
+                            {
+                                @if (isPickerLoading)
+                                {
+                                    <div class="picker-loading-state">
+                                        <div class="spinner-border spinner-border-sm me-2" role="status"></div>
+                                        <span>Connessione a OneDrive...</span>
+                                        <button class="btn-link-vibe ms-3" @onclick="CancelLoading">Annulla</button>
+                                    </div>
+                                }
+                                else
+                                {
+                                    <button class="btn-picker-vibe" @onclick="OpenPicker">
+                                        <img src="images/onedrive.svg" width="20" height="20" alt="" class="me-2" />
+                                        <span>Sfoglia Cartelle</span>
+                                    </button>
+                                }
+                            }
+                            else
+                            {
+                                <div class="selected-folder-info od-selected">
+                                    <img src="images/onedrive.svg" width="20" height="20" alt="" />
+                                    <span class="folder-name-vibe">@folderName</span>
+                                    <button class="btn-link-vibe ms-auto" @onclick="OpenPicker">Cambia</button>
+                                </div>
+                            }
+                        </div>
+
+                        <div class="d-flex gap-2">
+                            <button class="btn-secondary-vibe flex-1" @onclick="Back">Indietro</button>
+                            <button class="btn-primary-vibe flex-2" @onclick="Complete" disabled="@(string.IsNullOrWhiteSpace(folderId))">Conferma</button>
+                        </div>
+                    </div>
+                }
             </div>
         </div>
     </div>
 }
 
+<OneDrivePickerModal @bind-IsVisible="isOneDrivePickerVisible" 
+                     AccessToken="@oneDriveToken" 
+                     OnFolderSelected="OnOneDriveFolderSelected" />
+
 <style>
+    .od-selected {
+        border-color: #0078D4 !important;
+        background-color: #F3F9FF !important;
+    }
     .btn-picker-vibe {
         width: 100%;
         padding: 0.8rem 1rem;

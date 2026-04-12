@@ -58,6 +58,16 @@
             <key>CFBundleTypeRole</key>
             <string>Editor</string>
         </dict>
+        <dict>
+            <key>CFBundleURLName</key>
+            <string>Microsoft OneDrive Auth</string>
+            <key>CFBundleURLSchemes</key>
+            <array>
+                <string>msal4197af94-b80a-4862-8743-835a14955fd1</string>
+            </array>
+            <key>CFBundleTypeRole</key>
+            <string>Editor</string>
+        </dict>
     </array>
 </dict>
 </plist>

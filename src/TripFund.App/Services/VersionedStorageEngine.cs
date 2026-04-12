@@ -18,6 +18,17 @@ public class VersionFolderInfo
     public string DeviceId { get; set; } = string.Empty;
 }
 
+public class VersionConflictException : Exception
+{
+    public List<string> ConflictingFolderNames { get; }
+
+    public VersionConflictException(List<string> conflictingFolderNames)
+        : base($"Conflict detected between versions: {string.Join(", ", conflictingFolderNames)}")
+    {
+        ConflictingFolderNames = conflictingFolderNames;
+    }
+}
+
 public class VersionedStorageEngine
 {
     private static readonly Regex VersionRegex = new(@"^(?<nnn>\d{3})_(?<kind>new|upd|res|del)_(?<deviceId>[a-z0-9\-]+)$", RegexOptions.Compiled);
@@ -26,8 +37,12 @@ public class VersionedStorageEngine
     {
         if (!Directory.Exists(rootPath)) return new List<VersionFolderInfo>();
 
-        return Directory.GetDirectories(rootPath)
-            .Select(Path.GetFileName)
+        return GetVersionFolders(Directory.GetDirectories(rootPath).Select(Path.GetFileName)!);
+    }
+
+    public List<VersionFolderInfo> GetVersionFolders(IEnumerable<string> folderNames)
+    {
+        return folderNames
             .Select(name => ParseVersionFolder(name!))
             .Where(info => info != null)
             .Cast<VersionFolderInfo>()
@@ -52,16 +67,45 @@ public class VersionedStorageEngine
     public List<VersionFolderInfo> GetLatestVersionFolders(string rootPath)
     {
         var versions = GetVersionFolders(rootPath);
+        return GetLatestVersionFolders(versions);
+    }
+
+    public List<VersionFolderInfo> GetLatestVersionFolders(List<VersionFolderInfo> versions)
+    {
         if (versions.Count == 0) return new List<VersionFolderInfo>();
 
         var maxSequence = versions.Max(v => v.Sequence);
-        var latest = versions.Where(v => v.Sequence == maxSequence).ToList();
+        var latestAtSequence = versions.Where(v => v.Sequence == maxSequence).ToList();
 
         // If there's a 'res' folder at the latest sequence, it wins over 'upd' or 'new'
-        var resVersions = latest.Where(v => v.Kind == CommitKind.Res).ToList();
+        var resVersions = latestAtSequence.Where(v => v.Kind == CommitKind.Res).ToList();
         if (resVersions.Count > 0) return resVersions;
 
-        return latest;
+        return latestAtSequence;
+    }
+
+    public string? GetLatestVersionFolder(IEnumerable<string> folderNames)
+    {
+        var versions = GetVersionFolders(folderNames);
+        var latest = GetLatestVersionFolders(versions);
+
+        if (latest.Count == 0) return null;
+        if (latest.Count > 1)
+        {
+            throw new VersionConflictException(latest.Select(v => v.FolderName).ToList());
+        }
+
+        return latest[0].FolderName;
+    }
+
+    public List<string> GetDivergingVersionFolders(IEnumerable<string> folderNames)
+    {
+        var versions = GetVersionFolders(folderNames);
+        var latest = GetLatestVersionFolders(versions);
+        
+        if (latest.Count <= 1) return new List<string>();
+        
+        return latest.Select(v => v.FolderName).ToList();
     }
 
     public bool IsInConflict(string rootPath)

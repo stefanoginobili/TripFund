@@ -5,11 +5,16 @@ namespace TripFund.App.Services;
 public class CompositeRemoteStorageService : IRemoteStorageService
 {
     private readonly GoogleDriveRemoteStorageService _drive;
+    private readonly OneDriveRemoteStorageService _onedrive;
     private readonly LocalTripStorageService _storage;
 
-    public CompositeRemoteStorageService(GoogleDriveRemoteStorageService drive, LocalTripStorageService storage)
+    public CompositeRemoteStorageService(
+        GoogleDriveRemoteStorageService drive, 
+        OneDriveRemoteStorageService onedrive,
+        LocalTripStorageService storage)
     {
         _drive = drive;
+        _onedrive = onedrive;
         _storage = storage;
     }
 
@@ -18,6 +23,10 @@ public class CompositeRemoteStorageService : IRemoteStorageService
         if (provider == "google-drive")
         {
             return _drive.GetRemoteTripConfigAsync(provider, parameters);
+        }
+        if (provider == "onedrive")
+        {
+            return _onedrive.GetRemoteTripConfigAsync(provider, parameters);
         }
 
         return Task.FromResult<TripConfig?>(null);
@@ -28,6 +37,10 @@ public class CompositeRemoteStorageService : IRemoteStorageService
         if (provider == "google-drive")
         {
             return _drive.IsRemoteLocationEmptyAsync(provider, parameters);
+        }
+        if (provider == "onedrive")
+        {
+            return _onedrive.IsRemoteLocationEmptyAsync(provider, parameters);
         }
 
         return Task.FromResult(false);
@@ -41,6 +54,10 @@ public class CompositeRemoteStorageService : IRemoteStorageService
             if (entry.RemoteStorage.Provider == "google-drive")
             {
                 await _drive.SynchronizeAsync(tripSlug);
+            }
+            if (entry.RemoteStorage.Provider == "onedrive")
+            {
+                await _onedrive.SynchronizeAsync(tripSlug);
             }
 
             // Reload registry to get updates from the provider (hasConflicts, readonly)

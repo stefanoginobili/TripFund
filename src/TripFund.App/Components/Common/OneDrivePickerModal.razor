@@ -1,0 +1,424 @@
+@using TripFund.App.Services
+@inject OneDrivePickerService OneDriveService
+
+@if (IsVisible)
+{
+    <div class="modal-backdrop-vibe" @onclick="Close">
+        <div class="modal-sheet-vibe" @onclick:stopPropagation="true">
+            <header class="modal-header-vibe">
+                <div class="header-left">
+                    @if (navigationStack.Count > 0)
+                    {
+                        <button class="back-btn-vibe" @onclick="GoBack">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polyline points="15 18 9 12 15 6"></polyline>
+                            </svg>
+                        </button>
+                    }
+                    <h2 class="modal-title-vibe">@Title</h2>
+                </div>
+                <button class="close-btn-vibe" @onclick="Close">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                </button>
+            </header>
+
+            <div class="modal-body-vibe">
+                <div class="view-toggle-vibe">
+                    <button class="toggle-btn @(viewMode == "personal" ? "active" : "")" @onclick='() => ChangeView("personal")'>
+                        I miei file
+                    </button>
+                    <button class="toggle-btn @(viewMode == "shared" ? "active" : "")" @onclick='() => ChangeView("shared")'>
+                        Condivisi con me
+                    </button>
+                </div>
+
+                <div class="breadcrumb-vibe">
+                    <span class="breadcrumb-item @(navigationStack.Count == 0 ? "active" : "")" @onclick="GoToRoot">
+                        @(viewMode == "personal" ? "I miei file" : "Condivisi con me")
+                    </span>
+                    @foreach (var step in navigationStack)
+                    {
+                        <span class="breadcrumb-separator">/</span>
+                        <span class="breadcrumb-item @(step == navigationStack.Last() ? "active" : "")" @onclick="() => GoToStep(step)">@step.Name</span>
+                    }
+                </div>
+
+                @if (isLoading)
+                {
+                    <div class="loading-state">
+                        <div class="spinner-border text-primary" role="status"></div>
+                        <p>Caricamento cartelle...</p>
+                    </div>
+                }
+                else
+                {
+                    <div class="item-list">
+                        @foreach (var item in items)
+                        {
+                            <div class="item-row @(selectedId == item.Id ? "selected" : "")" @onclick="() => SelectItem(item)">
+                                <div class="item-icon">
+                                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#0078D4" stroke-width="2">
+                                        <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
+                                    </svg>
+                                </div>
+                                <div class="item-name">@item.Name</div>
+                                <div class="item-actions">
+                                    <button class="btn-open" @onclick:stopPropagation="true" @onclick="() => OpenFolder(item)">
+                                        Apri
+                                    </button>
+                                </div>
+                            </div>
+                        }
+
+                        @if (items.Count == 0)
+                        {
+                            <div class="empty-state">
+                                <p>Nessuna cartella trovata.</p>
+                            </div>
+                        }
+                    </div>
+                }
+            </div>
+
+            <footer class="modal-footer-vibe">
+                <button class="btn-secondary-vibe flex-1" @onclick="Close">Annulla</button>
+                <button class="btn-primary-vibe flex-2" @onclick="ConfirmSelection" disabled="@(string.IsNullOrEmpty(selectedId))">
+                    Seleziona "@selectedName"
+                </button>
+            </footer>
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter] public bool IsVisible { get; set; }
+    [Parameter] public EventCallback<bool> IsVisibleChanged { get; set; }
+    [Parameter] public string AccessToken { get; set; } = string.Empty;
+    [Parameter] public string Title { get; set; } = "Seleziona Cartella OneDrive";
+    [Parameter] public EventCallback<(string Id, string Name, string? DriveId)> OnFolderSelected { get; set; }
+
+    private bool isLoading = true;
+    private List<OneDriveItem> items = new();
+    private List<NavigationStep> navigationStack = new();
+    private string? selectedId;
+    private string? selectedName;
+    private string viewMode = "personal"; // personal or shared
+    private string? currentDriveId;
+
+    private class NavigationStep
+    {
+        public string Id { get; set; } = string.Empty;
+        public string Name { get; set; } = string.Empty;
+        public string? DriveId { get; set; }
+    }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (IsVisible && items.Count == 0 && !string.IsNullOrEmpty(AccessToken))
+        {
+            await LoadFolders();
+        }
+    }
+
+    private async Task ChangeView(string mode)
+    {
+        if (viewMode == mode) return;
+        viewMode = mode;
+        navigationStack.Clear();
+        selectedId = null;
+        selectedName = null;
+        currentDriveId = null;
+        await LoadFolders();
+    }
+
+    private async Task LoadFolders(string? parentId = null, string? driveId = null)
+    {
+        isLoading = true;
+        currentDriveId = driveId;
+        try
+        {
+            if (string.IsNullOrEmpty(parentId) && viewMode == "shared")
+            {
+                items = await OneDriveService.ListSharedFoldersAsync(AccessToken);
+            }
+            else
+            {
+                items = await OneDriveService.ListFoldersAsync(AccessToken, parentId, driveId);
+            }
+        }
+        catch (Exception ex)
+        {
+            // Handle error (e.g., show alert)
+            Console.WriteLine(ex.Message);
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private async Task OpenFolder(OneDriveItem folder)
+    {
+        var driveId = folder.ParentReference?.DriveId ?? currentDriveId;
+        navigationStack.Add(new NavigationStep { Id = folder.Id, Name = folder.Name, DriveId = driveId });
+        await LoadFolders(folder.Id, driveId);
+    }
+
+    private async Task GoBack()
+    {
+        if (navigationStack.Count > 0)
+        {
+            navigationStack.RemoveAt(navigationStack.Count - 1);
+            var lastStep = navigationStack.LastOrDefault();
+            await LoadFolders(lastStep?.Id, lastStep?.DriveId);
+        }
+    }
+
+    private async Task GoToRoot()
+    {
+        navigationStack.Clear();
+        await LoadFolders();
+    }
+
+    private async Task GoToStep(NavigationStep step)
+    {
+        var index = navigationStack.IndexOf(step);
+        if (index >= 0)
+        {
+            navigationStack = navigationStack.Take(index + 1).ToList();
+            await LoadFolders(step.Id, step.DriveId);
+        }
+    }
+
+    private void SelectItem(OneDriveItem item)
+    {
+        selectedId = item.Id;
+        selectedName = item.Name;
+        // For shared items, the driveId is in the item itself
+        // For personal items, it's either null or the current personal drive context
+        var itemDriveId = item.ParentReference?.DriveId ?? currentDriveId;
+        currentDriveId = itemDriveId;
+    }
+
+    private async Task ConfirmSelection()
+    {
+        if (!string.IsNullOrEmpty(selectedId) && !string.IsNullOrEmpty(selectedName))
+        {
+            await OnFolderSelected.InvokeAsync((selectedId, selectedName, currentDriveId));
+            await Close();
+        }
+    }
+
+    private async Task Close()
+    {
+        IsVisible = false;
+        await IsVisibleChanged.InvokeAsync(false);
+    }
+}
+
+<style>
+    .view-toggle-vibe {
+        display: flex;
+        background-color: #E9F2EE;
+        padding: 4px;
+        border-radius: 12px;
+        margin-bottom: 1.5rem;
+    }
+
+    .toggle-btn {
+        flex: 1;
+        border: none;
+        padding: 8px;
+        border-radius: 10px;
+        font-size: 0.85rem;
+        font-weight: 700;
+        cursor: pointer;
+        background-color: transparent;
+        color: #6C757D;
+        transition: all 0.2s;
+    }
+
+    .toggle-btn.active {
+        background-color: #FFFFFF;
+        color: #20563C;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    }
+
+    .breadcrumb-vibe {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        margin-bottom: 1rem;
+        font-size: 0.85rem;
+        color: #6C757D;
+        overflow-x: auto;
+        white-space: nowrap;
+        padding-bottom: 0.5rem;
+    }
+
+    .breadcrumb-item {
+        cursor: pointer;
+    }
+
+    .breadcrumb-item.active {
+        color: #0078D4;
+        font-weight: 700;
+    }
+
+    .breadcrumb-separator {
+        color: #ADB5BD;
+    }
+
+    .item-list {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+
+    .item-row {
+        display: flex;
+        align-items: center;
+        padding: 0.75rem 1rem;
+        background-color: #FFFFFF;
+        border-radius: 12px;
+        border: 1px solid #E0E0E0;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+
+    .item-row:hover {
+        border-color: #0078D4;
+        background-color: #F3F9FF;
+    }
+
+    .item-row.selected {
+        border-color: #0078D4;
+        background-color: #EBF5FF;
+        box-shadow: 0 0 0 2px rgba(0, 120, 212, 0.2);
+    }
+
+    .item-icon {
+        margin-right: 0.75rem;
+        display: flex;
+        align-items: center;
+    }
+
+    .item-name {
+        flex: 1;
+        font-weight: 600;
+        color: #1A3C2F;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .btn-open {
+        background: none;
+        border: 1px solid #0078D4;
+        color: #0078D4;
+        border-radius: 6px;
+        padding: 2px 8px;
+        font-size: 0.75rem;
+        font-weight: 700;
+        cursor: pointer;
+    }
+
+    .loading-state, .empty-state {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 3rem 1rem;
+        color: #6C757D;
+    }
+
+    .header-left {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .back-btn-vibe {
+        background: none;
+        border: none;
+        color: #0078D4;
+        padding: 4px;
+        cursor: pointer;
+    }
+
+    .modal-footer-vibe {
+        padding: 1.5rem;
+        display: flex;
+        gap: 1rem;
+        border-top: 1px solid rgba(0,0,0,0.05);
+    }
+
+    .modal-backdrop-vibe {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.5);
+        display: flex;
+        align-items: flex-end;
+        justify-content: center;
+        z-index: 2000;
+        backdrop-filter: blur(4px);
+    }
+
+    .modal-sheet-vibe {
+        width: 100%;
+        max-width: 600px;
+        background-color: #F8FBF9;
+        border-top-left-radius: 32px;
+        border-top-right-radius: 32px;
+        display: flex;
+        flex-direction: column;
+        max-height: 90vh;
+        animation: slide-up 0.3s ease-out;
+        box-shadow: 0 -8px 32px rgba(0, 0, 0, 0.1);
+    }
+
+    @@keyframes slide-up {
+        from { transform: translateY(100%); }
+        to { transform: translateY(0); }
+    }
+
+    .modal-header-vibe {
+        padding: 1.5rem;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        border-bottom: 1px solid rgba(0,0,0,0.05);
+    }
+
+    .modal-title-vibe {
+        font-size: 1.25rem;
+        font-weight: 700;
+        color: #1A3C2F;
+        margin: 0;
+    }
+
+    .close-btn-vibe {
+        background: none;
+        border: none;
+        color: #6C757D;
+        cursor: pointer;
+        padding: 4px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 50%;
+        transition: background-color 0.2s;
+    }
+
+    .modal-body-vibe {
+        flex: 1;
+        overflow-y: auto;
+        padding: 1.5rem 1.5rem 3rem;
+    }
+</style>

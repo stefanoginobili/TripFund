@@ -66,6 +66,7 @@
         <PackageReference Include="Microsoft.Maui.Controls" Version="$(MauiVersion)" />
         <PackageReference Include="Microsoft.AspNetCore.Components.WebView.Maui" Version="$(MauiVersion)" />
         <PackageReference Include="Microsoft.Extensions.Logging.Debug" Version="10.0.0" />
+        <PackageReference Include="Microsoft.AspNetCore.WebUtilities" Version="9.0.0" />
     </ItemGroup>
 
     <Target Name="SwitchInfoPlist" BeforeTargets="BeforeBuild" Condition="'$(TargetFramework)' == 'net9.0-ios'">
