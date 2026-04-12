@@ -80,7 +80,19 @@
     <RemoteStorageSelector IsVisible="showSyncSelector"
                           IsJoining="isJoining"
                           OnClose="() => showSyncSelector = false"
-                          OnSelectionCompleted="HandleSyncSelectionCompleted" /></div>
+                          OnSelectionCompleted="HandleSyncSelectionCompleted" />
+
+    @if (isSearchingRemote)
+    {
+        <div class="search-overlay-vibe">
+            <div class="search-modal-vibe">
+                <div class="spinner-border text-primary mb-3" role="status"></div>
+                <p class="searching-text-vibe">Ricerca configurazione viaggio...</p>
+                <p class="small text-muted">Stiamo scaricando i dati dal server remoto.</p>
+            </div>
+        </div>
+    }
+</div>
 
 @code {
     private RenderFragment RenderTripCard(TripListItem item, string icon, bool isGray, bool isHighlighted) => __builder => {
@@ -247,4 +259,36 @@
     }
 
     .small { font-size: 0.9rem; }
+
+    .search-overlay-vibe {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.5);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 3000;
+        backdrop-filter: blur(4px);
+    }
+
+    .search-modal-vibe {
+        background-color: #FFFFFF;
+        padding: 2rem;
+        border-radius: 24px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        max-width: 80%;
+    }
+
+    .searching-text-vibe {
+        font-weight: 700;
+        color: #1A3C2F;
+        margin-bottom: 0.25rem;
+    }
 </style>

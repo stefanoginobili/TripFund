@@ -1,5 +1,6 @@
 @using TripFund.App.Services
 @inject OneDrivePickerService OneDriveService
+@inject IAlertService AlertService
 
 @if (IsVisible)
 {
@@ -35,16 +36,42 @@
                     </button>
                 </div>
 
-                <div class="breadcrumb-vibe">
-                    <span class="breadcrumb-item @(navigationStack.Count == 0 ? "active" : "")" @onclick="GoToRoot">
-                        @(viewMode == "personal" ? "I miei file" : "Condivisi con me")
-                    </span>
-                    @foreach (var step in navigationStack)
+                <div class="breadcrumb-container-vibe">
+                    <div class="breadcrumb-vibe">
+                        <span class="breadcrumb-item @(navigationStack.Count == 0 ? "active" : "")" @onclick="GoToRoot">
+                            @(viewMode == "personal" ? "I miei file" : "Condivisi con me")
+                        </span>
+                        @foreach (var step in navigationStack)
+                        {
+                            <span class="breadcrumb-separator">/</span>
+                            <span class="breadcrumb-item @(step == navigationStack.Last() ? "active" : "")" @onclick="() => GoToStep(step)">@step.Name</span>
+                        }
+                    </div>
+                    @if (viewMode == "personal" && !isLoading)
                     {
-                        <span class="breadcrumb-separator">/</span>
-                        <span class="breadcrumb-item @(step == navigationStack.Last() ? "active" : "")" @onclick="() => GoToStep(step)">@step.Name</span>
+                        <button class="btn-new-folder-vibe" @onclick="ToggleCreateFolder" title="Nuova Cartella">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
+                                <line x1="12" y1="11" x2="12" y2="17"></line>
+                                <line x1="9" y1="14" x2="15" y2="14"></line>
+                            </svg>
+                        </button>
                     }
                 </div>
+
+                @if (isCreatingFolder)
+                {
+                    <div class="create-folder-form-vibe">
+                        <input type="text" class="form-control-vibe" @bind="newFolderName" placeholder="Nome cartella..." autofocus />
+                        <div class="form-actions-vibe">
+                            <button class="btn-cancel-vibe" @onclick="ToggleCreateFolder" disabled="@isFolderCreating">Annulla</button>
+                            <button class="btn-confirm-vibe" @onclick="CreateFolder" disabled="@(isFolderCreating || string.IsNullOrWhiteSpace(newFolderName))">
+                                @if (isFolderCreating) { <div class="spinner-border spinner-border-sm me-1" role="status"></div> }
+                                Crea
+                            </button>
+                        </div>
+                    </div>
+                }
 
                 @if (isLoading)
                 {
@@ -84,9 +111,9 @@
             </div>
 
             <footer class="modal-footer-vibe">
-                <button class="btn-secondary-vibe flex-1" @onclick="Close">Annulla</button>
-                <button class="btn-primary-vibe flex-2" @onclick="ConfirmSelection" disabled="@(string.IsNullOrEmpty(selectedId))">
-                    Seleziona "@selectedName"
+                <button class="btn-link-vibe" @onclick="Close">Annulla</button>
+                <button class="btn-primary-vibe flex-1 ms-4" @onclick="ConfirmSelection" disabled="@(string.IsNullOrEmpty(selectedId))">
+                    Seleziona
                 </button>
             </footer>
         </div>
@@ -107,6 +134,46 @@
     private string? selectedName;
     private string viewMode = "personal"; // personal or shared
     private string? currentDriveId;
+
+    private bool isCreatingFolder = false;
+    private string newFolderName = string.Empty;
+    private bool isFolderCreating = false;
+
+    private void ToggleCreateFolder()
+    {
+        isCreatingFolder = !isCreatingFolder;
+        newFolderName = string.Empty;
+    }
+
+    private async Task CreateFolder()
+    {
+        if (string.IsNullOrWhiteSpace(newFolderName)) return;
+
+        isFolderCreating = true;
+        try
+        {
+            var parentId = navigationStack.LastOrDefault()?.Id;
+            var folder = await OneDriveService.CreateFolderAsync(AccessToken, newFolderName, parentId, currentDriveId);
+            
+            // Reload folders to see the new one
+            await LoadFolders(parentId, currentDriveId);
+            
+            // Auto-select the new folder
+            SelectItem(folder);
+            
+            isCreatingFolder = false;
+            newFolderName = string.Empty;
+        }
+        catch (Exception ex)
+        {
+            await AlertService.ShowAlertAsync("Errore", "Impossibile creare la cartella: " + ex.Message);
+            Console.WriteLine(ex.Message);
+        }
+        finally
+        {
+            isFolderCreating = false;
+        }
+    }
 
     private class NavigationStep
     {
@@ -247,16 +314,87 @@
         box-shadow: 0 2px 8px rgba(0,0,0,0.05);
     }
 
+    .breadcrumb-container-vibe {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 1rem;
+        gap: 0.5rem;
+    }
+
+    .btn-new-folder-vibe {
+        background: #EBF5FF;
+        border: 1px solid #0078D4;
+        color: #0078D4;
+        border-radius: 8px;
+        width: 36px;
+        height: 36px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        flex-shrink: 0;
+    }
+
+    .create-folder-form-vibe {
+        background-color: #FFFFFF;
+        padding: 1rem;
+        border-radius: 12px;
+        border: 1px solid #0078D4;
+        margin-bottom: 1rem;
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+        animation: fade-in 0.2s ease-out;
+    }
+
+    @@keyframes fade-in {
+        from { opacity: 0; transform: translateY(-10px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    .form-actions-vibe {
+        display: flex;
+        justify-content: flex-end;
+        gap: 0.5rem;
+    }
+
+    .btn-cancel-vibe {
+        background: none;
+        border: none;
+        color: #6C757D;
+        font-size: 0.85rem;
+        font-weight: 600;
+        cursor: pointer;
+    }
+
+    .btn-confirm-vibe {
+        background-color: #0078D4;
+        color: #FFFFFF;
+        border: none;
+        border-radius: 6px;
+        padding: 4px 12px;
+        font-size: 0.85rem;
+        font-weight: 700;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+    }
+
+    .btn-confirm-vibe:disabled {
+        opacity: 0.6;
+    }
+
     .breadcrumb-vibe {
         display: flex;
         align-items: center;
         gap: 0.5rem;
-        margin-bottom: 1rem;
         font-size: 0.85rem;
         color: #6C757D;
         overflow-x: auto;
         white-space: nowrap;
         padding-bottom: 0.5rem;
+        flex: 1;
     }
 
     .breadcrumb-item {
@@ -352,9 +490,24 @@
     .modal-footer-vibe {
         padding: 1.5rem;
         display: flex;
-        gap: 1rem;
+        align-items: center;
+        justify-content: space-between;
         border-top: 1px solid rgba(0,0,0,0.05);
     }
+
+    .btn-link-vibe {
+        background: none;
+        border: none;
+        color: #20563C;
+        font-weight: 700;
+        font-size: 0.85rem;
+        text-decoration: underline;
+        padding: 0;
+        cursor: pointer;
+    }
+
+    .flex-1 { flex: 1; }
+    .ms-4 { margin-left: 1.5rem; }
 
     .modal-backdrop-vibe {
         position: fixed;

@@ -16,6 +16,7 @@ namespace TripFund.App.Components.Pages
         private List<TripListItem> futureTrips = new();
         private List<TripListItem> pastTrips = new();
         private bool isLoading = true;
+        private bool isSearchingRemote = false;
         private bool showSyncSelector = false;
         private bool isJoining = false;
 
@@ -113,43 +114,54 @@ namespace TripFund.App.Components.Pages
 
         private async Task HandleJoinTrip(RemoteStorageSelection selection)
         {
-            var remoteConfig = await RemoteStorage.GetRemoteTripConfigAsync(selection.Provider, selection.Parameters);
+            isSearchingRemote = true;
+            StateHasChanged();
             
-            if (remoteConfig == null)
+            try
             {
-                await Alert.ShowAlertAsync("Errore", "Impossibile trovare i dati del viaggio nella posizione specificata.");
-                return;
-            }
+                var remoteConfig = await RemoteStorage.GetRemoteTripConfigAsync(selection.Provider, selection.Parameters);
+                
+                if (remoteConfig == null)
+                {
+                    await Alert.ShowAlertAsync("Errore", "Impossibile trovare i dati del viaggio nella posizione specificata.");
+                    return;
+                }
 
-            var confirmed = await Alert.ConfirmAsync("Conferma", 
-                $"Vuoi aggiungere il viaggio {remoteConfig.Name} dal {remoteConfig.StartDate:dd/MM/yyyy} al {remoteConfig.EndDate:dd/MM/yyyy}?",
-                "Conferma", "Annulla");
+                var confirmed = await Alert.ConfirmAsync("Conferma", 
+                    $"Vuoi aggiungere il viaggio {remoteConfig.Name} dal {remoteConfig.StartDate:dd/MM/yyyy} al {remoteConfig.EndDate:dd/MM/yyyy}?",
+                    "Conferma", "Annulla");
 
-            if (!confirmed) return;
+                if (!confirmed) return;
 
-            string slug = SlugUtility.GenerateSlug(remoteConfig.Name);
-            var existingConfig = await Storage.GetTripConfigAsync(slug);
-            
-            if (existingConfig == null)
-            {
-                var settings = await Storage.GetAppSettingsAsync();
-                var deviceId = settings?.DeviceId ?? "unknown";
-                await Storage.SaveTripConfigAsync(slug, remoteConfig, deviceId);
-            }
+                string slug = SlugUtility.GenerateSlug(remoteConfig.Name);
+                var existingConfig = await Storage.GetTripConfigAsync(slug);
+                
+                if (existingConfig == null)
+                {
+                    var settings = await Storage.GetAppSettingsAsync();
+                    var deviceId = settings?.DeviceId ?? "unknown";
+                    await Storage.SaveTripConfigAsync(slug, remoteConfig, deviceId);
+                }
 
-            var registry = await Storage.GetTripRegistryAsync();
-            registry.Trips[slug] = new TripRegistryEntry 
-            { 
-                CreatedAt = DateTime.UtcNow,
-                RemoteStorage = new RemoteStorageConfig 
+                var registry = await Storage.GetTripRegistryAsync();
+                registry.Trips[slug] = new TripRegistryEntry 
                 { 
-                    Provider = selection.Provider, 
-                    Parameters = selection.Parameters
-                } 
-            };
-            await Storage.SaveTripRegistryAsync(registry);
+                    CreatedAt = DateTime.UtcNow,
+                    RemoteStorage = new RemoteStorageConfig 
+                    { 
+                        Provider = selection.Provider, 
+                        Parameters = selection.Parameters
+                    } 
+                };
+                await Storage.SaveTripRegistryAsync(registry);
 
-            NavigateToTrip(slug);
+                NavigateToTrip(slug);
+            }
+            finally
+            {
+                isSearchingRemote = false;
+                StateHasChanged();
+            }
         }
 
         private string FormatDates(DateTime start, DateTime end)

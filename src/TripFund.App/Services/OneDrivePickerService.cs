@@ -22,6 +22,33 @@ public class OneDrivePickerService : IOneDrivePickerService
         return Task.FromResult<(string?, string?)>((null, null));
     }
 
+    public async Task<OneDriveItem> CreateFolderAsync(string accessToken, string folderName, string? parentFolderId = null, string? driveId = null)
+    {
+        string url;
+        if (string.IsNullOrEmpty(parentFolderId))
+        {
+            url = "https://graph.microsoft.com/v1.0/me/drive/root/children";
+        }
+        else if (!string.IsNullOrEmpty(driveId))
+        {
+            url = $"https://graph.microsoft.com/v1.0/drives/{driveId}/items/{parentFolderId}/children";
+        }
+        else
+        {
+            url = $"https://graph.microsoft.com/v1.0/me/drive/items/{parentFolderId}/children";
+        }
+
+        var body = new { name = folderName, folder = new { }, @microsoft_graph_conflictBehavior = "rename" };
+        using var request = new HttpRequestMessage(HttpMethod.Post, url);
+        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
+        request.Content = JsonContent.Create(body);
+
+        var response = await _httpClient.SendAsync(request);
+        response.EnsureSuccessStatusCode();
+
+        return await response.Content.ReadFromJsonAsync<OneDriveItem>() ?? throw new Exception("Failed to create folder");
+    }
+
     public async Task<List<OneDriveItem>> ListFoldersAsync(string accessToken, string? parentFolderId = null, string? driveId = null)
     {
         string url;
