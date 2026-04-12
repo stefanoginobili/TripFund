@@ -108,6 +108,14 @@ public class OneDriveRemoteStorageService : IRemoteStorageService
             await _localStorage.SaveTripRegistryAsync(registry);
         }
 
+        // Check if root is readonly by trying to write/delete a test file
+        var canWrite = await CheckFolderWritePermissionAsync(folderId, driveId);
+        if (entry.RemoteStorage.Readonly != !canWrite)
+        {
+            entry.RemoteStorage.Readonly = !canWrite;
+            await _localStorage.SaveTripRegistryAsync(registry);
+        }
+
         // 1. Download Phase
         var localTripPath = Path.Combine(_localStorage.TripsPath, tripSlug);
         await SyncDownAsync(folderId, localTripPath, driveId);
@@ -142,6 +150,61 @@ public class OneDriveRemoteStorageService : IRemoteStorageService
         if (!entry.RemoteStorage.Readonly)
         {
             await SyncUpAsync(localTripPath, folderId, driveId);
+        }
+    }
+
+    private async Task<bool> CheckFolderWritePermissionAsync(string folderId, string? driveId)
+    {
+        try
+        {
+            var settings = await _localStorage.GetAppSettingsAsync();
+            var deviceId = settings?.DeviceId ?? "unknown-device";
+            var fileName = $".rw-test-{deviceId}";
+
+            // Check if test file already exists
+            var children = await ListChildrenAsync(folderId, driveId);
+            var existing = children.FirstOrDefault(c => c.Name == fileName);
+            if (existing != null)
+            {
+                // Try to delete existing file to confirm write permission
+                try
+                {
+                    await DeleteFileAsync(existing.Id, driveId);
+                    return true;
+                }
+                catch
+                {
+                    // If deletion of existing fails, proceed to try creation
+                }
+            }
+
+            // Try to create/upload a new test file
+            var uploaded = await UploadFileAsync(folderId, fileName, new byte[] { 0x01 }, driveId);
+            if (uploaded == null) return false;
+
+            // Try to delete it
+            await DeleteFileAsync(uploaded.Id, driveId);
+            return true;
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
+    private async Task DeleteFileAsync(string fileId, string? driveId)
+    {
+        var url = string.IsNullOrEmpty(driveId)
+            ? $"https://graph.microsoft.com/v1.0/me/drive/items/{fileId}"
+            : $"https://graph.microsoft.com/v1.0/drives/{driveId}/items/{fileId}";
+
+        using var request = new HttpRequestMessage(HttpMethod.Delete, url);
+        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", _accessToken);
+
+        var response = await _httpClient.SendAsync(request);
+        if (!response.IsSuccessStatusCode)
+        {
+            throw new Exception("Failed to delete file from OneDrive");
         }
     }
 

@@ -80,7 +80,6 @@
         {
             await RemoteStorage.SynchronizeAsync(TripSlug);
             await LoadSyncStatus();
-            await OnSyncCompleted.InvokeAsync();
         }
         catch (Exception ex)
         {
@@ -88,6 +87,7 @@
         }
         finally
         {
+            await OnSyncCompleted.InvokeAsync();
             isSyncing = false;
             StateHasChanged();
         }

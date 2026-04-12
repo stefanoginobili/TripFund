@@ -36,6 +36,7 @@ namespace TripFund.App.Components.Pages
         };
 
         private bool isHeaderMenuOpen = false;
+        private bool isReadonly = false;
 
         private void ToggleHeaderMenu() => isHeaderMenuOpen = !isHeaderMenuOpen;
 
@@ -46,6 +47,13 @@ namespace TripFund.App.Components.Pages
             {
                 originalConfigJson = System.Text.Json.JsonSerializer.Serialize(config);
             }
+            
+            var registry = await Storage.GetTripRegistryAsync();
+            if (registry != null && registry.Trips.TryGetValue(tripSlug, out var entry))
+            {
+                isReadonly = entry.RemoteStorage?.Readonly ?? false;
+            }
+
             var settings = await Storage.GetAppSettingsAsync();
             deviceId = settings?.DeviceId ?? "";
             authorName = settings?.AuthorName ?? "";
