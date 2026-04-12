@@ -26,6 +26,7 @@ namespace TripFund.App.Components.Common
 
         private bool isOneDrivePickerVisible = false;
         private string oneDriveToken = "";
+        private string? oneDriveRefreshToken;
 
         private string GetTitle()
         {
@@ -43,14 +44,15 @@ namespace TripFund.App.Components.Common
 
                 if (selectedProvider == "onedrive")
                 {
-                    var token = await OneDriveService.GetAccessTokenAsync();
-                    if (string.IsNullOrEmpty(token))
+                    var authResult = await OneDriveService.AuthenticateUserAsync();
+                    if (authResult == null || !authResult.TryGetValue("accessToken", out var token))
                     {
                         await AlertService.ShowAlertAsync("Errore", "Impossibile autenticare l'account Microsoft.");
                         return;
                     }
 
                     oneDriveToken = token;
+                    authResult.TryGetValue("refreshToken", out oneDriveRefreshToken);
                     isOneDrivePickerVisible = true;
                 }
             }
@@ -121,6 +123,10 @@ namespace TripFund.App.Components.Common
                 if (!string.IsNullOrEmpty(driveId))
                 {
                     parameters["driveId"] = driveId;
+                }
+                if (!string.IsNullOrEmpty(oneDriveRefreshToken))
+                {
+                    parameters["refreshToken"] = oneDriveRefreshToken;
                 }
             }
 
