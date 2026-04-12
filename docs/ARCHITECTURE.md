@@ -35,7 +35,7 @@ The application utilizes an append-only, soft-deletion storage engine. When a fo
 
 ### 3.1. Version Sub-Folder Naming Convention
 Data is never stored in the root of a versioned folder. It is stored in sub-folders adhering strictly to this regex-compatible format:
-`^(?<nnn>\d{3})_(?<kind>new|upd|res|del)_(?<deviceId>[a-z0-9\-]+)$`
+`^(?<nnn>\d{3})_(?<kind>NEW|UPD|RES|DEL)_(?<deviceId>[a-z0-9\-]+)$`
 
 - `[nnn]`: A 3-digit progressive integer (e.g., `001`, `002`).
 - `[kind]`: The commit type (see 3.2).
@@ -44,18 +44,18 @@ Data is never stored in the root of a versioned folder. It is stored in sub-fold
 ### 3.2. Commit Kinds & Multi-File Rules
 Commits are **atomic**. A single version bump MUST be able to process a batch of multiple file changes (creations, modifications, and deletions) simultaneously.
 
-- **`new` (Creation):** Always paired with `001`. Contains the initial dataset.
-- **`upd` (Update):** Contains a batch of modifications.
-    - **Rule:** When creating an `upd` folder, the system MUST:
+- **`NEW` (Creation):** Always paired with `001`. Contains the initial dataset.
+- **`UPD` (Update):** Contains a batch of modifications.
+    - **Rule:** When creating an `UPD` folder, the system MUST:
         1. Include all newly created files.
         2. Include all modified files (e.g., an updated `data.json`).
         3. Copy all **untouched** files from the immediate previous version.
         4. Explicitly **exclude/drop** any files the user intended to delete (e.g., removing a specific attachment).
-- **`del` (Soft Deletion):** Deletes the *entire entity*.
+- **`DEL` (Soft Deletion):** Deletes the *entire entity*.
     - **Rule:** The folder MUST ONLY contain a file named `.deleted`. No `data.json` or attachments are copied forward. The `.deleted` MUST contain 2 line:
       - `author=Mario Rossi`: where "Mario Rossi" in this example is the author from the Global Settings.
       - `deletedAt=20260332T212354Z`: where the timestamp is the timestamp of the deletion time.
-- **`res` (Resolution):** Closes a conflict state. Contains the exact file payload (or `.deleted` marker) of the chosen winning thread.
+- **`RES` (Resolution):** Closes a conflict state. Contains the exact file payload (or `.deleted` marker) of the chosen winning thread.
 
 ### 3.3. Standard Commit Operation Algorithm
 When a user modifies data (changing one or multiple files) and saves:
@@ -69,7 +69,7 @@ When a user modifies data (changing one or multiple files) and saves:
 Conflicts occur natively due to the offline-first architecture when multiple users commit against the same base state before syncing.
 
 **Detection Rule:**
-A conflict is actively occurring IF AND ONLY IF there are two or more version sub-folders sharing the exact same `[nnn]` value, AND there is no valid `res` folder that supersedes them.
+A conflict is actively occurring IF AND ONLY IF there are two or more version sub-folders sharing the exact same `[nnn]` value, AND there is no valid `RES` folder that supersedes them.
 
 **Conflict State Behavior:**
 1. The engine MUST group the diverging paths into "Threads" based on the `[deviceId]`.
@@ -79,12 +79,12 @@ A conflict is actively occurring IF AND ONLY IF there are two or more version su
 **Resolution Algorithm:**
 1. The user selects a winning thread via the UI.
 2. The engine calculates `NextSeq = MAX([nnn_all_threads]) + 1`.
-3. The engine creates a `[NextSeq]_res_[deviceId]` folder.
-4. The engine copies the exact state (files, or the `.deleted` marker) of the chosen winning thread into the `res` folder.
+3. The engine creates a `[NextSeq]_RES_[deviceId]` folder.
+4. The engine copies the exact state (files, or the `.deleted` marker) of the chosen winning thread into the `RES` folder.
 5. The conflict is marked resolved. Standard linear commits can resume at `NextSeq + 1`.
 
 **Conflict Override Edge Case:**
-If an out-of-sync client uploads a new version folder (e.g., an `upd` or `del`) that sits alongside an existing `res` folder, the resolution is invalidated. The engine MUST revert the entity to an active Conflict State, requiring a new `res` commit to reconcile the newly introduced thread.
+If an out-of-sync client uploads a new version folder (e.g., an `UPD` or `DEL`) that sits alongside an existing `RES` folder, the resolution is invalidated. The engine MUST revert the entity to an active Conflict State, requiring a new `RES` commit to reconcile the newly introduced thread.
 
 ## 5. Remote Storage Synchronization
 The synchronization process ensures the local offline-first storage and the remote provider (Microsoft OneDrive, Git, etc.) are eventually consistent. This process operates at the folder level, navigating recursively through the `trips/[TripSlug]` structure.

@@ -53,7 +53,7 @@ public class AttachmentCopyTests : IDisposable
         var transRoot = Path.Combine(_tempPath, "trips", tripSlug, "transactions", transactionId);
         
         // Verify V1
-        var v1Path = Path.Combine(transRoot, "001_new_device1");
+        var v1Path = Path.Combine(transRoot, "001_NEW_device1");
         Directory.Exists(v1Path).Should().BeTrue("V1 folder should exist");
         File.Exists(Path.Combine(v1Path, "attachment_1.jpg")).Should().BeTrue();
 
@@ -77,7 +77,7 @@ public class AttachmentCopyTests : IDisposable
         await _service.SaveTransactionAsync(tripSlug, t2, "device1", attachments: newAttachments);
 
         // Assert: V2 should contain all three attachments
-        var v2Path = Path.Combine(transRoot, "002_upd_device1");
+        var v2Path = Path.Combine(transRoot, "002_UPD_device1");
         Directory.Exists(v2Path).Should().BeTrue("V2 folder should exist");
         
         File.Exists(Path.Combine(v2Path, "data.json")).Should().BeTrue("data.json should exist in V2");
@@ -128,7 +128,7 @@ public class AttachmentCopyTests : IDisposable
 
         // Assert
         var transRoot = Path.Combine(_tempPath, "trips", tripSlug, "transactions", transactionId);
-        var v2Path = Path.Combine(transRoot, "002_upd_device1");
+        var v2Path = Path.Combine(transRoot, "002_UPD_device1");
         Directory.Exists(v2Path).Should().BeTrue("V2 folder should exist");
         
         File.Exists(Path.Combine(v2Path, "keep.jpg")).Should().BeTrue("keep.jpg should be kept");

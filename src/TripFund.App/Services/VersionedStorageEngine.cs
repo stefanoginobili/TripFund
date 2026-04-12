@@ -31,7 +31,7 @@ public class VersionConflictException : Exception
 
 public class VersionedStorageEngine
 {
-    private static readonly Regex VersionRegex = new(@"^(?<nnn>\d{3})_(?<kind>new|upd|res|del)_(?<deviceId>[a-z0-9\-]+)$", RegexOptions.Compiled);
+    private static readonly Regex VersionRegex = new(@"^(?<nnn>\d{3})_(?<kind>NEW|UPD|RES|DEL|new|upd|res|del)_(?<deviceId>[a-z0-9\-]+)$", RegexOptions.Compiled);
 
     public List<VersionFolderInfo> GetVersionFolders(string rootPath)
     {
@@ -128,7 +128,7 @@ public class VersionedStorageEngine
     {
         var versions = GetVersionFolders(rootPath);
         int nextSeq = (versions.Count == 0) ? 1 : versions.Max(v => v.Sequence) + 1;
-        string folderName = $"{nextSeq:D3}_{kind.ToString().ToLower()}_{deviceId}";
+        string folderName = $"{nextSeq:D3}_{kind.ToString().ToUpperInvariant()}_{deviceId}";
         string newDirPath = Path.Combine(rootPath, folderName);
         Directory.CreateDirectory(newDirPath);
 

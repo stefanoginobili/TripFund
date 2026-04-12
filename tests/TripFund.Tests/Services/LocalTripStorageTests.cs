@@ -41,7 +41,7 @@ public class LocalTripStorageTests : IDisposable
         loaded.UpdatedAt.Should().BeCloseTo(DateTime.UtcNow, TimeSpan.FromSeconds(5));
 
         var metadataDir = Path.Combine(_tempPath, "trips", slug, "metadata");
-        Directory.GetDirectories(metadataDir).Should().ContainSingle(d => Path.GetFileName(d) == "001_new_mario");
+        Directory.GetDirectories(metadataDir).Should().ContainSingle(d => Path.GetFileName(d) == "001_NEW_mario");
     }
 
     [Fact]
@@ -60,7 +60,7 @@ public class LocalTripStorageTests : IDisposable
         transactions[0].Description.Should().Be("Lunch");
 
         var transDir = Path.Combine(_tempPath, "trips", tripSlug, "transactions", "trans-1");
-        Directory.GetDirectories(transDir).Should().ContainSingle(d => Path.GetFileName(d) == "001_new_mario");
+        Directory.GetDirectories(transDir).Should().ContainSingle(d => Path.GetFileName(d) == "001_NEW_mario");
     }
 
     [Fact]
@@ -82,7 +82,7 @@ public class LocalTripStorageTests : IDisposable
         
         var transDir = Path.Combine(_tempPath, "trips", tripSlug, "transactions", "trans-1");
         Directory.GetDirectories(transDir).Should().HaveCount(2);
-        Directory.GetDirectories(transDir).Should().Contain(d => Path.GetFileName(d) == "002_upd_mario");
+        Directory.GetDirectories(transDir).Should().Contain(d => Path.GetFileName(d) == "002_UPD_mario");
     }
 
     [Fact]
@@ -102,7 +102,7 @@ public class LocalTripStorageTests : IDisposable
 
         var transDir = Path.Combine(_tempPath, "trips", tripSlug, "transactions", "trans-1");
         Directory.GetDirectories(transDir).Should().HaveCount(2);
-        Directory.GetDirectories(transDir).Should().Contain(d => Path.GetFileName(d) == "002_del_mario");
+        Directory.GetDirectories(transDir).Should().Contain(d => Path.GetFileName(d) == "002_DEL_mario");
     }
 
     [Fact]
@@ -120,7 +120,7 @@ public class LocalTripStorageTests : IDisposable
 
         // Assert
         var transDir = Path.Combine(_tempPath, "trips", tripSlug, "transactions", "trans-1");
-        var delVersionDir = Path.Combine(transDir, "002_del_mario");
+        var delVersionDir = Path.Combine(transDir, "002_DEL_mario");
         var deletedFile = Path.Combine(delVersionDir, ".deleted");
         
         File.Exists(deletedFile).Should().BeTrue();
@@ -146,8 +146,8 @@ public class LocalTripStorageTests : IDisposable
         Directory.CreateDirectory(transDir);
         
         // Manual setup to create conflict (same sequence number for different users)
-        Directory.CreateDirectory(Path.Combine(transDir, "001_new_mario"));
-        Directory.CreateDirectory(Path.Combine(transDir, "001_new_luigi"));
+        Directory.CreateDirectory(Path.Combine(transDir, "001_NEW_mario"));
+        Directory.CreateDirectory(Path.Combine(transDir, "001_NEW_luigi"));
 
         // Assert
         Func<Task> act = () => _service.GetTransactionsAsync(tripSlug);
@@ -165,9 +165,9 @@ public class LocalTripStorageTests : IDisposable
         var transDir = Path.Combine(_tempPath, "trips", tripSlug, "transactions", transId);
         Directory.CreateDirectory(transDir);
         
-        // Setup conflict: 001_new_mario, 001_new_luigi
-        Directory.CreateDirectory(Path.Combine(transDir, "001_new_mario"));
-        Directory.CreateDirectory(Path.Combine(transDir, "001_new_luigi"));
+        // Setup conflict: 001_NEW_mario, 001_NEW_luigi
+        Directory.CreateDirectory(Path.Combine(transDir, "001_NEW_mario"));
+        Directory.CreateDirectory(Path.Combine(transDir, "001_NEW_luigi"));
 
         var resolvedTrans = new Transaction { Id = transId, Description = "Resolved" };
 
@@ -175,9 +175,9 @@ public class LocalTripStorageTests : IDisposable
         await _service.ResolveConflictAsync(tripSlug, resolvedTrans, "mario");
 
         // Assert
-        // New resolved version should be 002_res_mario
+        // New resolved version should be 002_RES_mario
         Directory.GetDirectories(transDir).Should().HaveCount(3);
-        Directory.GetDirectories(transDir).Should().Contain(d => Path.GetFileName(d) == "002_res_mario");
+        Directory.GetDirectories(transDir).Should().Contain(d => Path.GetFileName(d) == "002_RES_mario");
 
         var loaded = await _service.GetLatestTransactionVersionAsync(tripSlug, transId);
         loaded!.Description.Should().Be("Resolved");
