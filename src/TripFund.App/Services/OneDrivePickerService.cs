@@ -8,10 +8,12 @@ namespace TripFund.App.Services;
 public class OneDrivePickerService : IOneDrivePickerService
 {
     private readonly HttpClient _httpClient;
+    private readonly string _graphBaseUrl;
 
-    public OneDrivePickerService(HttpClient httpClient)
+    public OneDrivePickerService(HttpClient httpClient, string graphBaseUrl = "https://graph.microsoft.com/v1.0")
     {
         _httpClient = httpClient;
+        _graphBaseUrl = graphBaseUrl.TrimEnd('/');
     }
 
     public Task<(string? FolderId, string? FolderName)> PickFolderAsync(string accessToken, string title)
@@ -27,15 +29,15 @@ public class OneDrivePickerService : IOneDrivePickerService
         string url;
         if (string.IsNullOrEmpty(parentFolderId))
         {
-            url = "https://graph.microsoft.com/v1.0/me/drive/root/children";
+            url = $"{_graphBaseUrl}/me/drive/root/children";
         }
         else if (!string.IsNullOrEmpty(driveId))
         {
-            url = $"https://graph.microsoft.com/v1.0/drives/{driveId}/items/{parentFolderId}/children";
+            url = $"{_graphBaseUrl}/drives/{driveId}/items/{parentFolderId}/children";
         }
         else
         {
-            url = $"https://graph.microsoft.com/v1.0/me/drive/items/{parentFolderId}/children";
+            url = $"{_graphBaseUrl}/me/drive/items/{parentFolderId}/children";
         }
 
         var body = new { name = folderName, folder = new { }, @microsoft_graph_conflictBehavior = "rename" };
@@ -54,15 +56,15 @@ public class OneDrivePickerService : IOneDrivePickerService
         string url;
         if (string.IsNullOrEmpty(parentFolderId))
         {
-            url = "https://graph.microsoft.com/v1.0/me/drive/root/children?$filter=folder ne null";
+            url = $"{_graphBaseUrl}/me/drive/root/children?$filter=folder ne null";
         }
         else if (!string.IsNullOrEmpty(driveId))
         {
-            url = $"https://graph.microsoft.com/v1.0/drives/{driveId}/items/{parentFolderId}/children?$filter=folder ne null";
+            url = $"{_graphBaseUrl}/drives/{driveId}/items/{parentFolderId}/children?$filter=folder ne null";
         }
         else
         {
-            url = $"https://graph.microsoft.com/v1.0/me/drive/items/{parentFolderId}/children?$filter=folder ne null";
+            url = $"{_graphBaseUrl}/me/drive/items/{parentFolderId}/children?$filter=folder ne null";
         }
 
         using var request = new HttpRequestMessage(HttpMethod.Get, url);
@@ -79,7 +81,7 @@ public class OneDrivePickerService : IOneDrivePickerService
     {
         // GET /me/drive/sharedWithMe returns DriveItems that are shared with the user.
         // We filter for items that represent a folder.
-        var url = "https://graph.microsoft.com/v1.0/me/drive/sharedWithMe";
+        var url = $"{_graphBaseUrl}/me/drive/sharedWithMe";
 
         using var request = new HttpRequestMessage(HttpMethod.Get, url);
         request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);

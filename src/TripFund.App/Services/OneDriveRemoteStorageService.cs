@@ -19,18 +19,21 @@ public class OneDriveRemoteStorageService : IRemoteStorageService
     private string? _refreshToken;
     private DateTime _tokenExpiry = DateTime.MinValue;
 
+    private readonly string _graphBaseUrl;
+
     public OneDriveRemoteStorageService(
-        IHttpClientFactory httpClientFactory, 
-        IWebAuthenticator authenticator, 
+        IHttpClientFactory httpClientFactory,
+        IWebAuthenticator authenticator,
         LocalTripStorageService localStorage,
-        IMicrosoftAuthConfiguration config)
+        IMicrosoftAuthConfiguration config,
+        string graphBaseUrl = "https://graph.microsoft.com/v1.0")
     {
         _httpClient = httpClientFactory.CreateClient(nameof(OneDriveRemoteStorageService));
         _authenticator = authenticator;
         _localStorage = localStorage;
         _config = config;
+        _graphBaseUrl = graphBaseUrl.TrimEnd('/');
     }
-
     public async Task<string?> GetAccessTokenAsync()
     {
         await EnsureAuthenticatedAsync();
@@ -213,8 +216,8 @@ public class OneDriveRemoteStorageService : IRemoteStorageService
     private async Task DeleteFileAsync(string fileId, string? driveId)
     {
         var url = string.IsNullOrEmpty(driveId)
-            ? $"https://graph.microsoft.com/v1.0/me/drive/items/{fileId}"
-            : $"https://graph.microsoft.com/v1.0/drives/{driveId}/items/{fileId}";
+            ? $"{_graphBaseUrl}/me/drive/items/{fileId}"
+            : $"{_graphBaseUrl}/drives/{driveId}/items/{fileId}";
 
         using var request = new HttpRequestMessage(HttpMethod.Delete, url);
         request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", _accessToken);
@@ -228,50 +231,126 @@ public class OneDriveRemoteStorageService : IRemoteStorageService
 
     private async Task SyncDownAsync(string remoteFolderId, string localPath, string? driveId)
     {
-        var children = await ListChildrenAsync(remoteFolderId, driveId);
+        if (File.Exists(Path.Combine(localPath, ".synched"))) return;
 
-        foreach (var child in children)
+        var children = await ListChildrenAsync(remoteFolderId, driveId);
+        if (children.Count == 0) return;
+
+        bool hasFolders = children.Any(c => c.Folder != null);
+        bool hasFiles = children.Any(c => c.Folder == null && c.Name != ".synching");
+
+        if (hasFolders && hasFiles)
         {
-            var localChildPath = Path.Combine(localPath, child.Name);
-            if (child.Folder != null)
+            throw new InvalidOperationException("Architecture constraint violation: Folder contains both files and subfolders.");
+        }
+
+        if (hasFolders)
+        {
+            // Node folder: Recurse into subfolders
+            foreach (var child in children.Where(c => c.Folder != null))
             {
+                var localChildPath = Path.Combine(localPath, child.Name);
                 if (!Directory.Exists(localChildPath)) Directory.CreateDirectory(localChildPath);
                 await SyncDownAsync(child.Id, localChildPath, driveId);
             }
-            else
+        }
+        else if (hasFiles)
+        {
+            // Leaf folder: Apply the "Fully Copied" rule
+            bool isFullyCopiedLocally = false;
+            if (Directory.Exists(localPath))
             {
-                // It's a file
-                var remoteEtag = child.ETag;
-                var metadataFile = localChildPath + ".remote-etag";
-                var localEtag = File.Exists(metadataFile) ? await File.ReadAllTextAsync(metadataFile) : null;
-
-                if (remoteEtag != localEtag)
+                var localEntries = Directory.GetFileSystemEntries(localPath)
+                    .Where(e => !e.EndsWith(".remote-etag") && Path.GetFileName(e) != ".synching" && Path.GetFileName(e) != ".synched")
+                    .ToList();
+                bool hasSynching = File.Exists(Path.Combine(localPath, ".synching"));
+                if (localEntries.Count > 0 && !hasSynching)
                 {
+                    isFullyCopiedLocally = true;
+                }
+            }
+
+            if (!isFullyCopiedLocally)
+            {
+                // Restart copy: Clear existing contents and mark with .synching
+                if (Directory.Exists(localPath))
+                {
+                    foreach (var file in Directory.GetFiles(localPath)) File.Delete(file);
+                }
+                else
+                {
+                    Directory.CreateDirectory(localPath);
+                }
+
+                var synchingFile = Path.Combine(localPath, ".synching");
+                await File.WriteAllTextAsync(synchingFile, "");
+
+                foreach (var child in children.Where(c => c.Folder == null && c.Name != ".synching"))
+                {
+                    var localChildFile = Path.Combine(localPath, child.Name);
                     var content = await DownloadFileContentAsync(child.Id, driveId);
                     if (content != null)
                     {
-                        await File.WriteAllBytesAsync(localChildPath, content);
-                        await File.WriteAllTextAsync(metadataFile, remoteEtag);
+                        await File.WriteAllBytesAsync(localChildFile, content);
+                        await File.WriteAllTextAsync(localChildFile + ".remote-etag", child.ETag);
+                    }
+                }
+
+                if (File.Exists(synchingFile)) File.Delete(synchingFile);
+            }
+            else
+            {
+                // Already fully copied: Check for updates to individual files
+                foreach (var child in children.Where(c => c.Folder == null && c.Name != ".synching"))
+                {
+                    var localChildFile = Path.Combine(localPath, child.Name);
+                    var metadataFile = localChildFile + ".remote-etag";
+                    var remoteEtag = child.ETag;
+                    var localEtag = File.Exists(metadataFile) ? await File.ReadAllTextAsync(metadataFile) : null;
+
+                    if (remoteEtag != localEtag)
+                    {
+                        var content = await DownloadFileContentAsync(child.Id, driveId);
+                        if (content != null)
+                        {
+                            await File.WriteAllBytesAsync(localChildFile, content);
+                            await File.WriteAllTextAsync(metadataFile, remoteEtag);
+                        }
                     }
                 }
             }
+
+            // Mark as fully synched locally
+            await File.WriteAllTextAsync(Path.Combine(localPath, ".synched"), "");
         }
     }
 
     private async Task SyncUpAsync(string localPath, string remoteFolderId, string? driveId)
     {
-        var localEntries = Directory.GetFileSystemEntries(localPath);
+        if (File.Exists(Path.Combine(localPath, ".synched"))) return;
+
+        var localEntries = Directory.GetFileSystemEntries(localPath)
+            .Where(e => !e.EndsWith(".remote-etag") && Path.GetFileName(e) != ".synching" && Path.GetFileName(e) != ".synched")
+            .ToList();
+        if (localEntries.Count == 0) return;
+
+        bool hasFolders = localEntries.Any(e => Directory.Exists(e));
+        bool hasFiles = localEntries.Any(e => File.Exists(e));
+
+        if (hasFolders && hasFiles)
+        {
+            throw new InvalidOperationException("Architecture constraint violation: Folder contains both files and subfolders.");
+        }
+
         var remoteChildren = await ListChildrenAsync(remoteFolderId, driveId);
 
-        foreach (var entry in localEntries)
+        if (hasFolders)
         {
-            var name = Path.GetFileName(entry);
-            if (name.EndsWith(".remote-etag")) continue;
-
-            var remoteMatch = remoteChildren.FirstOrDefault(c => c.Name == name);
-
-            if (Directory.Exists(entry))
+            // Node folder: Recurse into subfolders
+            foreach (var entry in localEntries.Where(e => Directory.Exists(e)))
             {
+                var name = Path.GetFileName(entry);
+                var remoteMatch = remoteChildren.FirstOrDefault(c => c.Name == name && c.Folder != null);
                 string folderId;
                 if (remoteMatch != null)
                 {
@@ -280,24 +359,72 @@ public class OneDriveRemoteStorageService : IRemoteStorageService
                 else
                 {
                     var newFolder = await CreateFolderAsync(remoteFolderId, name, driveId);
-                    if (newFolder == null) continue; // Skip if creation failed
+                    if (newFolder == null) continue;
                     folderId = newFolder.Id;
                 }
                 await SyncUpAsync(entry, folderId, driveId);
             }
+        }
+        else if (hasFiles)
+        {
+            // Leaf folder: Apply the "Fully Copied" rule on remote
+            bool isFullyCopiedRemotely = false;
+            bool hasSynching = remoteChildren.Any(c => c.Name == ".synching");
+            bool isEmpty = !remoteChildren.Any(c => c.Name != ".synching");
+
+            if (!isEmpty && !hasSynching)
+            {
+                isFullyCopiedRemotely = true;
+            }
+
+            if (!isFullyCopiedRemotely)
+            {
+                // Restart copy: Clear remote contents and mark with .synching
+                foreach (var child in remoteChildren)
+                {
+                    await DeleteFileAsync(child.Id, driveId);
+                }
+
+                await UploadFileAsync(remoteFolderId, ".synching", new byte[] { 0x01 }, driveId);
+
+                foreach (var entry in localEntries.Where(e => File.Exists(e)))
+                {
+                    var name = Path.GetFileName(entry);
+                    var content = await File.ReadAllBytesAsync(entry);
+                    var uploaded = await UploadFileAsync(remoteFolderId, name, content, driveId);
+                    if (uploaded != null)
+                    {
+                        await File.WriteAllTextAsync(entry + ".remote-etag", uploaded.ETag);
+                    }
+                }
+
+                // Mark as fully copied: Delete the .synching file
+                var finalChildren = await ListChildrenAsync(remoteFolderId, driveId);
+                var sFile = finalChildren.FirstOrDefault(c => c.Name == ".synching");
+                if (sFile != null) await DeleteFileAsync(sFile.Id, driveId);
+            }
             else
             {
-                // File
-                var content = await File.ReadAllBytesAsync(entry);
-                var etagFile = entry + ".remote-etag";
-                var localEtag = File.Exists(etagFile) ? await File.ReadAllTextAsync(etagFile) : null;
-
-                if (remoteMatch == null || localEtag == null)
+                // Already fully copied: Check for updates or missing files
+                foreach (var entry in localEntries.Where(e => File.Exists(e)))
                 {
-                    var uploaded = await UploadFileAsync(remoteFolderId, name, content, driveId);
-                    if (uploaded != null) await File.WriteAllTextAsync(etagFile, uploaded.ETag);
+                    var name = Path.GetFileName(entry);
+                    var remoteMatch = remoteChildren.FirstOrDefault(c => c.Name == name);
+
+                    var content = await File.ReadAllBytesAsync(entry);
+                    var etagFile = entry + ".remote-etag";
+                    var localEtag = File.Exists(etagFile) ? await File.ReadAllTextAsync(etagFile) : null;
+
+                    if (remoteMatch == null || localEtag == null)
+                    {
+                        var uploaded = await UploadFileAsync(remoteFolderId, name, content, driveId);
+                        if (uploaded != null) await File.WriteAllTextAsync(etagFile, uploaded.ETag);
+                    }
                 }
             }
+
+            // Mark as fully synched locally
+            await File.WriteAllTextAsync(Path.Combine(localPath, ".synched"), "");
         }
     }
 
@@ -306,8 +433,8 @@ public class OneDriveRemoteStorageService : IRemoteStorageService
     private async Task<List<OneDriveItemInternal>> ListChildrenAsync(string folderId, string? driveId)
     {
         var url = string.IsNullOrEmpty(driveId) 
-            ? $"https://graph.microsoft.com/v1.0/me/drive/items/{folderId}/children"
-            : $"https://graph.microsoft.com/v1.0/drives/{driveId}/items/{folderId}/children";
+            ? $"{_graphBaseUrl}/me/drive/items/{folderId}/children"
+            : $"{_graphBaseUrl}/drives/{driveId}/items/{folderId}/children";
 
         using var request = new HttpRequestMessage(HttpMethod.Get, url);
         request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", _accessToken);
@@ -322,8 +449,8 @@ public class OneDriveRemoteStorageService : IRemoteStorageService
     private async Task<OneDriveItemInternal?> GetChildItemAsync(string parentId, string name, string? driveId)
     {
         var url = string.IsNullOrEmpty(driveId)
-            ? $"https://graph.microsoft.com/v1.0/me/drive/items/{parentId}:/{name}"
-            : $"https://graph.microsoft.com/v1.0/drives/{driveId}/items/{parentId}:/{name}";
+            ? $"{_graphBaseUrl}/me/drive/items/{parentId}:/{name}"
+            : $"{_graphBaseUrl}/drives/{driveId}/items/{parentId}:/{name}";
 
         using var request = new HttpRequestMessage(HttpMethod.Get, url);
         request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", _accessToken);
@@ -337,8 +464,8 @@ public class OneDriveRemoteStorageService : IRemoteStorageService
     private async Task<byte[]?> DownloadFileContentAsync(string fileId, string? driveId)
     {
         var url = string.IsNullOrEmpty(driveId)
-            ? $"https://graph.microsoft.com/v1.0/me/drive/items/{fileId}/content"
-            : $"https://graph.microsoft.com/v1.0/drives/{driveId}/items/{fileId}/content";
+            ? $"{_graphBaseUrl}/me/drive/items/{fileId}/content"
+            : $"{_graphBaseUrl}/drives/{driveId}/items/{fileId}/content";
 
         using var request = new HttpRequestMessage(HttpMethod.Get, url);
         request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", _accessToken);
@@ -352,8 +479,8 @@ public class OneDriveRemoteStorageService : IRemoteStorageService
     private async Task<OneDriveItemInternal?> CreateFolderAsync(string parentId, string name, string? driveId)
     {
         var url = string.IsNullOrEmpty(driveId)
-            ? $"https://graph.microsoft.com/v1.0/me/drive/items/{parentId}/children"
-            : $"https://graph.microsoft.com/v1.0/drives/{driveId}/items/{parentId}/children";
+            ? $"{_graphBaseUrl}/me/drive/items/{parentId}/children"
+            : $"{_graphBaseUrl}/drives/{driveId}/items/{parentId}/children";
 
         var body = new { name = name, folder = new { }, @microsoft_graph_conflictBehavior = "replace" };
         
@@ -370,8 +497,8 @@ public class OneDriveRemoteStorageService : IRemoteStorageService
     private async Task<OneDriveItemInternal?> UploadFileAsync(string parentId, string name, byte[] content, string? driveId)
     {
         var url = string.IsNullOrEmpty(driveId)
-            ? $"https://graph.microsoft.com/v1.0/me/drive/items/{parentId}:/{name}:/content"
-            : $"https://graph.microsoft.com/v1.0/drives/{driveId}/items/{parentId}:/{name}:/content";
+            ? $"{_graphBaseUrl}/me/drive/items/{parentId}:/{name}:/content"
+            : $"{_graphBaseUrl}/drives/{driveId}/items/{parentId}:/{name}:/content";
 
         using var request = new HttpRequestMessage(HttpMethod.Put, url);
         request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", _accessToken);

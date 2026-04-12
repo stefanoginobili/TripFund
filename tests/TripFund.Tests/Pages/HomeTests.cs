@@ -34,7 +34,8 @@ public class HomeTests : BunitContext
             httpClientFactoryMock.Object, 
             new Mock<TripFund.App.Services.IWebAuthenticator>().Object, 
             _storageMock.Object, 
-            _msAuthConfigMock.Object);
+            _msAuthConfigMock.Object,
+            "https://graph.microsoft.com/v1.0");
 
         Services.AddSingleton(_storageMock.Object);
         Services.AddSingleton(_remoteStorageMock.Object);

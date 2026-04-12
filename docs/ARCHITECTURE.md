@@ -94,10 +94,9 @@ The process compares the local trip root (`trips/[TripSlug]`) against the remote
 
 1.  **Remote-to-Local Scan (Download Phase):**
     *   Navigate recursively through all remote folders.
-    *   For each folder existing on remote but missing locally:
-        *   Initiate the **Folder Copying Flow** (see 5.2) to pull it locally.
-    *   If a folder exists locally with a `.synching` suffix:
-        *   Empty the local `.synching` folder and restart the copy from remote.
+    *   For each leaf folder (see 5.2):
+        *   If the local destination fails the "Fully Copied" rule, restart the copy.
+        *   Otherwise, update files as needed.
 
 2.  **Integrity & Conflict Check:**
     *   Invoke the `VersionedStorageEngine` for the `metadata/` folder and each folder in `transactions/`.
@@ -106,23 +105,34 @@ The process compares the local trip root (`trips/[TripSlug]`) against the remote
 
 3.  **Local-to-Remote Scan (Upload Phase):**
     *   Navigate recursively through all local folders.
-    *   For each folder existing locally but missing on remote:
-        *   Initiate the **Folder Copying Flow** (see 5.2) to push it to remote storage.
-    *   If a folder exists remotely with a `.synching` suffix:
-        *   Empty the remote `.synching` folder and restart the copy from local.
+    *   For each leaf folder (see 5.2):
+        *   If the remote destination fails the "Fully Copied" rule, restart the copy.
+        *   Otherwise, update files as needed.
 
-### 5.2. Atomic Folder Copying Flow (`.synching` Pattern)
-To handle network interruptions or app crashes during transfer, all folder-copying operations MUST be atomic using a temporary suffix:
+### 5.2. Atomic Leaf Folder Sync & ".synching" Logic
+To ensure data integrity during network interruptions or crashes, the sync process follows these strict rules:
 
-*   **Remote to Local:**
-    1.  Create the destination folder locally with a `.synching` suffix (e.g., `002_upd_dev1.synching`).
-    2.  Copy all files from the remote folder into this local `.synching` directory.
-    3.  Once all files are successfully verified, rename the local folder by dropping the `.synching` suffix.
-*   **Local to Remote:**
-    1.  Create the destination folder on the remote storage with a `.synching` suffix.
-    2.  Copy all local files into this remote `.synching` directory.
-    3.  Once the remote provider confirms all files are uploaded, rename the remote folder by dropping the `.synching` suffix.
+- **Strict Folder Types**: A folder MUST contain either ONLY files (Leaf folder) or ONLY subfolders (Node folder). Mixing files and folders in the same directory is strictly prohibited. 
+- **Atomic Leaf Folder Sync**: Leaf folders (e.g., version folders like `001_NEW_device1`) represent the atomic unit of synchronization.
+- **"Fully Copied" Rule**: A leaf folder is considered fully copied ONLY if:
+    1. The destination folder is **NOT EMPTY**.
+    2. The destination folder **DOES NOT contain a `.synching` file**.
+- **Restart Mechanism**: If a leaf folder fails the "Fully Copied" rule (e.g., it is empty or contains a `.synching` file from a previous interrupted attempt), the synchronization process MUST:
+    1. Clear all existing contents of the destination folder.
+    2. Create a `.synching` file inside the folder.
+    3. Restart the copy of all files from the source.
+    4. Delete the `.synching` file only after all files are successfully transferred and verified.
 
-### 5.3. Error Handling
+Node folders (folders containing other folders, like `metadata/` or `transactions/`) are traversed recursively and do not use the `.synching` logic themselves; the logic applies to their descendant leaf folders.
+
+### 5.3. Sync Optimization (".synched" Marker)
+To minimize redundant network traffic and API calls, the sync engine utilizes a local-only optimization marker:
+
+- **The ".synched" Marker**: A file named `.synched` is created inside a local leaf folder immediately after it has been successfully synchronized (either downloaded from remote or uploaded to remote).
+- **Fast-Path Skip**: During the synchronization flow, if the engine detects a `.synched` file in a local leaf folder, it **immediately skips** both the download and upload phases for that folder. It does not perform any remote listing or comparison for that specific directory.
+- **Immutability Reliance**: This optimization is safe because versioned leaf folders (e.g., `001_NEW_device1`) are designed to be immutable once committed. Any change results in a new version folder with a higher sequence number.
+- **Local-Only**: The `.synched` file MUST NEVER be uploaded to the remote storage provider. It is strictly a local hint for the sync engine.
+
+### 5.4. Error Handling
 *   **Success:** The process is complete only when all recursive scans and copies finish without exceptions.
 *   **Failure:** Any exception (API error, Disk Full, Permission Denied) during the process MUST abort the synchronization and return a descriptive error to the UI. The state of partial transfers is safely managed by the `.synching` suffix logic.
