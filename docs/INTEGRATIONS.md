@@ -38,9 +38,3 @@ Update the `IMicrosoftAuthConfiguration` implementation in `src/TripFund.App/Ser
 *   **ClientId**: The "Application (client) ID" from the Overview page.
 *   **TenantId**: `common` (since we support personal accounts).
 *   **Scopes**: `["User.Read", "Files.ReadWrite", "offline_access"]`.
-
----
-
-## Google Drive Integration (Google Cloud Console)
-
-*(Instructions for Google Drive configuration should be added here similarly if applicable.)*

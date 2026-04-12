@@ -50,16 +50,6 @@
     <array>
         <dict>
             <key>CFBundleURLName</key>
-            <string>Google Drive Auth</string>
-            <key>CFBundleURLSchemes</key>
-            <array>
-                <string>com.stefanoginobili.tripfund.app</string>
-            </array>
-            <key>CFBundleTypeRole</key>
-            <string>Editor</string>
-        </dict>
-        <dict>
-            <key>CFBundleURLName</key>
             <string>Microsoft OneDrive Auth</string>
             <key>CFBundleURLSchemes</key>
             <array>

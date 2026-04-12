@@ -4,26 +4,19 @@ namespace TripFund.App.Services;
 
 public class CompositeRemoteStorageService : IRemoteStorageService
 {
-    private readonly GoogleDriveRemoteStorageService _drive;
     private readonly OneDriveRemoteStorageService _onedrive;
     private readonly LocalTripStorageService _storage;
 
     public CompositeRemoteStorageService(
-        GoogleDriveRemoteStorageService drive, 
         OneDriveRemoteStorageService onedrive,
         LocalTripStorageService storage)
     {
-        _drive = drive;
         _onedrive = onedrive;
         _storage = storage;
     }
 
     public Task<TripConfig?> GetRemoteTripConfigAsync(string provider, Dictionary<string, string> parameters)
     {
-        if (provider == "google-drive")
-        {
-            return _drive.GetRemoteTripConfigAsync(provider, parameters);
-        }
         if (provider == "onedrive")
         {
             return _onedrive.GetRemoteTripConfigAsync(provider, parameters);
@@ -34,10 +27,6 @@ public class CompositeRemoteStorageService : IRemoteStorageService
 
     public Task<bool> IsRemoteLocationEmptyAsync(string provider, Dictionary<string, string> parameters)
     {
-        if (provider == "google-drive")
-        {
-            return _drive.IsRemoteLocationEmptyAsync(provider, parameters);
-        }
         if (provider == "onedrive")
         {
             return _onedrive.IsRemoteLocationEmptyAsync(provider, parameters);
@@ -51,10 +40,6 @@ public class CompositeRemoteStorageService : IRemoteStorageService
         var registry = await _storage.GetTripRegistryAsync();
         if (registry.Trips.TryGetValue(tripSlug, out var entry) && entry.RemoteStorage != null)
         {
-            if (entry.RemoteStorage.Provider == "google-drive")
-            {
-                await _drive.SynchronizeAsync(tripSlug);
-            }
             if (entry.RemoteStorage.Provider == "onedrive")
             {
                 await _onedrive.SynchronizeAsync(tripSlug);

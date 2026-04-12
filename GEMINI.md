@@ -6,7 +6,7 @@ You are an AI assistant specialized in building applications through "vibe codin
 Before executing any task or writing a single line of code, you **MUST STRICTLY** read and understand the following context documents located in the `docs/` folder:
 
 1.  **`docs/PRD.md`**: Understand the purpose, features, and target audience.
-2.  **`docs/ARCHITECTURE.md`**: Learn the offline-first paradigm, local file system management, and Google Drive sync logic.
+2.  **`docs/ARCHITECTURE.md`**: Learn the offline-first paradigm, local file system management, and Microsoft OneDrive sync logic.
 3.  **`docs/CODING_STYLE.md`**: Apply the strict language rules (Code = English, UI = Italian) and MAUI Blazor best practices.
 4.  **`docs/SCHEMAS.md`**: Use the provided JSON structures exactly.
 5.  **`docs/UX_FLOW.md`**: **CRITICAL.** Strictly follow the UI layouts, behaviors, and user flows defined here. Do not invent new UI paradigms.

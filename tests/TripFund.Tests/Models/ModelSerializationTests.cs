@@ -143,7 +143,7 @@ public class ModelSerializationTests
             ""patagonia-2026"": {
               ""createdAt"": ""2026-05-01T13:30:00Z"",
               ""remoteStorage"": {
-                ""provider"": ""google-drive"",
+                "provider": "onedrive",
                 ""parameters"": {
                   ""folderId"": ""abcdef1234567890""
                 },
@@ -163,7 +163,7 @@ public class ModelSerializationTests
         registry.Should().NotBeNull();
         registry!.Trips.Should().HaveCount(1);
         registry.Trips.Should().ContainKey("patagonia-2026");
-        registry.Trips["patagonia-2026"].RemoteStorage!.Provider.Should().Be("google-drive");
+        registry.Trips["patagonia-2026"].RemoteStorage!.Provider.Should().Be("onedrive");
         registry.Trips["patagonia-2026"].RemoteStorage!.Parameters["folderId"].Should().Be("abcdef1234567890");
 
         deserializedAgain.Should().BeEquivalentTo(registry);

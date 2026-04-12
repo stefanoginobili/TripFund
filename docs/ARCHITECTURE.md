@@ -5,7 +5,7 @@
 - **Framework:** .NET MAUI Blazor Hybrid (HTML/CSS/C#).
 - **Data Format:** Human-readable JSON. Collections MUST utilize `Dictionary<string, object>` rather than arrays to facilitate key-based $O(1)$ lookups and simplified merge operations.
 - **Local Storage:** Append-only, folder-based versioning system.
-- **Remote Storage:** Multi-provider support (Google Drive, Dropbox, Git, etc.). Acts purely as a synchronization layer; providers do not process logic.
+- **Remote Storage:** Multi-provider support (Microsoft OneDrive, Dropbox, Git, etc.). Acts purely as a synchronization layer; providers do not process logic.
 
 ## 2. File System Architecture
 All application data resides locally. The absolute source of truth for the offline-first UI is the local file system.
@@ -17,7 +17,7 @@ All application data resides locally. The absolute source of truth for the offli
 ### 2.2. Trip Level
 - **Structure:** `[AppData]/trips/[TripSlug]/`
 - **Versioning:** This root folder is **NOT** versioned.
-- **Remote Storage Mapping:** Each trip maps to a remote storage location managed by the selected remote storage provider (e.g., a shared folder in Google Drive, a Git repository, etc.). Permissions and access control rely on the provider's native security model. Unhandled API errors MUST gracefully display a standard error without preemptively blocking UI interactions.
+- **Remote Storage Mapping:** Each trip maps to a remote storage location managed by the selected remote storage provider (e.g., a shared folder in Microsoft OneDrive, a Git repository, etc.). Permissions and access control rely on the provider's native security model. Unhandled API errors MUST gracefully display a standard error without preemptively blocking UI interactions.
 
 ### 2.3. Trip Data Directories
 Inside each `[TripSlug]` folder, data is partitioned into two distinct domains, both governed by the Versioned Storage Engine:
@@ -87,7 +87,7 @@ A conflict is actively occurring IF AND ONLY IF there are two or more version su
 If an out-of-sync client uploads a new version folder (e.g., an `upd` or `del`) that sits alongside an existing `res` folder, the resolution is invalidated. The engine MUST revert the entity to an active Conflict State, requiring a new `res` commit to reconcile the newly introduced thread.
 
 ## 5. Remote Storage Synchronization
-The synchronization process ensures the local offline-first storage and the remote provider (Google Drive, Git, etc.) are eventually consistent. This process operates at the folder level, navigating recursively through the `trips/[TripSlug]` structure.
+The synchronization process ensures the local offline-first storage and the remote provider (Microsoft OneDrive, Git, etc.) are eventually consistent. This process operates at the folder level, navigating recursively through the `trips/[TripSlug]` structure.
 
 ### 5.1. Synchronization Flow
 The process compares the local trip root (`trips/[TripSlug]`) against the remote root defined by the provider-specific parameters. It follows these macro-steps:

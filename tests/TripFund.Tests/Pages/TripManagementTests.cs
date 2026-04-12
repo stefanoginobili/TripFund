@@ -41,7 +41,7 @@ public class TripManagementTests : BunitContext
         _storageMock.Setup(s => s.GetAppSettingsAsync()).ReturnsAsync(new AppSettings { AuthorName = "Mario", DeviceId = "mario" });
 
         var nav = Services.GetRequiredService<NavigationManager>();
-        nav.NavigateTo("/create-trip?provider=google-drive&folderUrl=https%3A%2F%2Fdrive.google.com%2Ftest");
+        nav.NavigateTo("/create-trip?provider=onedrive&folderId=123&folderName=TestFolder");
 
         var cut = Render<CreateTrip>();
 
@@ -63,8 +63,8 @@ public class TripManagementTests : BunitContext
         _storageMock.Verify(s => s.SaveTripRegistryAsync(It.Is<LocalTripRegistry>(r => 
             r.Trips.ContainsKey("new-trip") && 
             r.Trips["new-trip"].RemoteStorage != null &&
-            r.Trips["new-trip"].RemoteStorage!.Provider == "google-drive" &&
-            r.Trips["new-trip"].RemoteStorage!.Parameters["folderUrl"] == "https://drive.google.com/test")), Times.Once);
+            r.Trips["new-trip"].RemoteStorage!.Provider == "onedrive" &&
+            r.Trips["new-trip"].RemoteStorage!.Parameters["folderId"] == "123")), Times.Once);
     }
 
     [Fact]

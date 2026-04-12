@@ -22,17 +22,11 @@ public static class MauiProgram
 			});
 
 		builder.Services.AddMauiBlazorWebView();
-		builder.Services.AddHttpClient<Services.GoogleDriveRemoteStorageService>(client =>
-		{
-			client.BaseAddress = new Uri("https://www.googleapis.com");
-		});
 		builder.Services.AddHttpClient<Services.OneDriveRemoteStorageService>();
 		builder.Services.AddHttpClient<Services.OneDrivePickerService>();
 		builder.Services.AddSingleton<Services.LocalTripStorageService>();
-		builder.Services.AddSingleton<Services.IGoogleAuthConfiguration, Services.GoogleAuthConfiguration>();
 		builder.Services.AddSingleton<Services.IMicrosoftAuthConfiguration, Services.MicrosoftAuthConfiguration>();
 		builder.Services.AddSingleton<Services.IWebAuthenticator, Services.MauiWebAuthenticator>();
-		builder.Services.AddSingleton<Services.IGooglePickerService, Services.GooglePickerService>();
 		builder.Services.AddSingleton<Services.IRemoteStorageService, Services.CompositeRemoteStorageService>();
 		builder.Services.AddSingleton<Services.IAlertService, Services.MauiAlertService>();
 		builder.Services.AddSingleton<Services.IThumbnailService, Services.ThumbnailService>();

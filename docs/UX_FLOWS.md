@@ -8,7 +8,7 @@ This document strictly defines the user flows and UI layouts. **All UI text must
 - **Bottom:** Two main buttons: "Crea nuovo viaggio" and "Aggiungi viaggio esistente".
 
 ## 2. Join Existing Trip
-- **Action:** User selects a remote storage provider (e.g., Google Drive, Git) and provides the required parameters.
+- **Action:** User selects a remote storage provider (e.g., Microsoft OneDrive, Git) and provides the required parameters.
 - **Remote Validation:** The app attempts to locate the `metadata` versioned folder in the specified remote location.
   - If the `metadata` folder is missing, an error alert is shown: "Impossibile trovare i dati del viaggio nella posizione specificata."
 - **Confirmation Modal:** If found, the app reads the latest `trip_config.json` from the remote metadata and displays a confirmation modal:
@@ -17,7 +17,7 @@ This document strictly defines the user flows and UI layouts. **All UI text must
 - **Result:** Upon confirmation, the app registers the trip in `known_trips.json`, syncs the metadata and transaction history locally, and navigates to the **Trip Dashboard** (Flow 4).
 
 ## 3. Create New Trip
-- **Step A (Remote Storage Configuration):** User selects a remote storage provider (e.g., Google Drive, Git) and provides the required parameters.
+- **Step A (Remote Storage Configuration):** User selects a remote storage provider (e.g., Microsoft OneDrive, Git) and provides the required parameters.
 - **Remote Validation:** The app ensures that the specified remote location exists and is empty.
   - If the location does not exist or contains any files/folders, an error alert is shown: "La posizione remota deve esistere ed essere vuota."
 - **Step B (Initial Data Form):** If validation passes, the app proceeds to the form to input Name, Slug, Dates, and Currencies.
@@ -40,7 +40,7 @@ This document strictly defines the user flows and UI layouts. **All UI text must
 - **Trip Slug:** Displayed as read-only.
 - **Members Management:** Inline creation (empty row). Requires Name, Slug, Email, and Emoji (default "👤"). **Crucial:** Member slug is editable ONLY during creation. Once saved, it becomes read-only. Slugs must be unique within the trip.
 - **Currencies Management:** Add/Remove only. Adding prompts for Code (e.g., "EUR"), Symbol (e.g., "€"), and **Expected Quota per Member** (e.g., "1000"). Codes must be unique.
-- **Bottom:** A "Danger Zone" button to "Elimina Viaggio". **Logic:** This deletes the local folder and registry entry, but DOES NOT delete data on Google Drive.
+- **Bottom:** A "Danger Zone" button to "Elimina Viaggio". **Logic:** This deletes the local folder and registry entry, but DOES NOT delete data on Microsoft OneDrive.
 
 ## 6. Add Contribution (Registra Versamento)
 - **Top Bar:** Back button (left).

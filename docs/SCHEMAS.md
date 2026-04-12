@@ -103,7 +103,7 @@ This file is stored in the root of the app's local storage. It acts purely as a 
     "patagonia-2026": {
       "createdAt": "2026-05-01T13:30:00Z",
       "remoteStorage": {
-        "provider": "google-drive",
+        "provider": "onedrive",
         "parameters": {
           "folderId": "abcdef1234567890"
         },

@@ -8,13 +8,10 @@ namespace TripFund.App.Components.Common
 {
     public partial class RemoteStorageSelector
     {
-        [Inject] private IGoogleAuthConfiguration GoogleConfig { get; set; } = default!;
         [Inject] private IMicrosoftAuthConfiguration MicrosoftConfig { get; set; } = default!;
         [Inject] private IRemoteStorageService RemoteStorageService { get; set; } = default!;
         [Inject] private IAlertService AlertService { get; set; } = default!;
-        [Inject] private GoogleDriveRemoteStorageService GoogleDriveService { get; set; } = default!;
         [Inject] private OneDriveRemoteStorageService OneDriveService { get; set; } = default!;
-        [Inject] private IGooglePickerService GooglePickerService { get; set; } = default!;
 
         [Parameter] public bool IsVisible { get; set; }
         [Parameter] public bool IsJoining { get; set; }
@@ -32,7 +29,6 @@ namespace TripFund.App.Components.Common
 
         private string GetTitle()
         {
-            if (selectedProvider == "google-drive") return "Google Drive";
             if (selectedProvider == "onedrive") return "Microsoft OneDrive";
             if (selectedProvider == "local") return "Memoria Locale";
             return "Seleziona Archivio";
@@ -45,25 +41,7 @@ namespace TripFund.App.Components.Common
                 isPickerLoading = true;
                 StateHasChanged();
 
-                if (selectedProvider == "google-drive")
-                {
-                    var token = await GoogleDriveService.GetAccessTokenAsync();
-                    if (string.IsNullOrEmpty(token))
-                    {
-                        await AlertService.ShowAlertAsync("Errore", "Impossibile autenticare l'account Google.");
-                        return;
-                    }
-
-                    var title = IsJoining ? "Aggiungi viaggio esistente" : "Crea nuovo viaggio";
-                    var result = await GooglePickerService.PickFolderAsync(GoogleConfig.GoogleAppId, token, GoogleConfig.GoogleApiKey, title);
-                    
-                    if (!string.IsNullOrEmpty(result.FolderId))
-                    {
-                        folderId = result.FolderId;
-                        folderName = result.FolderName ?? "Cartella senza nome";
-                    }
-                }
-                else if (selectedProvider == "onedrive")
+                if (selectedProvider == "onedrive")
                 {
                     var token = await OneDriveService.GetAccessTokenAsync();
                     if (string.IsNullOrEmpty(token))
@@ -136,7 +114,7 @@ namespace TripFund.App.Components.Common
             }
 
             var parameters = new Dictionary<string, string>();
-            if (selectedProvider == "google-drive" || selectedProvider == "onedrive")
+            if (selectedProvider == "onedrive")
             {
                 parameters["folderId"] = folderId;
                 parameters["folderName"] = folderName;

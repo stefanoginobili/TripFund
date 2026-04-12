@@ -47,9 +47,9 @@ public class HomeTests : BunitContext
     {
         // Arrange
         var registry = new LocalTripRegistry();
-        registry.Trips.Add("current", new TripRegistryEntry { RemoteStorage = new RemoteStorageConfig { Provider = "google-drive", Parameters = new() { { "folderId", "1" } } } });
-        registry.Trips.Add("future", new TripRegistryEntry { RemoteStorage = new RemoteStorageConfig { Provider = "google-drive", Parameters = new() { { "folderId", "2" } } } });
-        registry.Trips.Add("past", new TripRegistryEntry { RemoteStorage = new RemoteStorageConfig { Provider = "google-drive", Parameters = new() { { "folderId", "3" } } } });
+        registry.Trips.Add("current", new TripRegistryEntry { RemoteStorage = new RemoteStorageConfig { Provider = "onedrive", Parameters = new() { { "folderId", "1" } } } });
+        registry.Trips.Add("future", new TripRegistryEntry { RemoteStorage = new RemoteStorageConfig { Provider = "onedrive", Parameters = new() { { "folderId", "2" } } } });
+        registry.Trips.Add("past", new TripRegistryEntry { RemoteStorage = new RemoteStorageConfig { Provider = "onedrive", Parameters = new() { { "folderId", "3" } } } });
 
         var today = DateTime.Today;
         

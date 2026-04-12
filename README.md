@@ -22,7 +22,7 @@ Participants pour money *into* the fund (Contributions), and money is taken *out
 * **💱 Multi-Currency Magic:** A single trip can have multiple currency sub-funds (e.g., EUR and ARS) with predefined expected quotas for each participant.
 * **📥 Quota Tracking:** Easily see who has deposited their full expected quota into the shared fund and who is still lagging behind.
 * **📤 Fund-Based Expenses:** Log expenses paid *from* the shared wallet. No more "paid by" confusion. Just select who the expense applies to (to deduct it from their personal balance).
-* **☁️ Bring Your Own Backend (BYOB):** Zero servers, zero subscriptions. TripFund syncs data directly to a shared **Google Drive** folder owned by your group.
+* **☁️ Bring Your Own Backend (BYOB):** Zero servers, zero subscriptions. TripFund syncs data directly to a shared **Microsoft OneDrive** folder owned by your group.
 * **📍 Location & Receipts:** Attach photos of receipts and save the GPS coordinates of where the expense happened.
 
 
@@ -35,7 +35,7 @@ Instead of a traditional database, TripFund relies on an **Append-Only File Syst
 * Transactions are saved locally as `.json` files inside unique versioned folders.
 * Attachments are renamed with GUIDs to prevent collisions.
 * Deletions are handled via soft-delete `.deleted` files.
-* When online, the app syncs this folder tree with Google Drive, gracefully handling merge conflicts manually via UI.
+* When online, the app syncs this folder tree with Microsoft OneDrive, gracefully handling merge conflicts manually via UI.
 
 
 ## 🚀 Getting Started
@@ -43,7 +43,7 @@ Instead of a traditional database, TripFund relies on an **Append-Only File Syst
 ### Prerequisites
 * [.NET 8 SDK](https://dotnet.microsoft.com/download) or later.
 * Visual Studio 2022 (with .NET MAUI workload) or VS Code with the MAUI extension.
-* A Google Cloud Console account (to generate the Google Drive API OAuth client ID).
+* A Microsoft Entra ID (Azure AD) application (to generate the Client ID for OneDrive access).
 
 ### Installation
 1. Clone the repo:
@@ -51,7 +51,7 @@ Instead of a traditional database, TripFund relies on an **Append-Only File Syst
    git clone https://github.com/stefanoginobili/TripFund.git
    ```
 2.  Open the solution in your IDE.
-3.  Add your Google Drive API credentials in the configuration files (see `docs/SETUP.md` - *coming soon*).
+3.  Add your Microsoft Auth credentials in the configuration files (see `docs/SETUP.md` - *coming soon*).
 4.  Build and deploy to your Android emulator or iOS simulator\!
 
 

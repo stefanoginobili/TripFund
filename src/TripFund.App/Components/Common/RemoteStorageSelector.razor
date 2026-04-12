@@ -34,18 +34,6 @@
                             </div>
                         }
 
-                        <div class="provider-item" @onclick='() => SelectProvider("google-drive")'>
-                            <div class="provider-logo">
-                                <img src="images/google-drive.svg" width="32" height="32" alt="Google Drive" />
-                            </div>
-                            <div class="provider-info">
-                                <div class="provider-name">Google Drive</div>
-                            </div>
-                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <polyline points="9 18 15 12 9 6"></polyline>
-                            </svg>
-                        </div>
-
                         <div class="provider-item" @onclick='() => SelectProvider("onedrive")'>
                             <div class="provider-logo">
                                 <img src="images/onedrive.svg" width="32" height="32" alt="Microsoft OneDrive" />
@@ -56,52 +44,6 @@
                             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                 <polyline points="9 18 15 12 9 6"></polyline>
                             </svg>
-                        </div>
-                    </div>
-                }
-                else if (selectedProvider == "google-drive")
-                {
-                    <div class="provider-form">
-                        <div class="help-section-vibe">
-                            <h3 class="help-title-vibe">Accesso a Google Drive:</h3>
-                            <div class="help-item-vibe">
-                                <p>Per proteggere la tua privacy, TripFund può accedere solo alle cartelle che selezioni esplicitamente.</p>
-                                <p>Clicca il pulsante qui sotto per scegliere una cartella condivisa o presente nel tuo Drive.</p>
-                            </div>
-                        </div>
-                        <div class="mb-3">
-                            @if (string.IsNullOrEmpty(folderName))
-                            {
-                                @if (isPickerLoading)
-                                {
-                                    <div class="picker-loading-state">
-                                        <div class="spinner-border spinner-border-sm me-2" role="status"></div>
-                                        <span>In attesa del selettore...</span>
-                                        <button class="btn-link-vibe ms-3" @onclick="CancelLoading">Annulla</button>
-                                    </div>
-                                }
-                                else
-                                {
-                                    <button class="btn-picker-vibe" @onclick="OpenPicker">
-                                        <img src="images/google-drive.svg" width="20" height="20" alt="" class="me-2" />
-                                        <span>Seleziona Cartella</span>
-                                    </button>
-                                }
-                            }
-                            else
-                            {
-
-                                <div class="selected-folder-info">
-                                    <img src="images/google-drive.svg" width="20" height="20" alt="" />
-                                    <span class="folder-name-vibe">@folderName</span>
-                                    <button class="btn-link-vibe ms-auto" @onclick="OpenPicker">Cambia</button>
-                                </div>
-                            }
-                        </div>
-
-                        <div class="d-flex gap-2">
-                            <button class="btn-secondary-vibe flex-1" @onclick="Back">Indietro</button>
-                            <button class="btn-primary-vibe flex-2" @onclick="Complete" disabled="@(string.IsNullOrWhiteSpace(folderId))">Conferma</button>
                         </div>
                     </div>
                 }
