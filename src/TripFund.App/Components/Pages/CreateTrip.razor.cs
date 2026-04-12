@@ -21,6 +21,7 @@ namespace TripFund.App.Components.Pages
         private string tripName = "";
         private string tripSlug = "";
         private string description = "";
+        private string remoteUniqueId = "";
         private DateTime startDate = DateTime.Today;
         private DateTime endDate = DateTime.Today.AddDays(7);
         private string error = "";
@@ -38,6 +39,11 @@ namespace TripFund.App.Components.Pages
                 {
                     remoteStorageParameters[kvp.Key] = kvp.Value.ToString();
                 }
+            }
+
+            if (!string.IsNullOrEmpty(Provider))
+            {
+                remoteUniqueId = RemoteStorage.GetRemoteUniqueId(Provider, remoteStorageParameters) ?? "";
             }
         }
 
@@ -61,17 +67,9 @@ namespace TripFund.App.Components.Pages
             if (string.IsNullOrWhiteSpace(tripSlug)) { error = "Lo slug è obbligatorio."; return; }
             if (currencies.Count == 0) { error = "Aggiungi almeno una valuta."; return; }
 
-            string remoteId = "";
-            if (!string.IsNullOrEmpty(Provider))
-            {
-                remoteId = RemoteStorage.GetRemoteUniqueId(Provider, remoteStorageParameters) ?? "";
-            }
-
-            string finalSlug = tripSlug;
-            if (!string.IsNullOrEmpty(remoteId))
-            {
-                finalSlug = SlugUtility.GenerateSlug(tripSlug + "_" + remoteId);
-            }
+            string finalSlug = string.IsNullOrEmpty(remoteUniqueId) 
+                ? tripSlug 
+                : SlugUtility.GenerateSlug(tripSlug + "_" + remoteUniqueId);
 
             var registry = await Storage.GetTripRegistryAsync();
             if (registry.Trips.ContainsKey(finalSlug))
@@ -90,7 +88,7 @@ namespace TripFund.App.Components.Pages
 
             var tripConfig = new TripConfig
             {
-                Id = !string.IsNullOrEmpty(remoteId) ? remoteId : Guid.NewGuid().ToString(),
+                Id = !string.IsNullOrEmpty(remoteUniqueId) ? remoteUniqueId : Guid.NewGuid().ToString(),
                 Name = tripName,
                 Description = description,
                 StartDate = startDate,
@@ -109,7 +107,7 @@ namespace TripFund.App.Components.Pages
                 remoteStorage = new RemoteStorageConfig 
                 { 
                     Provider = Provider, 
-                    RemoteUniqueId = remoteId,
+                    RemoteUniqueId = remoteUniqueId,
                     Parameters = remoteStorageParameters
                 };
             }

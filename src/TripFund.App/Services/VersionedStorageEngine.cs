@@ -33,6 +33,13 @@ public class VersionedStorageEngine
 {
     private static readonly Regex VersionRegex = new(@"^(?<nnn>\d{3})_(?<kind>NEW|UPD|RES|DEL|new|upd|res|del)_(?<deviceId>[a-z0-9\-]+)$", RegexOptions.Compiled);
 
+    public static readonly IReadOnlyList<Regex> IgnoredSystemFiles = new List<Regex>
+    {
+        new(@"^\.synched$", RegexOptions.Compiled | RegexOptions.IgnoreCase),
+        new(@"^\.synching$", RegexOptions.Compiled | RegexOptions.IgnoreCase),
+        new(@"\.remote-etag$", RegexOptions.Compiled | RegexOptions.IgnoreCase)
+    };
+
     public List<VersionFolderInfo> GetVersionFolders(string rootPath)
     {
         if (!Directory.Exists(rootPath)) return new List<VersionFolderInfo>();
@@ -161,6 +168,7 @@ public class VersionedStorageEngine
                         var fileName = Path.GetFileName(file);
                         if (deletedFiles != null && deletedFiles.Contains(fileName)) continue;
                         if (changedFiles.ContainsKey(fileName)) continue;
+                        if (IgnoredSystemFiles.Any(regex => regex.IsMatch(fileName))) continue;
                         
                         File.Copy(file, Path.Combine(newDirPath, fileName));
                     }

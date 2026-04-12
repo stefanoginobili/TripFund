@@ -80,7 +80,7 @@ public class ModelSerializationTests
           },
           ""attachments"": [
             {
-              ""name"": ""attachment_abc123.jpg"",
+              ""name"": ""ATT_20260406T133421555Z"",
               ""originalName"": ""original_name.jpg"",
               ""createdAt"": ""2026-04-06T13:34:21Z""
             }
@@ -105,7 +105,7 @@ public class ModelSerializationTests
         transaction.Location.Should().NotBeNull();
         transaction.Location!.Name.Should().Be("Restaurante El Gaucho");
         transaction.Attachments.Should().ContainSingle();
-        transaction.Attachments[0].Name.Should().Be("attachment_abc123.jpg");
+        transaction.Attachments[0].Name.Should().Be("ATT_20260406T133421555Z");
         transaction.Attachments[0].OriginalName.Should().Be("original_name.jpg");
         transaction.Attachments[0].CreatedAt.Should().Be(DateTime.Parse("2026-04-06T13:34:21Z").ToUniversalTime());
 

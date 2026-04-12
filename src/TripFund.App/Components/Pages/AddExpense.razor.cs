@@ -500,8 +500,8 @@ namespace TripFund.App.Components.Pages
         private string GetAttachmentDisplayName(AttachmentInfo att)
         {
             if (att.IsExisting) return att.FileName;
-            var timestamp = att.CreatedAt.ToUniversalTime().ToString("yyyyMMddTHHmmssZ");
-            return $"ATT_{timestamp}{att.Extension}";
+            var timestamp = att.CreatedAt.ToUniversalTime().ToString("yyyyMMddTHHmmssfffZ");
+            return $"ATT_{timestamp}";
         }
 
         private async Task FetchLocation()
@@ -601,7 +601,7 @@ namespace TripFund.App.Components.Pages
                 var newName = GetAttachmentDisplayName(info);
                 if (processedNewAttachments.Any(p => p.newName == newName))
                 {
-                    errorMessage = "Due allegati non possono avere lo stesso timestamp (secondo). Caricali a distanza di un secondo.";
+                    errorMessage = "Due allegati non possono avere lo stesso timestamp (millisecondo).";
                     isSubmitting = false;
                     return;
                 }

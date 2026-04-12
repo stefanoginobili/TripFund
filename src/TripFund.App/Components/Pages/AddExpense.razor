@@ -127,6 +127,7 @@
                                                 <polyline points="13 2 13 9 20 9"></polyline>
                                             </svg>
                                             <span class="file-ext">@((string.IsNullOrEmpty(att.Extension) ? Path.GetExtension(att.FileName) : att.Extension).TrimStart('.').ToUpper())</span>
+                                            <span class="file-original-name">@att.OriginalName</span>
                                         </div>
                                     }
                                 </div>
@@ -233,8 +234,9 @@
     .attachment-preview-wrapper { display: flex; flex-direction: column; gap: 6px; position: relative; }
     .attachment-square { aspect-ratio: 1 / 1; width: 100%; background-color: #C0C0C0; border: 1px solid #E0E0E0; border-radius: 12px; overflow: hidden; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 8px rgba(0,0,0,0.02); position: relative; }
     .attachment-square img { width: 100%; height: 100%; object-fit: contain; }
-    .file-icon-placeholder { display: flex; flex-direction: column; align-items: center; color: #6C757D; }
+    .file-icon-placeholder { display: flex; flex-direction: column; align-items: center; color: #6C757D; width: 100%; overflow: hidden; }
     .file-ext { font-size: 0.6rem; font-weight: 800; margin-top: 2px; }
+    .file-original-name { font-size: 0.75rem; color: #6C757D; text-align: center; margin-top: 4px; padding: 0 4px; width: 100%; overflow: hidden; white-space: normal; word-break: break-all; line-height: 1.1; max-height: 2.2em; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
     .attachment-name { font-size: 0.7rem; color: #6C757D; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-align: center; }
 
     .remove-bullet { position: absolute; top: -6px; right: -6px; width: 22px; height: 22px; background-color: #DC3545; border-radius: 50%; border: 2px solid #FFFFFF; display: flex; align-items: center; justify-content: center; cursor: pointer; padding: 0; box-shadow: 0 2px 4px rgba(0,0,0,0.1); z-index: 10; }

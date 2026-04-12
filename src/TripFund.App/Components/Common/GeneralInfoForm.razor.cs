@@ -22,7 +22,11 @@ namespace TripFund.App.Components.Common
         [Parameter] public string Description { get; set; } = "";
         [Parameter] public EventCallback<string> DescriptionChanged { get; set; }
 
+        [Parameter] public string Suffix { get; set; } = "";
+
         [Parameter] public bool IsCreate { get; set; } = false;
+
+        private string FullSlug => SlugUtility.GenerateSlug(Slug + (string.IsNullOrEmpty(Suffix) ? "" : "_" + Suffix));
 
         private string dateError = "";
 

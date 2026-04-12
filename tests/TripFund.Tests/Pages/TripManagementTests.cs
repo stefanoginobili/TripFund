@@ -77,6 +77,27 @@ public class TripManagementTests : BunitContext
     }
 
     [Fact]
+    public void CreateTrip_ShouldShowCompleteSlugPreview_WithRemoteUniqueId()
+    {
+        // Arrange
+        _remoteStorageMock.Setup(r => r.GetRemoteUniqueId("onedrive", It.IsAny<Dictionary<string, string>>())).Returns("abc12345");
+
+        var nav = Services.GetRequiredService<NavigationManager>();
+        nav.NavigateTo("/create-trip?provider=onedrive&folderId=abc12345");
+
+        var cut = Render<CreateTrip>();
+
+        // Act
+        var nameInput = cut.Find("input[placeholder='es. Patagonia 2026']");
+        nameInput.Input("My New Trip");
+
+        // Assert
+        // The slug input is readonly and should contain the complete preview
+        var slugInput = cut.FindAll("input").First(i => i.HasAttribute("readonly") && i.ParentElement!.ClassList.Contains("read-only"));
+        slugInput.GetAttribute("value").Should().Be("my-new-trip_abc12345");
+    }
+
+    [Fact]
     public async Task EditTrip_ShouldUpdateConfig()
     {
         // Arrange

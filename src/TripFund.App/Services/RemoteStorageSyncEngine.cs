@@ -123,6 +123,8 @@ public class RemoteStorageSyncEngine
             foreach (var child in children.Where(c => c.IsFolder))
             {
                 var localChildPath = Path.Combine(localPath, child.Name);
+                if (File.Exists(Path.Combine(localChildPath, ".synched"))) continue;
+
                 if (!Directory.Exists(localChildPath)) Directory.CreateDirectory(localChildPath);
                 await SyncDownAsync(child.Id, localChildPath, parameters, fileSystem);
             }
@@ -201,6 +203,11 @@ public class RemoteStorageSyncEngine
         var localEntries = Directory.GetFileSystemEntries(localPath)
             .Where(e => !e.EndsWith(".remote-etag") && Path.GetFileName(e) != ".synching" && Path.GetFileName(e) != ".synched")
             .ToList();
+
+        // OPTIMIZATION: Filter out items that are already synched. 
+        // Files won't be filtered as they don't contain a ".synched" file.
+        localEntries = localEntries.Where(e => !File.Exists(Path.Combine(e, ".synched"))).ToList();
+        
         if (localEntries.Count == 0) return;
 
         bool hasFolders = localEntries.Any(e => Directory.Exists(e));

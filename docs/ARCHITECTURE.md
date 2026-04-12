@@ -27,8 +27,10 @@ Inside each `[TripSlug]` folder, data is partitioned into two distinct domains, 
     - **Is Versioned:** YES.
 2. **Transactions:** `[AppData]/trips/[TripSlug]/transactions/[TransactionID]/`
     - **TransactionID Format:** `yyyyMMddTHHmmssZ-[guidprefix]` (e.g., `20260325T143000Z-a1b2c3d4`). The prefix is the first 8 characters of a standard GUID.
-    - **Is Versioned:** YES.
-    - **Attachment Rule:** All non-JSON files (images, PDFs) MUST be renamed upon import to `ATT_[timestamp].[extension]` to avoid collisions. `[timestamp]` format must be `yyyyMMddTHH:mm:ssZ` (UTC). Original filenames and attachment timestamp MUST be stored in the `data.json` file.
+    - **Structure:**
+        - `metadata/`: Versioned folder containing `transaction_detail.json`.
+        - `attachments/[AttachmentName]/`: Unversioned leaf folders containing the actual attachment files.
+    - **Attachment Rule:** All non-JSON files (images, PDFs) MUST be stored in a dedicated leaf folder `attachments/[AttachmentName]/` where `[AttachmentName]` is formatted as `ATT_[timestamp]` (UTC `yyyyMMddTHHmmssfffZ`, including milliseconds). The original filename MUST be preserved inside this folder. Metadata about the attachment (name, original name, timestamp) MUST be stored in the `transaction_detail.json` file. Existing attachments are never re-saved or moved when a new transaction version is created.
 
 ## 3. The Versioned Storage Engine
 The application utilizes an append-only, soft-deletion storage engine. When a folder is designated as "Versioned" (like Metadata or specific Transactions), its active state is determined by its sub-folders.
@@ -48,11 +50,11 @@ Commits are **atomic**. A single version bump MUST be able to process a batch of
 - **`UPD` (Update):** Contains a batch of modifications.
     - **Rule:** When creating an `UPD` folder, the system MUST:
         1. Include all newly created files.
-        2. Include all modified files (e.g., an updated `data.json`).
+        2. Include all modified files (e.g., an updated `transaction_detail.json`).
         3. Copy all **untouched** files from the immediate previous version.
         4. Explicitly **exclude/drop** any files the user intended to delete (e.g., removing a specific attachment).
 - **`DEL` (Soft Deletion):** Deletes the *entire entity*.
-    - **Rule:** The folder MUST ONLY contain a file named `.deleted`. No `data.json` or attachments are copied forward. The `.deleted` MUST contain 2 line:
+    - **Rule:** The folder MUST ONLY contain a file named `.deleted`. No `transaction_detail.json` or attachments are copied forward. The `.deleted` MUST contain 2 line:
       - `author=Mario Rossi`: where "Mario Rossi" in this example is the author from the Global Settings.
       - `deletedAt=20260332T212354Z`: where the timestamp is the timestamp of the deletion time.
 - **`RES` (Resolution):** Closes a conflict state. Contains the exact file payload (or `.deleted` marker) of the chosen winning thread.

@@ -48,8 +48,8 @@ This file is stored inside the specific version folder of the trip's `metadata` 
 * Note 1: `expectedQuotaPerMember` defines the target contribution amount that EACH member is expected to deposit into the shared fund for that specific currency. `author` contains the user name (from the Global Settings) that last saved (created or updated) the trip config.
 * Note 2: `author` is a plain string representing the physical user of the device (retrieved from `app_settings.json`'s `authorName`), NOT a trip member's slug. It is used purely for auditing and conflict resolution purposes. It is set each time the configuration is created or updated.
 
-## 2. Transaction (`data.json`)
-This file is stored inside the specific version folder of the trip's `transactions` (see `ARCHITECTURE.md` for folders' structure).
+## 2. Transaction (`transaction_detail.json`)
+This file is stored inside the specific version folder of the trip's `transactions/metadata` (see `ARCHITECTURE.md` for folders' structure).
 
 ```json
 {
@@ -80,7 +80,7 @@ This file is stored inside the specific version folder of the trip's `transactio
   },
   "attachments": [
     {
-      "name": "ATT_20260406T133421Z.jpg",
+      "name": "ATT_20260406T133421555Z",
       "originalName": "PXL_20260406_133421_Z.jpg",
       "createdAt": "2026-04-06T13:34:21Z"
     }
@@ -92,7 +92,7 @@ This file is stored inside the specific version folder of the trip's `transactio
 * Note 2: `author` is a plain string representing the physical user of the device (retrieved from `app_settings.json`'s `authorName`), NOT a trip member's slug. It is used purely for auditing and conflict resolution purposes. It is set each time a transaction is created or updated.
 * Note 3: `manuale` is a flag indicating wheter the amount has been manually set by the user or it has been automatically calculated by the application.
 * Note 4: `type` can be "expense" (spesa) or "contribution" (versamento in cassa). The split dictionary determines the money flow per user. If "expense", the split amounts are DEDUCTED from the users' balances. If "contribution", the `split` amount is ADDED to the user's balance. The sum of all values in split MUST exactly equal the `amount`.
-* Note 5: `attachments.name` MUST be formatted as `ATT_yyyyMMddTHHmmssZ.[extension]` (using the UTC `createdAt` timestamp). The `originalName` MUST store the original filename as provided by the camera or file system.
+* Note 5: `attachments.name` MUST be formatted as `ATT_yyyyMMddTHHmmssfffZ` (using the UTC `createdAt` timestamp including milliseconds). The `originalName` MUST store the original filename as provided by the camera or file system. The physical file will be stored in `attachments/[attachments.name]/[originalName]`.
 
 ## 3. Local Trip Registry (`known_trips.json`)
 This file is stored in the root of the app's local storage. It acts purely as a pointer registry to find the trip folders.

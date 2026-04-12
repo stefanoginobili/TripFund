@@ -25,7 +25,7 @@ public class AttachmentCopyTests : IDisposable
     }
 
     [Fact]
-    public async Task UpdateTransaction_ShouldCopyUntouchedAttachments()
+    public async Task SaveTransaction_ShouldStoreAttachmentsInDecoupledFolders()
     {
         // Arrange
         var tripSlug = "test-trip";
@@ -36,15 +36,15 @@ public class AttachmentCopyTests : IDisposable
             Description = "Initial",
             Attachments = new List<TransactionAttachment> 
             { 
-                new TransactionAttachment { Name = "attachment_1.jpg", OriginalName = "original_1.jpg", CreatedAt = DateTime.UtcNow },
-                new TransactionAttachment { Name = "attachment_2.png", OriginalName = "original_2.png", CreatedAt = DateTime.UtcNow }
+                new TransactionAttachment { Name = "ATT_001", OriginalName = "original_1.jpg", CreatedAt = DateTime.UtcNow },
+                new TransactionAttachment { Name = "ATT_002", OriginalName = "original_2.png", CreatedAt = DateTime.UtcNow }
             }
         };
 
         var attachments = new Dictionary<string, byte[]>
         {
-            { "attachment_1.jpg", new byte[] { 1, 2, 3 } },
-            { "attachment_2.png", new byte[] { 4, 5, 6 } }
+            { "ATT_001", new byte[] { 1, 2, 3 } },
+            { "ATT_002", new byte[] { 4, 5, 6 } }
         };
 
         // Act 1: Create initial version with two attachments
@@ -52,44 +52,53 @@ public class AttachmentCopyTests : IDisposable
 
         var transRoot = Path.Combine(_tempPath, "trips", tripSlug, "transactions", transactionId);
         
-        // Verify V1
-        var v1Path = Path.Combine(transRoot, "001_NEW_device1");
-        Directory.Exists(v1Path).Should().BeTrue("V1 folder should exist");
-        File.Exists(Path.Combine(v1Path, "attachment_1.jpg")).Should().BeTrue();
+        // Verify Metadata V1
+        var v1Path = Path.Combine(transRoot, "metadata", "001_NEW_device1");
+        Directory.Exists(v1Path).Should().BeTrue("Metadata V1 folder should exist");
+        File.Exists(Path.Combine(v1Path, "transaction_detail.json")).Should().BeTrue();
 
-        // Act 2: Update transaction
+        // Verify Attachments
+        var att1Path = Path.Combine(transRoot, "attachments", "ATT_001", "original_1.jpg");
+        var att2Path = Path.Combine(transRoot, "attachments", "ATT_002", "original_2.png");
+        File.Exists(att1Path).Should().BeTrue("Attachment 1 should exist in decoupled folder");
+        File.Exists(att2Path).Should().BeTrue("Attachment 2 should exist in decoupled folder");
+
+        // Act 2: Update transaction (add new attachment)
         var t2 = new Transaction 
         { 
             Id = transactionId, 
             Description = "Updated",
             Attachments = new List<TransactionAttachment> 
             { 
-                new TransactionAttachment { Name = "attachment_1.jpg", OriginalName = "original_1.jpg", CreatedAt = t1.Attachments[0].CreatedAt },
-                new TransactionAttachment { Name = "attachment_2.png", OriginalName = "original_2.png", CreatedAt = t1.Attachments[1].CreatedAt },
-                new TransactionAttachment { Name = "attachment_3.pdf", OriginalName = "original_3.pdf", CreatedAt = DateTime.UtcNow }
+                new TransactionAttachment { Name = "ATT_001", OriginalName = "original_1.jpg", CreatedAt = t1.Attachments[0].CreatedAt },
+                new TransactionAttachment { Name = "ATT_002", OriginalName = "original_2.png", CreatedAt = t1.Attachments[1].CreatedAt },
+                new TransactionAttachment { Name = "ATT_003", OriginalName = "original_3.pdf", CreatedAt = DateTime.UtcNow }
             }
         };
         var newAttachments = new Dictionary<string, byte[]>
         {
-            { "attachment_3.pdf", new byte[] { 7, 8, 9 } }
+            { "ATT_003", new byte[] { 7, 8, 9 } }
         };
 
         await _service.SaveTransactionAsync(tripSlug, t2, "device1", attachments: newAttachments);
 
-        // Assert: V2 should contain all three attachments
-        var v2Path = Path.Combine(transRoot, "002_UPD_device1");
-        Directory.Exists(v2Path).Should().BeTrue("V2 folder should exist");
+        // Assert: V2 metadata created
+        var v2Path = Path.Combine(transRoot, "metadata", "002_UPD_device1");
+        Directory.Exists(v2Path).Should().BeTrue("Metadata V2 folder should exist");
         
-        File.Exists(Path.Combine(v2Path, "data.json")).Should().BeTrue("data.json should exist in V2");
-        File.Exists(Path.Combine(v2Path, "attachment_1.jpg")).Should().BeTrue("attachment_1.jpg should be copied to V2");
-        File.Exists(Path.Combine(v2Path, "attachment_2.png")).Should().BeTrue("attachment_2.png should be copied to V2");
-        File.Exists(Path.Combine(v2Path, "attachment_3.pdf")).Should().BeTrue("attachment_3.pdf should be new in V2");
+        // Assert: Attachments are not duplicated but all exist in unversioned folder
+        File.Exists(att1Path).Should().BeTrue();
+        File.Exists(att2Path).Should().BeTrue();
+        var att3Path = Path.Combine(transRoot, "attachments", "ATT_003", "original_3.pdf");
+        File.Exists(att3Path).Should().BeTrue();
 
-        (await File.ReadAllBytesAsync(Path.Combine(v2Path, "attachment_1.jpg"))).Should().Equal(new byte[] { 1, 2, 3 });
+        // Assert: No attachments inside versioned folders
+        Directory.GetFiles(v1Path, "*.*").Should().NotContain(f => f.EndsWith(".jpg") || f.EndsWith(".png") || f.EndsWith(".pdf"));
+        Directory.GetFiles(v2Path, "*.*").Should().NotContain(f => f.EndsWith(".jpg") || f.EndsWith(".png") || f.EndsWith(".pdf"));
     }
 
     [Fact]
-    public async Task UpdateTransaction_ShouldExcludeDeletedAttachments()
+    public async Task UpdateTransaction_ShouldKeepPhysicalFilesWhenRemovedFromMetadata()
     {
         // Arrange
         var tripSlug = "test-trip";
@@ -100,27 +109,27 @@ public class AttachmentCopyTests : IDisposable
             Description = "Initial",
             Attachments = new List<TransactionAttachment> 
             { 
-                new TransactionAttachment { Name = "keep.jpg", OriginalName = "keep.jpg", CreatedAt = DateTime.UtcNow },
-                new TransactionAttachment { Name = "delete.png", OriginalName = "delete.png", CreatedAt = DateTime.UtcNow }
+                new TransactionAttachment { Name = "ATT_KEEP", OriginalName = "keep.jpg", CreatedAt = DateTime.UtcNow },
+                new TransactionAttachment { Name = "ATT_DELETE", OriginalName = "delete.png", CreatedAt = DateTime.UtcNow }
             }
         };
 
         var attachments = new Dictionary<string, byte[]>
         {
-            { "keep.jpg", new byte[] { 1, 2, 3 } },
-            { "delete.png", new byte[] { 4, 5, 6 } }
+            { "ATT_KEEP", new byte[] { 1, 2, 3 } },
+            { "ATT_DELETE", new byte[] { 4, 5, 6 } }
         };
 
         await _service.SaveTransactionAsync(tripSlug, t1, "device1", attachments: attachments);
 
-        // Act: Update, keeping only keep.jpg
+        // Act: Update, keeping only keep.jpg in metadata
         var t2 = new Transaction 
         { 
             Id = transactionId, 
             Description = "Updated",
             Attachments = new List<TransactionAttachment> 
             { 
-                new TransactionAttachment { Name = "keep.jpg", OriginalName = "keep.jpg", CreatedAt = t1.Attachments[0].CreatedAt }
+                new TransactionAttachment { Name = "ATT_KEEP", OriginalName = "keep.jpg", CreatedAt = t1.Attachments[0].CreatedAt }
             }
         };
 
@@ -128,10 +137,14 @@ public class AttachmentCopyTests : IDisposable
 
         // Assert
         var transRoot = Path.Combine(_tempPath, "trips", tripSlug, "transactions", transactionId);
-        var v2Path = Path.Combine(transRoot, "002_UPD_device1");
-        Directory.Exists(v2Path).Should().BeTrue("V2 folder should exist");
+        var attKeepPath = Path.Combine(transRoot, "attachments", "ATT_KEEP", "keep.jpg");
+        var attDeletePath = Path.Combine(transRoot, "attachments", "ATT_DELETE", "delete.png");
         
-        File.Exists(Path.Combine(v2Path, "keep.jpg")).Should().BeTrue("keep.jpg should be kept");
-        File.Exists(Path.Combine(v2Path, "delete.png")).Should().BeFalse("delete.png should be deleted");
+        File.Exists(attKeepPath).Should().BeTrue("Physical file for kept attachment should exist");
+        File.Exists(attDeletePath).Should().BeTrue("Physical file for removed attachment should ALSO exist (soft delete/history preservation)");
+
+        var latestTx = await _service.GetLatestTransactionVersionAsync(tripSlug, transactionId);
+        latestTx!.Attachments.Should().HaveCount(1);
+        latestTx.Attachments[0].Name.Should().Be("ATT_KEEP");
     }
 }

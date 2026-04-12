@@ -554,8 +554,8 @@ public class TransactionFormTests : BunitContext
         // Add 2 NEW attachments
         var now1 = DateTime.UtcNow;
         var now2 = now1.AddSeconds(2);
-        var nowStr1 = now1.ToString("yyyyMMddTHHmmssZ");
-        var nowStr2 = now2.ToString("yyyyMMddTHHmmssZ");
+        var nowStr1 = now1.ToString("yyyyMMddTHHmmssfffZ");
+        var nowStr2 = now2.ToString("yyyyMMddTHHmmssfffZ");
 
         var new1 = System.Activator.CreateInstance(attachmentInfoType!);
         attachmentInfoType!.GetProperty("FileName")!.SetValue(new1, "photo.jpg");
@@ -587,8 +587,8 @@ public class TransactionFormTests : BunitContext
         savedTransaction.Attachments.Any(a => a.Name == "Attachment-07.png").Should().BeTrue();
         
         // New ones should be ATT_... format
-        savedTransaction.Attachments.Any(a => a.Name == $"ATT_{nowStr1}.jpg").Should().BeTrue();
-        savedTransaction.Attachments.Any(a => a.Name == $"ATT_{nowStr2}.pdf").Should().BeTrue();
+        savedTransaction.Attachments.Any(a => a.Name == $"ATT_{nowStr1}").Should().BeTrue();
+        savedTransaction.Attachments.Any(a => a.Name == $"ATT_{nowStr2}").Should().BeTrue();
     }
 
     [Fact]
