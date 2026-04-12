@@ -10,6 +10,7 @@ Before executing any task or writing a single line of code, you **MUST STRICTLY*
 3.  **`docs/CODING_STYLE.md`**: Apply the strict language rules (Code = English, UI = Italian) and MAUI Blazor best practices.
 4.  **`docs/SCHEMAS.md`**: Use the provided JSON structures exactly.
 5.  **`docs/UX_FLOW.md`**: **CRITICAL.** Strictly follow the UI layouts, behaviors, and user flows defined here. Do not invent new UI paradigms.
+6.  **`docs/INTEGRATIONS.md`**: Configuration steps for external services (Azure/OneDrive, etc.).
 
 ## Workflow
 The project is divided into sequential tasks. I will provide you with the content of the files located in the `tasks/` folder one at a time. Every time you receive a new task, you must:
