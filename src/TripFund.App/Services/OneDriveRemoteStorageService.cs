@@ -13,17 +13,18 @@ public class OneDriveRemoteStorageService : IRemoteStorageService
     private readonly LocalTripStorageService _localStorage;
     private readonly IMicrosoftAuthConfiguration _config;
     private readonly VersionedStorageEngine _engine = new();
+    private readonly SemaphoreSlim _authSemaphore = new(1, 1);
     private string? _accessToken;
     private string? _refreshToken;
     private DateTime _tokenExpiry = DateTime.MinValue;
 
     public OneDriveRemoteStorageService(
-        HttpClient httpClient, 
+        IHttpClientFactory httpClientFactory, 
         IWebAuthenticator authenticator, 
         LocalTripStorageService localStorage,
         IMicrosoftAuthConfiguration config)
     {
-        _httpClient = httpClient;
+        _httpClient = httpClientFactory.CreateClient(nameof(OneDriveRemoteStorageService));
         _authenticator = authenticator;
         _localStorage = localStorage;
         _config = config;
@@ -379,18 +380,28 @@ public class OneDriveRemoteStorageService : IRemoteStorageService
     {
         if (_accessToken != null && DateTime.Now < _tokenExpiry) return;
 
-        if (_refreshToken == null && parameters != null && parameters.TryGetValue("refreshToken", out var storedToken))
+        await _authSemaphore.WaitAsync();
+        try
         {
-            _refreshToken = storedToken;
-        }
+            if (_accessToken != null && DateTime.Now < _tokenExpiry) return;
 
-        if (_refreshToken != null)
+            if (_refreshToken == null && parameters != null && parameters.TryGetValue("refreshToken", out var storedToken))
+            {
+                _refreshToken = storedToken;
+            }
+
+            if (_refreshToken != null)
+            {
+                await RefreshTokenAsync(parameters);
+                return;
+            }
+
+            await AuthenticateAsync(parameters);
+        }
+        finally
         {
-            await RefreshTokenAsync(parameters);
-            return;
+            _authSemaphore.Release();
         }
-
-        await AuthenticateAsync(parameters);
     }
 
     private async Task AuthenticateAsync(Dictionary<string, string>? parameters = null)
