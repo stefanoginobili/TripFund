@@ -28,8 +28,10 @@ public class HomeTests : BunitContext
         _alertMock = new Mock<IAlertService>();
         _msAuthConfigMock = new Mock<IMicrosoftAuthConfiguration>();
         _oneDrivePickerMock = new Mock<IOneDrivePickerService>();
+        
+        var httpClientFactoryMock = new Mock<IHttpClientFactory>();
         _oneDriveMock = new Mock<OneDriveRemoteStorageService>(
-            new HttpClient(), 
+            httpClientFactoryMock.Object, 
             new Mock<TripFund.App.Services.IWebAuthenticator>().Object, 
             _storageMock.Object, 
             _msAuthConfigMock.Object);
@@ -140,7 +142,11 @@ public class HomeTests : BunitContext
         // Expected slug: existing-trip_remote-123
         var expectedSlug = "existing-trip_remote-123";
         _storageMock.Verify(s => s.SaveTripConfigAsync(expectedSlug, It.IsAny<TripConfig>(), "dev-1", It.IsAny<bool>()), Times.Once);
-        _storageMock.Verify(s => s.SaveTripRegistryAsync(It.Is<LocalTripRegistry>(r => r.Trips.ContainsKey(expectedSlug))), Times.Once);
+        _storageMock.Verify(s => s.SaveTripRegistryAsync(It.Is<LocalTripRegistry>(r => 
+            r.Trips.ContainsKey(expectedSlug) &&
+            r.Trips[expectedSlug].RemoteStorage != null &&
+            r.Trips[expectedSlug].RemoteStorage!.RemoteUniqueId == "remote-123" &&
+            r.Trips[expectedSlug].RemoteStorage!.Readonly == true)), Times.Once);
 
         // Act & Assert 2: Join again, should fail because directory exists
         // We simulate Directory.Exists returning true by setting up a real directory or mocking if possible.

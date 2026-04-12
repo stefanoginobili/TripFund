@@ -62,11 +62,17 @@ public class TripManagementTests : BunitContext
         await cut.Find(".btn-primary-vibe").ClickAsync();
 
         // Assert
-        _storageMock.Verify(s => s.SaveTripConfigAsync("new-trip_123", It.Is<TripConfig>(c => c.Name == "New Trip" && c.Currencies.ContainsKey("USD")), "mario", It.IsAny<bool>()), Times.Once);
+        _storageMock.Verify(s => s.SaveTripConfigAsync("new-trip_123", It.Is<TripConfig>(c => 
+            c.Id == "123" && 
+            c.Name == "New Trip" && 
+            c.Currencies.ContainsKey("USD")), "mario", It.IsAny<bool>()), Times.Once);
+
         _storageMock.Verify(s => s.SaveTripRegistryAsync(It.Is<LocalTripRegistry>(r => 
             r.Trips.ContainsKey("new-trip_123") && 
             r.Trips["new-trip_123"].RemoteStorage != null &&
             r.Trips["new-trip_123"].RemoteStorage!.Provider == "onedrive" &&
+            r.Trips["new-trip_123"].RemoteStorage!.RemoteUniqueId == "123" &&
+            r.Trips["new-trip_123"].RemoteStorage!.Readonly == false &&
             r.Trips["new-trip_123"].RemoteStorage!.Parameters["folderId"] == "123")), Times.Once);
     }
 

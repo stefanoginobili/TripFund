@@ -24,6 +24,9 @@ public class RemoteStorageConfig
     [JsonPropertyName("provider")]
     public string Provider { get; set; } = string.Empty;
 
+    [JsonPropertyName("remoteUniqueId")]
+    public string RemoteUniqueId { get; set; } = string.Empty;
+
     [JsonPropertyName("parameters")]
     public Dictionary<string, string> Parameters { get; set; } = new();
 

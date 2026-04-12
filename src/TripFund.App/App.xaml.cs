@@ -2,14 +2,17 @@
 
 public partial class App : Application
 {
-	public App()
+	private readonly IServiceProvider _services;
+
+	public App(IServiceProvider services)
 	{
 		InitializeComponent();
 		UserAppTheme = AppTheme.Light;
+		_services = services;
 	}
 
 	protected override Window CreateWindow(IActivationState? activationState)
 	{
-		return new Window(new MainPage()) { Title = "TripFund.App" };
+		return new Window(new MainPage(_services)) { Title = "TripFund.App" };
 	}
 }

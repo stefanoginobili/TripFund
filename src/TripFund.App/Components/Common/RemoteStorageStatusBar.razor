@@ -46,9 +46,29 @@
     private bool isSyncing = false;
     private System.Timers.Timer? refreshTimer;
 
+    protected override async Task OnInitializedAsync()
+    {
+        RemoteStorage.OnSyncStateChanged += HandleSyncStateChanged;
+        isSyncing = RemoteStorage.IsSyncing(TripSlug);
+    }
+
     protected override async Task OnParametersSetAsync()
     {
         await LoadSyncStatus();
+    }
+
+    private async void HandleSyncStateChanged(string slug, bool isSyncingNew)
+    {
+        if (slug == TripSlug)
+        {
+            isSyncing = isSyncingNew;
+            if (!isSyncingNew)
+            {
+                await LoadSyncStatus();
+                await OnSyncCompleted.InvokeAsync();
+            }
+            await InvokeAsync(StateHasChanged);
+        }
     }
 
     private async Task LoadSyncStatus()
@@ -73,23 +93,14 @@
     private async Task TriggerSync()
     {
         if (isSyncing) return;
-        isSyncing = true;
-        StateHasChanged();
-
+        
         try
         {
             await RemoteStorage.SynchronizeAsync(TripSlug);
-            await LoadSyncStatus();
         }
         catch (Exception ex)
         {
             Console.WriteLine($"Sync failed: {ex.Message}");
-        }
-        finally
-        {
-            await OnSyncCompleted.InvokeAsync();
-            isSyncing = false;
-            StateHasChanged();
         }
     }
 
@@ -118,6 +129,7 @@
 
     public void Dispose()
     {
+        RemoteStorage.OnSyncStateChanged -= HandleSyncStateChanged;
         if (refreshTimer != null)
         {
             refreshTimer.Stop();

@@ -161,10 +161,17 @@ namespace TripFund.App.Components.Pages
                     RemoteStorage = new RemoteStorageConfig 
                     { 
                         Provider = selection.Provider, 
-                        Parameters = selection.Parameters
+                        RemoteUniqueId = remoteId,
+                        Parameters = selection.Parameters,
+                        Readonly = true
                     } 
                 };
                 await Storage.SaveTripRegistryAsync(registry);
+
+                if (registry.Trips[slug].RemoteStorage != null)
+                {
+                    _ = RemoteStorage.SynchronizeAsync(slug);
+                }
 
                 NavigateToTrip(slug);
             }

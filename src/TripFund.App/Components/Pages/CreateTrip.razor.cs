@@ -90,7 +90,7 @@ namespace TripFund.App.Components.Pages
 
             var tripConfig = new TripConfig
             {
-                Id = Guid.NewGuid().ToString(),
+                Id = !string.IsNullOrEmpty(remoteId) ? remoteId : Guid.NewGuid().ToString(),
                 Name = tripName,
                 Description = description,
                 StartDate = startDate,
@@ -109,6 +109,7 @@ namespace TripFund.App.Components.Pages
                 remoteStorage = new RemoteStorageConfig 
                 { 
                     Provider = Provider, 
+                    RemoteUniqueId = remoteId,
                     Parameters = remoteStorageParameters
                 };
             }
@@ -119,6 +120,14 @@ namespace TripFund.App.Components.Pages
                 RemoteStorage = remoteStorage
             };
             await Storage.SaveTripRegistryAsync(registry);
+
+            if (remoteStorage != null)
+            {
+                // Start sync in background or wait?
+                // The PRD says "Synchronization process ensures eventually consistent".
+                // Let's at least start it.
+                _ = RemoteStorage.SynchronizeAsync(finalSlug);
+            }
 
             Nav.NavigateTo($"/trip/{finalSlug}");
         }

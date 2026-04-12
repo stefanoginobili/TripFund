@@ -24,7 +24,7 @@ public static class MauiProgram
 		builder.Services.AddMauiBlazorWebView();
 		builder.Services.AddHttpClient(nameof(Services.OneDriveRemoteStorageService));
 		builder.Services.AddSingleton<Services.OneDriveRemoteStorageService>();
-		builder.Services.AddHttpClient<Services.OneDrivePickerService>();
+		builder.Services.AddHttpClient<Services.IOneDrivePickerService, Services.OneDrivePickerService>();
 		builder.Services.AddSingleton<Services.LocalTripStorageService>();
 		builder.Services.AddSingleton<Services.IMicrosoftAuthConfiguration, Services.MicrosoftAuthConfiguration>();
 		builder.Services.AddSingleton<Services.IWebAuthenticator, Services.MauiWebAuthenticator>();

@@ -8,6 +8,7 @@ namespace TripFund.App.Services;
 
 public class OneDriveRemoteStorageService : IRemoteStorageService
 {
+    public event Action<string, bool>? OnSyncStateChanged;
     private readonly HttpClient _httpClient;
     private readonly IWebAuthenticator _authenticator;
     private readonly LocalTripStorageService _localStorage;
@@ -99,64 +100,74 @@ public class OneDriveRemoteStorageService : IRemoteStorageService
         return parameters.TryGetValue("folderId", out var folderId) ? folderId : null;
     }
 
+    public bool IsSyncing(string tripSlug) => false;
+
     public async Task SynchronizeAsync(string tripSlug)
     {
-        var registry = await _localStorage.GetTripRegistryAsync();
-        if (!registry.Trips.TryGetValue(tripSlug, out var entry) || entry.RemoteStorage == null) return;
-
-        if (!entry.RemoteStorage.Parameters.TryGetValue("folderId", out var folderId)) return;
-        entry.RemoteStorage.Parameters.TryGetValue("driveId", out var driveId);
-
-        var oldRefreshToken = _refreshToken;
-        await EnsureAuthenticatedAsync(entry.RemoteStorage.Parameters);
-
-        if (_refreshToken != oldRefreshToken)
+        OnSyncStateChanged?.Invoke(tripSlug, true);
+        try
         {
-            await _localStorage.SaveTripRegistryAsync(registry);
-        }
+            var registry = await _localStorage.GetTripRegistryAsync();
+            if (!registry.Trips.TryGetValue(tripSlug, out var entry) || entry.RemoteStorage == null) return;
 
-        // Check if root is readonly by trying to write/delete a test file
-        var canWrite = await CheckFolderWritePermissionAsync(folderId, driveId);
-        if (entry.RemoteStorage.Readonly != !canWrite)
-        {
-            entry.RemoteStorage.Readonly = !canWrite;
-            await _localStorage.SaveTripRegistryAsync(registry);
-        }
+            if (!entry.RemoteStorage.Parameters.TryGetValue("folderId", out var folderId)) return;
+            entry.RemoteStorage.Parameters.TryGetValue("driveId", out var driveId);
 
-        // 1. Download Phase
-        var localTripPath = Path.Combine(_localStorage.TripsPath, tripSlug);
-        await SyncDownAsync(folderId, localTripPath, driveId);
+            var oldRefreshToken = _refreshToken;
+            await EnsureAuthenticatedAsync(entry.RemoteStorage.Parameters);
 
-        // 2. Integrity & Conflict Check (handled by LocalTripStorageService and VersionedStorageEngine normally)
-        // Here we just mark if there's a conflict
-        bool hasConflict = false;
-        if (Directory.Exists(Path.Combine(localTripPath, "metadata")))
-        {
-            if (_engine.IsInConflict(Path.Combine(localTripPath, "metadata"))) hasConflict = true;
-        }
-
-        var transDir = Path.Combine(localTripPath, "transactions");
-        if (Directory.Exists(transDir))
-        {
-            foreach (var t in Directory.GetDirectories(transDir))
+            if (_refreshToken != oldRefreshToken)
             {
-                if (_engine.IsInConflict(t))
+                await _localStorage.SaveTripRegistryAsync(registry);
+            }
+
+            // Check if root is readonly by trying to write/delete a test file
+            var canWrite = await CheckFolderWritePermissionAsync(folderId, driveId);
+            if (entry.RemoteStorage.Readonly != !canWrite)
+            {
+                entry.RemoteStorage.Readonly = !canWrite;
+                await _localStorage.SaveTripRegistryAsync(registry);
+            }
+
+            // 1. Download Phase
+            var localTripPath = Path.Combine(_localStorage.TripsPath, tripSlug);
+            await SyncDownAsync(folderId, localTripPath, driveId);
+
+            // 2. Integrity & Conflict Check (handled by LocalTripStorageService and VersionedStorageEngine normally)
+            // Here we just mark if there's a conflict
+            bool hasConflict = false;
+            if (Directory.Exists(Path.Combine(localTripPath, "metadata")))
+            {
+                if (_engine.IsInConflict(Path.Combine(localTripPath, "metadata"))) hasConflict = true;
+            }
+
+            var transDir = Path.Combine(localTripPath, "transactions");
+            if (Directory.Exists(transDir))
+            {
+                foreach (var t in Directory.GetDirectories(transDir))
                 {
-                    hasConflict = true;
-                    break;
+                    if (_engine.IsInConflict(t))
+                    {
+                        hasConflict = true;
+                        break;
+                    }
                 }
             }
+
+            entry.RemoteStorage.HasConflicts = hasConflict;
+            await _localStorage.SaveTripRegistryAsync(registry);
+
+            if (hasConflict) return;
+
+            // 3. Upload Phase
+            if (!entry.RemoteStorage.Readonly)
+            {
+                await SyncUpAsync(localTripPath, folderId, driveId);
+            }
         }
-
-        entry.RemoteStorage.HasConflicts = hasConflict;
-        await _localStorage.SaveTripRegistryAsync(registry);
-
-        if (hasConflict) return;
-
-        // 3. Upload Phase
-        if (!entry.RemoteStorage.Readonly)
+        finally
         {
-            await SyncUpAsync(localTripPath, folderId, driveId);
+            OnSyncStateChanged?.Invoke(tripSlug, false);
         }
     }
 

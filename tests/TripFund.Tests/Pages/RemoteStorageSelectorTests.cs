@@ -22,12 +22,19 @@ public class RemoteStorageSelectorTests : BunitContext
         _storageMock = new Mock<LocalTripStorageService>("dummy_path");
         _remoteStorageMock = new Mock<IRemoteStorageService>();
         _alertMock = new Mock<IAlertService>();
-        _oneDriveMock = new Mock<OneDriveRemoteStorageService>(new HttpClient(), new Mock<TripFund.App.Services.IWebAuthenticator>().Object, _storageMock.Object, new Mock<IMicrosoftAuthConfiguration>().Object);
+        
+        var httpClientFactoryMock = new Mock<IHttpClientFactory>();
+        _oneDriveMock = new Mock<OneDriveRemoteStorageService>(
+            httpClientFactoryMock.Object, 
+            new Mock<TripFund.App.Services.IWebAuthenticator>().Object, 
+            _storageMock.Object, 
+            new Mock<IMicrosoftAuthConfiguration>().Object);
 
         Services.AddSingleton(_storageMock.Object);
         Services.AddSingleton(_remoteStorageMock.Object);
         Services.AddSingleton(_alertMock.Object);
         Services.AddSingleton(_oneDriveMock.Object);
+        Services.AddSingleton(new Mock<IOneDrivePickerService>().Object);
         Services.AddSingleton(new Mock<IMicrosoftAuthConfiguration>().Object);
     }
 

@@ -62,7 +62,7 @@
                 @if (isCreatingFolder)
                 {
                     <div class="create-folder-form-vibe">
-                        <input type="text" class="form-control-vibe" @bind="newFolderName" placeholder="Nome cartella..." autofocus />
+                        <input type="text" class="form-control-vibe" @bind="newFolderName" @bind:event="oninput" placeholder="Nome cartella..." autofocus />
                         <div class="form-actions-vibe">
                             <button class="btn-cancel-vibe" @onclick="ToggleCreateFolder" disabled="@isFolderCreating">Annulla</button>
                             <button class="btn-confirm-vibe" @onclick="CreateFolder" disabled="@(isFolderCreating || string.IsNullOrWhiteSpace(newFolderName))">
