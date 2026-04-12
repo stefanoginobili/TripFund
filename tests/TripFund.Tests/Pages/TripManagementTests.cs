@@ -23,6 +23,7 @@ public class TripManagementTests : BunitContext
         System.Globalization.CultureInfo.DefaultThreadCurrentUICulture = itCulture;
 
         _storageMock = new Mock<LocalTripStorageService>("dummy_path");
+        _storageMock.Setup(s => s.TripsPath).Returns("dummy_trips_path");
         _remoteStorageMock = new Mock<IRemoteStorageService>();
         _alertMock = new Mock<IAlertService>();
         _datePickerMock = new Mock<INativeDatePickerService>();
@@ -34,11 +35,12 @@ public class TripManagementTests : BunitContext
     }
 
     [Fact]
-    public async Task CreateTrip_ShouldSaveConfigAndRegistry()
+    public async Task CreateTrip_ShouldSaveConfigAndRegistry_WithUniqueSlug()
     {
         // Arrange
         _storageMock.Setup(s => s.GetTripRegistryAsync()).ReturnsAsync(new LocalTripRegistry());
         _storageMock.Setup(s => s.GetAppSettingsAsync()).ReturnsAsync(new AppSettings { AuthorName = "Mario", DeviceId = "mario" });
+        _remoteStorageMock.Setup(r => r.GetRemoteUniqueId("onedrive", It.IsAny<Dictionary<string, string>>())).Returns("123");
 
         var nav = Services.GetRequiredService<NavigationManager>();
         nav.NavigateTo("/create-trip?provider=onedrive&folderId=123&folderName=TestFolder");
@@ -54,17 +56,18 @@ public class TripManagementTests : BunitContext
         cut.Find("input[placeholder='1000']").Input("500");
         await cut.Find(".confirm-btn").ClickAsync();
         
-        // Slug should be generated automatically: "new-trip"
+        // Slug generated from Name "New Trip" would be "new-trip"
+        // Then unique ID "123" is appended: "new-trip_123"
         
         await cut.Find(".btn-primary-vibe").ClickAsync();
 
         // Assert
-        _storageMock.Verify(s => s.SaveTripConfigAsync("new-trip", It.Is<TripConfig>(c => c.Name == "New Trip" && c.Currencies.ContainsKey("USD")), "mario", It.IsAny<bool>()), Times.Once);
+        _storageMock.Verify(s => s.SaveTripConfigAsync("new-trip_123", It.Is<TripConfig>(c => c.Name == "New Trip" && c.Currencies.ContainsKey("USD")), "mario", It.IsAny<bool>()), Times.Once);
         _storageMock.Verify(s => s.SaveTripRegistryAsync(It.Is<LocalTripRegistry>(r => 
-            r.Trips.ContainsKey("new-trip") && 
-            r.Trips["new-trip"].RemoteStorage != null &&
-            r.Trips["new-trip"].RemoteStorage!.Provider == "onedrive" &&
-            r.Trips["new-trip"].RemoteStorage!.Parameters["folderId"] == "123")), Times.Once);
+            r.Trips.ContainsKey("new-trip_123") && 
+            r.Trips["new-trip_123"].RemoteStorage != null &&
+            r.Trips["new-trip_123"].RemoteStorage!.Provider == "onedrive" &&
+            r.Trips["new-trip_123"].RemoteStorage!.Parameters["folderId"] == "123")), Times.Once);
     }
 
     [Fact]

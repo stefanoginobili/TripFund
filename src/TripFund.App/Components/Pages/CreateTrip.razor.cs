@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Components;
 using Microsoft.JSInterop;
 using TripFund.App.Models;
 using TripFund.App.Services;
+using TripFund.App.Utilities;
 
 namespace TripFund.App.Components.Pages
 {
@@ -60,10 +61,30 @@ namespace TripFund.App.Components.Pages
             if (string.IsNullOrWhiteSpace(tripSlug)) { error = "Lo slug è obbligatorio."; return; }
             if (currencies.Count == 0) { error = "Aggiungi almeno una valuta."; return; }
 
+            string remoteId = "";
+            if (!string.IsNullOrEmpty(Provider))
+            {
+                remoteId = RemoteStorage.GetRemoteUniqueId(Provider, remoteStorageParameters) ?? "";
+            }
+
+            string finalSlug = tripSlug;
+            if (!string.IsNullOrEmpty(remoteId))
+            {
+                finalSlug = SlugUtility.GenerateSlug(tripSlug + "_" + remoteId);
+            }
+
             var registry = await Storage.GetTripRegistryAsync();
-            if (registry.Trips.ContainsKey(tripSlug))
+            if (registry.Trips.ContainsKey(finalSlug))
             {
                 error = "Esiste già un viaggio con questo slug locale.";
+                return;
+            }
+
+            // Safety check: fail if local folder already exists
+            var tripDir = Path.Combine(Storage.TripsPath, finalSlug);
+            if (Directory.Exists(tripDir))
+            {
+                error = "Questo viaggio è già stato importato localmente.";
                 return;
             }
 
@@ -80,7 +101,7 @@ namespace TripFund.App.Components.Pages
 
             var settings = await Storage.GetAppSettingsAsync();
 
-            await Storage.SaveTripConfigAsync(tripSlug, tripConfig, settings?.DeviceId ?? "unknown");
+            await Storage.SaveTripConfigAsync(finalSlug, tripConfig, settings?.DeviceId ?? "unknown");
 
             RemoteStorageConfig? remoteStorage = null;
             if (!string.IsNullOrEmpty(Provider))
@@ -92,14 +113,14 @@ namespace TripFund.App.Components.Pages
                 };
             }
 
-            registry.Trips[tripSlug] = new TripRegistryEntry 
+            registry.Trips[finalSlug] = new TripRegistryEntry 
             { 
                 CreatedAt = DateTime.UtcNow,
                 RemoteStorage = remoteStorage
             };
             await Storage.SaveTripRegistryAsync(registry);
 
-            Nav.NavigateTo($"/trip/{tripSlug}");
+            Nav.NavigateTo($"/trip/{finalSlug}");
         }
     }
 }

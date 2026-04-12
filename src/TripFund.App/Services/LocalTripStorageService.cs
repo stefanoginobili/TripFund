@@ -28,7 +28,7 @@ public class LocalTripStorageService
         PropertyNameCaseInsensitive = true
     };
 
-    public string TripsPath => _tripsPath;
+    public virtual string TripsPath => _tripsPath;
 
     public LocalTripStorageService(string? rootPath = null)
     {

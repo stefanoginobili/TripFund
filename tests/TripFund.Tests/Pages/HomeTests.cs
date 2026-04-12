@@ -13,6 +13,9 @@ public class HomeTests : BunitContext
     private readonly Mock<LocalTripStorageService> _storageMock;
     private readonly Mock<IRemoteStorageService> _remoteStorageMock;
     private readonly Mock<IAlertService> _alertMock;
+    private readonly Mock<OneDriveRemoteStorageService> _oneDriveMock;
+    private readonly Mock<IMicrosoftAuthConfiguration> _msAuthConfigMock;
+    private readonly Mock<IOneDrivePickerService> _oneDrivePickerMock;
 
     public HomeTests()
     {
@@ -23,9 +26,22 @@ public class HomeTests : BunitContext
         _storageMock = new Mock<LocalTripStorageService>("dummy_path");
         _remoteStorageMock = new Mock<IRemoteStorageService>();
         _alertMock = new Mock<IAlertService>();
+        _msAuthConfigMock = new Mock<IMicrosoftAuthConfiguration>();
+        _oneDrivePickerMock = new Mock<IOneDrivePickerService>();
+        _oneDriveMock = new Mock<OneDriveRemoteStorageService>(
+            new HttpClient(), 
+            new Mock<TripFund.App.Services.IWebAuthenticator>().Object, 
+            _storageMock.Object, 
+            _msAuthConfigMock.Object);
+
         Services.AddSingleton(_storageMock.Object);
         Services.AddSingleton(_remoteStorageMock.Object);
         Services.AddSingleton(_alertMock.Object);
+        Services.AddSingleton(_msAuthConfigMock.Object);
+        Services.AddSingleton(_oneDriveMock.Object);
+        Services.AddSingleton(_oneDrivePickerMock.Object);
+        // Also register OneDrivePickerService as itself if needed, but the component uses OneDrivePickerService concrete class?
+        // Let's check OneDrivePickerModal.razor
     }
 
     [Fact]
@@ -85,5 +101,64 @@ public class HomeTests : BunitContext
         badges.Any(b => b.Contains("1 Partecipante")).Should().BeTrue();
         badges.Any(b => b.Contains("2 Partecipanti")).Should().BeTrue();
         badges.Any(b => b.Contains("0 Partecipanti")).Should().BeTrue();
+    }
+
+    [Fact]
+    public async Task HandleJoinTrip_ShouldUseUniqueSlugAndFailIfFolderExists()
+    {
+        // Arrange
+        var registry = new LocalTripRegistry();
+        _storageMock.Setup(s => s.GetTripRegistryAsync()).ReturnsAsync(registry);
+        _storageMock.Setup(s => s.GetAppSettingsAsync()).ReturnsAsync(new AppSettings { DeviceId = "dev-1" });
+        _storageMock.Setup(s => s.TripsPath).Returns(Path.Combine(Path.GetTempPath(), "TripFundTests_Trips"));
+        
+        var remoteConfig = new TripConfig { Name = "Existing Trip", StartDate = DateTime.Today, EndDate = DateTime.Today.AddDays(1) };
+        _remoteStorageMock.Setup(r => r.GetRemoteTripConfigAsync(It.IsAny<string>(), It.IsAny<Dictionary<string, string>>()))
+            .ReturnsAsync(remoteConfig);
+        _remoteStorageMock.Setup(r => r.GetRemoteUniqueId(It.IsAny<string>(), It.IsAny<Dictionary<string, string>>()))
+            .Returns("remote-123");
+        
+        _alertMock.Setup(a => a.ConfirmAsync(It.IsAny<string>(), It.IsAny<string>(), "Conferma", "Annulla"))
+            .ReturnsAsync(true);
+
+        var cut = Render<Home>();
+
+        var selection = new RemoteStorageSelection 
+        { 
+            Provider = "onedrive", 
+            Parameters = new Dictionary<string, string> { { "folderId", "remote-123" } } 
+        };
+
+        // Act & Assert 1: Normal join
+        var handleJoinMethod = cut.Instance.GetType().GetMethod("HandleJoinTrip", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+        await cut.InvokeAsync(async () => 
+        {
+            var task = handleJoinMethod!.Invoke(cut.Instance, new object[] { selection }) as Task;
+            if (task != null) await task;
+        });
+
+        // Expected slug: existing-trip_remote-123
+        var expectedSlug = "existing-trip_remote-123";
+        _storageMock.Verify(s => s.SaveTripConfigAsync(expectedSlug, It.IsAny<TripConfig>(), "dev-1", It.IsAny<bool>()), Times.Once);
+        _storageMock.Verify(s => s.SaveTripRegistryAsync(It.Is<LocalTripRegistry>(r => r.Trips.ContainsKey(expectedSlug))), Times.Once);
+
+        // Act & Assert 2: Join again, should fail because directory exists
+        // We simulate Directory.Exists returning true by setting up a real directory or mocking if possible.
+        // Since we can't easily mock static Directory.Exists, we'll ensure the TripsPath exists and create the folder.
+        var tripsPath = _storageMock.Object.TripsPath;
+        if (!Directory.Exists(tripsPath)) Directory.CreateDirectory(tripsPath);
+        var tripDir = Path.Combine(tripsPath, expectedSlug);
+        Directory.CreateDirectory(tripDir);
+
+        await cut.InvokeAsync(async () => 
+        {
+            var task = handleJoinMethod!.Invoke(cut.Instance, new object[] { selection }) as Task;
+            if (task != null) await task;
+        });
+
+        _alertMock.Verify(a => a.ShowAlertAsync("Errore", "Questo viaggio è già stato importato localmente."), Times.Once);
+        
+        // Cleanup
+        if (Directory.Exists(tripsPath)) Directory.Delete(tripsPath, true);
     }
 }

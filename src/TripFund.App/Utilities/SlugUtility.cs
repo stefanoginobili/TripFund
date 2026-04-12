@@ -17,7 +17,7 @@ public static class SlugUtility
         string str = RemoveDiacritics(phrase).ToLowerInvariant();
 
         // Remove invalid characters
-        str = Regex.Replace(str, @"[^a-z0-9\s-]", "");
+        str = Regex.Replace(str, @"[^a-z0-9\s-_]", "");
 
         // Convert multiple spaces into one space
         str = Regex.Replace(str, @"\s+", " ").Trim();

@@ -143,7 +143,7 @@ public class ModelSerializationTests
             ""patagonia-2026"": {
               ""createdAt"": ""2026-05-01T13:30:00Z"",
               ""remoteStorage"": {
-                "provider": "onedrive",
+                ""provider"": ""onedrive"",
                 ""parameters"": {
                   ""folderId"": ""abcdef1234567890""
                 },

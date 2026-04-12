@@ -35,6 +35,16 @@ public class CompositeRemoteStorageService : IRemoteStorageService
         return Task.FromResult(false);
     }
 
+    public string? GetRemoteUniqueId(string provider, Dictionary<string, string> parameters)
+    {
+        if (provider == "onedrive")
+        {
+            return _onedrive.GetRemoteUniqueId(provider, parameters);
+        }
+
+        return null;
+    }
+
     public async Task SynchronizeAsync(string tripSlug)
     {
         var registry = await _storage.GetTripRegistryAsync();

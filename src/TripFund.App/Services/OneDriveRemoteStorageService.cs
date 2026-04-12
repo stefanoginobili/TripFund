@@ -92,6 +92,12 @@ public class OneDriveRemoteStorageService : IRemoteStorageService
         return children.Count == 0;
     }
 
+    public string? GetRemoteUniqueId(string provider, Dictionary<string, string> parameters)
+    {
+        if (provider != "onedrive") return null;
+        return parameters.TryGetValue("folderId", out var folderId) ? folderId : null;
+    }
+
     public async Task SynchronizeAsync(string tripSlug)
     {
         var registry = await _localStorage.GetTripRegistryAsync();
@@ -262,6 +268,7 @@ public class OneDriveRemoteStorageService : IRemoteStorageService
                 else
                 {
                     var newFolder = await CreateFolderAsync(remoteFolderId, name, driveId);
+                    if (newFolder == null) continue; // Skip if creation failed
                     folderId = newFolder.Id;
                 }
                 await SyncUpAsync(entry, folderId, driveId);

@@ -133,7 +133,18 @@ namespace TripFund.App.Components.Pages
 
                 if (!confirmed) return;
 
-                string slug = SlugUtility.GenerateSlug(remoteConfig.Name);
+                string baseSlug = SlugUtility.GenerateSlug(remoteConfig.Name);
+                string remoteId = RemoteStorage.GetRemoteUniqueId(selection.Provider, selection.Parameters) ?? "";
+                string slug = SlugUtility.GenerateSlug(baseSlug + "_" + remoteId);
+
+                // Safety check: fail if local folder already exists
+                var tripDir = Path.Combine(Storage.TripsPath, slug);
+                if (Directory.Exists(tripDir))
+                {
+                    await Alert.ShowAlertAsync("Errore", "Questo viaggio è già stato importato localmente.");
+                    return;
+                }
+
                 var existingConfig = await Storage.GetTripConfigAsync(slug);
                 
                 if (existingConfig == null)

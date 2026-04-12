@@ -7,6 +7,7 @@ public interface IRemoteStorageService
     Task<TripConfig?> GetRemoteTripConfigAsync(string provider, Dictionary<string, string> parameters);
     Task<bool> IsRemoteLocationEmptyAsync(string provider, Dictionary<string, string> parameters);
     Task SynchronizeAsync(string tripSlug);
+    string? GetRemoteUniqueId(string provider, Dictionary<string, string> parameters);
 }
 
 public class RemoteStorageFolder
