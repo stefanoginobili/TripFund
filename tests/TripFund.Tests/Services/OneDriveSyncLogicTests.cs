@@ -34,11 +34,14 @@ public class OneDriveSyncLogicTests : IDisposable
         var client = new HttpClient { BaseAddress = new Uri(_server.Urls[0]) };
         httpClientFactoryMock.Setup(f => f.CreateClient(nameof(OneDriveRemoteStorageService))).Returns(client);
 
+        var syncEngine = new RemoteStorageSyncEngine(localStorage);
+
         _service = new OneDriveRemoteStorageService(
             httpClientFactoryMock.Object,
             _authenticatorMock.Object,
             localStorage,
             _configMock.Object,
+            syncEngine,
             _server.Urls[0]);
 
         // Mock Authentication

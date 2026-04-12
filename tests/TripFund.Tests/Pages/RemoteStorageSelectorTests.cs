@@ -29,6 +29,7 @@ public class RemoteStorageSelectorTests : BunitContext
             new Mock<TripFund.App.Services.IWebAuthenticator>().Object,
             _storageMock.Object,
             new Mock<IMicrosoftAuthConfiguration>().Object,
+            new RemoteStorageSyncEngine(_storageMock.Object),
             "https://graph.microsoft.com/v1.0");
         Services.AddSingleton(_storageMock.Object);
         Services.AddSingleton(_remoteStorageMock.Object);
