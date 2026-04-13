@@ -106,6 +106,7 @@ public class OneDrivePickerService : IOneDrivePickerService
                         Name = item.RemoteItem.Name,
                         Folder = item.RemoteItem.Folder,
                         ParentReference = item.RemoteItem.ParentReference
+                        // We do not set RemoteItem here so they are treated as regular folders in the shared view
                     });
                 }
                 else if (item.Folder != null)
@@ -140,6 +141,9 @@ public class OneDriveItem
 
     [JsonPropertyName("parentReference")]
     public OneDriveParentReference? ParentReference { get; set; }
+
+    [JsonIgnore]
+    public bool IsRemote => RemoteItem != null;
 }
 
 public class OneDriveRemoteItem
@@ -155,6 +159,9 @@ public class OneDriveRemoteItem
 
     [JsonPropertyName("parentReference")]
     public OneDriveParentReference? ParentReference { get; set; }
+
+    [JsonIgnore]
+    public bool IsRemote => true;
 }
 
 public class OneDriveParentReference

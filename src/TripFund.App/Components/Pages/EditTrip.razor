@@ -462,7 +462,7 @@
         box-shadow: 0 8px 32px rgba(0,0,0,0.15);
         padding: 0.75rem;
         width: 280px;
-        max-height: 250px;
+        max-height: 300px;
         overflow-y: auto;
     }
 
@@ -512,11 +512,11 @@
     .error-text { color: #DC3545; font-size: 0.85rem; font-weight: 600; }
 
     .popover-overlay {
-        position: fixed;
-        top: 0;
-        left: 0;
-        right: 0;
-        bottom: 0;
+        position: absolute;
+        top: -1000vh;
+        left: -1000vw;
+        width: 2000vw;
+        height: 2000vh;
         background: rgba(0,0,0,0.05);
         z-index: 1000;
     }

@@ -440,6 +440,7 @@ body:has(input[type="date"]:focus, input[type="time"]:focus) .app-header {
     bottom: 0;
     background-color: transparent;
     z-index: 1100; /* Above everything */
+    touch-action: pan-y;
 }
 
 /* Loading Spinner */

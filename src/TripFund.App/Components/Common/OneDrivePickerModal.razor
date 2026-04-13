@@ -100,15 +100,28 @@
                     <div class="item-list">
                         @foreach (var item in items)
                         {
-                            <div class="item-row @(selectedId == item.Id ? "selected" : "")" @onclick="() => SelectItem(item)">
+                            bool isItemRemote = item.IsRemote;
+                            <div class="item-row @(isItemRemote ? "disabled" : "") @(selectedId == item.Id ? "selected" : "")" @onclick="() => { if (!isItemRemote) SelectItem(item); }">
                                 <div class="item-icon">
-                                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#0078D4" stroke-width="2">
-                                        <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
-                                    </svg>
+                                    @if (isItemRemote)
+                                    {
+                                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#6C757D" stroke-width="2">
+                                            <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
+                                            <circle cx="18" cy="18" r="3"></circle>
+                                            <path d="M18 15v3"></path>
+                                            <path d="M18 21v-3"></path>
+                                        </svg>
+                                    }
+                                    else
+                                    {
+                                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#0078D4" stroke-width="2">
+                                            <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
+                                        </svg>
+                                    }
                                 </div>
                                 <div class="item-name">@item.Name</div>
                                 <div class="item-actions">
-                                    <button class="btn-open" @onclick:stopPropagation="true" @onclick="() => OpenFolder(item)">
+                                    <button class="btn-open" disabled="@isItemRemote" @onclick:stopPropagation="true" @onclick="() => OpenFolder(item)">
                                         Apri
                                     </button>
                                 </div>
@@ -518,6 +531,17 @@
         box-shadow: 0 0 0 2px rgba(0, 120, 212, 0.2);
     }
 
+    .item-row.disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+        background-color: #F8F9FA;
+    }
+
+    .item-row.disabled:hover {
+        border-color: #E0E0E0;
+        background-color: #F8F9FA;
+    }
+
     .item-icon {
         margin-right: 0.75rem;
         display: flex;
@@ -542,6 +566,13 @@
         font-size: 0.75rem;
         font-weight: 700;
         cursor: pointer;
+    }
+
+    .btn-open:disabled {
+        opacity: 0.5;
+        border-color: #ADB5BD;
+        color: #ADB5BD;
+        cursor: not-allowed;
     }
 
     .loading-state, .empty-state {

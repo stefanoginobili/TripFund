@@ -17,6 +17,8 @@ namespace TripFund.App.Components.Pages
         private List<TripListItem> pastTrips = new();
         private bool isLoading = true;
         private bool isSearchingRemote = false;
+        private string loadingMessage = "Ricerca configurazione viaggio...";
+        private string loadingSubMessage = "Stiamo scaricando i dati dal server remoto.";
         private bool showSyncSelector = false;
         private bool isJoining = false;
 
@@ -66,11 +68,23 @@ namespace TripFund.App.Components.Pages
             {
                 if (selection != null)
                 {
-                    var isEmpty = await RemoteStorage.IsRemoteLocationEmptyAsync(selection.Provider, selection.Parameters);
-                    if (!isEmpty)
+                    loadingMessage = "Verifica posizione remota...";
+                    loadingSubMessage = "Stiamo controllando che la cartella sia vuota.";
+                    isSearchingRemote = true;
+                    StateHasChanged();
+                    try
                     {
-                        await Alert.ShowAlertAsync("Errore", "La posizione remota deve esistere ed essere vuota.");
-                        return;
+                        var isEmpty = await RemoteStorage.IsRemoteLocationEmptyAsync(selection.Provider, selection.Parameters);
+                        if (!isEmpty)
+                        {
+                            await Alert.ShowAlertAsync("Errore", "La posizione remota deve esistere ed essere vuota.");
+                            return;
+                        }
+                    }
+                    finally
+                    {
+                        isSearchingRemote = false;
+                        StateHasChanged();
                     }
                 }
                 NavigateToCreate(selection);
@@ -114,6 +128,8 @@ namespace TripFund.App.Components.Pages
 
         private async Task HandleJoinTrip(RemoteStorageSelection selection)
         {
+            loadingMessage = "Ricerca configurazione viaggio...";
+            loadingSubMessage = "Stiamo scaricando i dati dal server remoto.";
             isSearchingRemote = true;
             StateHasChanged();
             
