@@ -80,7 +80,7 @@ public static class ReceiptGenerator
         sb.AppendLine();
         sb.AppendLine();
         sb.AppendLine("---");
-        sb.AppendLine("Inviato automaticamente dall'app TripFund.");
+        sb.AppendLine("Inviato dall'app TripFund.");
         sb.AppendLine("In caso di dubbi, contatta il coordinatore del gruppo.");
 
         return sb.ToString();

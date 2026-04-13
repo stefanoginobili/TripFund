@@ -23,11 +23,15 @@ namespace TripFund.App.Components.Common
         private bool canEdit = true;
         private bool isReadonly = false;
         private List<AttachmentPreview> previews = new();
+        private string? lastLoadedTxId;
 
         protected override async Task OnParametersSetAsync()
         {
             if (IsVisible && Transaction != null && Config != null)
             {
+                if (lastLoadedTxId == Transaction.Id) return;
+                lastLoadedTxId = Transaction.Id;
+
                 canEdit = Transaction.Split.Keys.All(slug => Config.Members.ContainsKey(slug));
                 
                 var registry = await Storage.GetTripRegistryAsync();
@@ -38,12 +42,18 @@ namespace TripFund.App.Components.Common
                 
                 await LoadPreviews();
             }
+            else if (!IsVisible)
+            {
+                lastLoadedTxId = null;
+                previews.Clear();
+            }
         }
 
         private async Task LoadPreviews()
         {
             if (Transaction == null) return;
-            previews.Clear();
+            var currentTxId = Transaction.Id;
+            var newPreviews = new List<AttachmentPreview>();
 
             TimeZoneInfo tz;
             try
@@ -88,7 +98,13 @@ namespace TripFund.App.Components.Common
                         catch { /* ignore */ }
                     }
                 }
-                previews.Add(preview);
+                newPreviews.Add(preview);
+            }
+
+            if (Transaction?.Id == currentTxId)
+            {
+                previews = newPreviews;
+                StateHasChanged();
             }
         }
 
