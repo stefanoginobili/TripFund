@@ -29,6 +29,7 @@ public class LocalTripStorageService
     };
 
     public virtual string TripsPath => _tripsPath;
+    public virtual string AppDataPath => _rootPath;
 
     public LocalTripStorageService(string? rootPath = null)
     {

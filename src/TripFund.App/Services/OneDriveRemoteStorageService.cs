@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text.Json;
@@ -9,6 +10,14 @@ namespace TripFund.App.Services;
 public class OneDriveRemoteStorageService : IRemoteStorageService, IRemoteFileSystem
 {
     public event Action<string, bool>? OnSyncStateChanged;
+    
+    private readonly AsyncLocal<IRemoteStorageLogger?> _logger = new();
+    public IRemoteStorageLogger? Logger 
+    { 
+        get => _logger.Value;
+        set => _logger.Value = value;
+    }
+
     private readonly HttpClient _httpClient;
     private readonly IWebAuthenticator _authenticator;
     private readonly LocalTripStorageService _localStorage;
@@ -16,6 +25,7 @@ public class OneDriveRemoteStorageService : IRemoteStorageService, IRemoteFileSy
     private readonly RemoteStorageSyncEngine _syncEngine;
     private readonly VersionedStorageEngine _engine = new();
     private readonly SemaphoreSlim _authSemaphore = new(1, 1);
+    private readonly ConcurrentDictionary<string, string> _idToNameCache = new();
 
     private readonly string _graphBaseUrl;
 
@@ -187,12 +197,17 @@ public class OneDriveRemoteStorageService : IRemoteStorageService, IRemoteFileSy
             ? $"{_graphBaseUrl}/me/drive/items/{fileId}"
             : $"{_graphBaseUrl}/drives/{driveId}/items/{fileId}";
 
+        var itemName = _idToNameCache.TryGetValue(fileId, out var n) ? $"'{n}'" : $"ID: {fileId}";
+        Logger?.LogApiCall("DELETE", url, $"Deleting file/folder {itemName}");
+
         using var request = new HttpRequestMessage(HttpMethod.Delete, url);
         request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", parameters["accessToken"]);
 
         var response = await _httpClient.SendAsync(request);
         if (!response.IsSuccessStatusCode)
         {
+            var error = await response.Content.ReadAsStringAsync();
+            Logger?.LogError($"Failed to delete file {fileId}: {response.StatusCode} - {error}");
             throw new Exception("Failed to delete file from OneDrive");
         }
     }
@@ -206,13 +221,31 @@ public class OneDriveRemoteStorageService : IRemoteStorageService, IRemoteFileSy
             ? $"{_graphBaseUrl}/me/drive/items/{folderId}/children"
             : $"{_graphBaseUrl}/drives/{driveId}/items/{folderId}/children";
 
+        var folderName = _idToNameCache.TryGetValue(folderId, out var n) ? $"'{n}'" : $"ID: {folderId}";
+        Logger?.LogApiCall("GET", url, $"Listing children for folder {folderName}");
+
         using var request = new HttpRequestMessage(HttpMethod.Get, url);
         request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", parameters["accessToken"]);
 
         var response = await _httpClient.SendAsync(request);
-        if (!response.IsSuccessStatusCode) return new();
+        if (!response.IsSuccessStatusCode)
+        {
+            var error = await response.Content.ReadAsStringAsync();
+            Logger?.LogError($"Failed to list children for {folderId}: {response.StatusCode} - {error}");
+            return new();
+        }
 
         var result = await response.Content.ReadFromJsonAsync<OneDriveListResponseInternal>();
+        if (result?.Value != null)
+        {
+            foreach (var item in result.Value)
+            {
+                if (!string.IsNullOrEmpty(item.Id) && !string.IsNullOrEmpty(item.Name))
+                {
+                    _idToNameCache[item.Id] = item.Name;
+                }
+            }
+        }
         return result?.Value ?? new();
     }
 
@@ -223,13 +256,29 @@ public class OneDriveRemoteStorageService : IRemoteStorageService, IRemoteFileSy
             ? $"{_graphBaseUrl}/me/drive/items/{parentId}:/{name}"
             : $"{_graphBaseUrl}/drives/{driveId}/items/{parentId}:/{name}";
 
+        var parentName = _idToNameCache.TryGetValue(parentId, out var n) ? $"'{n}'" : $"ID: {parentId}";
+        Logger?.LogApiCall("GET", url, $"Getting item '{name}' in parent folder {parentName}");
+
         using var request = new HttpRequestMessage(HttpMethod.Get, url);
         request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", parameters["accessToken"]);
 
         var response = await _httpClient.SendAsync(request);
-        if (!response.IsSuccessStatusCode) return null;
+        if (!response.IsSuccessStatusCode)
+        {
+            if (response.StatusCode != System.Net.HttpStatusCode.NotFound)
+            {
+                var error = await response.Content.ReadAsStringAsync();
+                Logger?.LogError($"Failed to get item '{name}' in {parentId}: {response.StatusCode} - {error}");
+            }
+            return null;
+        }
 
-        return await response.Content.ReadFromJsonAsync<OneDriveItemInternal>();
+        var item = await response.Content.ReadFromJsonAsync<OneDriveItemInternal>();
+        if (item != null && !string.IsNullOrEmpty(item.Id) && !string.IsNullOrEmpty(item.Name))
+        {
+            _idToNameCache[item.Id] = item.Name;
+        }
+        return item;
     }
 
     private async Task<byte[]?> DownloadFileContentAsync(string fileId, Dictionary<string, string> parameters)
@@ -239,11 +288,19 @@ public class OneDriveRemoteStorageService : IRemoteStorageService, IRemoteFileSy
             ? $"{_graphBaseUrl}/me/drive/items/{fileId}/content"
             : $"{_graphBaseUrl}/drives/{driveId}/items/{fileId}/content";
 
+        var fileName = _idToNameCache.TryGetValue(fileId, out var n) ? $"'{n}'" : $"ID: {fileId}";
+        Logger?.LogApiCall("GET", url, $"Downloading content for file {fileName}");
+
         using var request = new HttpRequestMessage(HttpMethod.Get, url);
         request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", parameters["accessToken"]);
 
         var response = await _httpClient.SendAsync(request);
-        if (!response.IsSuccessStatusCode) return null;
+        if (!response.IsSuccessStatusCode)
+        {
+            var error = await response.Content.ReadAsStringAsync();
+            Logger?.LogError($"Failed to download content for {fileId}: {response.StatusCode} - {error}");
+            return null;
+        }
 
         return await response.Content.ReadAsByteArrayAsync();
     }
@@ -255,6 +312,9 @@ public class OneDriveRemoteStorageService : IRemoteStorageService, IRemoteFileSy
             ? $"{_graphBaseUrl}/me/drive/items/{parentId}/children"
             : $"{_graphBaseUrl}/drives/{driveId}/items/{parentId}/children";
 
+        var parentName = _idToNameCache.TryGetValue(parentId, out var n) ? $"'{n}'" : $"ID: {parentId}";
+        Logger?.LogApiCall("POST", url, $"Creating folder '{name}' in parent folder {parentName}");
+
         var body = new { name = name, folder = new { }, @microsoft_graph_conflictBehavior = "replace" };
         
         using var request = new HttpRequestMessage(HttpMethod.Post, url);
@@ -262,9 +322,19 @@ public class OneDriveRemoteStorageService : IRemoteStorageService, IRemoteFileSy
         request.Content = JsonContent.Create(body);
 
         var response = await _httpClient.SendAsync(request);
-        if (!response.IsSuccessStatusCode) return null;
+        if (!response.IsSuccessStatusCode)
+        {
+            var error = await response.Content.ReadAsStringAsync();
+            Logger?.LogError($"Failed to create folder '{name}' in {parentId}: {response.StatusCode} - {error}");
+            return null;
+        }
 
-        return await response.Content.ReadFromJsonAsync<OneDriveItemInternal>();
+        var item = await response.Content.ReadFromJsonAsync<OneDriveItemInternal>();
+        if (item != null && !string.IsNullOrEmpty(item.Id) && !string.IsNullOrEmpty(item.Name))
+        {
+            _idToNameCache[item.Id] = item.Name;
+        }
+        return item;
     }
 
     private async Task<OneDriveItemInternal?> UploadFileAsync(string parentId, string name, byte[] content, Dictionary<string, string> parameters)
@@ -274,14 +344,27 @@ public class OneDriveRemoteStorageService : IRemoteStorageService, IRemoteFileSy
             ? $"{_graphBaseUrl}/me/drive/items/{parentId}:/{name}:/content"
             : $"{_graphBaseUrl}/drives/{driveId}/items/{parentId}:/{name}:/content";
 
+        var parentName = _idToNameCache.TryGetValue(parentId, out var n) ? $"'{n}'" : $"ID: {parentId}";
+        Logger?.LogApiCall("PUT", url, $"Uploading file '{name}' to parent folder {parentName}");
+
         using var request = new HttpRequestMessage(HttpMethod.Put, url);
         request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", parameters["accessToken"]);
         request.Content = new ByteArrayContent(content);
 
         var response = await _httpClient.SendAsync(request);
-        if (!response.IsSuccessStatusCode) return null;
+        if (!response.IsSuccessStatusCode)
+        {
+            var error = await response.Content.ReadAsStringAsync();
+            Logger?.LogError($"Failed to upload file '{name}' to {parentId}: {response.StatusCode} - {error}");
+            return null;
+        }
 
-        return await response.Content.ReadFromJsonAsync<OneDriveItemInternal>();
+        var item = await response.Content.ReadFromJsonAsync<OneDriveItemInternal>();
+        if (item != null && !string.IsNullOrEmpty(item.Id) && !string.IsNullOrEmpty(item.Name))
+        {
+            _idToNameCache[item.Id] = item.Name;
+        }
+        return item;
     }
 
     #endregion

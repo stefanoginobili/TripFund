@@ -4,6 +4,7 @@ namespace TripFund.App.Services;
 
 public interface IRemoteFileSystem
 {
+    IRemoteStorageLogger? Logger { get; set; }
     Task<List<RemoteItem>> ListChildrenAsync(string folderId, Dictionary<string, string> parameters);
     Task<RemoteItem?> GetChildItemAsync(string parentId, string name, Dictionary<string, string> parameters);
     Task<byte[]?> DownloadFileContentAsync(string fileId, Dictionary<string, string> parameters);

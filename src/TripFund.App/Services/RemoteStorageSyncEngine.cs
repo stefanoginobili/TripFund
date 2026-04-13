@@ -15,31 +15,48 @@ public class RemoteStorageSyncEngine
 
     public async Task SynchronizeAsync(string tripSlug, IRemoteFileSystem fileSystem, Action<string, bool>? onSyncStateChanged = null)
     {
+        var logger = new RemoteStorageLogger();
+        fileSystem.Logger = logger;
+        logger.LogInfo($"Starting synchronization for trip: {tripSlug}");
+
         onSyncStateChanged?.Invoke(tripSlug, true);
         try
         {
             var registry = await _localStorage.GetTripRegistryAsync();
-            if (!registry.Trips.TryGetValue(tripSlug, out var entry) || entry.RemoteStorage == null) return;
+            if (!registry.Trips.TryGetValue(tripSlug, out var entry) || entry.RemoteStorage == null)
+            {
+                logger.LogInfo("Trip not found in registry or remote storage not configured.");
+                return;
+            }
 
-            if (!entry.RemoteStorage.Parameters.TryGetValue("folderId", out var folderId)) return;
+            if (!entry.RemoteStorage.Parameters.TryGetValue("folderId", out var folderId))
+            {
+                logger.LogError("Remote folderId not found in parameters.");
+                return;
+            }
 
+            logger.LogInfo("Authenticating with remote storage provider...");
             await fileSystem.EnsureAuthenticatedAsync(entry.RemoteStorage.Parameters);
             // After authentication, check if registry needs to be saved (e.g., updated refresh token)
             await _localStorage.SaveTripRegistryAsync(registry);
 
             // Check if root is readonly
+            logger.LogInfo("Checking write permissions on remote storage...");
             var canWrite = await CheckFolderWritePermissionAsync(folderId, entry.RemoteStorage.Parameters, fileSystem);
             if (entry.RemoteStorage.Readonly != !canWrite)
             {
                 entry.RemoteStorage.Readonly = !canWrite;
                 await _localStorage.SaveTripRegistryAsync(registry);
             }
+            logger.LogInfo($"Remote storage is {(entry.RemoteStorage.Readonly ? "READ-ONLY" : "READ-WRITE")}");
 
             // 1. Download Phase
+            logger.LogInfo("Starting DOWNLOAD phase...");
             var localTripPath = Path.Combine(_localStorage.TripsPath, tripSlug);
             await SyncDownAsync(folderId, localTripPath, entry.RemoteStorage.Parameters, fileSystem);
 
             // 2. Integrity & Conflict Check
+            logger.LogInfo("Checking for local conflicts...");
             bool hasConflict = false;
             if (Directory.Exists(Path.Combine(localTripPath, "metadata")))
             {
@@ -62,18 +79,70 @@ public class RemoteStorageSyncEngine
             entry.RemoteStorage.HasConflicts = hasConflict;
             await _localStorage.SaveTripRegistryAsync(registry);
 
-            if (hasConflict) return;
+            if (hasConflict)
+            {
+                logger.LogInfo("Conflict detected. Sync aborted. Resolution required.");
+                return;
+            }
 
             // 3. Upload Phase
             if (!entry.RemoteStorage.Readonly)
             {
+                logger.LogInfo("Starting UPLOAD phase...");
                 await SyncUpAsync(localTripPath, folderId, entry.RemoteStorage.Parameters, fileSystem);
             }
+            else
+            {
+                logger.LogInfo("Skipping UPLOAD phase (Read-Only).");
+            }
+            
+            logger.LogInfo("Synchronization completed successfully.");
+        }
+        catch (Exception ex)
+        {
+            logger.LogError("An error occurred during synchronization", ex);
+            throw;
         }
         finally
         {
             onSyncStateChanged?.Invoke(tripSlug, false);
+            
+            // Save the log locally (STAYS LOCAL, NEVER UPLOADED)
+            try
+            {
+                await SaveSyncLogLocallyAsync(tripSlug, fileSystem);
+            }
+            catch (Exception logEx)
+            {
+                System.Diagnostics.Debug.WriteLine($"Failed to save sync log locally: {logEx.Message}");
+            }
         }
+    }
+
+    private async Task SaveSyncLogLocallyAsync(string tripSlug, IRemoteFileSystem fileSystem)
+    {
+        if (fileSystem.Logger == null) return;
+
+        var logContent = fileSystem.Logger.GetLogContent();
+
+        // The requirement is debug/sync/[TripSlug].txt as a sibling of "trips"
+        var debugPath = Path.Combine(_localStorage.AppDataPath, "debug", "sync");
+        if (!Directory.Exists(debugPath))
+        {
+            Directory.CreateDirectory(debugPath);
+        }
+
+        var logFile = Path.Combine(debugPath, $"{tripSlug}.txt");
+        await File.WriteAllTextAsync(logFile, logContent);
+    }
+
+    private async Task<RemoteItem?> GetOrCreateFolderAsync(string parentId, string name, Dictionary<string, string> parameters, IRemoteFileSystem fileSystem)
+    {
+        var children = await fileSystem.ListChildrenAsync(parentId, parameters);
+        var existing = children.FirstOrDefault(c => c.Name == name && c.IsFolder);
+        if (existing != null) return existing;
+
+        return await fileSystem.CreateFolderAsync(parentId, name, parameters);
     }
 
     private async Task<bool> CheckFolderWritePermissionAsync(string folderId, Dictionary<string, string> parameters, IRemoteFileSystem fileSystem)
@@ -107,6 +176,7 @@ public class RemoteStorageSyncEngine
     {
         if (File.Exists(Path.Combine(localPath, ".synched"))) return;
 
+        if (fileSystem.Logger != null) fileSystem.Logger.CurrentFolderName = Path.GetFileName(localPath);
         var children = await fileSystem.ListChildrenAsync(remoteFolderId, parameters);
         if (children.Count == 0) return;
 
@@ -199,6 +269,8 @@ public class RemoteStorageSyncEngine
     private async Task SyncUpAsync(string localPath, string remoteFolderId, Dictionary<string, string> parameters, IRemoteFileSystem fileSystem)
     {
         if (File.Exists(Path.Combine(localPath, ".synched"))) return;
+
+        if (fileSystem.Logger != null) fileSystem.Logger.CurrentFolderName = Path.GetFileName(localPath);
 
         var localEntries = Directory.GetFileSystemEntries(localPath)
             .Where(e => !e.EndsWith(".remote-etag") && Path.GetFileName(e) != ".synching" && Path.GetFileName(e) != ".synched")
