@@ -86,4 +86,27 @@ public class RemoteStorageSelectorTests : BunitContext
         // Assert - Navigation without parameters
         nav.Uri.Should().EndWith("/create-trip");
     }
+
+    [Fact]
+    public void Selector_ShouldResetState_WhenReopened()
+    {
+        // Arrange
+        var cut = Render<RemoteStorageSelector>(parameters => parameters
+            .Add(p => p.IsVisible, true)
+        );
+
+        // Act - Select OneDrive
+        cut.FindAll(".provider-item")[1].Click();
+        cut.Find(".modal-title-vibe").TextContent.Should().Be("Microsoft OneDrive");
+
+        // Act - Close
+        cut.Render(parameters => parameters.Add(p => p.IsVisible, false));
+        
+        // Act - Reopen
+        cut.Render(parameters => parameters.Add(p => p.IsVisible, true));
+
+        // Assert - Should be back to provider selection
+        cut.Find(".modal-title-vibe").TextContent.Should().Be("Seleziona Archivio");
+        cut.FindAll(".provider-item").Should().HaveCount(2);
+    }
 }

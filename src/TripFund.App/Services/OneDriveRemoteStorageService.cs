@@ -57,7 +57,7 @@ public class OneDriveRemoteStorageService : IRemoteStorageService, IRemoteFileSy
         
         // In Microsoft Graph, we browse metadata/trip_config.json
         // 1. Look for metadata folder
-        var metadataFolder = await GetChildItemAsync(folderId, parameters);
+        var metadataFolder = await GetChildItemAsync(folderId, "metadata", parameters);
         if (metadataFolder == null || metadataFolder.Folder == null) return null;
 
         // 2. Look for latest version folder in metadata
@@ -220,22 +220,6 @@ public class OneDriveRemoteStorageService : IRemoteStorageService, IRemoteFileSy
         var url = string.IsNullOrEmpty(driveId)
             ? $"{_graphBaseUrl}/me/drive/items/{parentId}:/{name}"
             : $"{_graphBaseUrl}/drives/{driveId}/items/{parentId}:/{name}";
-
-        using var request = new HttpRequestMessage(HttpMethod.Get, url);
-        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", parameters["accessToken"]);
-
-        var response = await _httpClient.SendAsync(request);
-        if (!response.IsSuccessStatusCode) return null;
-
-        return await response.Content.ReadFromJsonAsync<OneDriveItemInternal>();
-    }
-
-    private async Task<OneDriveItemInternal?> GetChildItemAsync(string parentId, Dictionary<string, string> parameters)
-    {
-        var driveId = parameters.TryGetValue("driveId", out var d) ? d : null;
-        var url = string.IsNullOrEmpty(driveId)
-            ? $"{_graphBaseUrl}/me/drive/items/{parentId}"
-            : $"{_graphBaseUrl}/drives/{driveId}/items/{parentId}";
 
         using var request = new HttpRequestMessage(HttpMethod.Get, url);
         request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", parameters["accessToken"]);

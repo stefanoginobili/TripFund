@@ -50,6 +50,37 @@ public class OneDriveSyncLogicTests : IDisposable
     }
 
     [Fact]
+    public async Task GetRemoteTripConfigAsync_CorrectlyLoadsConfig_WhenGivenTripRootId()
+    {
+        var parameters = new Dictionary<string, string> { { "folderId", "root_id" }, { "accessToken", "fake_token" }, { "accessTokenExpiry", DateTime.Now.AddHours(1).ToString("O") } };
+        
+        // 1. Mock GetChildItemAsync(root_id, "metadata")
+        _server.Given(Request.Create().WithPath("/me/drive/items/root_id:/metadata").UsingGet())
+            .RespondWith(Response.Create().WithStatusCode(200).WithBody("{ \"id\": \"meta_id\", \"name\": \"metadata\", \"folder\": {} }"));
+
+        // 2. Mock ListChildrenAsync(meta_id)
+        _server.Given(Request.Create().WithPath("/me/drive/items/meta_id/children").UsingGet())
+            .RespondWith(Response.Create().WithStatusCode(200).WithBody("{ \"value\": [ { \"id\": \"v1_id\", \"name\": \"001_NEW_dev1\", \"folder\": {} } ] }"));
+
+        // 3. Mock GetChildItemAsync(v1_id, "trip_config.json")
+        _server.Given(Request.Create().WithPath("/me/drive/items/v1_id:/trip_config.json").UsingGet())
+            .RespondWith(Response.Create().WithStatusCode(200).WithBody("{ \"id\": \"file_id\", \"name\": \"trip_config.json\", \"file\": {} }"));
+
+        // 4. Mock DownloadFileContentAsync(file_id)
+        var tripConfig = new TripConfig { Name = "Test Trip", StartDate = DateTime.Today, EndDate = DateTime.Today.AddDays(7) };
+        var json = System.Text.Json.JsonSerializer.Serialize(tripConfig);
+        _server.Given(Request.Create().WithPath("/me/drive/items/file_id/content").UsingGet())
+            .RespondWith(Response.Create().WithStatusCode(200).WithBody(json));
+
+        // Act
+        var result = await _service.GetRemoteTripConfigAsync("onedrive", parameters);
+
+        // Assert
+        Assert.NotNull(result);
+        Assert.Equal("Test Trip", result.Name);
+    }
+
+    [Fact]
     public async Task SyncDown_RestartsCopy_IfLocalFolderHasSynchingFile()
     {
         // Arrange
@@ -83,7 +114,12 @@ public class OneDriveSyncLogicTests : IDisposable
             RemoteStorage = new RemoteStorageConfig 
             { 
                 Provider = "onedrive", 
-                Parameters = new Dictionary<string, string> { { "folderId", "root_id" } } 
+                Parameters = new Dictionary<string, string> 
+                { 
+                    { "folderId", "root_id" },
+                    { "accessToken", "fake_token" },
+                    { "accessTokenExpiry", DateTime.Now.AddHours(1).ToString("O") }
+                } 
             } 
         };
         var localStorage = new LocalTripStorageService(_tempPath);
@@ -117,7 +153,12 @@ public class OneDriveSyncLogicTests : IDisposable
             RemoteStorage = new RemoteStorageConfig 
             { 
                 Provider = "onedrive", 
-                Parameters = new Dictionary<string, string> { { "folderId", "root_id" } } 
+                Parameters = new Dictionary<string, string> 
+                { 
+                    { "folderId", "root_id" },
+                    { "accessToken", "fake_token" },
+                    { "accessTokenExpiry", DateTime.Now.AddHours(1).ToString("O") }
+                } 
             } 
         };
         var localStorage = new LocalTripStorageService(_tempPath);
@@ -148,7 +189,12 @@ public class OneDriveSyncLogicTests : IDisposable
             RemoteStorage = new RemoteStorageConfig 
             { 
                 Provider = "onedrive", 
-                Parameters = new Dictionary<string, string> { { "folderId", "root_id" } } 
+                Parameters = new Dictionary<string, string> 
+                { 
+                    { "folderId", "root_id" },
+                    { "accessToken", "fake_token" },
+                    { "accessTokenExpiry", DateTime.Now.AddHours(1).ToString("O") }
+                } 
             } 
         };
         var localStorage = new LocalTripStorageService(_tempPath);

@@ -85,9 +85,8 @@
                             }
                         </div>
 
-                        <div class="d-flex align-items-center justify-content-between mt-4">
-                            <button class="btn-link-vibe" @onclick="Back">Indietro</button>
-                            <button class="btn-primary-vibe flex-2 ms-4" @onclick="Complete" disabled="@(string.IsNullOrWhiteSpace(folderId))">Conferma</button>
+                        <div class="mt-4">
+                            <button class="btn-primary-vibe w-100" @onclick="Complete" disabled="@(string.IsNullOrWhiteSpace(folderId))">Conferma</button>
                         </div>
                     </div>
                 }

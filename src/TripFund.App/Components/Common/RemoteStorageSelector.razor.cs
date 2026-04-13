@@ -18,6 +18,29 @@ namespace TripFund.App.Components.Common
         [Parameter] public EventCallback OnClose { get; set; }
         [Parameter] public EventCallback<RemoteStorageSelection?> OnSelectionCompleted { get; set; }
 
+        private bool _wasVisible;
+
+        protected override void OnParametersSet()
+        {
+            if (IsVisible && !_wasVisible)
+            {
+                ResetState();
+            }
+            _wasVisible = IsVisible;
+        }
+
+        private void ResetState()
+        {
+            selectedProvider = null;
+            folderId = "";
+            folderName = "";
+            driveId = null;
+            isPickerLoading = false;
+            isOneDrivePickerVisible = false;
+            oneDriveToken = "";
+            oneDriveRefreshToken = null;
+        }
+
         private string? selectedProvider;
         private string folderId = "";
         private string folderName = "";
@@ -89,20 +112,9 @@ namespace TripFund.App.Components.Common
             }
         }
 
-        private void Back()
-        {
-            selectedProvider = null;
-            folderId = "";
-            folderName = "";
-            driveId = null;
-        }
-
         private async Task Close()
         {
-            selectedProvider = null;
-            folderId = "";
-            folderName = "";
-            driveId = null;
+            ResetState();
             await OnClose.InvokeAsync();
         }
 
@@ -111,7 +123,7 @@ namespace TripFund.App.Components.Common
             if (selectedProvider == "local")
             {
                 await OnSelectionCompleted.InvokeAsync(null);
-                selectedProvider = null;
+                ResetState();
                 return;
             }
 
@@ -137,10 +149,7 @@ namespace TripFund.App.Components.Common
             };
 
             await OnSelectionCompleted.InvokeAsync(selection);
-            selectedProvider = null;
-            folderId = "";
-            folderName = "";
-            driveId = null;
+            ResetState();
         }
     }
 }
