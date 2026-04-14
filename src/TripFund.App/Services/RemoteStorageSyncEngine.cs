@@ -189,14 +189,14 @@ public class RemoteStorageSyncEngine
 
     private async Task SyncDownAsync(string remoteFolderId, string localPath, Dictionary<string, string> parameters, IRemoteFileSystem fileSystem)
     {
-        if (File.Exists(Path.Combine(localPath, ".synched"))) return;
+        if (File.Exists(Path.Combine(localPath, ".synched.tf"))) return;
 
         if (fileSystem.Logger != null) fileSystem.Logger.CurrentFolderName = Path.GetFileName(localPath);
         var children = await fileSystem.ListChildrenAsync(remoteFolderId, parameters);
         if (children.Count == 0) return;
 
         bool hasFolders = children.Any(c => c.IsFolder);
-        bool hasFiles = children.Any(c => !c.IsFolder && c.Name != ".synching");
+        bool hasFiles = children.Any(c => !c.IsFolder && c.Name != ".synching.tf");
 
         if (hasFolders && hasFiles)
         {
@@ -208,7 +208,7 @@ public class RemoteStorageSyncEngine
             foreach (var child in children.Where(c => c.IsFolder))
             {
                 var localChildPath = Path.Combine(localPath, child.Name);
-                if (File.Exists(Path.Combine(localChildPath, ".synched"))) continue;
+                if (File.Exists(Path.Combine(localChildPath, ".synched.tf"))) continue;
 
                 if (!Directory.Exists(localChildPath)) Directory.CreateDirectory(localChildPath);
                 await SyncDownAsync(child.Id, localChildPath, parameters, fileSystem);
@@ -220,9 +220,9 @@ public class RemoteStorageSyncEngine
             if (Directory.Exists(localPath))
             {
                 var localEntries = Directory.GetFileSystemEntries(localPath)
-                    .Where(e => !e.EndsWith(".remote-etag") && Path.GetFileName(e) != ".synching" && Path.GetFileName(e) != ".synched")
+                    .Where(e => !e.EndsWith(".remote-etag.tf") && Path.GetFileName(e) != ".synching.tf" && Path.GetFileName(e) != ".synched.tf")
                     .ToList();
-                bool hasSynching = File.Exists(Path.Combine(localPath, ".synching"));
+                bool hasSynching = File.Exists(Path.Combine(localPath, ".synching.tf"));
                 if (localEntries.Count > 0 && !hasSynching)
                 {
                     isFullyCopiedLocally = true;
@@ -240,17 +240,17 @@ public class RemoteStorageSyncEngine
                     Directory.CreateDirectory(localPath);
                 }
 
-                var synchingFile = Path.Combine(localPath, ".synching");
+                var synchingFile = Path.Combine(localPath, ".synching.tf");
                 await File.WriteAllTextAsync(synchingFile, "");
 
-                foreach (var child in children.Where(c => !c.IsFolder && c.Name != ".synching"))
+                foreach (var child in children.Where(c => !c.IsFolder && c.Name != ".synching.tf"))
                 {
                     var localChildFile = Path.Combine(localPath, child.Name);
                     var content = await fileSystem.DownloadFileContentAsync(child.Id, parameters);
                     if (content != null)
                     {
                         await File.WriteAllBytesAsync(localChildFile, content);
-                        await File.WriteAllTextAsync(localChildFile + ".remote-etag", child.ETag);
+                        await File.WriteAllTextAsync(localChildFile + ".remote-etag.tf", child.ETag);
                     }
                 }
 
@@ -258,10 +258,10 @@ public class RemoteStorageSyncEngine
             }
             else
             {
-                foreach (var child in children.Where(c => !c.IsFolder && c.Name != ".synching"))
+                foreach (var child in children.Where(c => !c.IsFolder && c.Name != ".synching.tf"))
                 {
                     var localChildFile = Path.Combine(localPath, child.Name);
-                    var metadataFile = localChildFile + ".remote-etag";
+                    var metadataFile = localChildFile + ".remote-etag.tf";
                     var remoteEtag = child.ETag;
                     var localEtag = File.Exists(metadataFile) ? await File.ReadAllTextAsync(metadataFile) : null;
 
@@ -277,23 +277,23 @@ public class RemoteStorageSyncEngine
                 }
             }
 
-            await File.WriteAllTextAsync(Path.Combine(localPath, ".synched"), "");
+            await File.WriteAllTextAsync(Path.Combine(localPath, ".synched.tf"), "");
         }
     }
 
     private async Task SyncUpAsync(string localPath, string remoteFolderId, Dictionary<string, string> parameters, IRemoteFileSystem fileSystem)
     {
-        if (File.Exists(Path.Combine(localPath, ".synched"))) return;
+        if (File.Exists(Path.Combine(localPath, ".synched.tf"))) return;
 
         if (fileSystem.Logger != null) fileSystem.Logger.CurrentFolderName = Path.GetFileName(localPath);
 
         var localEntries = Directory.GetFileSystemEntries(localPath)
-            .Where(e => !e.EndsWith(".remote-etag") && Path.GetFileName(e) != ".synching" && Path.GetFileName(e) != ".synched")
+            .Where(e => !e.EndsWith(".remote-etag.tf") && Path.GetFileName(e) != ".synching.tf" && Path.GetFileName(e) != ".synched.tf")
             .ToList();
 
         // OPTIMIZATION: Filter out items that are already synched. 
-        // Files won't be filtered as they don't contain a ".synched" file.
-        localEntries = localEntries.Where(e => !File.Exists(Path.Combine(e, ".synched"))).ToList();
+        // Files won't be filtered as they don't contain a ".synched.tf" file.
+        localEntries = localEntries.Where(e => !File.Exists(Path.Combine(e, ".synched.tf"))).ToList();
         
         if (localEntries.Count == 0) return;
 
@@ -330,8 +330,8 @@ public class RemoteStorageSyncEngine
         else if (hasFiles)
         {
             bool isFullyCopiedRemotely = false;
-            bool hasSynching = remoteChildren.Any(c => c.Name == ".synching");
-            bool isEmpty = !remoteChildren.Any(c => c.Name != ".synching");
+            bool hasSynching = remoteChildren.Any(c => c.Name == ".synching.tf");
+            bool isEmpty = !remoteChildren.Any(c => c.Name != ".synching.tf");
 
             if (!isEmpty && !hasSynching)
             {
@@ -345,7 +345,7 @@ public class RemoteStorageSyncEngine
                     await fileSystem.DeleteFileAsync(child.Id, parameters);
                 }
 
-                await fileSystem.UploadFileAsync(remoteFolderId, ".synching", new byte[] { 0x01 }, parameters);
+                await fileSystem.UploadFileAsync(remoteFolderId, ".synching.tf", new byte[] { 0x01 }, parameters);
 
                 foreach (var entry in localEntries.Where(e => File.Exists(e)))
                 {
@@ -354,12 +354,12 @@ public class RemoteStorageSyncEngine
                     var uploaded = await fileSystem.UploadFileAsync(remoteFolderId, name, content, parameters);
                     if (uploaded != null)
                     {
-                        await File.WriteAllTextAsync(entry + ".remote-etag", uploaded.ETag);
+                        await File.WriteAllTextAsync(entry + ".remote-etag.tf", uploaded.ETag);
                     }
                 }
 
                 var finalChildren = await fileSystem.ListChildrenAsync(remoteFolderId, parameters);
-                var sFile = finalChildren.FirstOrDefault(c => c.Name == ".synching");
+                var sFile = finalChildren.FirstOrDefault(c => c.Name == ".synching.tf");
                 if (sFile != null) await fileSystem.DeleteFileAsync(sFile.Id, parameters);
             }
             else
@@ -370,7 +370,7 @@ public class RemoteStorageSyncEngine
                     var remoteMatch = remoteChildren.FirstOrDefault(c => c.Name == name);
 
                     var content = await File.ReadAllBytesAsync(entry);
-                    var etagFile = entry + ".remote-etag";
+                    var etagFile = entry + ".remote-etag.tf";
                     var localEtag = File.Exists(etagFile) ? await File.ReadAllTextAsync(etagFile) : null;
 
                     if (remoteMatch == null || localEtag == null)
@@ -381,7 +381,7 @@ public class RemoteStorageSyncEngine
                 }
             }
 
-            await File.WriteAllTextAsync(Path.Combine(localPath, ".synched"), "");
+            await File.WriteAllTextAsync(Path.Combine(localPath, ".synched.tf"), "");
         }
     }
 }

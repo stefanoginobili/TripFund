@@ -68,11 +68,11 @@ public class VersionedStorageEngine
 
     public static readonly IReadOnlyList<Regex> IgnoredSystemFiles = new List<Regex>
     {
-        new(@"^\.synched$", RegexOptions.Compiled | RegexOptions.IgnoreCase),
-        new(@"^\.synching$", RegexOptions.Compiled | RegexOptions.IgnoreCase),
-        new(@"\.remote-etag$", RegexOptions.Compiled | RegexOptions.IgnoreCase),
+        new(@"^\.synched\.tf$", RegexOptions.Compiled | RegexOptions.IgnoreCase),
+        new(@"^\.synching\.tf$", RegexOptions.Compiled | RegexOptions.IgnoreCase),
+        new(@"\.remote-etag\.tf$", RegexOptions.Compiled | RegexOptions.IgnoreCase),
         new(@"^\.resolved_versions\.tf$", RegexOptions.Compiled | RegexOptions.IgnoreCase),
-        new(@"^\.deleted$", RegexOptions.Compiled | RegexOptions.IgnoreCase)
+        new(@"^\.deleted\.tf$", RegexOptions.Compiled | RegexOptions.IgnoreCase)
     };
 
     public List<VersionFolderInfo> GetVersionFolders(string rootPath)
@@ -278,7 +278,7 @@ public class VersionedStorageEngine
 
         if (kind == CommitKind.Del)
         {
-            await File.WriteAllTextAsync(Path.Combine(newDirPath, ".deleted"), deletedInfo ?? "");
+            await File.WriteAllTextAsync(Path.Combine(newDirPath, ".deleted.tf"), deletedInfo ?? "");
             return folderName;
         }
 
@@ -298,7 +298,7 @@ public class VersionedStorageEngine
 
                 var prevPath = Path.Combine(rootPath, sourceInfo.FolderName);
                 
-                if (!File.Exists(Path.Combine(prevPath, ".deleted")))
+                if (!File.Exists(Path.Combine(prevPath, ".deleted.tf")))
                 {
                     foreach (var file in Directory.GetFiles(prevPath))
                     {

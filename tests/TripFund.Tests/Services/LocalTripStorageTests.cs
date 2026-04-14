@@ -121,7 +121,7 @@ public class LocalTripStorageTests : IDisposable
         // Assert
         var metadataDir = Path.Combine(_tempPath, "trips", tripSlug, "transactions", "trans-1", "metadata");
         var delVersionDir = Path.Combine(metadataDir, "002_DEL_mario");
-        var deletedFile = Path.Combine(delVersionDir, ".deleted");
+        var deletedFile = Path.Combine(delVersionDir, ".deleted.tf");
         
         File.Exists(deletedFile).Should().BeTrue();
         var content = await File.ReadAllTextAsync(deletedFile);
@@ -256,9 +256,9 @@ public class LocalTripStorageTests : IDisposable
         var v1Dir = Path.Combine(metadataDir, "001_NEW_device1");
         
         // Simulate successful sync
-        File.WriteAllText(Path.Combine(v1Dir, ".synched"), "");
-        File.WriteAllText(Path.Combine(v1Dir, "transaction_detail.json.remote-etag"), "etag-v1");
-        File.WriteAllText(Path.Combine(v1Dir, ".synching"), "");
+        File.WriteAllText(Path.Combine(v1Dir, ".synched.tf"), "");
+        File.WriteAllText(Path.Combine(v1Dir, "transaction_detail.json.remote-etag.tf"), "etag-v1");
+        File.WriteAllText(Path.Combine(v1Dir, ".synching.tf"), "");
 
         // Act: Update to V2
         var t2 = new Transaction { Id = "trans-1", Description = "V2" };
@@ -269,8 +269,8 @@ public class LocalTripStorageTests : IDisposable
         Directory.Exists(v2Dir).Should().BeTrue();
         
         File.Exists(Path.Combine(v2Dir, "transaction_detail.json")).Should().BeTrue();
-        File.Exists(Path.Combine(v2Dir, ".synched")).Should().BeFalse(".synched should NOT be copied");
-        File.Exists(Path.Combine(v2Dir, "transaction_detail.json.remote-etag")).Should().BeFalse(".remote-etag should NOT be copied");
-        File.Exists(Path.Combine(v2Dir, ".synching")).Should().BeFalse(".synching should NOT be copied");
+        File.Exists(Path.Combine(v2Dir, ".synched.tf")).Should().BeFalse(".synched.tf should NOT be copied");
+        File.Exists(Path.Combine(v2Dir, "transaction_detail.json.remote-etag.tf")).Should().BeFalse(".remote-etag.tf should NOT be copied");
+        File.Exists(Path.Combine(v2Dir, ".synching.tf")).Should().BeFalse(".synching.tf should NOT be copied");
     }
 }

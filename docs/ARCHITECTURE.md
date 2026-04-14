@@ -54,11 +54,11 @@ Commits are **atomic**. A single version bump MUST be able to process a batch of
         3. Copy all **untouched** files from the immediate previous version.
         4. Explicitly **exclude/drop** any files the user intended to delete (e.g., removing a specific attachment).
 - **`DEL` (Soft Deletion):** Deletes the *entire entity*.
-    - **Rule:** The folder MUST ONLY contain a file named `.deleted`. No `transaction_detail.json` or attachments are copied forward. The `.deleted` MUST contain 2 line:
+    - **Rule:** The folder MUST ONLY contain a file named `.deleted.tf`. No `transaction_detail.json` or attachments are copied forward. The `.deleted.tf` MUST contain 2 line:
       - `author=Mario Rossi`: where "Mario Rossi" in this example is the author from the Global Settings.
       - `deletedAt=20260332T212354Z`: where the timestamp is the timestamp of the deletion time.
 - **`RES` (Resolution):** Closes a conflict state by merging multiple diverging branches. 
-    - **Rule:** The folder MUST contain a `.resolved_versions.tf` file listing the exact folder names of the branches it is merging (one per line). It contains the exact file payload (or `.deleted` marker) of the chosen winning state.
+    - **Rule:** The folder MUST contain a `.resolved_versions.tf` file listing the exact folder names of the branches it is merging (one per line). It contains the exact file payload (or `.deleted.tf` marker) of the chosen winning state.
 
 ### 3.3. Standard Commit Operation Algorithm
 When a user modifies data (changing one or multiple files) and saves:
@@ -115,30 +115,30 @@ The process compares the local trip root (`trips/[TripSlug]`) against the remote
         *   If the remote destination fails the "Fully Copied" rule, restart the copy.
         *   Otherwise, update files as needed.
 
-### 5.2. Atomic Leaf Folder Sync & ".synching" Logic
+### 5.2. Atomic Leaf Folder Sync & ".synching.tf" Logic
 To ensure data integrity during network interruptions or crashes, the sync process follows these strict rules:
 
 - **Strict Folder Types**: A folder MUST contain either ONLY files (Leaf folder) or ONLY subfolders (Node folder). Mixing files and folders in the same directory is strictly prohibited. 
 - **Atomic Leaf Folder Sync**: Leaf folders (e.g., version folders like `001_NEW_device1`) represent the atomic unit of synchronization.
 - **"Fully Copied" Rule**: A leaf folder is considered fully copied ONLY if:
     1. The destination folder is **NOT EMPTY**.
-    2. The destination folder **DOES NOT contain a `.synching` file**.
-- **Restart Mechanism**: If a leaf folder fails the "Fully Copied" rule (e.g., it is empty or contains a `.synching` file from a previous interrupted attempt), the synchronization process MUST:
+    2. The destination folder **DOES NOT contain a `.synching.tf` file**.
+- **Restart Mechanism**: If a leaf folder fails the "Fully Copied" rule (e.g., it is empty or contains a `.synching.tf` file from a previous interrupted attempt), the synchronization process MUST:
     1. Clear all existing contents of the destination folder.
-    2. Create a `.synching` file inside the folder.
+    2. Create a `.synching.tf` file inside the folder.
     3. Restart the copy of all files from the source.
-    4. Delete the `.synching` file only after all files are successfully transferred and verified.
+    4. Delete the `.synching.tf` file only after all files are successfully transferred and verified.
 
-Node folders (folders containing other folders, like `metadata/` or `transactions/`) are traversed recursively and do not use the `.synching` logic themselves; the logic applies to their descendant leaf folders.
+Node folders (folders containing other folders, like `metadata/` or `transactions/`) are traversed recursively and do not use the `.synching.tf` logic themselves; the logic applies to their descendant leaf folders.
 
-### 5.3. Sync Optimization (".synched" Marker)
+### 5.3. Sync Optimization (".synched.tf" Marker)
 To minimize redundant network traffic and API calls, the sync engine utilizes a local-only optimization marker:
 
-- **The ".synched" Marker**: A file named `.synched` is created inside a local leaf folder immediately after it has been successfully synchronized (either downloaded from remote or uploaded to remote).
-- **Fast-Path Skip**: During the synchronization flow, if the engine detects a `.synched` file in a local leaf folder, it **immediately skips** both the download and upload phases for that folder. It does not perform any remote listing or comparison for that specific directory.
+- **The ".synched.tf" Marker**: A file named `.synched.tf` is created inside a local leaf folder immediately after it has been successfully synchronized (either downloaded from remote or uploaded to remote).
+- **Fast-Path Skip**: During the synchronization flow, if the engine detects a `.synched.tf` file in a local leaf folder, it **immediately skips** both the download and upload phases for that folder. It does not perform any remote listing or comparison for that specific directory.
 - **Immutability Reliance**: This optimization is safe because versioned leaf folders (e.g., `001_NEW_device1`) are designed to be immutable once committed. Any change results in a new version folder with a higher sequence number.
-- **Local-Only**: The `.synched` file MUST NEVER be uploaded to the remote storage provider. It is strictly a local hint for the sync engine.
+- **Local-Only**: The `.synched.tf` file MUST NEVER be uploaded to the remote storage provider. It is strictly a local hint for the sync engine.
 
 ### 5.4. Error Handling
 *   **Success:** The process is complete only when all recursive scans and copies finish without exceptions.
-*   **Failure:** Any exception (API error, Disk Full, Permission Denied) during the process MUST abort the synchronization and return a descriptive error to the UI. The state of partial transfers is safely managed by the `.synching` suffix logic.
+*   **Failure:** Any exception (API error, Disk Full, Permission Denied) during the process MUST abort the synchronization and return a descriptive error to the UI. The state of partial transfers is safely managed by the `.synching.tf` suffix logic.

@@ -139,7 +139,7 @@ public class LocalTripStorageService
         var latest = latestVersions[0];
         var latestDirPath = Path.Combine(metadataRoot, latest.FolderName);
 
-        if (File.Exists(Path.Combine(latestDirPath, ".deleted")))
+        if (File.Exists(Path.Combine(latestDirPath, ".deleted.tf")))
         {
             return new TransactionVersionInfo { VersionFolderName = latest.FolderName, IsDeleted = true };
         }
@@ -260,7 +260,7 @@ public class LocalTripStorageService
         foreach (var v in latestVersions)
         {
             var latestDirPath = Path.Combine(metadataRoot, v.FolderName);
-            if (File.Exists(Path.Combine(latestDirPath, ".deleted"))) continue;
+            if (File.Exists(Path.Combine(latestDirPath, ".deleted.tf"))) continue;
 
             var dataPath = Path.Combine(latestDirPath, "transaction_detail.json");
             if (File.Exists(dataPath))

@@ -82,7 +82,7 @@ This document strictly defines the user flows and UI layouts. **All UI text must
 - **Top Bar:** Back button (left). 3-dot menu (right) containing: Edit ✏️ and Delete 🗑️ (Red).
 - **View:** Read-only display of Type, Currency, Date/Time, Total Amount, Description, Author, Split details per member, Attachments, and Location.
 - **Edit Action:** Opens Flow 6 or Flow 7 in edit mode. Saving creates a new version folder.
-- **Delete Action:** Creates a `.deleted` version folder.
+- **Delete Action:** Creates a `.deleted.tf` version folder.
 
 ## 10. Global Settings (Onboarding)
 - **First Launch Blocker:** If `app_settings.json` is missing, the app cannot proceed.

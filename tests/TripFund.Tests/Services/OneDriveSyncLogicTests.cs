@@ -88,7 +88,7 @@ public class OneDriveSyncLogicTests : IDisposable
         var localTripPath = Path.Combine(_tempPath, "trips", tripSlug);
         var leafPath = Path.Combine(localTripPath, "metadata", "001_NEW_dev1");
         Directory.CreateDirectory(leafPath);
-        File.WriteAllText(Path.Combine(leafPath, ".synching"), "");
+        File.WriteAllText(Path.Combine(leafPath, ".synching.tf"), "");
         File.WriteAllText(Path.Combine(leafPath, "old_file.json"), "old content");
 
         // Mock OneDrive responses
@@ -137,8 +137,8 @@ public class OneDriveSyncLogicTests : IDisposable
 
         // Assert
         Assert.True(File.Exists(Path.Combine(leafPath, "trip_config.json")));
-        Assert.False(File.Exists(Path.Combine(leafPath, ".synching")));
-        Assert.True(File.Exists(Path.Combine(leafPath, ".synched"))); // Optimization marker
+        Assert.False(File.Exists(Path.Combine(leafPath, ".synching.tf")));
+        Assert.True(File.Exists(Path.Combine(leafPath, ".synched.tf"))); // Optimization marker
         Assert.False(File.Exists(Path.Combine(leafPath, "old_file.json"))); // Should have been cleared
     }
 
@@ -180,7 +180,7 @@ public class OneDriveSyncLogicTests : IDisposable
         var localTripPath = Path.Combine(_tempPath, "trips", tripSlug);
         var leafPath = Path.Combine(localTripPath, "metadata", "001_NEW_dev1");
         Directory.CreateDirectory(leafPath);
-        File.WriteAllText(Path.Combine(leafPath, ".synched"), "");
+        File.WriteAllText(Path.Combine(leafPath, ".synched.tf"), "");
         File.WriteAllText(Path.Combine(leafPath, "trip_config.json"), "{}");
 
         var registry = new LocalTripRegistry();

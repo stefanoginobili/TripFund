@@ -34,7 +34,7 @@ TripFund is built with **.NET MAUI Blazor Hybrid**, allowing us to share web UI 
 Instead of a traditional database, TripFund relies on an **Append-Only File System** architecture. 
 * Transactions are saved locally as `.json` files inside unique versioned folders.
 * Attachments are renamed with GUIDs to prevent collisions.
-* Deletions are handled via soft-delete `.deleted` files.
+* Deletions are handled via soft-delete `.deleted.tf` files.
 * When online, the app syncs this folder tree with Microsoft OneDrive, gracefully handling merge conflicts manually via UI.
 
 
