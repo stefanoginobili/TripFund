@@ -57,10 +57,18 @@ public class RemoteStorageSyncEngine
 
             // 2. Integrity & Conflict Check
             logger.LogInfo("Checking for local conflicts...");
-            bool hasConflict = false;
-            if (Directory.Exists(Path.Combine(localTripPath, "metadata")))
+            var conflicts = new List<VersionedFolderConflictException>();
+
+            var metadataPath = Path.Combine(localTripPath, "metadata");
+            if (Directory.Exists(metadataPath))
             {
-                if (_engine.IsInConflict(Path.Combine(localTripPath, "metadata"))) hasConflict = true;
+                var latest = _engine.GetLatestVersionFolders(metadataPath);
+                if (latest.Count > 1)
+                {
+                    var diverging = latest.Select(v => v.FolderName).ToList();
+                    var baseVer = _engine.GetBaseVersionFolder(metadataPath, latest[0].Sequence);
+                    conflicts.Add(new TripMetadataConflictException(diverging, baseVer));
+                }
             }
 
             var transDir = Path.Combine(localTripPath, "transactions");
@@ -68,21 +76,28 @@ public class RemoteStorageSyncEngine
             {
                 foreach (var t in Directory.GetDirectories(transDir))
                 {
-                    if (_engine.IsInConflict(t))
+                    var metadataRoot = Path.Combine(t, "metadata");
+                    if (Directory.Exists(metadataRoot))
                     {
-                        hasConflict = true;
-                        break;
+                        var latest = _engine.GetLatestVersionFolders(metadataRoot);
+                        if (latest.Count > 1)
+                        {
+                            var diverging = latest.Select(v => v.FolderName).ToList();
+                            var baseVer = _engine.GetBaseVersionFolder(metadataRoot, latest[0].Sequence);
+                            var transactionId = Path.GetFileName(t);
+                            conflicts.Add(new TransactionConflictException(transactionId, diverging, baseVer));
+                        }
                     }
                 }
             }
 
-            entry.RemoteStorage.HasConflicts = hasConflict;
+            entry.RemoteStorage.HasConflicts = conflicts.Count > 0;
             await _localStorage.SaveTripRegistryAsync(registry);
 
-            if (hasConflict)
+            if (conflicts.Count > 0)
             {
-                logger.LogInfo("Conflict detected. Sync aborted. Resolution required.");
-                return;
+                logger.LogInfo($"Conflict detected ({conflicts.Count}). Sync aborted. Resolution required.");
+                throw new SyncConflictException(conflicts);
             }
 
             // 3. Upload Phase

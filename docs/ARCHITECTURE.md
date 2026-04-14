@@ -57,7 +57,8 @@ Commits are **atomic**. A single version bump MUST be able to process a batch of
     - **Rule:** The folder MUST ONLY contain a file named `.deleted`. No `transaction_detail.json` or attachments are copied forward. The `.deleted` MUST contain 2 line:
       - `author=Mario Rossi`: where "Mario Rossi" in this example is the author from the Global Settings.
       - `deletedAt=20260332T212354Z`: where the timestamp is the timestamp of the deletion time.
-- **`RES` (Resolution):** Closes a conflict state. Contains the exact file payload (or `.deleted` marker) of the chosen winning thread.
+- **`RES` (Resolution):** Closes a conflict state by merging multiple diverging branches. 
+    - **Rule:** The folder MUST contain a `.resolves` file listing the exact folder names of the branches it is merging (one per line). It contains the exact file payload (or `.deleted` marker) of the chosen winning state.
 
 ### 3.3. Standard Commit Operation Algorithm
 When a user modifies data (changing one or multiple files) and saves:
@@ -67,26 +68,29 @@ When a user modifies data (changing one or multiple files) and saves:
 4. Populate the folder resolving the batch of changes against the previous state (copying untouched files, writing new/changed files, omitting deleted files).
 5. Commit the operation atomically to the file system.
 
-### 3.4. Conflict Detection & Resolution Matrix
-Conflicts occur natively due to the offline-first architecture when multiple users commit against the same base state before syncing.
+### 3.4. Conflict Detection & Resolution (DAG)
+The versioning system operates as a **Directed Acyclic Graph (DAG)** of folders. Conflicts occur when multiple devices commit against the same base state without synchronizing.
 
-**Detection Rule:**
-A conflict is actively occurring IF AND ONLY IF there are two or more version sub-folders sharing the exact same `[nnn]` value, AND there is no valid `RES` folder that supersedes them.
+**Divergence Detection (Leaves):**
+A version folder is a "Leaf" if it is NOT **superseded** by any other folder. A conflict is active if there is more than one Leaf.
+A folder **A** supersedes folder **B** if:
+1.  **Device-Local Progression**: Both folders belong to the same `deviceId` and `A.Sequence > B.Sequence`.
+2.  **Global Linear Progression**: Folder `A` has sequence `B.Sequence + 1`, and `B` was the only folder at its sequence level.
+3.  **Explicit Resolution**: Folder `A` is a `RES` (Resolution) kind and its `.resolves` file explicitly lists `B.FolderName`.
 
 **Conflict State Behavior:**
-1. The engine MUST group the diverging paths into "Threads" based on the `[deviceId]`.
-2. The engine MUST surface the latest valid data payload from *all* active threads to the UI.
-3. The UI remains in a locked/conflict state until a resolution is committed.
+1.  **Thread Identification**: The engine identifies all current "Leaf" folders.
+2.  **UI Feedback**: The engine surfaces the data from all active Leaves. The UI remains in a "locked/conflict" state, requiring a resolution.
+3.  **Base Version Discovery**: The common ancestor (Base Version) is found by scanning backwards from the minimum sequence of the leaves until a sequence with exactly one folder is found.
 
 **Resolution Algorithm:**
-1. The user selects a winning thread via the UI.
-2. The engine calculates `NextSeq = MAX([nnn_all_threads]) + 1`.
-3. The engine creates a `[NextSeq]_RES_[deviceId]` folder.
-4. The engine copies the exact state (files, or the `.deleted` marker) of the chosen winning thread into the `RES` folder.
-5. The conflict is marked resolved. Standard linear commits can resume at `NextSeq + 1`.
+1.  **User Selection**: The user chooses a winning state (or merges data) via the UI.
+2.  **Create RES folder**: The engine calculates `NextSeq = MAX(all_folders.Sequence) + 1` and creates a `[NextSeq]_RES_[deviceId]` folder.
+3.  **Explicit Linkage**: The engine writes a `.resolves` file inside the new `RES` folder containing the folder names of all current Leaves.
+4.  **Payload**: The winning data payload is copied into the `RES` folder.
 
-**Conflict Override Edge Case:**
-If an out-of-sync client uploads a new version folder (e.g., an `UPD` or `DEL`) that sits alongside an existing `RES` folder, the resolution is invalidated. The engine MUST revert the entity to an active Conflict State, requiring a new `RES` commit to reconcile the newly introduced thread.
+**Resolution Invalidation (DAG Edge Case):**
+If a device was offline during a resolution and later uploads a new `UPD` or `DEL` (even with a lower sequence number than the `RES`), this new commit will not be superseded by the existing `RES` because it wasn't explicitly listed in the `.resolves` file. The engine will detect multiple Leaves again, re-triggering a conflict state. This ensures no data is ever silently lost.
 
 ## 5. Remote Storage Synchronization
 The synchronization process ensures the local offline-first storage and the remote provider (Microsoft OneDrive, Git, etc.) are eventually consistent. This process operates at the folder level, navigating recursively through the `trips/[TripSlug]` structure.
@@ -102,7 +106,7 @@ The process compares the local trip root (`trips/[TripSlug]`) against the remote
 
 2.  **Integrity & Conflict Check:**
     *   Invoke the `VersionedStorageEngine` for the `metadata/` folder and each folder in `transactions/`.
-    *   **If any conflict is detected:** The synchronization process MUST fail immediately to prevent overwriting diverging data. The UI must then guide the user to resolve conflicts locally before re-attempting sync.
+    *   **If any conflict is detected:** The synchronization process MUST fail by throwing a `SyncConflictException`. This exception contains a list of all detected conflicts (specialized as `TripMetadataConflictException` or `TransactionConflictException`). Each conflict details the diverging version folders and the common base version to facilitate UI-side resolution. The UI must catch this exception and guide the user to resolve conflicts locally before re-attempting sync.
     *   **If no conflicts are found:** Proceed to the next step.
 
 3.  **Local-to-Remote Scan (Upload Phase):**

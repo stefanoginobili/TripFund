@@ -79,7 +79,7 @@ public class OneDriveRemoteStorageService : IRemoteStorageService, IRemoteFileSy
         {
             latestVersionName = _engine.GetLatestVersionFolder(folderNames);
         }
-        catch (VersionConflictException)
+        catch (VersionedFolderConflictException)
         {
             return null;
         }

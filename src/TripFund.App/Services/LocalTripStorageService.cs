@@ -4,19 +4,6 @@ using TripFund.App.Models;
 
 namespace TripFund.App.Services;
 
-public class TransactionConflictException : Exception
-{
-    public string TransactionId { get; }
-    public List<string> ConflictingDeviceIds { get; }
-
-    public TransactionConflictException(string transactionId, List<string> conflictingDeviceIds)
-        : base($"Conflict detected in transaction {transactionId} between: {string.Join(", ", conflictingDeviceIds)}")
-    {
-        TransactionId = transactionId;
-        ConflictingDeviceIds = conflictingDeviceIds;
-    }
-}
-
 public class LocalTripStorageService
 {
     private readonly string _rootPath;
@@ -144,7 +131,9 @@ public class LocalTripStorageService
 
         if (latestVersions.Count > 1)
         {
-            throw new TransactionConflictException(transactionId, latestVersions.Select(v => v.DeviceId).ToList());
+            var diverging = latestVersions.Select(v => v.FolderName).ToList();
+            var baseVer = _engine.GetBaseVersionFolder(metadataRoot, latestVersions[0].Sequence);
+            throw new TransactionConflictException(transactionId, diverging, baseVer);
         }
 
         var latest = latestVersions[0];
@@ -291,11 +280,12 @@ public class LocalTripStorageService
         var settings = await GetAppSettingsAsync();
         resolvedTransaction.Author = settings?.AuthorName ?? "Unknown";
         
+        IReadOnlyList<VersionFolderInfo> latestVersions;
         if (resolvedTransaction.CreatedAt == default)
         {
             // Try to find the original CreatedAt from one of the conflicting versions or previous history
             // We don't use GetLatestTransactionVersionWithMetadataAsync because it throws on conflict
-            var latestVersions = _engine.GetLatestVersionFolders(metadataRoot);
+            latestVersions = _engine.GetLatestVersionFolders(metadataRoot);
             if (latestVersions.Count > 0)
             {
                 var latest = latestVersions[0];
@@ -335,13 +325,19 @@ public class LocalTripStorageService
                 resolvedTransaction.CreatedAt = DateTime.UtcNow;
             }
         }
+        else
+        {
+            latestVersions = _engine.GetLatestVersionFolders(metadataRoot);
+        }
         
         resolvedTransaction.UpdatedAt = DateTime.UtcNow;
 
         var json = JsonSerializer.Serialize(resolvedTransaction, _jsonOptions);
         var changedFiles = new Dictionary<string, byte[]> { { "transaction_detail.json", System.Text.Encoding.UTF8.GetBytes(json) } };
 
-        await _engine.CommitAsync(metadataRoot, deviceId, CommitKind.Res, changedFiles);
+        var resolvedFolders = latestVersions.Select(v => v.FolderName).ToList();
+
+        await _engine.CommitAsync(metadataRoot, deviceId, CommitKind.Res, changedFiles, resolvedFolders: resolvedFolders);
     }
 
     public virtual async Task DeleteTripAsync(string tripSlug)

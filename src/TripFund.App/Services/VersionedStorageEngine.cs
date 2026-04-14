@@ -16,16 +16,49 @@ public class VersionFolderInfo
     public int Sequence { get; set; }
     public CommitKind Kind { get; set; }
     public string DeviceId { get; set; } = string.Empty;
+    public IReadOnlyList<string>? ResolvedFolders { get; set; }
 }
 
-public class VersionConflictException : Exception
+public class VersionedFolderConflictException : Exception
 {
-    public List<string> ConflictingFolderNames { get; }
+    public IReadOnlyList<string> DivergingVersions { get; }
+    public string? BaseVersion { get; }
 
-    public VersionConflictException(List<string> conflictingFolderNames)
-        : base($"Conflict detected between versions: {string.Join(", ", conflictingFolderNames)}")
+    public VersionedFolderConflictException(string message, IReadOnlyList<string> divergingVersions, string? baseVersion)
+        : base(message)
     {
-        ConflictingFolderNames = conflictingFolderNames;
+        DivergingVersions = divergingVersions;
+        BaseVersion = baseVersion;
+    }
+}
+
+public class TripMetadataConflictException : VersionedFolderConflictException
+{
+    public TripMetadataConflictException(IReadOnlyList<string> divergingVersions, string? baseVersion)
+        : base("Trip metadata conflict detected.", divergingVersions, baseVersion)
+    {
+    }
+}
+
+public class TransactionConflictException : VersionedFolderConflictException
+{
+    public string TransactionId { get; }
+
+    public TransactionConflictException(string transactionId, IReadOnlyList<string> divergingVersions, string? baseVersion)
+        : base($"Conflict detected in transaction {transactionId}.", divergingVersions, baseVersion)
+    {
+        TransactionId = transactionId;
+    }
+}
+
+public class SyncConflictException : Exception
+{
+    public IReadOnlyList<VersionedFolderConflictException> Conflicts { get; }
+
+    public SyncConflictException(IReadOnlyList<VersionedFolderConflictException> conflicts)
+        : base($"Synchronization aborted due to {conflicts.Count} conflicts.")
+    {
+        Conflicts = conflicts;
     }
 }
 
@@ -44,7 +77,22 @@ public class VersionedStorageEngine
     {
         if (!Directory.Exists(rootPath)) return new List<VersionFolderInfo>();
 
-        return GetVersionFolders(Directory.GetDirectories(rootPath).Select(Path.GetFileName)!);
+        var folderNames = Directory.GetDirectories(rootPath).Select(Path.GetFileName).Where(n => n != null).Cast<string>();
+        var versions = GetVersionFolders(folderNames);
+
+        foreach (var v in versions)
+        {
+            if (v.Kind == CommitKind.Res)
+            {
+                var resolvesFile = Path.Combine(rootPath, v.FolderName, ".resolves");
+                if (File.Exists(resolvesFile))
+                {
+                    v.ResolvedFolders = File.ReadAllLines(resolvesFile).Where(l => !string.IsNullOrWhiteSpace(l)).ToList();
+                }
+            }
+        }
+
+        return versions;
     }
 
     public List<VersionFolderInfo> GetVersionFolders(IEnumerable<string> folderNames)
@@ -81,14 +129,67 @@ public class VersionedStorageEngine
     {
         if (versions.Count == 0) return new List<VersionFolderInfo>();
 
-        var maxSequence = versions.Max(v => v.Sequence);
-        var latestAtSequence = versions.Where(v => v.Sequence == maxSequence).ToList();
+        var leaves = new List<VersionFolderInfo>();
+        foreach (var v in versions)
+        {
+            bool isSuperseded = false;
+            foreach (var other in versions)
+            {
+                if (other.FolderName == v.FolderName) continue;
 
-        // If there's a 'res' folder at the latest sequence, it wins over 'upd' or 'new'
-        var resVersions = latestAtSequence.Where(v => v.Kind == CommitKind.Res).ToList();
-        if (resVersions.Count > 0) return resVersions;
+                if (Supersedes(other, v, versions))
+                {
+                    isSuperseded = true;
+                    break;
+                }
+            }
+            if (!isSuperseded)
+            {
+                leaves.Add(v);
+            }
+        }
 
-        return latestAtSequence;
+        return leaves.OrderBy(v => v.Sequence).ToList();
+    }
+
+    private bool Supersedes(VersionFolderInfo A, VersionFolderInfo B, List<VersionFolderInfo> allVersions)
+    {
+        // 1. Device-Local Progression (Highest sequence for same device wins)
+        if (A.DeviceId == B.DeviceId && A.Sequence > B.Sequence)
+        {
+            return true;
+        }
+
+        // 2. Global Linear Progression (Sequence N+1 wins over N if N was unique)
+        if (A.Sequence == B.Sequence + 1)
+        {
+            int countAtBSeq = allVersions.Count(v => v.Sequence == B.Sequence);
+            if (countAtBSeq == 1) return true;
+        }
+
+        // 3. Explicit Resolution (RES wins over the exact folders it resolves)
+        if (A.Kind == CommitKind.Res && A.ResolvedFolders != null && A.ResolvedFolders.Contains(B.FolderName))
+        {
+            return true;
+        }
+
+        return false;
+    }
+
+    public string? GetLatestVersionFolder(string rootPath)
+    {
+        var versions = GetVersionFolders(rootPath);
+        var latest = GetLatestVersionFolders(versions);
+
+        if (latest.Count == 0) return null;
+        if (latest.Count > 1)
+        {
+            var diverging = latest.Select(v => v.FolderName).ToList();
+            var baseVer = GetBaseVersionFolder(rootPath, latest);
+            throw new VersionedFolderConflictException($"Conflict detected between versions: {string.Join(", ", diverging)}", diverging, baseVer);
+        }
+
+        return latest[0].FolderName;
     }
 
     public string? GetLatestVersionFolder(IEnumerable<string> folderNames)
@@ -99,10 +200,38 @@ public class VersionedStorageEngine
         if (latest.Count == 0) return null;
         if (latest.Count > 1)
         {
-            throw new VersionConflictException(latest.Select(v => v.FolderName).ToList());
+            var diverging = latest.Select(v => v.FolderName).ToList();
+            throw new VersionedFolderConflictException($"Conflict detected between versions: {string.Join(", ", diverging)}", diverging, null);
         }
 
         return latest[0].FolderName;
+    }
+
+    public string? GetBaseVersionFolder(string rootPath, List<VersionFolderInfo> leaves)
+    {
+        if (leaves.Count <= 1) return null;
+
+        var versions = GetVersionFolders(rootPath);
+        int minLeafSeq = leaves.Min(l => l.Sequence);
+
+        for (int s = minLeafSeq - 1; s >= 1; s--)
+        {
+            var atSeq = versions.Where(v => v.Sequence == s).ToList();
+            if (atSeq.Count == 1) return atSeq[0].FolderName;
+        }
+
+        return null;
+    }
+
+    public string? GetBaseVersionFolder(string rootPath, int conflictSequence)
+    {
+        // Keep this signature for backward compatibility or simple cases
+        var versions = GetVersionFolders(rootPath);
+        return versions
+            .Where(v => v.Sequence < conflictSequence)
+            .OrderByDescending(v => v.Sequence)
+            .Select(v => v.FolderName)
+            .FirstOrDefault();
     }
 
     public List<string> GetDivergingVersionFolders(IEnumerable<string> folderNames)
@@ -131,13 +260,19 @@ public class VersionedStorageEngine
         CommitKind kind, 
         Dictionary<string, byte[]> changedFiles, 
         List<string>? deletedFiles = null,
-        string? deletedInfo = null)
+        string? deletedInfo = null,
+        IEnumerable<string>? resolvedFolders = null)
     {
         var versions = GetVersionFolders(rootPath);
         int nextSeq = (versions.Count == 0) ? 1 : versions.Max(v => v.Sequence) + 1;
         string folderName = $"{nextSeq:D3}_{kind.ToString().ToUpperInvariant()}_{deviceId}";
         string newDirPath = Path.Combine(rootPath, folderName);
         Directory.CreateDirectory(newDirPath);
+
+        if (kind == CommitKind.Res && resolvedFolders != null)
+        {
+            await File.WriteAllLinesAsync(Path.Combine(newDirPath, ".resolves"), resolvedFolders);
+        }
 
         if (kind == CommitKind.Del)
         {
