@@ -70,7 +70,9 @@ public class VersionedStorageEngine
     {
         new(@"^\.synched$", RegexOptions.Compiled | RegexOptions.IgnoreCase),
         new(@"^\.synching$", RegexOptions.Compiled | RegexOptions.IgnoreCase),
-        new(@"\.remote-etag$", RegexOptions.Compiled | RegexOptions.IgnoreCase)
+        new(@"\.remote-etag$", RegexOptions.Compiled | RegexOptions.IgnoreCase),
+        new(@"^\.resolved_versions\.tf$", RegexOptions.Compiled | RegexOptions.IgnoreCase),
+        new(@"^\.deleted$", RegexOptions.Compiled | RegexOptions.IgnoreCase)
     };
 
     public List<VersionFolderInfo> GetVersionFolders(string rootPath)
@@ -84,7 +86,7 @@ public class VersionedStorageEngine
         {
             if (v.Kind == CommitKind.Res)
             {
-                var resolvesFile = Path.Combine(rootPath, v.FolderName, ".resolves");
+                var resolvesFile = Path.Combine(rootPath, v.FolderName, ".resolved_versions.tf");
                 if (File.Exists(resolvesFile))
                 {
                     v.ResolvedFolders = File.ReadAllLines(resolvesFile).Where(l => !string.IsNullOrWhiteSpace(l)).ToList();
@@ -271,7 +273,7 @@ public class VersionedStorageEngine
 
         if (kind == CommitKind.Res && resolvedFolders != null)
         {
-            await File.WriteAllLinesAsync(Path.Combine(newDirPath, ".resolves"), resolvedFolders);
+            await File.WriteAllLinesAsync(Path.Combine(newDirPath, ".resolved_versions.tf"), resolvedFolders);
         }
 
         if (kind == CommitKind.Del)

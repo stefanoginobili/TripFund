@@ -140,7 +140,7 @@ public class SyncConflictTests
 
         var resDir = Path.Combine(root, "003_RES_luigi");
         Directory.CreateDirectory(resDir);
-        await File.WriteAllLinesAsync(Path.Combine(resDir, ".resolves"), new[] { "002_UPD_mario", "002_UPD_carlo" });
+        await File.WriteAllLinesAsync(Path.Combine(resDir, ".resolved_versions.tf"), new[] { "002_UPD_mario", "002_UPD_carlo" });
 
         // Carlo creates a new commit at sequence 3, sitting alongside the RES
         Directory.CreateDirectory(Path.Combine(root, "003_UPD_carlo"));

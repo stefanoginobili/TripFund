@@ -58,7 +58,7 @@ Commits are **atomic**. A single version bump MUST be able to process a batch of
       - `author=Mario Rossi`: where "Mario Rossi" in this example is the author from the Global Settings.
       - `deletedAt=20260332T212354Z`: where the timestamp is the timestamp of the deletion time.
 - **`RES` (Resolution):** Closes a conflict state by merging multiple diverging branches. 
-    - **Rule:** The folder MUST contain a `.resolves` file listing the exact folder names of the branches it is merging (one per line). It contains the exact file payload (or `.deleted` marker) of the chosen winning state.
+    - **Rule:** The folder MUST contain a `.resolved_versions.tf` file listing the exact folder names of the branches it is merging (one per line). It contains the exact file payload (or `.deleted` marker) of the chosen winning state.
 
 ### 3.3. Standard Commit Operation Algorithm
 When a user modifies data (changing one or multiple files) and saves:
@@ -76,7 +76,7 @@ A version folder is a "Leaf" if it is NOT **superseded** by any other folder. A 
 A folder **A** supersedes folder **B** if:
 1.  **Device-Local Progression**: Both folders belong to the same `deviceId` and `A.Sequence > B.Sequence`.
 2.  **Global Linear Progression**: Folder `A` has sequence `B.Sequence + 1`, and `B` was the only folder at its sequence level.
-3.  **Explicit Resolution**: Folder `A` is a `RES` (Resolution) kind and its `.resolves` file explicitly lists `B.FolderName`.
+3.  **Explicit Resolution**: Folder `A` is a `RES` (Resolution) kind and its `.resolved_versions.tf` file explicitly lists `B.FolderName`.
 
 **Conflict State Behavior:**
 1.  **Thread Identification**: The engine identifies all current "Leaf" folders.
@@ -86,11 +86,11 @@ A folder **A** supersedes folder **B** if:
 **Resolution Algorithm:**
 1.  **User Selection**: The user chooses a winning state (or merges data) via the UI.
 2.  **Create RES folder**: The engine calculates `NextSeq = MAX(all_folders.Sequence) + 1` and creates a `[NextSeq]_RES_[deviceId]` folder.
-3.  **Explicit Linkage**: The engine writes a `.resolves` file inside the new `RES` folder containing the folder names of all current Leaves.
+3.  **Explicit Linkage**: The engine writes a `.resolved_versions.tf` file inside the new `RES` folder containing the folder names of all current Leaves.
 4.  **Payload**: The winning data payload is copied into the `RES` folder.
 
 **Resolution Invalidation (DAG Edge Case):**
-If a device was offline during a resolution and later uploads a new `UPD` or `DEL` (even with a lower sequence number than the `RES`), this new commit will not be superseded by the existing `RES` because it wasn't explicitly listed in the `.resolves` file. The engine will detect multiple Leaves again, re-triggering a conflict state. This ensures no data is ever silently lost.
+If a device was offline during a resolution and later uploads a new `UPD` or `DEL` (even with a lower sequence number than the `RES`), this new commit will not be superseded by the existing `RES` because it wasn't explicitly listed in the `.resolved_versions.tf` file. The engine will detect multiple Leaves again, re-triggering a conflict state. This ensures no data is ever silently lost.
 
 ## 5. Remote Storage Synchronization
 The synchronization process ensures the local offline-first storage and the remote provider (Microsoft OneDrive, Git, etc.) are eventually consistent. This process operates at the folder level, navigating recursively through the `trips/[TripSlug]` structure.
