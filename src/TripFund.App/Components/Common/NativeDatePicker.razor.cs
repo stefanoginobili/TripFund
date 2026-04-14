@@ -10,6 +10,7 @@ namespace TripFund.App.Components.Common
         [Parameter] public EventCallback<DateTime> ValueChanged { get; set; }
         [Parameter] public string? Label { get; set; }
         [Parameter] public string? Class { get; set; }
+        [Parameter] public bool IsReadonly { get; set; } = false;
 
         [Inject] private INativeDatePickerService DatePickerService { get; set; } = default!;
 

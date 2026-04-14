@@ -46,10 +46,11 @@
                              @bind-StartDate="config.StartDate"
                              @bind-EndDate="config.EndDate"
                              @bind-Description="config.Description"
-                             IsCreate="false" />
+                             IsCreate="false"
+                             IsReadonly="@isReadonly" />
 
             <!-- CURRENCIES SECTION -->
-            <CurrenciesForm @bind-Currencies="config.Currencies" />
+            <CurrenciesForm @bind-Currencies="config.Currencies" IsReadonly="@isReadonly" />
 
             <!-- PARTICIPANTS SECTION -->
             <section class="info-section">
@@ -137,122 +138,128 @@
                                     <span class="member-name-text">@member.Value.Name</span>
                                     <span class="member-slug-text">@member.Key</span>
                                 </div>
-                                <div class="more-actions-container">
-                                    <div class="action-trigger" @onclick="() => ToggleMemberMenu(member.Key)">
-                                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                            <circle cx="12" cy="5" r="1"></circle>
-                                            <circle cx="12" cy="12" r="1"></circle>
-                                            <circle cx="12" cy="19" r="1"></circle>
-                                        </svg>
-                                    </div>
-                                    @if (openMenuMemberSlug == member.Key)
-                                    {
-                                        var keys = config.Members.Keys.ToList();
-                                        int index = keys.IndexOf(member.Key);
-                                        bool isFirst = index == 0;
-                                        bool isLast = index == keys.Count - 1;
-
-                                        <div class="popover-overlay" @onclick="() => openMenuMemberSlug = null" @onclick:stopPropagation></div>
-                                        <div class="dropdown-menu-vibe" @onclick:stopPropagation>
-                                            <div class="dropdown-item-vibe" @onclick="async () => { openMenuMemberSlug = null; await StartEditMember(member.Key, member.Value); }">
-                                                Modifica
-                                            </div>
-                                            <div class="dropdown-item-vibe @(isFirst ? "disabled" : "")" @onclick="() => { if(!isFirst) { openMenuMemberSlug = null; MoveMemberUp(member.Key); } }">
-                                                Sposta su
-                                            </div>
-                                            <div class="dropdown-item-vibe @(isLast ? "disabled" : "")" @onclick="() => { if(!isLast) { openMenuMemberSlug = null; MoveMemberDown(member.Key); } }">
-                                                Sposta giù
-                                            </div>
-                                            <div class="dropdown-item-vibe text-danger" @onclick="async () => { openMenuMemberSlug = null; await ConfirmDeleteMember(member.Key); }">
-                                                Elimina
-                                            </div>
+                                @if (!isReadonly)
+                                {
+                                    <div class="more-actions-container">
+                                        <div class="action-trigger" @onclick="() => ToggleMemberMenu(member.Key)">
+                                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                <circle cx="12" cy="5" r="1"></circle>
+                                                <circle cx="12" cy="12" r="1"></circle>
+                                                <circle cx="12" cy="19" r="1"></circle>
+                                            </svg>
                                         </div>
-                                    }
-                                </div>
+                                        @if (openMenuMemberSlug == member.Key)
+                                        {
+                                            var keys = config.Members.Keys.ToList();
+                                            int index = keys.IndexOf(member.Key);
+                                            bool isFirst = index == 0;
+                                            bool isLast = index == keys.Count - 1;
+
+                                            <div class="popover-overlay" @onclick="() => openMenuMemberSlug = null" @onclick:stopPropagation></div>
+                                            <div class="dropdown-menu-vibe" @onclick:stopPropagation>
+                                                <div class="dropdown-item-vibe" @onclick="async () => { openMenuMemberSlug = null; await StartEditMember(member.Key, member.Value); }">
+                                                    Modifica
+                                                </div>
+                                                <div class="dropdown-item-vibe @(isFirst ? "disabled" : "")" @onclick="() => { if(!isFirst) { openMenuMemberSlug = null; MoveMemberUp(member.Key); } }">
+                                                    Sposta su
+                                                </div>
+                                                <div class="dropdown-item-vibe @(isLast ? "disabled" : "")" @onclick="() => { if(!isLast) { openMenuMemberSlug = null; MoveMemberDown(member.Key); } }">
+                                                    Sposta giù
+                                                </div>
+                                                <div class="dropdown-item-vibe text-danger" @onclick="async () => { openMenuMemberSlug = null; await ConfirmDeleteMember(member.Key); }">
+                                                    Elimina
+                                                </div>
+                                            </div>
+                                        }
+                                    </div>
+                                }
                             </div>
                         }
                     }
                 </div>
 
-                <div class="add-member-dashed @(isAddingMember ? "expanded" : "")" @onclick="() => { if(!isAddingMember) { CancelMemberEdit(); isAddingMember = true; } }">
-                    @if (!isAddingMember)
-                    {
-                        <div class="dashed-btn-content">
-                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="me-2">
-                                <line x1="12" y1="5" x2="12" y2="19"></line>
-                                <line x1="5" y1="12" x2="19" y2="12"></line>
-                            </svg>
-                            <span>Aggiungi Partecipante</span>
-                        </div>
-                    }
-                    else
-                    {
-                        <div class="new-member-form" @onclick:stopPropagation>
-                            <div class="new-member-header">
-                                <span class="user-plus-icon">
-                                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                        <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
-                                        <circle cx="8.5" cy="7" r="4"></circle>
-                                        <line x1="20" y1="8" x2="20" y2="14"></line>
-                                        <line x1="17" y1="11" x2="23" y2="11"></line>
-                                    </svg>
-                                </span>
-                                <span class="new-member-title">Nuovo Partecipante</span>
+                @if (!isReadonly)
+                {
+                    <div class="add-member-dashed @(isAddingMember ? "expanded" : "")" @onclick="() => { if(!isAddingMember) { CancelMemberEdit(); isAddingMember = true; } }">
+                        @if (!isAddingMember)
+                        {
+                            <div class="dashed-btn-content">
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="me-2">
+                                    <line x1="12" y1="5" x2="12" y2="19"></line>
+                                    <line x1="5" y1="12" x2="19" y2="12"></line>
+                                </svg>
+                                <span>Aggiungi Partecipante</span>
                             </div>
+                        }
+                        else
+                        {
+                            <div class="new-member-form" @onclick:stopPropagation>
+                                <div class="new-member-header">
+                                    <span class="user-plus-icon">
+                                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                            <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                                            <circle cx="8.5" cy="7" r="4"></circle>
+                                            <line x1="20" y1="8" x2="20" y2="14"></line>
+                                            <line x1="17" y1="11" x2="23" y2="11"></line>
+                                        </svg>
+                                    </span>
+                                    <span class="new-member-title">Nuovo Partecipante</span>
+                                </div>
 
-                            <div class="member-form-row">
-                                <div class="avatar-col">
-                                    <div class="avatar-input-box" @onclick="ToggleEmojiPicker">
-                                        <span>@newMemberAvatar</span>
-                                        @if (showEmojiPicker)
-                                        {
-                                            <div class="popover-overlay" @onclick="ToggleEmojiPicker" @onclick:stopPropagation></div>
-                                            <div class="emoji-picker-popover" @onclick:stopPropagation>
-                                                <div class="emoji-grid">
-                                                    @foreach (var emoji in emojis)
-                                                    {
-                                                        <button class="emoji-btn @(newMemberAvatar == emoji ? "selected" : "")" @onclick="() => SelectEmoji(emoji)">
-                                                            @emoji
-                                                        </button>
-                                                    }
+                                <div class="member-form-row">
+                                    <div class="avatar-col">
+                                        <div class="avatar-input-box" @onclick="ToggleEmojiPicker">
+                                            <span>@newMemberAvatar</span>
+                                            @if (showEmojiPicker)
+                                            {
+                                                <div class="popover-overlay" @onclick="ToggleEmojiPicker" @onclick:stopPropagation></div>
+                                                <div class="emoji-picker-popover" @onclick:stopPropagation>
+                                                    <div class="emoji-grid">
+                                                        @foreach (var emoji in emojis)
+                                                        {
+                                                            <button class="emoji-btn @(newMemberAvatar == emoji ? "selected" : "")" @onclick="() => SelectEmoji(emoji)">
+                                                                @emoji
+                                                            </button>
+                                                        }
+                                                    </div>
                                                 </div>
-                                            </div>
-                                        }
+                                            }
+                                        </div>
+                                    </div>
+                                    <div class="name-col">
+                                        <label>NOME</label>
+                                        <input type="text" @bind="newMemberName" @oninput="OnNewMemberNameInput" @onblur="TrimMemberName" placeholder="Esempio: Andrea" />
                                     </div>
                                 </div>
-                                <div class="name-col">
-                                    <label>NOME</label>
-                                    <input type="text" @bind="newMemberName" @oninput="OnNewMemberNameInput" @onblur="TrimMemberName" placeholder="Esempio: Andrea" />
-                                </div>
-                            </div>
 
-                            <div class="member-form-full-row">
-                                <label>EMAIL</label>
-                                <input type="email" @bind="newMemberEmail" @onblur="TrimMemberEmail" placeholder="andrea@esempio.com" />
-                            </div>
+                                <div class="member-form-full-row">
+                                    <label>EMAIL</label>
+                                    <input type="email" @bind="newMemberEmail" @onblur="TrimMemberEmail" placeholder="andrea@esempio.com" />
+                                </div>
 
-                            <div class="member-form-footer">
-                                <div class="slug-col">
-                                    <label>SLUG</label>
-                                    <input type="text" @bind="newMemberSlug" placeholder="andrea-7890" />
-                                </div>
-                                <div class="action-buttons">
-                                    <button class="confirm-btn" @onclick="AddMember">
-                                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
-                                            <polyline points="20 6 9 17 4 12"></polyline>
-                                        </svg>
-                                    </button>
-                                    <button class="cancel-btn" @onclick="() => isAddingMember = false">
-                                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                            <line x1="18" y1="6" x2="6" y2="18"></line>
-                                            <line x1="6" y1="6" x2="18" y2="18"></line>
-                                        </svg>
-                                    </button>
+                                <div class="member-form-footer">
+                                    <div class="slug-col">
+                                        <label>SLUG</label>
+                                        <input type="text" @bind="newMemberSlug" placeholder="andrea-7890" />
+                                    </div>
+                                    <div class="action-buttons">
+                                        <button class="confirm-btn" @onclick="AddMember">
+                                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+                                                <polyline points="20 6 9 17 4 12"></polyline>
+                                            </svg>
+                                        </button>
+                                        <button class="cancel-btn" @onclick="() => isAddingMember = false">
+                                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                <line x1="18" y1="6" x2="6" y2="18"></line>
+                                                <line x1="6" y1="6" x2="18" y2="18"></line>
+                                            </svg>
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
-                        </div>
-                    }
-                </div>
+                        }
+                    </div>
+                }
             </section>
 
             <div class="error-container">

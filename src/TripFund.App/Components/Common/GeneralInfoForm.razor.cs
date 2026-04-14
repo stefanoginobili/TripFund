@@ -25,6 +25,7 @@ namespace TripFund.App.Components.Common
         [Parameter] public string Suffix { get; set; } = "";
 
         [Parameter] public bool IsCreate { get; set; } = false;
+        [Parameter] public bool IsReadonly { get; set; } = false;
 
         private string FullSlug => SlugUtility.GenerateSlug(Slug + (string.IsNullOrEmpty(Suffix) ? "" : "_" + Suffix));
 

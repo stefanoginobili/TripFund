@@ -61,107 +61,113 @@
                     <span class="currency-code">@curr.Key</span>
                     <div class="currency-value-container">
                         <span class="currency-quota-value">@FormatCurrencyValue(curr.Value.ExpectedQuotaPerMember, curr.Value)</span>
-                        <div class="more-actions-container">
-                            <div class="action-trigger" @onclick="() => ToggleCurrencyMenu(curr.Key)">
-                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                    <circle cx="12" cy="5" r="1"></circle>
-                                    <circle cx="12" cy="12" r="1"></circle>
-                                    <circle cx="12" cy="19" r="1"></circle>
-                                </svg>
-                            </div>
-                            @if (openMenuCurrencyCode == curr.Key)
-                            {
-                                var keys = Currencies.Keys.ToList();
-                                int index = keys.IndexOf(curr.Key);
-                                bool isFirst = index == 0;
-                                bool isLast = index == keys.Count - 1;
-
-                                <div class="popover-overlay" @onclick="() => openMenuCurrencyCode = null" @onclick:stopPropagation></div>
-                                <div class="dropdown-menu-vibe" @onclick:stopPropagation>
-                                    <div class="dropdown-item-vibe" @onclick="() => { openMenuCurrencyCode = null; StartEditCurrency(curr.Key, curr.Value); }">
-                                        Modifica
-                                    </div>
-                                    <div class="dropdown-item-vibe @(isFirst ? "disabled" : "")" @onclick="async () => { if(!isFirst) { openMenuCurrencyCode = null; await MoveCurrencyUp(curr.Key); } }">
-                                        Sposta su
-                                    </div>
-                                    <div class="dropdown-item-vibe @(isLast ? "disabled" : "")" @onclick="async () => { if(!isLast) { openMenuCurrencyCode = null; await MoveCurrencyDown(curr.Key); } }">
-                                        Sposta giù
-                                    </div>
-                                    <div class="dropdown-item-vibe text-danger" @onclick="async () => { openMenuCurrencyCode = null; await ConfirmDeleteCurrency(curr.Key); }">
-                                        Elimina
-                                    </div>
+                        @if (!IsReadonly)
+                        {
+                            <div class="more-actions-container">
+                                <div class="action-trigger" @onclick="() => ToggleCurrencyMenu(curr.Key)">
+                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <circle cx="12" cy="5" r="1"></circle>
+                                        <circle cx="12" cy="12" r="1"></circle>
+                                        <circle cx="12" cy="19" r="1"></circle>
+                                    </svg>
                                 </div>
-                            }
-                        </div>
+                                @if (openMenuCurrencyCode == curr.Key)
+                                {
+                                    var keys = Currencies.Keys.ToList();
+                                    int index = keys.IndexOf(curr.Key);
+                                    bool isFirst = index == 0;
+                                    bool isLast = index == keys.Count - 1;
+
+                                    <div class="popover-overlay" @onclick="() => openMenuCurrencyCode = null" @onclick:stopPropagation></div>
+                                    <div class="dropdown-menu-vibe" @onclick:stopPropagation>
+                                        <div class="dropdown-item-vibe" @onclick="() => { openMenuCurrencyCode = null; StartEditCurrency(curr.Key, curr.Value); }">
+                                            Modifica
+                                        </div>
+                                        <div class="dropdown-item-vibe @(isFirst ? "disabled" : "")" @onclick="async () => { if(!isFirst) { openMenuCurrencyCode = null; await MoveCurrencyUp(curr.Key); } }">
+                                            Sposta su
+                                        </div>
+                                        <div class="dropdown-item-vibe @(isLast ? "disabled" : "")" @onclick="async () => { if(!isLast) { openMenuCurrencyCode = null; await MoveCurrencyDown(curr.Key); } }">
+                                            Sposta giù
+                                        </div>
+                                        <div class="dropdown-item-vibe text-danger" @onclick="async () => { openMenuCurrencyCode = null; await ConfirmDeleteCurrency(curr.Key); }">
+                                            Elimina
+                                        </div>
+                                    </div>
+                                }
+                            </div>
+                        }
                     </div>
                 </div>
             }
         }
     </div>
 
-    <div class="add-currency-dashed @(isAddingCurrency ? "expanded" : "")" @onclick="() => { if(!isAddingCurrency) { CancelCurrencyEdit(); isAddingCurrency = true; } }">
-        @if (!isAddingCurrency)
-        {
-            <div class="dashed-btn-content">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="me-2">
-                    <line x1="12" y1="5" x2="12" y2="19"></line>
-                    <line x1="5" y1="12" x2="19" y2="12"></line>
-                </svg>
-                <span>Aggiungi Cassa</span>
-            </div>
-        }
-        else
-        {
-            <div class="new-currency-form" @onclick:stopPropagation>
-                <div class="new-currency-header">
-                    <span class="wallet-icon">
-                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M20 12V8H6a2 2 0 0 1-2-2c0-1.1.9-2 2-2h12v4"></path>
-                            <path d="M4 6v12c0 1.1.9 2 2 2h14v-4"></path>
-                            <path d="M18 12a2 2 0 0 0-2 2c0 1.1.9 2 2 2h4v-4h-4z"></path>
-                        </svg>
-                    </span>
-                    <span class="new-currency-title">Nuova Cassa</span>
+    @if (!IsReadonly)
+    {
+        <div class="add-currency-dashed @(isAddingCurrency ? "expanded" : "")" @onclick="() => { if(!isAddingCurrency) { CancelCurrencyEdit(); isAddingCurrency = true; } }">
+            @if (!isAddingCurrency)
+            {
+                <div class="dashed-btn-content">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="me-2">
+                        <line x1="12" y1="5" x2="12" y2="19"></line>
+                        <line x1="5" y1="12" x2="19" y2="12"></line>
+                    </svg>
+                    <span>Aggiungi Cassa</span>
                 </div>
-                
-                <div class="new-currency-grid">
-                    <div class="new-curr-col">
-                        <label>CODICE</label>
-                        <input type="text" @bind="newCurrCode" @bind:event="oninput" @onblur="TrimCode" placeholder="EUR" />
-                    </div>
-                    <div class="new-curr-col">
-                        <label>SIMBOLO</label>
-                        <input type="text" @bind="newCurrSymbol" @bind:event="oninput" @onblur="TrimSymbol" placeholder="€" />
-                    </div>
-
-                    <div class="new-curr-col">
-                        <label>DECIMALI</label>
-                        <input type="text" inputmode="numeric" value="@newCurrDecimals" @oninput="OnDecimalsChanged" onfocus="headerLogic.selectText(this)" />
-                    </div>
-                </div>
-                
-                <div class="new-currency-footer">
-                    <div class="new-curr-col quota-col">
-                        <label>QUOTA</label>
-                        <input type="text" inputmode="decimal" value="@newCurrQuotaString" @oninput="OnQuotaChanged" onfocus="headerLogic.selectText(this)" placeholder="1000" />
-                    </div>
-                    <div class="action-buttons">
-                        <button class="confirm-btn" @onmousedown="AddOrUpdateCurrency" @onclick="AddOrUpdateCurrency">
-                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
-                                <polyline points="20 6 9 17 4 12"></polyline>
-                            </svg>
-                        </button>
-                        <button class="cancel-btn" @onmousedown="() => isAddingCurrency = false" @onclick="() => isAddingCurrency = false">
+            }
+            else
+            {
+                <div class="new-currency-form" @onclick:stopPropagation>
+                    <div class="new-currency-header">
+                        <span class="wallet-icon">
                             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                <line x1="18" y1="6" x2="6" y2="18"></line>
-                                <line x1="6" y1="6" x2="18" y2="18"></line>
+                                <path d="M20 12V8H6a2 2 0 0 1-2-2c0-1.1.9-2 2-2h12v4"></path>
+                                <path d="M4 6v12c0 1.1.9 2 2 2h14v-4"></path>
+                                <path d="M18 12a2 2 0 0 0-2 2c0 1.1.9 2 2 2h4v-4h-4z"></path>
                             </svg>
-                        </button>
+                        </span>
+                        <span class="new-currency-title">Nuova Cassa</span>
+                    </div>
+                    
+                    <div class="new-currency-grid">
+                        <div class="new-curr-col">
+                            <label>CODICE</label>
+                            <input type="text" @bind="newCurrCode" @bind:event="oninput" @onblur="TrimCode" placeholder="EUR" />
+                        </div>
+                        <div class="new-curr-col">
+                            <label>SIMBOLO</label>
+                            <input type="text" @bind="newCurrSymbol" @bind:event="oninput" @onblur="TrimSymbol" placeholder="€" />
+                        </div>
+
+                        <div class="new-curr-col">
+                            <label>DECIMALI</label>
+                            <input type="text" inputmode="numeric" value="@newCurrDecimals" @oninput="OnDecimalsChanged" onfocus="headerLogic.selectText(this)" />
+                        </div>
+                    </div>
+                    
+                    <div class="new-currency-footer">
+                        <div class="new-curr-col quota-col">
+                            <label>QUOTA</label>
+                            <input type="text" inputmode="decimal" value="@newCurrQuotaString" @oninput="OnQuotaChanged" onfocus="headerLogic.selectText(this)" placeholder="1000" />
+                        </div>
+                        <div class="action-buttons">
+                            <button class="confirm-btn" @onmousedown="AddOrUpdateCurrency" @onclick="AddOrUpdateCurrency">
+                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+                                    <polyline points="20 6 9 17 4 12"></polyline>
+                                </svg>
+                            </button>
+                            <button class="cancel-btn" @onmousedown="() => isAddingCurrency = false" @onclick="() => isAddingCurrency = false">
+                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                                </svg>
+                            </button>
+                        </div>
                     </div>
                 </div>
-            </div>
-        }
-    </div>
+            }
+        </div>
+    }
 
     @if (!string.IsNullOrEmpty(error))
     {

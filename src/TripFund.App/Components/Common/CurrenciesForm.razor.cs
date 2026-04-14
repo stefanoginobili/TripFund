@@ -14,6 +14,7 @@ namespace TripFund.App.Components.Common
         [Parameter] public Dictionary<string, Currency> Currencies { get; set; } = new();
         [Parameter] public EventCallback<Dictionary<string, Currency>> CurrenciesChanged { get; set; }
         [Parameter] public bool OpenNewCurrencyOnOpen { get; set; } = false;
+        [Parameter] public bool IsReadonly { get; set; } = false;
 
         private string error = "";
         private string newCurrCode = "";

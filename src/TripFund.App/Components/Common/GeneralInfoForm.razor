@@ -5,7 +5,7 @@
     
         <div class="form-group-vibe">
             <label class="form-label-vibe">Nome Viaggio</label>
-            <input type="text" class="form-control-vibe" value="@Name" @oninput="OnNameInput" @onblur="TrimName" placeholder="es. Patagonia 2026" />
+            <input type="text" class="form-control-vibe @(IsReadonly ? "readonly-input" : "")" value="@Name" @oninput="OnNameInput" @onblur="TrimName" placeholder="es. Patagonia 2026" readonly="@IsReadonly" />
         </div>
 
         <div class="form-group-vibe">
@@ -20,8 +20,8 @@
         </div>
 
         <div class="row-group">
-            <NativeDatePicker Label="Data Inizio" Value="StartDate" ValueChanged="OnStartDateChanged" Class="flex-1" />
-            <NativeDatePicker Label="Data Fine" Value="EndDate" ValueChanged="OnEndDateChanged" Class="flex-1" />
+            <NativeDatePicker Label="Data Inizio" Value="StartDate" ValueChanged="OnStartDateChanged" Class="flex-1" IsReadonly="@IsReadonly" />
+            <NativeDatePicker Label="Data Fine" Value="EndDate" ValueChanged="OnEndDateChanged" Class="flex-1" IsReadonly="@IsReadonly" />
         </div>
 
         @if (!string.IsNullOrEmpty(dateError))
@@ -31,7 +31,7 @@
 
         <div class="form-group-vibe">
             <label class="form-label-vibe">Descrizione</label>
-            <textarea class="form-control-vibe" value="@Description" @oninput="OnDescriptionInput" @onblur="TrimDescription" placeholder="Aggiungi una descrizione..." rows="3"></textarea>
+            <textarea class="form-control-vibe @(IsReadonly ? "readonly-input" : "")" value="@Description" @oninput="OnDescriptionInput" @onblur="TrimDescription" placeholder="Aggiungi una descrizione..." rows="3" readonly="@IsReadonly"></textarea>
         </div>
     </div>
 </section>
@@ -44,10 +44,13 @@
         align-items: center;
     }
 
-    .input-wrapper.read-only .form-control-vibe {
+    .input-wrapper.read-only .form-control-vibe, .form-control-vibe.readonly-input {
         background-color: #E9ECEF;
         color: #6C757D;
         font-style: italic;
+    }
+
+    .input-wrapper.read-only .form-control-vibe {
         padding-right: 3rem;
     }
 
