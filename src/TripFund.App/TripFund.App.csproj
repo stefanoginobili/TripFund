@@ -57,6 +57,9 @@
         <!-- Custom Fonts -->
         <MauiFont Include="Resources\Fonts\*" />
 
+        <!-- Embed fonts for PDF report -->
+        <EmbeddedResource Include="Resources\Raw\Fonts\*.ttf" />
+
         <!-- Raw Assets (also remove the "Resources\Raw" prefix) -->
         <MauiAsset Include="Resources\Raw\**" LogicalName="%(RecursiveDir)%(Filename)%(Extension)" />
     </ItemGroup>
@@ -67,6 +70,7 @@
         <PackageReference Include="Microsoft.AspNetCore.Components.WebView.Maui" Version="$(MauiVersion)" />
         <PackageReference Include="Microsoft.Extensions.Logging.Debug" Version="10.0.0" />
         <PackageReference Include="Microsoft.AspNetCore.WebUtilities" Version="9.0.0" />
+        <PackageReference Include="PDFsharp" Version="6.2.4" />
     </ItemGroup>
 
     <Target Name="SwitchInfoPlist" BeforeTargets="BeforeBuild" Condition="'$(TargetFramework)' == 'net9.0-ios'">

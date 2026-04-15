@@ -1,5 +1,7 @@
 using Microsoft.AspNetCore.Components;
 using Microsoft.JSInterop;
+using Microsoft.Maui.ApplicationModel;
+using Microsoft.Maui.Storage;
 using TripFund.App.Models;
 using TripFund.App.Services;
 using TripFund.App.Utilities;
@@ -12,6 +14,7 @@ namespace TripFund.App.Components.Pages
         [Inject] private NavigationManager Nav { get; set; } = default!;
         [Inject] private IJSRuntime JSRuntime { get; set; } = default!;
         [Inject] private IRemoteStorageService RemoteStorage { get; set; } = default!;
+        [Inject] private PdfReportService PdfService { get; set; } = default!;
 
         [Parameter] public string tripSlug { get; set; } = "";
         [SupplyParameterFromQuery] public string? currency { get; set; }
@@ -91,6 +94,26 @@ namespace TripFund.App.Components.Pages
         private void CloseTransactionModal()
         {
             isTransactionModalOpen = false;
+        }
+
+        private async Task GenerateReport()
+        {
+            if (config == null) return;
+            
+            isMenuOpen = false;
+            try
+            {
+                var filePath = await PdfService.GenerateExpenseReportAsync(config, transactions);
+                await Launcher.Default.OpenAsync(new OpenFileRequest
+                {
+                    File = new ReadOnlyFile(filePath)
+                });
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error generating report: {ex}");
+                // In a real app, show an alert to the user.
+            }
         }
 
         private void EditTransaction(Transaction t)
