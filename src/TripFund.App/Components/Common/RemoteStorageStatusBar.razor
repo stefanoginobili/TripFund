@@ -6,32 +6,70 @@
 
 @if (!string.IsNullOrEmpty(remoteStorageProvider))
 {
-    <div class="sync-status-container">
-        <div class="sync-status-card">
-            <div class="sync-indicator">
-                <img src="images/@(remoteStorageProvider).svg" width="20" height="20" alt="@remoteStorageProvider" />
-            </div>
-            <div class="sync-info">
-                @if (isSyncing)
+    <div class="sync-overlay @(IsModal ? "visible" : "")"></div>
+    <div class="sync-status-container @(IsModal ? "modal-container" : "")">
+        <div class="sync-status-card @(IsModal ? "modal-active" : "")">
+            <div class="sync-header">
+                <div class="sync-indicator">
+                    <img src="images/@(remoteStorageProvider).svg" width="20" height="20" alt="@remoteStorageProvider" />
+                </div>
+                
+                @if (IsModal)
                 {
-                    <span class="sync-text syncing">Sincronizzazione in corso...</span>
+                    <button class="sync-now-btn @(isSyncing ? "spinning" : "")" disabled="@isSyncing">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M23 4v6h-6"></path>
+                            <path d="M1 20v-6h6"></path>
+                            <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+                        </svg>
+                    </button>
+                }
+            </div>
+
+            <div class="sync-info">
+                @if (IsModal)
+                {
+                    <div class="modal-content">
+                        @if (isSyncing)
+                        {
+                            <span class="sync-title syncing">Sincronizzazione in corso...</span>
+                            <p class="sync-warning">Ti invitiamo a rimanere su questa pagina durante la sincronizzazione per evitare che il processo venga interrotto dal sistema.</p>
+                        }
+                        else if (!string.IsNullOrEmpty(syncError))
+                        {
+                            <span class="sync-title error">Sincronizzazione fallita</span>
+                            <p class="sync-error-msg">@syncError</p>
+                            <button class="btn-dismiss" @onclick="DismissError">Ok</button>
+                        }
+                    </div>
                 }
                 else
                 {
-                    <span class="sync-text">@GetRelativeSyncTime(lastSynchronized)</span>
-                }
-                @if (isReadonly)
-                {
-                    <span class="sync-text readonly-label">Sola lettura</span>
+                    @if (isSyncing)
+                    {
+                        <span class="sync-text syncing">Sincronizzazione in corso...</span>
+                    }
+                    else
+                    {
+                        <span class="sync-text">@GetRelativeSyncTime(lastSynchronized)</span>
+                    }
+                    @if (isReadonly)
+                    {
+                        <span class="sync-text readonly-label">Sola lettura</span>
+                    }
                 }
             </div>
-            <button class="sync-now-btn @(isSyncing ? "spinning" : "")" @onclick="TriggerSync" disabled="@isSyncing">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M23 4v6h-6"></path>
-                    <path d="M1 20v-6h6"></path>
-                    <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
-                </svg>
-            </button>
+
+            @if (!IsModal)
+            {
+                <button class="sync-now-btn @(isSyncing ? "spinning" : "")" @onclick="TriggerSync" disabled="@isSyncing">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M23 4v6h-6"></path>
+                        <path d="M1 20v-6h6"></path>
+                        <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+                    </svg>
+                </button>
+            }
         </div>
     </div>
 }
@@ -44,7 +82,10 @@
     private DateTime? lastSynchronized;
     private bool isReadonly = false;
     private bool isSyncing = false;
+    private string? syncError;
     private System.Timers.Timer? refreshTimer;
+
+    private bool IsModal => isSyncing || !string.IsNullOrEmpty(syncError);
 
     protected override async Task OnInitializedAsync()
     {
@@ -94,14 +135,23 @@
     {
         if (isSyncing) return;
         
+        syncError = null;
         try
         {
             await RemoteStorage.SynchronizeAsync(TripSlug);
         }
         catch (Exception ex)
         {
+            syncError = ex.Message;
             Console.WriteLine($"Sync failed: {ex.Message}");
+            await InvokeAsync(StateHasChanged);
         }
+    }
+
+    private void DismissError()
+    {
+        syncError = null;
+        StateHasChanged();
     }
 
     private string GetRelativeSyncTime(DateTime? syncTime)
@@ -139,6 +189,42 @@
 }
 
 <style>
+    .sync-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
+        background: rgba(0,0,0,0.5);
+        z-index: 1000;
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.3s ease;
+        backdrop-filter: blur(2px);
+    }
+
+    .sync-overlay.visible {
+        opacity: 1;
+        pointer-events: all;
+    }
+
+    .sync-status-container {
+        transition: all 0.3s ease;
+    }
+
+    .sync-status-container.modal-container {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 1001;
+        pointer-events: none;
+    }
+
     .sync-status-card {
         display: flex;
         align-items: center;
@@ -147,6 +233,31 @@
         border-radius: 16px;
         box-shadow: 0 2px 8px rgba(0,0,0,0.02);
         border: 1px solid #F0F0F0;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        width: 100%;
+        max-width: 100%;
+        pointer-events: auto;
+    }
+
+    .sync-status-card.modal-active {
+        flex-direction: column;
+        padding: 2rem;
+        width: 90%;
+        max-width: 400px;
+        box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+        border: none;
+    }
+
+    .sync-header {
+        display: flex;
+        align-items: center;
+    }
+
+    .modal-active .sync-header {
+        justify-content: center;
+        gap: 1rem;
+        width: 100%;
+        margin-bottom: 1.5rem;
     }
 
     .sync-info {
@@ -154,6 +265,54 @@
         display: flex;
         flex-direction: column;
         align-items: center;
+    }
+
+    .modal-active .sync-info {
+        text-align: center;
+    }
+
+    .modal-content {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 0.75rem;
+    }
+
+    .sync-title {
+        font-size: 1.25rem;
+        font-weight: 700;
+        color: #212529;
+    }
+
+    .sync-title.syncing {
+        color: #20563C;
+    }
+
+    .sync-title.error {
+        color: #DC3545;
+    }
+
+    .sync-warning {
+        font-size: 0.95rem;
+        color: #6C757D;
+        line-height: 1.5;
+        margin: 0;
+    }
+
+    .sync-error-msg {
+        font-size: 0.95rem;
+        color: #DC3545;
+        margin-bottom: 1rem;
+    }
+
+    .btn-dismiss {
+        background-color: #20563C;
+        color: white;
+        border: none;
+        padding: 0.5rem 2rem;
+        border-radius: 8px;
+        font-weight: 600;
+        cursor: pointer;
     }
 
     .sync-text {
@@ -181,6 +340,16 @@
         background-color: #F8FBF9;
         border-radius: 8px;
         border: 1px solid #E9ECEF;
+    }
+
+    .modal-active .sync-indicator {
+        width: 48px;
+        height: 48px;
+    }
+
+    .modal-active .sync-indicator img {
+        width: 32px;
+        height: 32px;
     }
 
     .sync-now-btn {
