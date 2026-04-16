@@ -87,8 +87,12 @@ public class OneDriveRemoteStorageService : IRemoteStorageService, IRemoteFileSy
         if (latestVersionName == null) return null;
         var latestVersion = children.First(c => c.Name == latestVersionName);
 
-        // 3. Find trip_config.json inside the version folder
-        var configFile = await GetChildItemAsync(latestVersion.Id, "trip_config.json", parameters);
+        // 3. Find .data subfolder inside the version folder
+        var dataFolder = await GetChildItemAsync(latestVersion.Id, ".data", parameters);
+        if (dataFolder == null || dataFolder.Folder == null) return null;
+
+        // 4. Find trip_config.json inside the .data folder
+        var configFile = await GetChildItemAsync(dataFolder.Id, "trip_config.json", parameters);
         if (configFile == null) return null;
 
         var configJson = await DownloadFileContentAsync(configFile.Id, parameters);

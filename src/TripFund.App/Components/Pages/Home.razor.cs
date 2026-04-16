@@ -167,6 +167,10 @@ namespace TripFund.App.Components.Pages
                 {
                     var settings = await Storage.GetAppSettingsAsync();
                     var deviceId = settings?.DeviceId ?? "unknown";
+                    
+                    // Ensure the ID matches our generated local slug
+                    remoteConfig.Id = slug;
+                    
                     await Storage.SaveTripConfigAsync(slug, remoteConfig, deviceId);
                 }
 

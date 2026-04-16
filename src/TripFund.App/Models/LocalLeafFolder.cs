@@ -1,0 +1,117 @@
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using System.Threading.Tasks;
+
+namespace TripFund.App.Models;
+
+public class LocalLeafFolder : LeafFolder
+{
+    private readonly string _path;
+    private const string DataFolderName = ".data";
+    private const string MetadataFileName = ".metadata";
+
+    public LocalLeafFolder(string path)
+    {
+        _path = path;
+    }
+
+    public override async Task<Dictionary<string, string>> GetMetadataAsync()
+    {
+        var metadataPath = Path.Combine(_path, MetadataFileName);
+        var result = new Dictionary<string, string>();
+        if (File.Exists(metadataPath))
+        {
+            var lines = await File.ReadAllLinesAsync(metadataPath);
+            foreach (var line in lines)
+            {
+                var parts = line.Split('=', 2);
+                if (parts.Length == 2)
+                {
+                    result[parts[0]] = parts[1];
+                }
+            }
+        }
+        return result;
+    }
+
+    public override async Task SaveMetadataAsync(Dictionary<string, string> metadata)
+    {
+        if (!Directory.Exists(_path)) Directory.CreateDirectory(_path);
+        var metadataPath = Path.Combine(_path, MetadataFileName);
+        var lines = metadata.Select(kv => $"{kv.Key}={kv.Value}");
+        await File.WriteAllLinesAsync(metadataPath, lines);
+    }
+
+    public override Task<bool> IsDataEmptyAsync()
+    {
+        var dataPath = Path.Combine(_path, DataFolderName);
+        if (!Directory.Exists(dataPath)) return Task.FromResult(true);
+        return Task.FromResult(!Directory.EnumerateFileSystemEntries(dataPath).Any());
+    }
+
+    public override Task EnsureDataDirectoryAsync()
+    {
+        var dataPath = Path.Combine(_path, DataFolderName);
+        if (!Directory.Exists(dataPath))
+        {
+            Directory.CreateDirectory(dataPath);
+        }
+        return Task.CompletedTask;
+    }
+
+    public override Task<List<string>> ListDataFilesAsync()
+    {
+        var dataPath = Path.Combine(_path, DataFolderName);
+        if (!Directory.Exists(dataPath)) return Task.FromResult(new List<string>());
+        var files = Directory.GetFiles(dataPath).Select(Path.GetFileName).Cast<string>().ToList();
+        return Task.FromResult(files);
+    }
+
+    public override Task<byte[]> ReadDataFileAsync(string fileName)
+    {
+        var filePath = Path.Combine(_path, DataFolderName, fileName);
+        return File.ReadAllBytesAsync(filePath);
+    }
+
+    public override Task WriteDataFileAsync(string fileName, byte[] content)
+    {
+        EnsureDataDirectoryAsync().Wait();
+        var filePath = Path.Combine(_path, DataFolderName, fileName);
+        return File.WriteAllBytesAsync(filePath, content);
+    }
+
+    public override Task DeleteDataFileAsync(string fileName)
+    {
+        var filePath = Path.Combine(_path, DataFolderName, fileName);
+        if (File.Exists(filePath))
+        {
+            File.Delete(filePath);
+        }
+        return Task.CompletedTask;
+    }
+
+    public override Task<bool> HasMarkerAsync(string markerName)
+    {
+        var markerPath = Path.Combine(_path, markerName);
+        return Task.FromResult(File.Exists(markerPath));
+    }
+
+    public override async Task WriteMarkerAsync(string markerName, string? content = null)
+    {
+        if (!Directory.Exists(_path)) Directory.CreateDirectory(_path);
+        var markerPath = Path.Combine(_path, markerName);
+        await File.WriteAllTextAsync(markerPath, content ?? "");
+    }
+
+    public override Task DeleteMarkerAsync(string markerName)
+    {
+        var markerPath = Path.Combine(_path, markerName);
+        if (File.Exists(markerPath))
+        {
+            File.Delete(markerPath);
+        }
+        return Task.CompletedTask;
+    }
+}

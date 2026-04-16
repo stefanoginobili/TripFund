@@ -189,41 +189,25 @@ public class RemoteStorageSyncEngine
 
     private async Task SyncDownAsync(string remoteFolderId, string localPath, Dictionary<string, string> parameters, IRemoteFileSystem fileSystem)
     {
-        if (File.Exists(Path.Combine(localPath, ".synched.tf"))) return;
+        if (File.Exists(Path.Combine(localPath, ".synched"))) return;
 
         if (fileSystem.Logger != null) fileSystem.Logger.CurrentFolderName = Path.GetFileName(localPath);
         var children = await fileSystem.ListChildrenAsync(remoteFolderId, parameters);
         if (children.Count == 0) return;
 
-        bool hasFolders = children.Any(c => c.IsFolder);
-        bool hasFiles = children.Any(c => !c.IsFolder && c.Name != ".synching.tf");
+        bool isLeaf = children.Any(c => c.Name == ".metadata" || c.Name == ".data");
 
-        if (hasFolders && hasFiles)
+        if (isLeaf)
         {
-            throw new InvalidOperationException("Architecture constraint violation: Folder contains both files and subfolders.");
-        }
+            var localLeaf = new LocalLeafFolder(localPath);
+            var remoteLeaf = new RemoteLeafFolder(fileSystem, remoteFolderId, parameters);
 
-        if (hasFolders)
-        {
-            foreach (var child in children.Where(c => c.IsFolder))
-            {
-                var localChildPath = Path.Combine(localPath, child.Name);
-                if (File.Exists(Path.Combine(localChildPath, ".synched.tf"))) continue;
-
-                if (!Directory.Exists(localChildPath)) Directory.CreateDirectory(localChildPath);
-                await SyncDownAsync(child.Id, localChildPath, parameters, fileSystem);
-            }
-        }
-        else if (hasFiles)
-        {
             bool isFullyCopiedLocally = false;
             if (Directory.Exists(localPath))
             {
-                var localEntries = Directory.GetFileSystemEntries(localPath)
-                    .Where(e => Path.GetFileName(e) != ".synching.tf" && Path.GetFileName(e) != ".synched.tf")
-                    .ToList();
-                bool hasSynching = File.Exists(Path.Combine(localPath, ".synching.tf"));
-                if (localEntries.Count > 0 && !hasSynching)
+                bool hasDownloading = await localLeaf.HasMarkerAsync(".downloading");
+                bool hasMetadata = File.Exists(Path.Combine(localPath, ".metadata"));
+                if (hasMetadata && !hasDownloading)
                 {
                     isFullyCopiedLocally = true;
                 }
@@ -234,62 +218,114 @@ public class RemoteStorageSyncEngine
                 if (Directory.Exists(localPath))
                 {
                     foreach (var file in Directory.GetFiles(localPath)) File.Delete(file);
+                    foreach (var dir in Directory.GetDirectories(localPath)) Directory.Delete(dir, true);
                 }
                 else
                 {
                     Directory.CreateDirectory(localPath);
                 }
 
-                var synchingFile = Path.Combine(localPath, ".synching.tf");
-                await File.WriteAllTextAsync(synchingFile, "");
+                var timestamp = DateTime.UtcNow.ToString("yyyy-MM-ddTHH:mm:ssZ");
+                await localLeaf.WriteMarkerAsync(".downloading", $"begin={timestamp}");
 
-                foreach (var child in children.Where(c => !c.IsFolder && c.Name != ".synching.tf"))
+                // Copy Metadata
+                var metadata = await remoteLeaf.GetMetadataAsync();
+                await localLeaf.SaveMetadataAsync(metadata);
+
+                // Copy Data
+                await localLeaf.EnsureDataDirectoryAsync();
+                var dataFiles = await remoteLeaf.ListDataFilesAsync();
+                foreach (var fileName in dataFiles)
                 {
-                    var localChildFile = Path.Combine(localPath, child.Name);
-                    var content = await fileSystem.DownloadFileContentAsync(child.Id, parameters);
-                    if (content != null)
-                    {
-                        await File.WriteAllBytesAsync(localChildFile, content);
-                    }
+                    var content = await remoteLeaf.ReadDataFileAsync(fileName);
+                    await localLeaf.WriteDataFileAsync(fileName, content);
                 }
 
-                if (File.Exists(synchingFile)) File.Delete(synchingFile);
+                await localLeaf.DeleteMarkerAsync(".downloading");
             }
 
-            await File.WriteAllTextAsync(Path.Combine(localPath, ".synched.tf"), "");
+            await localLeaf.WriteMarkerAsync(".synched");
+        }
+        else
+        {
+            // Node folder
+            foreach (var child in children.Where(c => c.IsFolder && !VersionedStorageEngine.IgnoredSystemFiles.Any(r => r.IsMatch(c.Name))))
+            {
+                var localChildPath = Path.Combine(localPath, child.Name);
+                if (File.Exists(Path.Combine(localChildPath, ".synched"))) continue;
+
+                if (!Directory.Exists(localChildPath)) Directory.CreateDirectory(localChildPath);
+                await SyncDownAsync(child.Id, localChildPath, parameters, fileSystem);
+            }
         }
     }
 
     private async Task SyncUpAsync(string localPath, string remoteFolderId, Dictionary<string, string> parameters, IRemoteFileSystem fileSystem)
     {
-        if (File.Exists(Path.Combine(localPath, ".synched.tf"))) return;
+        if (File.Exists(Path.Combine(localPath, ".synched"))) return;
 
         if (fileSystem.Logger != null) fileSystem.Logger.CurrentFolderName = Path.GetFileName(localPath);
 
-        var localEntries = Directory.GetFileSystemEntries(localPath)
-            .Where(e => Path.GetFileName(e) != ".synching.tf" && Path.GetFileName(e) != ".synched.tf")
-            .ToList();
+        bool isLeaf = Directory.Exists(Path.Combine(localPath, ".data")) || File.Exists(Path.Combine(localPath, ".metadata"));
 
-        // OPTIMIZATION: Filter out items that are already synched. 
-        // Files won't be filtered as they don't contain a ".synched.tf" file.
-        localEntries = localEntries.Where(e => !File.Exists(Path.Combine(e, ".synched.tf"))).ToList();
-        
-        if (localEntries.Count == 0) return;
-
-        bool hasFolders = localEntries.Any(e => Directory.Exists(e));
-        bool hasFiles = localEntries.Any(e => File.Exists(e));
-
-        if (hasFolders && hasFiles)
+        if (isLeaf)
         {
-            throw new InvalidOperationException("Architecture constraint violation: Folder contains both files and subfolders.");
+            var localLeaf = new LocalLeafFolder(localPath);
+            var remoteLeaf = new RemoteLeafFolder(fileSystem, remoteFolderId, parameters);
+
+            var remoteChildren = await fileSystem.ListChildrenAsync(remoteFolderId, parameters);
+            bool isFullyCopiedRemotely = false;
+            bool hasUploading = remoteChildren.Any(c => c.Name == ".uploading");
+            bool hasMetadata = remoteChildren.Any(c => c.Name == ".metadata");
+
+            if (hasMetadata && !hasUploading)
+            {
+                isFullyCopiedRemotely = true;
+            }
+
+            if (!isFullyCopiedRemotely)
+            {
+                foreach (var child in remoteChildren)
+                {
+                    await fileSystem.DeleteFileAsync(child.Id, parameters);
+                }
+
+                var settings = await _localStorage.GetAppSettingsAsync();
+                var deviceId = settings?.DeviceId ?? "unknown";
+                var timestamp = DateTime.UtcNow.ToString("yyyy-MM-ddTHH:mm:ssZ");
+                await remoteLeaf.WriteMarkerAsync(".uploading", $"source={deviceId}\nbegin={timestamp}");
+
+                // Copy Metadata
+                var metadata = await localLeaf.GetMetadataAsync();
+                await remoteLeaf.SaveMetadataAsync(metadata);
+
+                // Copy Data
+                await remoteLeaf.EnsureDataDirectoryAsync();
+                var dataFiles = await localLeaf.ListDataFilesAsync();
+                foreach (var fileName in dataFiles)
+                {
+                    var content = await localLeaf.ReadDataFileAsync(fileName);
+                    await remoteLeaf.WriteDataFileAsync(fileName, content);
+                }
+
+                await remoteLeaf.DeleteMarkerAsync(".uploading");
+            }
+
+            await localLeaf.WriteMarkerAsync(".synched");
         }
-
-        var remoteChildren = await fileSystem.ListChildrenAsync(remoteFolderId, parameters);
-
-        if (hasFolders)
+        else
         {
+            // Node folder
+            var localEntries = Directory.GetFileSystemEntries(localPath)
+                .Where(e => !VersionedStorageEngine.IgnoredSystemFiles.Any(r => r.IsMatch(Path.GetFileName(e))))
+                .ToList();
+
+            var remoteChildren = await fileSystem.ListChildrenAsync(remoteFolderId, parameters);
+
             foreach (var entry in localEntries.Where(e => Directory.Exists(e)))
             {
+                if (File.Exists(Path.Combine(entry, ".synched"))) continue;
+
                 var name = Path.GetFileName(entry);
                 var remoteMatch = remoteChildren.FirstOrDefault(c => c.Name == name && c.IsFolder);
                 string folderId;
@@ -305,40 +341,6 @@ public class RemoteStorageSyncEngine
                 }
                 await SyncUpAsync(entry, folderId, parameters, fileSystem);
             }
-        }
-        else if (hasFiles)
-        {
-            bool isFullyCopiedRemotely = false;
-            bool hasSynching = remoteChildren.Any(c => c.Name == ".synching.tf");
-            bool isEmpty = !remoteChildren.Any(c => c.Name != ".synching.tf");
-
-            if (!isEmpty && !hasSynching)
-            {
-                isFullyCopiedRemotely = true;
-            }
-
-            if (!isFullyCopiedRemotely)
-            {
-                foreach (var child in remoteChildren)
-                {
-                    await fileSystem.DeleteFileAsync(child.Id, parameters);
-                }
-
-                await fileSystem.UploadFileAsync(remoteFolderId, ".synching.tf", new byte[] { 0x01 }, parameters);
-
-                foreach (var entry in localEntries.Where(e => File.Exists(e)))
-                {
-                    var name = Path.GetFileName(entry);
-                    var content = await File.ReadAllBytesAsync(entry);
-                    await fileSystem.UploadFileAsync(remoteFolderId, name, content, parameters);
-                }
-
-                var finalChildren = await fileSystem.ListChildrenAsync(remoteFolderId, parameters);
-                var sFile = finalChildren.FirstOrDefault(c => c.Name == ".synching.tf");
-                if (sFile != null) await fileSystem.DeleteFileAsync(sFile.Id, parameters);
-            }
-
-            await File.WriteAllTextAsync(Path.Combine(localPath, ".synched.tf"), "");
         }
     }
 }

@@ -88,7 +88,7 @@ namespace TripFund.App.Components.Pages
 
             var tripConfig = new TripConfig
             {
-                Id = !string.IsNullOrEmpty(remoteUniqueId) ? remoteUniqueId : Guid.NewGuid().ToString(),
+                Id = finalSlug,
                 Name = tripName,
                 Description = description,
                 StartDate = startDate,

@@ -1,4 +1,5 @@
 using System.Text.RegularExpressions;
+using TripFund.App.Models;
 
 namespace TripFund.App.Services;
 
@@ -68,10 +69,11 @@ public class VersionedStorageEngine
 
     public static readonly IReadOnlyList<Regex> IgnoredSystemFiles = new List<Regex>
     {
-        new(@"^\.synched\.tf$", RegexOptions.Compiled | RegexOptions.IgnoreCase),
-        new(@"^\.synching\.tf$", RegexOptions.Compiled | RegexOptions.IgnoreCase),
-        new(@"^\.resolved_versions\.tf$", RegexOptions.Compiled | RegexOptions.IgnoreCase),
-        new(@"^\.deleted\.tf$", RegexOptions.Compiled | RegexOptions.IgnoreCase)
+        new(@"^\.synched$", RegexOptions.Compiled | RegexOptions.IgnoreCase),
+        new(@"^\.uploading$", RegexOptions.Compiled | RegexOptions.IgnoreCase),
+        new(@"^\.downloading$", RegexOptions.Compiled | RegexOptions.IgnoreCase),
+        new(@"^\.metadata$", RegexOptions.Compiled | RegexOptions.IgnoreCase),
+        new(@"^\.data$", RegexOptions.Compiled | RegexOptions.IgnoreCase)
     };
 
     public List<VersionFolderInfo> GetVersionFolders(string rootPath)
@@ -85,10 +87,11 @@ public class VersionedStorageEngine
         {
             if (v.Kind == CommitKind.Res)
             {
-                var resolvesFile = Path.Combine(rootPath, v.FolderName, ".resolved_versions.tf");
-                if (File.Exists(resolvesFile))
+                var leaf = new LocalLeafFolder(Path.Combine(rootPath, v.FolderName));
+                var metadata = leaf.GetMetadataAsync().GetAwaiter().GetResult();
+                if (metadata.TryGetValue("resolved_versions", out var resolved))
                 {
-                    v.ResolvedFolders = File.ReadAllLines(resolvesFile).Where(l => !string.IsNullOrWhiteSpace(l)).ToList();
+                    v.ResolvedFolders = resolved.Split(',', StringSplitOptions.RemoveEmptyEntries).ToList();
                 }
             }
         }
@@ -261,7 +264,7 @@ public class VersionedStorageEngine
         CommitKind kind, 
         Dictionary<string, byte[]> changedFiles, 
         List<string>? deletedFiles = null,
-        string? deletedInfo = null,
+        Dictionary<string, string>? metadata = null,
         IEnumerable<string>? resolvedFolders = null)
     {
         var versions = GetVersionFolders(rootPath);
@@ -270,14 +273,19 @@ public class VersionedStorageEngine
         string newDirPath = Path.Combine(rootPath, folderName);
         Directory.CreateDirectory(newDirPath);
 
+        var leaf = new LocalLeafFolder(newDirPath);
+        var metaDict = metadata ?? new Dictionary<string, string>();
+
         if (kind == CommitKind.Res && resolvedFolders != null)
         {
-            await File.WriteAllLinesAsync(Path.Combine(newDirPath, ".resolved_versions.tf"), resolvedFolders);
+            metaDict["resolved_versions"] = string.Join(",", resolvedFolders);
         }
+
+        await leaf.SaveMetadataAsync(metaDict);
+        await leaf.EnsureDataDirectoryAsync();
 
         if (kind == CommitKind.Del)
         {
-            await File.WriteAllTextAsync(Path.Combine(newDirPath, ".deleted.tf"), deletedInfo ?? "");
             return folderName;
         }
 
@@ -295,18 +303,18 @@ public class VersionedStorageEngine
                 var resOfPrev = latestOfPrev.Where(v => v.Kind == CommitKind.Res).ToList();
                 var sourceInfo = resOfPrev.Any() ? resOfPrev.First() : latestOfPrev.First();
 
-                var prevPath = Path.Combine(rootPath, sourceInfo.FolderName);
+                var prevLeaf = new LocalLeafFolder(Path.Combine(rootPath, sourceInfo.FolderName));
                 
-                if (!File.Exists(Path.Combine(prevPath, ".deleted.tf")))
+                if (!(await prevLeaf.IsDataEmptyAsync()))
                 {
-                    foreach (var file in Directory.GetFiles(prevPath))
+                    var prevFiles = await prevLeaf.ListDataFilesAsync();
+                    foreach (var fileName in prevFiles)
                     {
-                        var fileName = Path.GetFileName(file);
                         if (deletedFiles != null && deletedFiles.Contains(fileName)) continue;
                         if (changedFiles.ContainsKey(fileName)) continue;
-                        if (IgnoredSystemFiles.Any(regex => regex.IsMatch(fileName))) continue;
                         
-                        File.Copy(file, Path.Combine(newDirPath, fileName));
+                        var content = await prevLeaf.ReadDataFileAsync(fileName);
+                        await leaf.WriteDataFileAsync(fileName, content);
                     }
                 }
             }
@@ -314,7 +322,7 @@ public class VersionedStorageEngine
 
         foreach (var file in changedFiles)
         {
-            await File.WriteAllBytesAsync(Path.Combine(newDirPath, file.Key), file.Value);
+            await leaf.WriteDataFileAsync(file.Key, file.Value);
         }
 
         return folderName;

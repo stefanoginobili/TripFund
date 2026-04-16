@@ -62,11 +62,15 @@ public class OneDriveSyncLogicTests : IDisposable
         _server.Given(Request.Create().WithPath("/me/drive/items/config_versioned_id/children").UsingGet())
             .RespondWith(Response.Create().WithStatusCode(200).WithBody("{ \"value\": [ { \"id\": \"v1_id\", \"name\": \"001_NEW_dev1\", \"folder\": {} } ] }"));
 
-        // 3. Mock GetChildItemAsync(v1_id, "trip_config.json")
-        _server.Given(Request.Create().WithPath("/me/drive/items/v1_id:/trip_config.json").UsingGet())
+        // 3. Mock GetChildItemAsync(v1_id, ".data")
+        _server.Given(Request.Create().WithPath("/me/drive/items/v1_id:/.data").UsingGet())
+            .RespondWith(Response.Create().WithStatusCode(200).WithBody("{ \"id\": \"data_id\", \"name\": \".data\", \"folder\": {} }"));
+
+        // 4. Mock GetChildItemAsync(data_id, "trip_config.json")
+        _server.Given(Request.Create().WithPath("/me/drive/items/data_id:/trip_config.json").UsingGet())
             .RespondWith(Response.Create().WithStatusCode(200).WithBody("{ \"id\": \"file_id\", \"name\": \"trip_config.json\", \"file\": {} }"));
 
-        // 4. Mock DownloadFileContentAsync(file_id)
+        // 5. Mock DownloadFileContentAsync(file_id)
         var tripConfig = new TripConfig { Name = "Test Trip", StartDate = DateTime.Today, EndDate = DateTime.Today.AddDays(7) };
         var json = System.Text.Json.JsonSerializer.Serialize(tripConfig);
         _server.Given(Request.Create().WithPath("/me/drive/items/file_id/content").UsingGet())
@@ -81,30 +85,50 @@ public class OneDriveSyncLogicTests : IDisposable
     }
 
     [Fact]
-    public async Task SyncDown_RestartsCopy_IfLocalFolderHasSynchingFile()
+    public async Task SyncDown_RestartsCopy_IfLocalFolderHasDownloadingMarker()
     {
         // Arrange
         var tripSlug = "test-trip";
         var localTripPath = Path.Combine(_tempPath, "trips", tripSlug);
         var leafPath = Path.Combine(localTripPath, "config_versioned", "001_NEW_dev1");
         Directory.CreateDirectory(leafPath);
-        File.WriteAllText(Path.Combine(leafPath, ".synching.tf"), "");
-        File.WriteAllText(Path.Combine(leafPath, "old_file.json"), "old content");
+        
+        var localLeaf = new LocalLeafFolder(leafPath);
+        await localLeaf.WriteMarkerAsync(".downloading", "begin=2023-10-01T12:00:00Z");
+        await localLeaf.WriteDataFileAsync("old_file.json", System.Text.Encoding.UTF8.GetBytes("old content"));
 
         // Mock OneDrive responses
         // 1. List config_versioned children
         _server.Given(Request.Create().WithPath("/me/drive/items/root_id/children").UsingGet())
             .RespondWith(Response.Create().WithStatusCode(200).WithBody("{ \"value\": [ { \"id\": \"config_versioned_id\", \"name\": \"config_versioned\", \"folder\": {} } ] }"));
 
-        // 2. List 001_NEW_dev1 children
+        // 2. List 001_NEW_dev1 children (to detect leaf)
         _server.Given(Request.Create().WithPath("/me/drive/items/config_versioned_id/children").UsingGet())
             .RespondWith(Response.Create().WithStatusCode(200).WithBody("{ \"value\": [ { \"id\": \"v1_id\", \"name\": \"001_NEW_dev1\", \"folder\": {} } ] }"));
 
-        // 3. List files in v1_id (Leaf folder)
+        // 3. List children of v1_id (Leaf folder) -> Has .metadata and .data
         _server.Given(Request.Create().WithPath("/me/drive/items/v1_id/children").UsingGet())
+            .RespondWith(Response.Create().WithStatusCode(200).WithBody("{ \"value\": [ { \"id\": \"meta_id\", \"name\": \".metadata\", \"file\": {} }, { \"id\": \"data_id\", \"name\": \".data\", \"folder\": {} } ] }"));
+
+        // 4. Download .metadata
+        _server.Given(Request.Create().WithPath("/me/drive/items/v1_id:/.metadata").UsingGet())
+            .RespondWith(Response.Create().WithStatusCode(200).WithBody("{ \"id\": \"meta_id\", \"name\": \".metadata\", \"file\": {} }"));
+        _server.Given(Request.Create().WithPath("/me/drive/items/meta_id/content").UsingGet())
+            .RespondWith(Response.Create().WithStatusCode(200).WithBody("author=mario\ndevice=dev1\ntimestamp=2023-10-01T12:00:00Z"));
+
+        // 5. Get .data folder
+        _server.Given(Request.Create().WithPath("/me/drive/items/v1_id:/.data").UsingGet())
+            .RespondWith(Response.Create().WithStatusCode(200).WithBody("{ \"id\": \"data_id\", \"name\": \".data\", \"folder\": {} }"));
+
+        // 6. List children of .data
+        _server.Given(Request.Create().WithPath("/me/drive/items/data_id/children").UsingGet())
             .RespondWith(Response.Create().WithStatusCode(200).WithBody("{ \"value\": [ { \"id\": \"file1_id\", \"name\": \"trip_config.json\", \"file\": {} } ] }"));
 
-        // 4. Download content
+        // 6b. Get trip_config.json in .data
+        _server.Given(Request.Create().WithPath("/me/drive/items/data_id:/trip_config.json").UsingGet())
+            .RespondWith(Response.Create().WithStatusCode(200).WithBody("{ \"id\": \"file1_id\", \"name\": \"trip_config.json\", \"file\": {} }"));
+
+        // 7. Download trip_config.json
         _server.Given(Request.Create().WithPath("/me/drive/items/file1_id/content").UsingGet())
             .RespondWith(Response.Create().WithStatusCode(200).WithBody("{ \"TripName\": \"Test Trip\" }"));
 
@@ -125,7 +149,7 @@ public class OneDriveSyncLogicTests : IDisposable
         var localStorage = new LocalTripStorageService(_tempPath);
         await localStorage.SaveTripRegistryAsync(registry);
 
-        // We also need to mock the write test
+        // Mock write test
         _server.Given(Request.Create().WithPath("/me/drive/items/root_id:/ .rw-test-unknown-device").UsingGet())
             .RespondWith(Response.Create().WithStatusCode(404));
         _server.Given(Request.Create().WithPath("/me/drive/items/root_id/children").UsingPost())
@@ -136,52 +160,24 @@ public class OneDriveSyncLogicTests : IDisposable
         await _service.SynchronizeAsync(tripSlug);
 
         // Assert
-        Assert.True(File.Exists(Path.Combine(leafPath, "trip_config.json")));
-        Assert.False(File.Exists(Path.Combine(leafPath, ".synching.tf")));
-        Assert.True(File.Exists(Path.Combine(leafPath, ".synched.tf"))); // Optimization marker
-        Assert.False(File.Exists(Path.Combine(leafPath, "old_file.json"))); // Should have been cleared
+        Assert.True(File.Exists(Path.Combine(leafPath, ".data", "trip_config.json")));
+        Assert.False(File.Exists(Path.Combine(leafPath, ".downloading")));
+        Assert.True(File.Exists(Path.Combine(leafPath, ".synched")));
+        Assert.False(File.Exists(Path.Combine(leafPath, ".data", "old_file.json"))); // Should have been cleared
     }
 
     [Fact]
-    public async Task SyncDown_Throws_IfMixedFolderFoundOnRemote()
-    {
-        // Arrange
-        var tripSlug = "test-trip";
-        var registry = new LocalTripRegistry();
-        registry.Trips[tripSlug] = new TripRegistryEntry 
-        { 
-            RemoteStorage = new RemoteStorageConfig 
-            { 
-                Provider = "onedrive", 
-                Parameters = new Dictionary<string, string> 
-                { 
-                    { "folderId", "root_id" },
-                    { "accessToken", "fake_token" },
-                    { "accessTokenExpiry", DateTime.Now.AddHours(1).ToString("O") }
-                } 
-            } 
-        };
-        var localStorage = new LocalTripStorageService(_tempPath);
-        await localStorage.SaveTripRegistryAsync(registry);
-
-        // Mock OneDrive responses: Root folder has both a folder and a file
-        _server.Given(Request.Create().WithPath("/me/drive/items/root_id/children").UsingGet())
-            .RespondWith(Response.Create().WithStatusCode(200).WithBody("{ \"value\": [ { \"id\": \"config_versioned_id\", \"name\": \"config_versioned\", \"folder\": {} }, { \"id\": \"file_id\", \"name\": \"oops.txt\", \"file\": {} } ] }"));
-
-        // Act & Assert
-        await Assert.ThrowsAsync<InvalidOperationException>(() => _service.SynchronizeAsync(tripSlug));
-    }
-
-    [Fact]
-    public async Task SyncDown_SkipsRemoteList_IfLocalFolderHasSynchedFile()
+    public async Task SyncDown_SkipsRemoteList_IfLocalFolderHasSynchedMarker()
     {
         // Arrange
         var tripSlug = "test-trip";
         var localTripPath = Path.Combine(_tempPath, "trips", tripSlug);
         var leafPath = Path.Combine(localTripPath, "config_versioned", "001_NEW_dev1");
         Directory.CreateDirectory(leafPath);
-        File.WriteAllText(Path.Combine(leafPath, ".synched.tf"), "");
-        File.WriteAllText(Path.Combine(leafPath, "trip_config.json"), "{}");
+        File.WriteAllText(Path.Combine(leafPath, ".synched"), "");
+        Directory.CreateDirectory(Path.Combine(leafPath, ".data"));
+        File.WriteAllText(Path.Combine(leafPath, ".data", "trip_config.json"), "{}");
+        File.WriteAllText(Path.Combine(leafPath, ".metadata"), "author=mario");
 
         var registry = new LocalTripRegistry();
         registry.Trips[tripSlug] = new TripRegistryEntry 
@@ -208,8 +204,6 @@ public class OneDriveSyncLogicTests : IDisposable
         _server.Given(Request.Create().WithPath("/me/drive/items/test_file_id").UsingDelete())
             .RespondWith(Response.Create().WithStatusCode(204));
 
-        // We EXPECT that config_versioned children WILL be listed (because config_versioned/ is a Node folder)
-        // BUT 001_NEW_dev1 children WILL NOT be listed!
         _server.Given(Request.Create().WithPath("/me/drive/items/root_id/children").UsingGet())
             .RespondWith(Response.Create().WithStatusCode(200).WithBody("{ \"value\": [ { \"id\": \"config_versioned_id\", \"name\": \"config_versioned\", \"folder\": {} } ] }"));
 

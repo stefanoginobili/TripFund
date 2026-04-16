@@ -6,7 +6,7 @@ using Xunit;
 
 namespace TripFund.Tests.Services;
 
-public class SyncConflictTests
+public class SyncConflictTests : IDisposable
 {
     private readonly string _tempPath;
     private readonly LocalTripStorageService _localStorage;
@@ -20,6 +20,11 @@ public class SyncConflictTests
         _syncEngine = new RemoteStorageSyncEngine(_localStorage);
     }
 
+    public void Dispose()
+    {
+        if (Directory.Exists(_tempPath)) Directory.Delete(_tempPath, true);
+    }
+
     [Fact]
     public async Task SynchronizeAsync_ShouldCollectAllConflicts()
     {
@@ -28,21 +33,38 @@ public class SyncConflictTests
         var localTripPath = Path.Combine(_localStorage.TripsPath, tripSlug);
         Directory.CreateDirectory(localTripPath);
 
-        // 1. Create a metadata conflict
-        var metadataDir = Path.Combine(localTripPath, "metadata");
-        Directory.CreateDirectory(metadataDir);
-        Directory.CreateDirectory(Path.Combine(metadataDir, "001_NEW_mario"));
-        Directory.CreateDirectory(Path.Combine(metadataDir, "001_NEW_luigi"));
+        // 1. Create a config conflict
+        var configPath = Path.Combine(localTripPath, "config_versioned");
+        Directory.CreateDirectory(configPath);
+        var v1m = Path.Combine(configPath, "001_NEW_mario");
+        var v1l = Path.Combine(configPath, "001_NEW_luigi");
+        Directory.CreateDirectory(v1m);
+        Directory.CreateDirectory(v1l);
+        Directory.CreateDirectory(Path.Combine(v1m, ".data"));
+        Directory.CreateDirectory(Path.Combine(v1l, ".data"));
+        await File.WriteAllTextAsync(Path.Combine(v1m, ".metadata"), "author=m\ndevice=m\ntimestamp=2023-10-01T12:00:00Z");
+        await File.WriteAllTextAsync(Path.Combine(v1l, ".metadata"), "author=l\ndevice=l\ntimestamp=2023-10-01T12:00:00Z");
 
         // 2. Create a transaction conflict
         var transId = "tx-123";
-        var transMetadataDir = Path.Combine(localTripPath, "transactions", transId, "metadata");
-        Directory.CreateDirectory(transMetadataDir);
+        var transDetailsDir = Path.Combine(localTripPath, "transactions", transId, "details_versioned");
+        Directory.CreateDirectory(transDetailsDir);
+        
         // Base version 001
-        Directory.CreateDirectory(Path.Combine(transMetadataDir, "001_NEW_mario"));
+        var v1 = Path.Combine(transDetailsDir, "001_NEW_mario");
+        Directory.CreateDirectory(v1);
+        Directory.CreateDirectory(Path.Combine(v1, ".data"));
+        await File.WriteAllTextAsync(Path.Combine(v1, ".metadata"), "author=m\ndevice=m\ntimestamp=2023-10-01T12:00:00Z");
+
         // Conflict at 002
-        Directory.CreateDirectory(Path.Combine(transMetadataDir, "002_UPD_mario"));
-        Directory.CreateDirectory(Path.Combine(transMetadataDir, "002_UPD_luigi"));
+        var v2m = Path.Combine(transDetailsDir, "002_UPD_mario");
+        var v2l = Path.Combine(transDetailsDir, "002_UPD_luigi");
+        Directory.CreateDirectory(v2m);
+        Directory.CreateDirectory(v2l);
+        Directory.CreateDirectory(Path.Combine(v2m, ".data"));
+        Directory.CreateDirectory(Path.Combine(v2l, ".data"));
+        await File.WriteAllTextAsync(Path.Combine(v2m, ".metadata"), "author=m\ndevice=m\ntimestamp=2023-10-02T12:00:00Z");
+        await File.WriteAllTextAsync(Path.Combine(v2l, ".metadata"), "author=l\ndevice=l\ntimestamp=2023-10-02T12:00:00Z");
 
         // Registry setup
         var registry = new LocalTripRegistry();
@@ -69,9 +91,9 @@ public class SyncConflictTests
 
         conflicts.Should().HaveCount(2);
         
-        var metaConflict = conflicts.OfType<TripMetadataConflictException>().Single();
-        metaConflict.DivergingVersions.Should().Contain(new[] { "001_NEW_mario", "001_NEW_luigi" });
-        metaConflict.BaseVersion.Should().BeNull();
+        var configConflict = conflicts.OfType<TripConfigConflictException>().Single();
+        configConflict.DivergingVersions.Should().Contain(new[] { "001_NEW_mario", "001_NEW_luigi" });
+        configConflict.BaseVersion.Should().BeNull();
 
         var txConflict = conflicts.OfType<TransactionConflictException>().Single();
         txConflict.TransactionId.Should().Be(transId);
@@ -140,7 +162,9 @@ public class SyncConflictTests
 
         var resDir = Path.Combine(root, "003_RES_luigi");
         Directory.CreateDirectory(resDir);
-        await File.WriteAllLinesAsync(Path.Combine(resDir, ".resolved_versions.tf"), new[] { "002_UPD_mario", "002_UPD_carlo" });
+        
+        // Metadata containing resolved_versions
+        await File.WriteAllTextAsync(Path.Combine(resDir, ".metadata"), "resolved_versions=002_UPD_mario,002_UPD_carlo");
 
         // Carlo creates a new commit at sequence 3, sitting alongside the RES
         Directory.CreateDirectory(Path.Combine(root, "003_UPD_carlo"));
