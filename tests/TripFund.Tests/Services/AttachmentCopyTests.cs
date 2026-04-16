@@ -52,10 +52,10 @@ public class AttachmentCopyTests : IDisposable
 
         var transRoot = Path.Combine(_tempPath, "trips", tripSlug, "transactions", transactionId);
         
-        // Verify Metadata V1
-        var v1Path = Path.Combine(transRoot, "metadata", "001_NEW_device1");
-        Directory.Exists(v1Path).Should().BeTrue("Metadata V1 folder should exist");
-        File.Exists(Path.Combine(v1Path, "transaction_detail.json")).Should().BeTrue();
+        // Verify Details V1
+        var v1Path = Path.Combine(transRoot, "details", "001_NEW_device1");
+        Directory.Exists(v1Path).Should().BeTrue("Details V1 folder should exist");
+        File.Exists(Path.Combine(v1Path, "transaction_details.json")).Should().BeTrue();
 
         // Verify Attachments
         var att1Path = Path.Combine(transRoot, "attachments", "ATT_001", "original_1.jpg");
@@ -82,9 +82,9 @@ public class AttachmentCopyTests : IDisposable
 
         await _service.SaveTransactionAsync(tripSlug, t2, "device1", attachments: newAttachments);
 
-        // Assert: V2 metadata created
-        var v2Path = Path.Combine(transRoot, "metadata", "002_UPD_device1");
-        Directory.Exists(v2Path).Should().BeTrue("Metadata V2 folder should exist");
+        // Assert: V2 details created
+        var v2Path = Path.Combine(transRoot, "details", "002_UPD_device1");
+        Directory.Exists(v2Path).Should().BeTrue("Details V2 folder should exist");
         
         // Assert: Attachments are not duplicated but all exist in unversioned folder
         File.Exists(att1Path).Should().BeTrue();
@@ -122,7 +122,7 @@ public class AttachmentCopyTests : IDisposable
 
         await _service.SaveTransactionAsync(tripSlug, t1, "device1", attachments: attachments);
 
-        // Act: Update, keeping only keep.jpg in metadata
+        // Act: Update, keeping only keep.jpg in details
         var t2 = new Transaction 
         { 
             Id = transactionId, 

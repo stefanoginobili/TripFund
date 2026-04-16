@@ -65,13 +65,13 @@ public class OneDriveRemoteStorageService : IRemoteStorageService, IRemoteFileSy
 
         await EnsureAuthenticatedAsync(parameters);
         
-        // In Microsoft Graph, we browse metadata/trip_config.json
-        // 1. Look for metadata folder
-        var metadataFolder = await GetChildItemAsync(folderId, "metadata", parameters);
-        if (metadataFolder == null || metadataFolder.Folder == null) return null;
+        // In Microsoft Graph, we browse config/trip_config.json
+        // 1. Look for config folder
+        var configFolder = await GetChildItemAsync(folderId, "config", parameters);
+        if (configFolder == null || configFolder.Folder == null) return null;
 
-        // 2. Look for latest version folder in metadata
-        var children = await ListChildrenAsync(metadataFolder.Id, parameters);
+        // 2. Look for latest version folder in config
+        var children = await ListChildrenAsync(configFolder.Id, parameters);
         var folderNames = children.Where(v => v.Folder != null).Select(v => v.Name);
         
         string? latestVersionName;

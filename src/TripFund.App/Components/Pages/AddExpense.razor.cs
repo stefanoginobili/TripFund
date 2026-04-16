@@ -55,7 +55,7 @@ namespace TripFund.App.Components.Pages
 
                 if (!string.IsNullOrEmpty(edit))
                 {
-                    editingInfo = await Storage.GetLatestTransactionVersionWithMetadataAsync(tripSlug, edit);
+                    editingInfo = await Storage.GetLatestTransactionVersionWithDetailsAsync(tripSlug, edit);
                     if (editingInfo != null && editingInfo.Transaction != null && editingInfo.Transaction.Type == "expense")
                     {
                         var tx = editingInfo.Transaction;

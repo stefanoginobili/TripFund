@@ -54,12 +54,12 @@ public class OneDriveSyncLogicTests : IDisposable
     {
         var parameters = new Dictionary<string, string> { { "folderId", "root_id" }, { "accessToken", "fake_token" }, { "accessTokenExpiry", DateTime.Now.AddHours(1).ToString("O") } };
         
-        // 1. Mock GetChildItemAsync(root_id, "metadata")
-        _server.Given(Request.Create().WithPath("/me/drive/items/root_id:/metadata").UsingGet())
-            .RespondWith(Response.Create().WithStatusCode(200).WithBody("{ \"id\": \"meta_id\", \"name\": \"metadata\", \"folder\": {} }"));
+        // 1. Mock GetChildItemAsync(root_id, "config")
+        _server.Given(Request.Create().WithPath("/me/drive/items/root_id:/config").UsingGet())
+            .RespondWith(Response.Create().WithStatusCode(200).WithBody("{ \"id\": \"config_id\", \"name\": \"config\", \"folder\": {} }"));
 
-        // 2. Mock ListChildrenAsync(meta_id)
-        _server.Given(Request.Create().WithPath("/me/drive/items/meta_id/children").UsingGet())
+        // 2. Mock ListChildrenAsync(config_id)
+        _server.Given(Request.Create().WithPath("/me/drive/items/config_id/children").UsingGet())
             .RespondWith(Response.Create().WithStatusCode(200).WithBody("{ \"value\": [ { \"id\": \"v1_id\", \"name\": \"001_NEW_dev1\", \"folder\": {} } ] }"));
 
         // 3. Mock GetChildItemAsync(v1_id, "trip_config.json")
@@ -86,18 +86,18 @@ public class OneDriveSyncLogicTests : IDisposable
         // Arrange
         var tripSlug = "test-trip";
         var localTripPath = Path.Combine(_tempPath, "trips", tripSlug);
-        var leafPath = Path.Combine(localTripPath, "metadata", "001_NEW_dev1");
+        var leafPath = Path.Combine(localTripPath, "config", "001_NEW_dev1");
         Directory.CreateDirectory(leafPath);
         File.WriteAllText(Path.Combine(leafPath, ".synching.tf"), "");
         File.WriteAllText(Path.Combine(leafPath, "old_file.json"), "old content");
 
         // Mock OneDrive responses
-        // 1. List metadata children
+        // 1. List config children
         _server.Given(Request.Create().WithPath("/me/drive/items/root_id/children").UsingGet())
-            .RespondWith(Response.Create().WithStatusCode(200).WithBody("{ \"value\": [ { \"id\": \"meta_id\", \"name\": \"metadata\", \"folder\": {} } ] }"));
+            .RespondWith(Response.Create().WithStatusCode(200).WithBody("{ \"value\": [ { \"id\": \"config_id\", \"name\": \"config\", \"folder\": {} } ] }"));
 
         // 2. List 001_NEW_dev1 children
-        _server.Given(Request.Create().WithPath("/me/drive/items/meta_id/children").UsingGet())
+        _server.Given(Request.Create().WithPath("/me/drive/items/config_id/children").UsingGet())
             .RespondWith(Response.Create().WithStatusCode(200).WithBody("{ \"value\": [ { \"id\": \"v1_id\", \"name\": \"001_NEW_dev1\", \"folder\": {} } ] }"));
 
         // 3. List files in v1_id (Leaf folder)
@@ -166,7 +166,7 @@ public class OneDriveSyncLogicTests : IDisposable
 
         // Mock OneDrive responses: Root folder has both a folder and a file
         _server.Given(Request.Create().WithPath("/me/drive/items/root_id/children").UsingGet())
-            .RespondWith(Response.Create().WithStatusCode(200).WithBody("{ \"value\": [ { \"id\": \"meta_id\", \"name\": \"metadata\", \"folder\": {} }, { \"id\": \"file_id\", \"name\": \"oops.txt\", \"file\": {} } ] }"));
+            .RespondWith(Response.Create().WithStatusCode(200).WithBody("{ \"value\": [ { \"id\": \"config_id\", \"name\": \"config\", \"folder\": {} }, { \"id\": \"file_id\", \"name\": \"oops.txt\", \"file\": {} } ] }"));
 
         // Act & Assert
         await Assert.ThrowsAsync<InvalidOperationException>(() => _service.SynchronizeAsync(tripSlug));
@@ -178,7 +178,7 @@ public class OneDriveSyncLogicTests : IDisposable
         // Arrange
         var tripSlug = "test-trip";
         var localTripPath = Path.Combine(_tempPath, "trips", tripSlug);
-        var leafPath = Path.Combine(localTripPath, "metadata", "001_NEW_dev1");
+        var leafPath = Path.Combine(localTripPath, "config", "001_NEW_dev1");
         Directory.CreateDirectory(leafPath);
         File.WriteAllText(Path.Combine(leafPath, ".synched.tf"), "");
         File.WriteAllText(Path.Combine(leafPath, "trip_config.json"), "{}");
@@ -208,12 +208,12 @@ public class OneDriveSyncLogicTests : IDisposable
         _server.Given(Request.Create().WithPath("/me/drive/items/test_file_id").UsingDelete())
             .RespondWith(Response.Create().WithStatusCode(204));
 
-        // We EXPECT that metadata children WILL be listed (because metadata/ is a Node folder)
+        // We EXPECT that config children WILL be listed (because config/ is a Node folder)
         // BUT 001_NEW_dev1 children WILL NOT be listed!
         _server.Given(Request.Create().WithPath("/me/drive/items/root_id/children").UsingGet())
-            .RespondWith(Response.Create().WithStatusCode(200).WithBody("{ \"value\": [ { \"id\": \"meta_id\", \"name\": \"metadata\", \"folder\": {} } ] }"));
+            .RespondWith(Response.Create().WithStatusCode(200).WithBody("{ \"value\": [ { \"id\": \"config_id\", \"name\": \"config\", \"folder\": {} } ] }"));
 
-        _server.Given(Request.Create().WithPath("/me/drive/items/meta_id/children").UsingGet())
+        _server.Given(Request.Create().WithPath("/me/drive/items/config_id/children").UsingGet())
             .RespondWith(Response.Create().WithStatusCode(200).WithBody("{ \"value\": [ { \"id\": \"v1_id\", \"name\": \"001_NEW_dev1\", \"folder\": {} } ] }"));
 
         // NO mapping for /me/drive/items/v1_id/children should be hit!

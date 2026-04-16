@@ -40,8 +40,8 @@ public class LocalTripStorageTests : IDisposable
         loaded!.Name.Should().Be("Test Trip");
         loaded.UpdatedAt.Should().BeCloseTo(DateTime.UtcNow, TimeSpan.FromSeconds(5));
 
-        var metadataDir = Path.Combine(_tempPath, "trips", slug, "metadata");
-        Directory.GetDirectories(metadataDir).Should().ContainSingle(d => Path.GetFileName(d) == "001_NEW_mario");
+        var configDir = Path.Combine(_tempPath, "trips", slug, "config");
+        Directory.GetDirectories(configDir).Should().ContainSingle(d => Path.GetFileName(d) == "001_NEW_mario");
     }
 
     [Fact]
@@ -59,8 +59,8 @@ public class LocalTripStorageTests : IDisposable
         transactions.Should().ContainSingle();
         transactions[0].Description.Should().Be("Lunch");
 
-        var metadataDir = Path.Combine(_tempPath, "trips", tripSlug, "transactions", "trans-1", "metadata");
-        Directory.GetDirectories(metadataDir).Should().ContainSingle(d => Path.GetFileName(d) == "001_NEW_mario");
+        var detailsDir = Path.Combine(_tempPath, "trips", tripSlug, "transactions", "trans-1", "details");
+        Directory.GetDirectories(detailsDir).Should().ContainSingle(d => Path.GetFileName(d) == "001_NEW_mario");
     }
 
     [Fact]
@@ -80,9 +80,9 @@ public class LocalTripStorageTests : IDisposable
         transactions.Should().ContainSingle();
         transactions[0].Description.Should().Be("Lunch V2");
         
-        var metadataDir = Path.Combine(_tempPath, "trips", tripSlug, "transactions", "trans-1", "metadata");
-        Directory.GetDirectories(metadataDir).Should().HaveCount(2);
-        Directory.GetDirectories(metadataDir).Should().Contain(d => Path.GetFileName(d) == "002_UPD_mario");
+        var detailsDir = Path.Combine(_tempPath, "trips", tripSlug, "transactions", "trans-1", "details");
+        Directory.GetDirectories(detailsDir).Should().HaveCount(2);
+        Directory.GetDirectories(detailsDir).Should().Contain(d => Path.GetFileName(d) == "002_UPD_mario");
     }
 
     [Fact]
@@ -100,9 +100,9 @@ public class LocalTripStorageTests : IDisposable
         // Assert
         transactions.Should().BeEmpty();
 
-        var metadataDir = Path.Combine(_tempPath, "trips", tripSlug, "transactions", "trans-1", "metadata");
-        Directory.GetDirectories(metadataDir).Should().HaveCount(2);
-        Directory.GetDirectories(metadataDir).Should().Contain(d => Path.GetFileName(d) == "002_DEL_mario");
+        var detailsDir = Path.Combine(_tempPath, "trips", tripSlug, "transactions", "trans-1", "details");
+        Directory.GetDirectories(detailsDir).Should().HaveCount(2);
+        Directory.GetDirectories(detailsDir).Should().Contain(d => Path.GetFileName(d) == "002_DEL_mario");
     }
 
     [Fact]
@@ -119,8 +119,8 @@ public class LocalTripStorageTests : IDisposable
         await _service.SaveTransactionAsync(tripSlug, t1, "mario", isDelete: true);
 
         // Assert
-        var metadataDir = Path.Combine(_tempPath, "trips", tripSlug, "transactions", "trans-1", "metadata");
-        var delVersionDir = Path.Combine(metadataDir, "002_DEL_mario");
+        var detailsDir = Path.Combine(_tempPath, "trips", tripSlug, "transactions", "trans-1", "details");
+        var delVersionDir = Path.Combine(detailsDir, "002_DEL_mario");
         var deletedFile = Path.Combine(delVersionDir, ".deleted.tf");
         
         File.Exists(deletedFile).Should().BeTrue();
@@ -142,12 +142,12 @@ public class LocalTripStorageTests : IDisposable
         // Arrange
         var tripSlug = "test-trip";
         var transId = "trans-1";
-        var metadataDir = Path.Combine(_tempPath, "trips", tripSlug, "transactions", transId, "metadata");
-        Directory.CreateDirectory(metadataDir);
+        var detailsDir = Path.Combine(_tempPath, "trips", tripSlug, "transactions", transId, "details");
+        Directory.CreateDirectory(detailsDir);
         
         // Manual setup to create conflict (same sequence number for different users)
-        Directory.CreateDirectory(Path.Combine(metadataDir, "001_NEW_mario"));
-        Directory.CreateDirectory(Path.Combine(metadataDir, "001_NEW_luigi"));
+        Directory.CreateDirectory(Path.Combine(detailsDir, "001_NEW_mario"));
+        Directory.CreateDirectory(Path.Combine(detailsDir, "001_NEW_luigi"));
 
         // Assert
         Func<Task> act = () => _service.GetTransactionsAsync(tripSlug);
@@ -162,12 +162,12 @@ public class LocalTripStorageTests : IDisposable
         // Arrange
         var tripSlug = "test-trip";
         var transId = "trans-1";
-        var metadataDir = Path.Combine(_tempPath, "trips", tripSlug, "transactions", transId, "metadata");
-        Directory.CreateDirectory(metadataDir);
+        var detailsDir = Path.Combine(_tempPath, "trips", tripSlug, "transactions", transId, "details");
+        Directory.CreateDirectory(detailsDir);
         
         // Setup conflict: 001_NEW_mario, 001_NEW_luigi
-        Directory.CreateDirectory(Path.Combine(metadataDir, "001_NEW_mario"));
-        Directory.CreateDirectory(Path.Combine(metadataDir, "001_NEW_luigi"));
+        Directory.CreateDirectory(Path.Combine(detailsDir, "001_NEW_mario"));
+        Directory.CreateDirectory(Path.Combine(detailsDir, "001_NEW_luigi"));
 
         var resolvedTrans = new Transaction { Id = transId, Description = "Resolved" };
 
@@ -176,8 +176,8 @@ public class LocalTripStorageTests : IDisposable
 
         // Assert
         // New resolved version should be 002_RES_mario
-        Directory.GetDirectories(metadataDir).Should().HaveCount(3);
-        Directory.GetDirectories(metadataDir).Should().Contain(d => Path.GetFileName(d) == "002_RES_mario");
+        Directory.GetDirectories(detailsDir).Should().HaveCount(3);
+        Directory.GetDirectories(detailsDir).Should().Contain(d => Path.GetFileName(d) == "002_RES_mario");
 
         var loaded = await _service.GetLatestTransactionVersionAsync(tripSlug, transId);
         loaded!.Description.Should().Be("Resolved");
@@ -196,12 +196,12 @@ public class LocalTripStorageTests : IDisposable
         var firstVersion = await _service.GetLatestTransactionVersionAsync(tripSlug, transId);
         var originalCreatedAt = firstVersion!.CreatedAt;
         
-        var metadataDir = Path.Combine(_tempPath, "trips", tripSlug, "transactions", transId, "metadata");
+        var detailsDir = Path.Combine(_tempPath, "trips", tripSlug, "transactions", transId, "details");
         
         // Setup conflict: 002_UPD_mario, 002_UPD_luigi
         // We use sequence 2 because 1 already exists
-        Directory.CreateDirectory(Path.Combine(metadataDir, "002_UPD_mario"));
-        Directory.CreateDirectory(Path.Combine(metadataDir, "002_UPD_luigi"));
+        Directory.CreateDirectory(Path.Combine(detailsDir, "002_UPD_mario"));
+        Directory.CreateDirectory(Path.Combine(detailsDir, "002_UPD_luigi"));
 
         var resolvedTrans = new Transaction { Id = transId, Description = "Resolved" };
         // resolvedTrans.CreatedAt is default(DateTime)
@@ -252,12 +252,12 @@ public class LocalTripStorageTests : IDisposable
         
         await _service.SaveTransactionAsync(tripSlug, t1, deviceId);
         
-        var metadataDir = Path.Combine(_tempPath, "trips", tripSlug, "transactions", "trans-1", "metadata");
-        var v1Dir = Path.Combine(metadataDir, "001_NEW_device1");
+        var detailsDir = Path.Combine(_tempPath, "trips", tripSlug, "transactions", "trans-1", "details");
+        var v1Dir = Path.Combine(detailsDir, "001_NEW_device1");
         
         // Simulate successful sync
         File.WriteAllText(Path.Combine(v1Dir, ".synched.tf"), "");
-        File.WriteAllText(Path.Combine(v1Dir, "transaction_detail.json.remote-etag.tf"), "etag-v1");
+        File.WriteAllText(Path.Combine(v1Dir, "transaction_details.json.remote-etag.tf"), "etag-v1");
         File.WriteAllText(Path.Combine(v1Dir, ".synching.tf"), "");
 
         // Act: Update to V2
@@ -265,12 +265,12 @@ public class LocalTripStorageTests : IDisposable
         await _service.SaveTransactionAsync(tripSlug, t2, deviceId);
 
         // Assert
-        var v2Dir = Path.Combine(metadataDir, "002_UPD_device1");
+        var v2Dir = Path.Combine(detailsDir, "002_UPD_device1");
         Directory.Exists(v2Dir).Should().BeTrue();
         
-        File.Exists(Path.Combine(v2Dir, "transaction_detail.json")).Should().BeTrue();
+        File.Exists(Path.Combine(v2Dir, "transaction_details.json")).Should().BeTrue();
         File.Exists(Path.Combine(v2Dir, ".synched.tf")).Should().BeFalse(".synched.tf should NOT be copied");
-        File.Exists(Path.Combine(v2Dir, "transaction_detail.json.remote-etag.tf")).Should().BeFalse(".remote-etag.tf should NOT be copied");
+        File.Exists(Path.Combine(v2Dir, "transaction_details.json.remote-etag.tf")).Should().BeFalse(".remote-etag.tf should NOT be copied");
         File.Exists(Path.Combine(v2Dir, ".synching.tf")).Should().BeFalse(".synching.tf should NOT be copied");
     }
 }

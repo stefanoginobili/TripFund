@@ -32,10 +32,10 @@ public class VersionedFolderConflictException : Exception
     }
 }
 
-public class TripMetadataConflictException : VersionedFolderConflictException
+public class TripConfigConflictException : VersionedFolderConflictException
 {
-    public TripMetadataConflictException(IReadOnlyList<string> divergingVersions, string? baseVersion)
-        : base("Trip metadata conflict detected.", divergingVersions, baseVersion)
+    public TripConfigConflictException(IReadOnlyList<string> divergingVersions, string? baseVersion)
+        : base("Trip config conflict detected.", divergingVersions, baseVersion)
     {
     }
 }

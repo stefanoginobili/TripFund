@@ -22,18 +22,18 @@ All application data resides locally. The absolute source of truth for the offli
 ### 2.3. Trip Data Directories
 Inside each `[TripSlug]` folder, data is partitioned into two distinct domains, both governed by the Versioned Storage Engine:
 
-1. **Metadata:** `[AppData]/trips/[TripSlug]/metadata/`
+1. **Config:** `[AppData]/trips/[TripSlug]/config/`
     - Contains high-level trip settings.
     - **Is Versioned:** YES.
 2. **Transactions:** `[AppData]/trips/[TripSlug]/transactions/[TransactionID]/`
     - **TransactionID Format:** `yyyyMMddTHHmmssZ-[guidprefix]` (e.g., `20260325T143000Z-a1b2c3d4`). The prefix is the first 8 characters of a standard GUID.
     - **Structure:**
-        - `metadata/`: Versioned folder containing `transaction_detail.json`.
+        - `details/`: Versioned folder containing `transaction_details.json`.
         - `attachments/[AttachmentName]/`: Unversioned leaf folders containing the actual attachment files.
-    - **Attachment Rule:** All non-JSON files (images, PDFs) MUST be stored in a dedicated leaf folder `attachments/[AttachmentName]/` where `[AttachmentName]` is formatted as `ATT_[timestamp]` (UTC `yyyyMMddTHHmmssfffZ`, including milliseconds). The original filename MUST be preserved inside this folder. Metadata about the attachment (name, original name, timestamp) MUST be stored in the `transaction_detail.json` file. Existing attachments are never re-saved or moved when a new transaction version is created.
+    - **Attachment Rule:** All non-JSON files (images, PDFs) MUST be stored in a dedicated leaf folder `attachments/[AttachmentName]/` where `[AttachmentName]` is formatted as `ATT_[timestamp]` (UTC `yyyyMMddTHHmmssfffZ`, including milliseconds). The original filename MUST be preserved inside this folder. Metadata about the attachment (name, original name, timestamp) MUST be stored in the `transaction_details.json` file. Existing attachments are never re-saved or moved when a new transaction version is created.
 
 ## 3. The Versioned Storage Engine
-The application utilizes an append-only, soft-deletion storage engine. When a folder is designated as "Versioned" (like Metadata or specific Transactions), its active state is determined by its sub-folders.
+The application utilizes an append-only, soft-deletion storage engine. When a folder is designated as "Versioned" (like Config or specific Transactions), its active state is determined by its sub-folders.
 
 ### 3.1. Version Sub-Folder Naming Convention
 Data is never stored in the root of a versioned folder. It is stored in sub-folders adhering strictly to this regex-compatible format:
@@ -50,11 +50,11 @@ Commits are **atomic**. A single version bump MUST be able to process a batch of
 - **`UPD` (Update):** Contains a batch of modifications.
     - **Rule:** When creating an `UPD` folder, the system MUST:
         1. Include all newly created files.
-        2. Include all modified files (e.g., an updated `transaction_detail.json`).
+        2. Include all modified files (e.g., an updated `transaction_details.json`).
         3. Copy all **untouched** files from the immediate previous version.
         4. Explicitly **exclude/drop** any files the user intended to delete (e.g., removing a specific attachment).
 - **`DEL` (Soft Deletion):** Deletes the *entire entity*.
-    - **Rule:** The folder MUST ONLY contain a file named `.deleted.tf`. No `transaction_detail.json` or attachments are copied forward. The `.deleted.tf` MUST contain 2 line:
+    - **Rule:** The folder MUST ONLY contain a file named `.deleted.tf`. No `transaction_details.json` or attachments are copied forward. The `.deleted.tf` MUST contain 2 line:
       - `author=Mario Rossi`: where "Mario Rossi" in this example is the author from the Global Settings.
       - `deletedAt=20260332T212354Z`: where the timestamp is the timestamp of the deletion time.
 - **`RES` (Resolution):** Closes a conflict state by merging multiple diverging branches. 
@@ -105,8 +105,8 @@ The process compares the local trip root (`trips/[TripSlug]`) against the remote
         *   Otherwise, update files as needed.
 
 2.  **Integrity & Conflict Check:**
-    *   Invoke the `VersionedStorageEngine` for the `metadata/` folder and each folder in `transactions/`.
-    *   **If any conflict is detected:** The synchronization process MUST fail by throwing a `SyncConflictException`. This exception contains a list of all detected conflicts (specialized as `TripMetadataConflictException` or `TransactionConflictException`). Each conflict details the diverging version folders and the common base version to facilitate UI-side resolution. The UI must catch this exception and guide the user to resolve conflicts locally before re-attempting sync.
+    *   Invoke the `VersionedStorageEngine` for the `config/` folder and each folder in `transactions/`.
+    *   **If any conflict is detected:** The synchronization process MUST fail by throwing a `SyncConflictException`. This exception contains a list of all detected conflicts (specialized as `TripConfigConflictException` or `TransactionConflictException`). Each conflict details the diverging version folders and the common base version to facilitate UI-side resolution. The UI must catch this exception and guide the user to resolve conflicts locally before re-attempting sync.
     *   **If no conflicts are found:** Proceed to the next step.
 
 3.  **Local-to-Remote Scan (Upload Phase):**
@@ -129,7 +129,7 @@ To ensure data integrity during network interruptions or crashes, the sync proce
     3. Restart the copy of all files from the source.
     4. Delete the `.synching.tf` file only after all files are successfully transferred and verified.
 
-Node folders (folders containing other folders, like `metadata/` or `transactions/`) are traversed recursively and do not use the `.synching.tf` logic themselves; the logic applies to their descendant leaf folders.
+Node folders (folders containing other folders, like `config/` or `transactions/`) are traversed recursively and do not use the `.synching.tf` logic themselves; the logic applies to their descendant leaf folders.
 
 ### 5.3. Sync Optimization (".synched.tf" Marker)
 To minimize redundant network traffic and API calls, the sync engine utilizes a local-only optimization marker:
