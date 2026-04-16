@@ -257,7 +257,6 @@ public class LocalTripStorageTests : IDisposable
         
         // Simulate successful sync
         File.WriteAllText(Path.Combine(v1Dir, ".synched.tf"), "");
-        File.WriteAllText(Path.Combine(v1Dir, "transaction_details.json.remote-etag.tf"), "etag-v1");
         File.WriteAllText(Path.Combine(v1Dir, ".synching.tf"), "");
 
         // Act: Update to V2
@@ -270,7 +269,6 @@ public class LocalTripStorageTests : IDisposable
         
         File.Exists(Path.Combine(v2Dir, "transaction_details.json")).Should().BeTrue();
         File.Exists(Path.Combine(v2Dir, ".synched.tf")).Should().BeFalse(".synched.tf should NOT be copied");
-        File.Exists(Path.Combine(v2Dir, "transaction_details.json.remote-etag.tf")).Should().BeFalse(".remote-etag.tf should NOT be copied");
         File.Exists(Path.Combine(v2Dir, ".synching.tf")).Should().BeFalse(".synching.tf should NOT be copied");
     }
 }

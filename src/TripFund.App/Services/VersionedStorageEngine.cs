@@ -70,7 +70,6 @@ public class VersionedStorageEngine
     {
         new(@"^\.synched\.tf$", RegexOptions.Compiled | RegexOptions.IgnoreCase),
         new(@"^\.synching\.tf$", RegexOptions.Compiled | RegexOptions.IgnoreCase),
-        new(@"\.remote-etag\.tf$", RegexOptions.Compiled | RegexOptions.IgnoreCase),
         new(@"^\.resolved_versions\.tf$", RegexOptions.Compiled | RegexOptions.IgnoreCase),
         new(@"^\.deleted\.tf$", RegexOptions.Compiled | RegexOptions.IgnoreCase)
     };

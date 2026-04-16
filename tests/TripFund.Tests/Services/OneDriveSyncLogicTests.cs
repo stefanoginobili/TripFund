@@ -102,7 +102,7 @@ public class OneDriveSyncLogicTests : IDisposable
 
         // 3. List files in v1_id (Leaf folder)
         _server.Given(Request.Create().WithPath("/me/drive/items/v1_id/children").UsingGet())
-            .RespondWith(Response.Create().WithStatusCode(200).WithBody("{ \"value\": [ { \"id\": \"file1_id\", \"name\": \"trip_config.json\", \"file\": {}, \"eTag\": \"etag1\" } ] }"));
+            .RespondWith(Response.Create().WithStatusCode(200).WithBody("{ \"value\": [ { \"id\": \"file1_id\", \"name\": \"trip_config.json\", \"file\": {} } ] }"));
 
         // 4. Download content
         _server.Given(Request.Create().WithPath("/me/drive/items/file1_id/content").UsingGet())

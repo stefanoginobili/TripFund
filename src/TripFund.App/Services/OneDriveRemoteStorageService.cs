@@ -135,8 +135,7 @@ public class OneDriveRemoteStorageService : IRemoteStorageService, IRemoteFileSy
             Id = i.Id,
             Name = i.Name,
             IsFolder = i.Folder != null || i.RemoteItem?.Folder != null,
-            IsRemote = i.RemoteItem != null,
-            ETag = i.ETag
+            IsRemote = i.RemoteItem != null
         }).ToList();
     }
 
@@ -149,8 +148,7 @@ public class OneDriveRemoteStorageService : IRemoteStorageService, IRemoteFileSy
             Id = item.Id,
             Name = item.Name,
             IsFolder = item.Folder != null || item.RemoteItem?.Folder != null,
-            IsRemote = item.RemoteItem != null,
-            ETag = item.ETag
+            IsRemote = item.RemoteItem != null
         };
     }
 
@@ -167,8 +165,7 @@ public class OneDriveRemoteStorageService : IRemoteStorageService, IRemoteFileSy
         {
             Id = item.Id,
             Name = item.Name,
-            IsFolder = true,
-            ETag = item.ETag
+            IsFolder = true
         };
     }
 
@@ -180,8 +177,7 @@ public class OneDriveRemoteStorageService : IRemoteStorageService, IRemoteFileSy
         {
             Id = item.Id,
             Name = item.Name,
-            IsFolder = false,
-            ETag = item.ETag
+            IsFolder = false
         };
     }
 
@@ -503,7 +499,6 @@ public class OneDriveRemoteStorageService : IRemoteStorageService, IRemoteFileSy
         [JsonPropertyName("folder")] public object? Folder { get; set; }
         [JsonPropertyName("remoteItem")] public RemoteItemInternal? RemoteItem { get; set; }
         [JsonPropertyName("@microsoft.graph.downloadUrl")] public string? DownloadUrl { get; set; }
-        [JsonPropertyName("eTag")] public string? ETag { get; set; }
     }
 
     private class RemoteItemInternal

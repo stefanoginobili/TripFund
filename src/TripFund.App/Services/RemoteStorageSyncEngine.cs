@@ -220,7 +220,7 @@ public class RemoteStorageSyncEngine
             if (Directory.Exists(localPath))
             {
                 var localEntries = Directory.GetFileSystemEntries(localPath)
-                    .Where(e => !e.EndsWith(".remote-etag.tf") && Path.GetFileName(e) != ".synching.tf" && Path.GetFileName(e) != ".synched.tf")
+                    .Where(e => Path.GetFileName(e) != ".synching.tf" && Path.GetFileName(e) != ".synched.tf")
                     .ToList();
                 bool hasSynching = File.Exists(Path.Combine(localPath, ".synching.tf"));
                 if (localEntries.Count > 0 && !hasSynching)
@@ -250,31 +250,10 @@ public class RemoteStorageSyncEngine
                     if (content != null)
                     {
                         await File.WriteAllBytesAsync(localChildFile, content);
-                        await File.WriteAllTextAsync(localChildFile + ".remote-etag.tf", child.ETag);
                     }
                 }
 
                 if (File.Exists(synchingFile)) File.Delete(synchingFile);
-            }
-            else
-            {
-                foreach (var child in children.Where(c => !c.IsFolder && c.Name != ".synching.tf"))
-                {
-                    var localChildFile = Path.Combine(localPath, child.Name);
-                    var metadataFile = localChildFile + ".remote-etag.tf";
-                    var remoteEtag = child.ETag;
-                    var localEtag = File.Exists(metadataFile) ? await File.ReadAllTextAsync(metadataFile) : null;
-
-                    if (remoteEtag != localEtag)
-                    {
-                        var content = await fileSystem.DownloadFileContentAsync(child.Id, parameters);
-                        if (content != null)
-                        {
-                            await File.WriteAllBytesAsync(localChildFile, content);
-                            await File.WriteAllTextAsync(metadataFile, remoteEtag);
-                        }
-                    }
-                }
             }
 
             await File.WriteAllTextAsync(Path.Combine(localPath, ".synched.tf"), "");
@@ -288,7 +267,7 @@ public class RemoteStorageSyncEngine
         if (fileSystem.Logger != null) fileSystem.Logger.CurrentFolderName = Path.GetFileName(localPath);
 
         var localEntries = Directory.GetFileSystemEntries(localPath)
-            .Where(e => !e.EndsWith(".remote-etag.tf") && Path.GetFileName(e) != ".synching.tf" && Path.GetFileName(e) != ".synched.tf")
+            .Where(e => Path.GetFileName(e) != ".synching.tf" && Path.GetFileName(e) != ".synched.tf")
             .ToList();
 
         // OPTIMIZATION: Filter out items that are already synched. 
@@ -351,34 +330,12 @@ public class RemoteStorageSyncEngine
                 {
                     var name = Path.GetFileName(entry);
                     var content = await File.ReadAllBytesAsync(entry);
-                    var uploaded = await fileSystem.UploadFileAsync(remoteFolderId, name, content, parameters);
-                    if (uploaded != null)
-                    {
-                        await File.WriteAllTextAsync(entry + ".remote-etag.tf", uploaded.ETag);
-                    }
+                    await fileSystem.UploadFileAsync(remoteFolderId, name, content, parameters);
                 }
 
                 var finalChildren = await fileSystem.ListChildrenAsync(remoteFolderId, parameters);
                 var sFile = finalChildren.FirstOrDefault(c => c.Name == ".synching.tf");
                 if (sFile != null) await fileSystem.DeleteFileAsync(sFile.Id, parameters);
-            }
-            else
-            {
-                foreach (var entry in localEntries.Where(e => File.Exists(e)))
-                {
-                    var name = Path.GetFileName(entry);
-                    var remoteMatch = remoteChildren.FirstOrDefault(c => c.Name == name);
-
-                    var content = await File.ReadAllBytesAsync(entry);
-                    var etagFile = entry + ".remote-etag.tf";
-                    var localEtag = File.Exists(etagFile) ? await File.ReadAllTextAsync(etagFile) : null;
-
-                    if (remoteMatch == null || localEtag == null)
-                    {
-                        var uploaded = await fileSystem.UploadFileAsync(remoteFolderId, name, content, parameters);
-                        if (uploaded != null) await File.WriteAllTextAsync(etagFile, uploaded.ETag);
-                    }
-                }
             }
 
             await File.WriteAllTextAsync(Path.Combine(localPath, ".synched.tf"), "");

@@ -25,7 +25,7 @@ Implement the `OneDriveRemoteStorageService` to enable offline-first synchroniza
 
 ### 3. Synchronization Logic (`SynchronizeAsync`)
 Follow the versioned storage engine logic:
-- **Config Sync**: Compare local and remote `config_versioned/` using ETags.
+- **Config Sync**: Ensure local and remote `config_versioned/` are consistent using the folder-based sync logic.
 - **Transactions Sync**:
   - Traverse `transactions/` folder recursively.
   - Identify version folders: `transactions/{transactionId}/details_versioned/{NNN_kind_deviceId}/`.
