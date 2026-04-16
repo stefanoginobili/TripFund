@@ -55,8 +55,8 @@ public class PdfReportService
             yPos = DrawExpenseTable(gfx, document, ref page, config!, expenses, yPos);
             yPos += 30;
 
-            // Summary Table
-            DrawSummaryTable(gfx, document, ref page, config!, transactions!, yPos);
+            // Summary Tiles
+            DrawSummaryTiles(gfx, document, ref page, config!, transactions!, yPos);
         }
 
         // Add Page Numbers in Footer
@@ -101,13 +101,13 @@ public class PdfReportService
         var textFont = new XFont("Sans-Serif", 10, XFontStyleEx.Regular);
 
         gfx.DrawString("TripFund", subTitleFont, XBrushes.DarkSlateGray, Margin + 50, yPos + 15);
-        gfx.DrawString("Riepilogo Cassa Comune", titleFont, XBrushes.Black, Margin + 50, yPos + 35);
+        gfx.DrawString("Spese Cassa Comune", titleFont, XBrushes.Black, Margin + 50, yPos + 35);
 
         yPos += 60;
-        gfx.DrawString(config.Name ?? string.Empty, subTitleFont, XBrushes.Black, Margin, yPos);
+        gfx.DrawString(config.Name ?? string.Empty, subTitleFont, XBrushes.Black, Margin + 50, yPos);
         yPos += 18;
         string dates = $"{config.StartDate.ToString("dd/MM/yyyy", ItCulture)} - {config.EndDate.ToString("dd/MM/yyyy", ItCulture)}";
-        gfx.DrawString(dates, textFont, XBrushes.Gray, Margin, yPos);
+        gfx.DrawString(dates, textFont, XBrushes.Gray, Margin + 50, yPos);
 
         return yPos + 10;
     }
@@ -131,15 +131,9 @@ public class PdfReportService
 
         foreach (var ex in expenses)
         {
-            if (yPos > PageHeight - Margin - 60) // Increased buffer for footer
+            if (yPos > PageHeight - Margin - 60)
             {
-                // We need to dispose the current gfx before adding a new page and getting a new gfx
-                // But DrawExpenseTable receives gfx as a parameter.
-                // This means the design needs a small fix: either pass XGraphics by ref and recreate it,
-                // or have the caller handle page creation.
-                // For simplicity, we'll keep using the same gfx if possible, but PDFsharp 6.x is strict.
-                
-                // Let's refactor to handle the multi-page logic correctly.
+                // Simple multi-page logic would go here if needed
             }
 
             // Data/Ora
@@ -170,29 +164,25 @@ public class PdfReportService
         return yPos;
     }
 
-    private void DrawSummaryTable(XGraphics gfx, PdfDocument doc, ref PdfPage page, TripConfig config, List<Transaction> transactions, double yPos)
+    private void DrawSummaryTiles(XGraphics gfx, PdfDocument doc, ref PdfPage page, TripConfig config, List<Transaction> transactions, double yPos)
     {
         if (config == null || config.Currencies == null) return;
         
-        var titleFont = new XFont("Sans-Serif", 12, XFontStyleEx.Bold);
-        var headerFont = new XFont("Sans-Serif", 9, XFontStyleEx.Bold);
-        var bodyFont = new XFont("Monospace", 9, XFontStyleEx.Regular);
+        var currencyCodeFont = new XFont("Sans-Serif", 18, XFontStyleEx.Bold);
+        var monoFont = new XFont("Monospace", 9, XFontStyleEx.Regular);
+        var monoBoldFont = new XFont("Monospace", 9, XFontStyleEx.Bold);
 
-        gfx.DrawString("Totali per Valuta", titleFont, XBrushes.Black, Margin, yPos);
-        yPos += 20;
-
-        double[] colWidths = { 80, 145, 145, 145 };
-        string[] headers = { "Valuta", "Totale", "Quota", "Differenza" };
-
-        gfx.DrawRectangle(XBrushes.LightGray, Margin, yPos, PageWidth - 2 * Margin, 18);
-        gfx.DrawString(headers[0], headerFont, XBrushes.Black, new XRect(Margin + 8, yPos, colWidths[0] - 8, 18), XStringFormats.CenterLeft);
-        gfx.DrawString(headers[1], headerFont, XBrushes.Black, new XRect(Margin + colWidths[0], yPos, colWidths[1] - 8, 18), XStringFormats.CenterRight);
-        gfx.DrawString(headers[2], headerFont, XBrushes.Black, new XRect(Margin + colWidths[0] + colWidths[1], yPos, colWidths[2] - 8, 18), XStringFormats.CenterRight);
-        gfx.DrawString(headers[3], headerFont, XBrushes.Black, new XRect(Margin + colWidths[0] + colWidths[1] + colWidths[2], yPos, colWidths[3] - 8, 18), XStringFormats.CenterRight);
-
-        yPos += 20;
+        yPos += 5; // Small buffer instead of title
 
         int membersCount = config.Members?.Count ?? 0;
+        double spacing = 10;
+        double tileWidth = (PageWidth - 2 * Margin - 2 * spacing) / 3;
+        double tileHeight = 85;
+        double currentX = Margin;
+        int count = 0;
+
+        // Measure monospace character width
+        double charWidth = gfx.MeasureString(" ", monoFont).Width;
 
         foreach (var currencyPair in config.Currencies)
         {
@@ -203,15 +193,63 @@ public class PdfReportService
             decimal quota = (currency?.ExpectedQuotaPerMember ?? 0) * membersCount;
             decimal diff = totalExpenses - quota;
 
-            gfx.DrawString(currencyCode ?? string.Empty, bodyFont, XBrushes.Black, new XRect(Margin + 8, yPos, colWidths[0] - 8, 15), XStringFormats.CenterLeft);
-            gfx.DrawString(FormatCurrency(totalExpenses, currencyCode ?? string.Empty, config), bodyFont, XBrushes.Black, new XRect(Margin + colWidths[0], yPos, colWidths[1] - 8, 15), XStringFormats.CenterRight);
-            gfx.DrawString(FormatCurrency(quota, currencyCode ?? string.Empty, config), bodyFont, XBrushes.Black, new XRect(Margin + colWidths[0] + colWidths[1], yPos, colWidths[2] - 8, 15), XStringFormats.CenterRight);
+            // Draw Tile Background
+            gfx.DrawRectangle(new XSolidBrush(XColor.FromArgb(245, 245, 245)), currentX, yPos, tileWidth, tileHeight);
             
-            var diffBrush = diff <= 0 ? XBrushes.Green : XBrushes.Red;
-            gfx.DrawString(FormatCurrency(diff, currencyCode ?? string.Empty, config), bodyFont, diffBrush, new XRect(Margin + colWidths[0] + colWidths[1] + colWidths[2], yPos, colWidths[3] - 8, 15), XStringFormats.CenterRight);
+            // Currency Code (Top Left)
+            gfx.DrawString(currencyCode ?? string.Empty, currencyCodeFont, XBrushes.DarkGray, currentX + 10, yPos + 25);
 
-            yPos += 18;
+            // Right-aligned values
+            string totalStr = FormatAmountOnly(totalExpenses, currencyCode ?? string.Empty, config);
+            string quotaStr = FormatAmountOnly(quota, currencyCode ?? string.Empty, config);
+            string diffStr = FormatAmountOnly(diff, currencyCode ?? string.Empty, config);
+
+            // Calculate max line length for alignment (with at least 3 spaces)
+            int maxLen = Math.Max("Totale:".Length + totalStr.Length, 
+                         Math.Max("Quota:".Length + quotaStr.Length, 
+                                  "Differenza:".Length + diffStr.Length)) + 3;
+
+            var diffBrush = diff <= 0 ? XBrushes.Green : XBrushes.Red;
+
+            // Draw the 3-value block aligned to the bottom right
+            DrawPaddedSummaryLine(gfx, "Totale:", totalStr, maxLen, monoBoldFont, XBrushes.Black, currentX, yPos + tileHeight - 52, tileWidth, charWidth);
+            DrawPaddedSummaryLine(gfx, "Quota:", quotaStr, maxLen, monoFont, XBrushes.Gray, currentX, yPos + tileHeight - 35, tileWidth, charWidth);
+            DrawPaddedSummaryLine(gfx, "Differenza:", diffStr, maxLen, monoFont, diffBrush, currentX, yPos + tileHeight - 20, tileWidth, charWidth);
+
+            count++;
+            if (count % 3 == 0)
+            {
+                currentX = Margin;
+                yPos += tileHeight + spacing;
+            }
+            else
+            {
+                currentX += tileWidth + spacing;
+            }
         }
+    }
+
+    private void DrawPaddedSummaryLine(XGraphics gfx, string label, string value, int maxLen, XFont valueFont, XBrush valueBrush, double currentX, double lineY, double tileWidth, double charWidth)
+    {
+        double blockWidth = maxLen * charWidth;
+        double startX = currentX + tileWidth - 10 - blockWidth;
+        var labelFont = new XFont("Monospace", 9, XFontStyleEx.Regular);
+
+        // Draw Label (Gray, left-aligned in the block)
+        gfx.DrawString(label, labelFont, XBrushes.Gray, new XRect(startX, lineY, blockWidth, 15), XStringFormats.CenterLeft);
+
+        // Draw Value (Colored/Bold, right-aligned in the block)
+        gfx.DrawString(value, valueFont, valueBrush, new XRect(startX, lineY, blockWidth, 15), XStringFormats.CenterRight);
+    }
+
+    private string FormatAmountOnly(decimal amount, string currencyCode, TripConfig config)
+    {
+        if (config != null && config.Currencies != null && config.Currencies.TryGetValue(currencyCode, out var c))
+        {
+            string format = c.Decimals > 0 ? "N" + c.Decimals : "N0";
+            return amount.ToString(format, ItCulture);
+        }
+        return amount.ToString("N2", ItCulture);
     }
 
     private string FormatCurrency(decimal amount, string currencyCode, TripConfig config)
