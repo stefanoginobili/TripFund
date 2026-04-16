@@ -28,6 +28,7 @@ public class DashboardTests : BunitContext
         Services.AddSingleton(new Mock<IAlertService>().Object);
         Services.AddSingleton(new Mock<IThumbnailService>().Object);
         Services.AddSingleton(new Mock<IRemoteStorageService>().Object);
+        Services.AddSingleton(new PdfReportService());
     }
 
     [Fact]
@@ -702,12 +703,13 @@ public class DashboardTests : BunitContext
     }
 
     [Fact]
-    public void MemberDashboard_SummaryEmailAction_ShouldBeDisabledIfNoContributions()
+    public void MemberDashboard_SummaryEmailAction_ShouldBeEnabledEvenIfNoContributions()
     {
         // Arrange
         var tripSlug = "test-trip";
         var memberSlug = "mario";
-        Services.AddSingleton(new Mock<IEmailService>().Object);
+        var emailServiceMock = new Mock<IEmailService>();
+        Services.AddSingleton(emailServiceMock.Object);
         Services.AddSingleton(new Mock<IAlertService>().Object);
 
         var config = new TripConfig
@@ -730,18 +732,29 @@ public class DashboardTests : BunitContext
         // Act - Open menu
         cut.Find(".header-actions .icon-btn").Click();
 
-        // Assert - Button should be disabled
+        // Assert - Button should be enabled
         var summaryBtn = cut.Find(".dropdown-item-vibe");
-        summaryBtn.HasAttribute("disabled").Should().BeTrue();
+        summaryBtn.HasAttribute("disabled").Should().BeFalse();
+
+        // Act - Click summary button
+        summaryBtn.Click();
+
+        // Assert - Email service should be called with "Nessun versamento registrato"
+        emailServiceMock.Verify(e => e.SendEmailAsync(
+            It.Is<string>(s => s.Contains("Riepilogo versamenti")),
+            It.Is<string>(b => b.Contains("Nessun versamento registrato") && b.Contains("Ciao Mario") && !b.Contains("RIEPILOGO TOTALI PER VALUTA")),
+            It.Is<IEnumerable<string>>(a => a.Contains("mario@example.com"))
+        ), Times.Once);
     }
 
     [Fact]
-    public void MemberDashboard_SummaryEmailAction_ShouldBeDisabledIfMemberHasNoEmail()
+    public void MemberDashboard_SummaryEmailAction_ShouldBeEnabledEvenIfMemberHasNoEmail()
     {
         // Arrange
         var tripSlug = "test-trip";
         var memberSlug = "mario";
-        Services.AddSingleton(new Mock<IEmailService>().Object);
+        var emailServiceMock = new Mock<IEmailService>();
+        Services.AddSingleton(emailServiceMock.Object);
         Services.AddSingleton(new Mock<IAlertService>().Object);
 
         var config = new TripConfig
@@ -776,8 +789,18 @@ public class DashboardTests : BunitContext
         // Act - Open menu
         cut.Find(".header-actions .icon-btn").Click();
 
-        // Assert - Button should be disabled
+        // Assert - Button should be enabled
         var summaryBtn = cut.Find(".dropdown-item-vibe");
-        summaryBtn.HasAttribute("disabled").Should().BeTrue();
+        summaryBtn.HasAttribute("disabled").Should().BeFalse();
+
+        // Act - Click summary button
+        summaryBtn.Click();
+
+        // Assert - Email service should be called with empty recipients
+        emailServiceMock.Verify(e => e.SendEmailAsync(
+            It.Is<string>(s => s.Contains("Riepilogo versamenti")),
+            It.IsAny<string>(),
+            It.Is<IEnumerable<string>>(a => !a.Any())
+        ), Times.Once);
     }
 }

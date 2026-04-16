@@ -140,4 +140,59 @@ public class EmailReceiptTests : BunitContext
         // 2. Verify Email was NEVER sent
         _emailMock.Verify(e => e.SendEmailAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<IEnumerable<string>>()), Times.Never);
     }
+
+    [Fact]
+    public async Task AddContribution_ShouldPromptAndSendEmail_EvenIfNoEmailConfigured()
+    {
+        // Arrange
+        var tripSlug = "test-trip";
+        var config = new TripConfig
+        {
+            Id = "123",
+            Name = "Test Trip",
+            Currencies = new Dictionary<string, Currency> { 
+                { "EUR", new Currency { Symbol = "€", Name = "Euro", Decimals = 2, ExpectedQuotaPerMember = 1000 } } 
+            },
+            Members = new Dictionary<string, User>
+            {
+                { "mario", new User { Name = "Mario", Email = "", Avatar = "M" } }
+            }
+        };
+        _storageMock.Setup(s => s.GetTripConfigAsync(tripSlug)).ReturnsAsync(config);
+        
+        var transactions = new List<Transaction>();
+        _storageMock.Setup(s => s.GetTransactionsAsync(tripSlug)).ReturnsAsync(transactions);
+        
+        _storageMock.Setup(s => s.SaveTransactionAsync(tripSlug, It.IsAny<Transaction>(), It.IsAny<string>(), It.IsAny<bool>(), It.IsAny<Dictionary<string, byte[]>>()))
+            .Callback<string, Transaction, string, bool, Dictionary<string, byte[]>>((s, t, d, b, a) => transactions.Add(t))
+            .Returns(Task.CompletedTask);
+        
+        // Mock alert confirmation to return TRUE (Sì)
+        _alertMock.Setup(a => a.ConfirmAsync("Invia ricevuta", It.IsAny<string>(), "Sì", "No"))
+            .ReturnsAsync(true);
+
+        var cut = Render<AddContribution>(parameters => parameters.Add(p => p.tripSlug, tripSlug));
+
+        // Act
+        cut.Find(".amount-input").Change("500");
+        
+        // Select member
+        cut.Find(".custom-member-selector").Click();
+        var marioItem = cut.FindAll(".dropdown-member-item").First(i => i.InnerHtml.Contains("Mario"));
+        marioItem.Click();
+
+        // Submit
+        await cut.Find(".btn-primary-vibe").ClickAsync();
+
+        // Assert
+        // 1. Verify Alert was shown
+        _alertMock.Verify(a => a.ConfirmAsync("Invia ricevuta", It.Is<string>(s => s.Contains("Mario")), "Sì", "No"), Times.Once);
+        
+        // 2. Verify Email was sent with empty recipients
+        _emailMock.Verify(e => e.SendEmailAsync(
+            It.Is<string>(s => s.Contains("Riepilogo versamenti")),
+            It.IsAny<string>(),
+            It.Is<IEnumerable<string>>(rec => !rec.Any())
+        ), Times.Once);
+    }
 }

@@ -118,23 +118,16 @@ namespace TripFund.App.Components.Pages
             isMenuOpen = false;
             if (config == null || member == null) return;
 
-            if (string.IsNullOrEmpty(member.Email))
-            {
-                await AlertService.ShowAlertAsync("Email mancante", $"Il partecipante {member.Name} non ha un indirizzo email configurato.");
-                return;
-            }
-
             var latestContribution = allTransactions
                 .Where(t => t.Type == "contribution" && t.Split.ContainsKey(memberSlug))
                 .OrderByDescending(t => t.Date)
                 .FirstOrDefault();
 
-            if (latestContribution == null) return;
-
             try
             {
-                var body = ReceiptGenerator.GenerateContributionText(config, latestContribution, allTransactions);
-                await EmailService.SendEmailAsync($"{config.Name} - Riepilogo versamenti", body, new[] { member.Email });
+                var body = ReceiptGenerator.GenerateContributionText(config, memberSlug, latestContribution, allTransactions);
+                var recipients = string.IsNullOrEmpty(member.Email) ? Array.Empty<string>() : new[] { member.Email };
+                await EmailService.SendEmailAsync($"{config.Name} - Riepilogo versamenti", body, recipients);
             }
             catch (Exception ex)
             {

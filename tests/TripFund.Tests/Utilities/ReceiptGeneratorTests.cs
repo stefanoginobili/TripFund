@@ -40,7 +40,7 @@ public class ReceiptGeneratorTests
         var allTransactions = new List<Transaction> { contribution };
 
         // Act
-        var result = ReceiptGenerator.GenerateContributionText(trip, contribution, allTransactions);
+        var result = ReceiptGenerator.GenerateContributionText(trip, "mario", contribution, allTransactions);
 
         // Assert
         result.Should().Contain("Data: 27/10/2023 12:30 (UTC+02:00)");
@@ -80,9 +80,38 @@ public class ReceiptGeneratorTests
         var allTransactions = new List<Transaction> { contribution };
 
         // Act
-        var result = ReceiptGenerator.GenerateContributionText(trip, contribution, allTransactions);
+        var result = ReceiptGenerator.GenerateContributionText(trip, "mario", contribution, allTransactions);
 
         // Assert
         result.Should().Contain("Data: 27/10/2023 09:00 (UTC-04:00)");
+    }
+
+    [Fact]
+    public void GenerateContributionText_ShouldShowNoContributionsMessage_WhenMemberHasNoContributions()
+    {
+        // Arrange
+        var trip = new TripConfig
+        {
+            Name = "Test Trip",
+            Members = new Dictionary<string, User>
+            {
+                { "mario", new User { Name = "Mario", Email = "mario@example.com", Avatar = "👨" } }
+            },
+            Currencies = new Dictionary<string, Currency>
+            {
+                { "EUR", new Currency { Symbol = "€", Decimals = 2 } }
+            }
+        };
+
+        var allTransactions = new List<Transaction>();
+
+        // Act
+        var result = ReceiptGenerator.GenerateContributionText(trip, "mario", null, allTransactions);
+
+        // Assert
+        result.Should().Contain("Ciao Mario,");
+        result.Should().Contain("--- DETTAGLIO VERSAMENTI ---");
+        result.Should().Contain("Nessun versamento registrato");
+        result.Should().NotContain("--- RIEPILOGO TOTALI PER VALUTA ---");
     }
 }

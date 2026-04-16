@@ -341,7 +341,7 @@ namespace TripFund.App.Components.Pages
             {
                 await Storage.SaveTransactionAsync(tripSlug, transaction, deviceId);
                 
-                if (config.Members.TryGetValue(selectedMemberSlug, out var member) && !string.IsNullOrEmpty(member.Email))
+                if (config.Members.TryGetValue(selectedMemberSlug, out var member))
                 {
                     bool confirm = await AlertService.ConfirmAsync("Invia ricevuta", $"Vuoi inviare una ricevuta via email a {member.Name}?", "Sì", "No");
                     if (confirm)
@@ -349,8 +349,9 @@ namespace TripFund.App.Components.Pages
                         try
                         {
                             var updatedTransactions = await Storage.GetTransactionsAsync(tripSlug);
-                            var body = ReceiptGenerator.GenerateContributionText(config, transaction, updatedTransactions);
-                            await EmailService.SendEmailAsync($"{config.Name} - Riepilogo versamenti", body, new[] { member.Email });
+                            var body = ReceiptGenerator.GenerateContributionText(config, selectedMemberSlug, transaction, updatedTransactions);
+                            var recipients = string.IsNullOrEmpty(member.Email) ? Array.Empty<string>() : new[] { member.Email };
+                            await EmailService.SendEmailAsync($"{config.Name} - Riepilogo versamenti", body, recipients);
                         }
                         catch (Exception emailEx)
                         {
