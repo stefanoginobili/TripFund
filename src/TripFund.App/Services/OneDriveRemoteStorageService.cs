@@ -65,9 +65,9 @@ public class OneDriveRemoteStorageService : IRemoteStorageService, IRemoteFileSy
 
         await EnsureAuthenticatedAsync(parameters);
         
-        // In Microsoft Graph, we browse config/trip_config.json
-        // 1. Look for config folder
-        var configFolder = await GetChildItemAsync(folderId, "config", parameters);
+        // In Microsoft Graph, we browse config_versioned/trip_config.json
+        // 1. Look for config_versioned folder
+        var configFolder = await GetChildItemAsync(folderId, "config_versioned", parameters);
         if (configFolder == null || configFolder.Folder == null) return null;
 
         // 2. Look for latest version folder in config

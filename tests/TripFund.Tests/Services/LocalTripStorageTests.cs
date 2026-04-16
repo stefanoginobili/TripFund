@@ -40,7 +40,7 @@ public class LocalTripStorageTests : IDisposable
         loaded!.Name.Should().Be("Test Trip");
         loaded.UpdatedAt.Should().BeCloseTo(DateTime.UtcNow, TimeSpan.FromSeconds(5));
 
-        var configDir = Path.Combine(_tempPath, "trips", slug, "config");
+        var configDir = Path.Combine(_tempPath, "trips", slug, "config_versioned");
         Directory.GetDirectories(configDir).Should().ContainSingle(d => Path.GetFileName(d) == "001_NEW_mario");
     }
 
@@ -59,7 +59,7 @@ public class LocalTripStorageTests : IDisposable
         transactions.Should().ContainSingle();
         transactions[0].Description.Should().Be("Lunch");
 
-        var detailsDir = Path.Combine(_tempPath, "trips", tripSlug, "transactions", "trans-1", "details");
+        var detailsDir = Path.Combine(_tempPath, "trips", tripSlug, "transactions", "trans-1", "details_versioned");
         Directory.GetDirectories(detailsDir).Should().ContainSingle(d => Path.GetFileName(d) == "001_NEW_mario");
     }
 
@@ -80,7 +80,7 @@ public class LocalTripStorageTests : IDisposable
         transactions.Should().ContainSingle();
         transactions[0].Description.Should().Be("Lunch V2");
         
-        var detailsDir = Path.Combine(_tempPath, "trips", tripSlug, "transactions", "trans-1", "details");
+        var detailsDir = Path.Combine(_tempPath, "trips", tripSlug, "transactions", "trans-1", "details_versioned");
         Directory.GetDirectories(detailsDir).Should().HaveCount(2);
         Directory.GetDirectories(detailsDir).Should().Contain(d => Path.GetFileName(d) == "002_UPD_mario");
     }
@@ -100,7 +100,7 @@ public class LocalTripStorageTests : IDisposable
         // Assert
         transactions.Should().BeEmpty();
 
-        var detailsDir = Path.Combine(_tempPath, "trips", tripSlug, "transactions", "trans-1", "details");
+        var detailsDir = Path.Combine(_tempPath, "trips", tripSlug, "transactions", "trans-1", "details_versioned");
         Directory.GetDirectories(detailsDir).Should().HaveCount(2);
         Directory.GetDirectories(detailsDir).Should().Contain(d => Path.GetFileName(d) == "002_DEL_mario");
     }
@@ -119,7 +119,7 @@ public class LocalTripStorageTests : IDisposable
         await _service.SaveTransactionAsync(tripSlug, t1, "mario", isDelete: true);
 
         // Assert
-        var detailsDir = Path.Combine(_tempPath, "trips", tripSlug, "transactions", "trans-1", "details");
+        var detailsDir = Path.Combine(_tempPath, "trips", tripSlug, "transactions", "trans-1", "details_versioned");
         var delVersionDir = Path.Combine(detailsDir, "002_DEL_mario");
         var deletedFile = Path.Combine(delVersionDir, ".deleted.tf");
         
@@ -142,7 +142,7 @@ public class LocalTripStorageTests : IDisposable
         // Arrange
         var tripSlug = "test-trip";
         var transId = "trans-1";
-        var detailsDir = Path.Combine(_tempPath, "trips", tripSlug, "transactions", transId, "details");
+        var detailsDir = Path.Combine(_tempPath, "trips", tripSlug, "transactions", transId, "details_versioned");
         Directory.CreateDirectory(detailsDir);
         
         // Manual setup to create conflict (same sequence number for different users)
@@ -162,7 +162,7 @@ public class LocalTripStorageTests : IDisposable
         // Arrange
         var tripSlug = "test-trip";
         var transId = "trans-1";
-        var detailsDir = Path.Combine(_tempPath, "trips", tripSlug, "transactions", transId, "details");
+        var detailsDir = Path.Combine(_tempPath, "trips", tripSlug, "transactions", transId, "details_versioned");
         Directory.CreateDirectory(detailsDir);
         
         // Setup conflict: 001_NEW_mario, 001_NEW_luigi
@@ -196,7 +196,7 @@ public class LocalTripStorageTests : IDisposable
         var firstVersion = await _service.GetLatestTransactionVersionAsync(tripSlug, transId);
         var originalCreatedAt = firstVersion!.CreatedAt;
         
-        var detailsDir = Path.Combine(_tempPath, "trips", tripSlug, "transactions", transId, "details");
+        var detailsDir = Path.Combine(_tempPath, "trips", tripSlug, "transactions", transId, "details_versioned");
         
         // Setup conflict: 002_UPD_mario, 002_UPD_luigi
         // We use sequence 2 because 1 already exists
@@ -252,7 +252,7 @@ public class LocalTripStorageTests : IDisposable
         
         await _service.SaveTransactionAsync(tripSlug, t1, deviceId);
         
-        var detailsDir = Path.Combine(_tempPath, "trips", tripSlug, "transactions", "trans-1", "details");
+        var detailsDir = Path.Combine(_tempPath, "trips", tripSlug, "transactions", "trans-1", "details_versioned");
         var v1Dir = Path.Combine(detailsDir, "001_NEW_device1");
         
         // Simulate successful sync

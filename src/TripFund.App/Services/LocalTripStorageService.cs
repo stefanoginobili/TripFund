@@ -66,7 +66,7 @@ public class LocalTripStorageService
 
     public virtual async Task<TripConfig?> GetTripConfigAsync(string tripSlug)
     {
-        var configPath = Path.Combine(_tripsPath, tripSlug, "config");
+        var configPath = Path.Combine(_tripsPath, tripSlug, "config_versioned");
         if (!Directory.Exists(configPath)) return null;
 
         var latestVersions = _engine.GetLatestVersionFolders(configPath);
@@ -83,7 +83,7 @@ public class LocalTripStorageService
 
     public virtual async Task SaveTripConfigAsync(string tripSlug, TripConfig config, string deviceId, bool isResolve = false)
     {
-        var configPath = Path.Combine(_tripsPath, tripSlug, "config");
+        var configPath = Path.Combine(_tripsPath, tripSlug, "config_versioned");
         if (!Directory.Exists(configPath)) Directory.CreateDirectory(configPath);
 
         var settings = await GetAppSettingsAsync();
@@ -123,7 +123,7 @@ public class LocalTripStorageService
 
     public virtual async Task<TransactionVersionInfo?> GetLatestTransactionVersionWithDetailsAsync(string tripSlug, string transactionId)
     {
-        var detailsRoot = Path.Combine(_tripsPath, tripSlug, "transactions", transactionId, "details");
+        var detailsRoot = Path.Combine(_tripsPath, tripSlug, "transactions", transactionId, "details_versioned");
         if (!Directory.Exists(detailsRoot)) return null;
 
         var latestVersions = _engine.GetLatestVersionFolders(detailsRoot);
@@ -189,7 +189,7 @@ public class LocalTripStorageService
         var transRoot = Path.Combine(_tripsPath, tripSlug, "transactions", transaction.Id);
         if (!Directory.Exists(transRoot)) Directory.CreateDirectory(transRoot);
 
-        var detailsRoot = Path.Combine(transRoot, "details");
+        var detailsRoot = Path.Combine(transRoot, "details_versioned");
         if (!Directory.Exists(detailsRoot)) Directory.CreateDirectory(detailsRoot);
 
         CommitKind kind = _engine.GetVersionFolders(detailsRoot).Count == 0 ? CommitKind.New : (isDelete ? CommitKind.Del : CommitKind.Upd);
@@ -253,7 +253,7 @@ public class LocalTripStorageService
 
     public virtual async Task<Dictionary<string, Transaction>> GetConflictingVersionsAsync(string tripSlug, string transactionId)
     {
-        var detailsRoot = Path.Combine(_tripsPath, tripSlug, "transactions", transactionId, "details");
+        var detailsRoot = Path.Combine(_tripsPath, tripSlug, "transactions", transactionId, "details_versioned");
         var latestVersions = _engine.GetLatestVersionFolders(detailsRoot);
 
         var result = new Dictionary<string, Transaction>();
@@ -275,7 +275,7 @@ public class LocalTripStorageService
 
     public virtual async Task ResolveConflictAsync(string tripSlug, Transaction resolvedTransaction, string deviceId)
     {
-        var detailsRoot = Path.Combine(_tripsPath, tripSlug, "transactions", resolvedTransaction.Id, "details");
+        var detailsRoot = Path.Combine(_tripsPath, tripSlug, "transactions", resolvedTransaction.Id, "details_versioned");
         
         var settings = await GetAppSettingsAsync();
         resolvedTransaction.Author = settings?.AuthorName ?? "Unknown";

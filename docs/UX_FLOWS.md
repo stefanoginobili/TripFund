@@ -9,12 +9,12 @@ This document strictly defines the user flows and UI layouts. **All UI text must
 
 ## 2. Join Existing Trip
 - **Action:** User selects a remote storage provider (e.g., Microsoft OneDrive, Git) and provides the required parameters.
-- **Remote Validation:** The app attempts to locate the `config` versioned folder in the specified remote location.
-  - If the `config` folder is missing, an error alert is shown: "Impossibile trovare i dati del viaggio nella posizione specificata."
-- **Confirmation Modal:** If found, the app reads the latest `trip_config.json` from the remote config and displays a confirmation modal:
+- **Remote Validation:** The app attempts to locate the `config_versioned` folder in the specified remote location.
+  - If the `config_versioned` folder is missing, an error alert is shown: "Impossibile trovare i dati del viaggio nella posizione specificata."
+- **Confirmation Modal:** If found, the app reads the latest `trip_config.json` from the remote config_versioned and displays a confirmation modal:
   - Text: "Vuoi aggiungere il viaggio {Name} dal {StartDate} al {EndDate}?"
   - Buttons: "Annulla" (closes modal), "Conferma" (proceeds).
-- **Result:** Upon confirmation, the app registers the trip in `known_trips.json`, syncs the config and transaction history locally, and navigates to the **Trip Dashboard** (Flow 4).
+- **Result:** Upon confirmation, the app registers the trip in `known_trips.json`, syncs the config_versioned and transaction history locally, and navigates to the **Trip Dashboard** (Flow 4).
 
 ## 3. Create New Trip
 - **Step A (Remote Storage Configuration):** User selects a remote storage provider (e.g., Microsoft OneDrive, Git) and provides the required parameters.

@@ -59,7 +59,7 @@ public class RemoteStorageSyncEngine
             logger.LogInfo("Checking for local conflicts...");
             var conflicts = new List<VersionedFolderConflictException>();
 
-            var configPath = Path.Combine(localTripPath, "config");
+            var configPath = Path.Combine(localTripPath, "config_versioned");
             if (Directory.Exists(configPath))
             {
                 var latest = _engine.GetLatestVersionFolders(configPath);
@@ -76,7 +76,7 @@ public class RemoteStorageSyncEngine
             {
                 foreach (var t in Directory.GetDirectories(transDir))
                 {
-                    var detailsRoot = Path.Combine(t, "details");
+                    var detailsRoot = Path.Combine(t, "details_versioned");
                     if (Directory.Exists(detailsRoot))
                     {
                         var latest = _engine.GetLatestVersionFolders(detailsRoot);
