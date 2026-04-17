@@ -220,6 +220,123 @@ public class OneDriveSyncLogicTests : IDisposable
         Assert.Empty(requests);
     }
 
+    [Fact]
+    public async Task SyncUp_SkipsRemoteAPI_IfAllLocalLeavesAreSynched()
+    {
+        // Arrange
+        var tripSlug = "test-trip";
+        var localTripPath = Path.Combine(_tempPath, "trips", tripSlug);
+        
+        // Create a synched leaf
+        var leafPath = Path.Combine(localTripPath, "config_versioned", "001_NEW_dev1");
+        Directory.CreateDirectory(leafPath);
+        File.WriteAllText(Path.Combine(leafPath, ".synched"), "");
+        Directory.CreateDirectory(Path.Combine(leafPath, ".data"));
+        File.WriteAllText(Path.Combine(leafPath, ".data", "trip_config.json"), "{}");
+        File.WriteAllText(Path.Combine(leafPath, ".metadata"), "author=mario");
+
+        var registry = new LocalTripRegistry();
+        registry.Trips[tripSlug] = new TripRegistryEntry 
+        { 
+            RemoteStorage = new RemoteStorageConfig 
+            { 
+                Provider = "onedrive", 
+                Parameters = new Dictionary<string, string> 
+                { 
+                    { "folderId", "root_id" },
+                    { "accessToken", "fake_token" },
+                    { "accessTokenExpiry", DateTime.Now.AddHours(1).ToString("O") }
+                } 
+            } 
+        };
+        var localStorage = new LocalTripStorageService(_tempPath);
+        await localStorage.SaveTripRegistryAsync(registry);
+
+        // Catch-all mock to ensure ANY request is handled (specifically the write check)
+        _server.Given(Request.Create().UsingAnyMethod())
+            .RespondWith(Response.Create().WithStatusCode(200).WithBody("{ \"value\": [], \"id\": \"root_id\", \"name\": \"root\" }"));
+
+        // Mock Download phase (empty remote)
+        _server.Given(Request.Create().WithPath("/me/drive/items/root_id/children").UsingGet())
+            .RespondWith(Response.Create().WithStatusCode(200).WithBody("{ \"value\": [] }"));
+
+        // Act
+        await _service.SynchronizeAsync(tripSlug);
+
+        // Assert
+        // The upload phase should have been skipped entirely.
+        // We check if ListChildren was called TWICE:
+        // 1. CheckFolderWritePermissionAsync
+        // 2. SyncDownAsync
+        var requests = _server.FindLogEntries(Request.Create().WithPath("/me/drive/items/root_id/children").UsingGet());
+        Assert.Equal(2, requests.Count); 
+    }
+
+    [Fact]
+    public async Task SyncUp_SkipsSubtreeAPI_IfSubtreeIsSynched()
+    {
+        // Arrange
+        var tripSlug = "test-trip";
+        var localTripPath = Path.Combine(_tempPath, "trips", tripSlug);
+        
+        // 1. A synched subtree (Transaction T1)
+        var t1Path = Path.Combine(localTripPath, "transactions", "T1", "details_versioned", "001_NEW_dev1");
+        Directory.CreateDirectory(t1Path);
+        File.WriteAllText(Path.Combine(t1Path, ".synched"), "");
+        Directory.CreateDirectory(Path.Combine(t1Path, ".data"));
+        File.WriteAllText(Path.Combine(t1Path, ".metadata"), "author=mario");
+
+        // 2. A PENDING subtree (Transaction T2)
+        var t2Path = Path.Combine(localTripPath, "transactions", "T2", "details_versioned", "001_NEW_dev1");
+        Directory.CreateDirectory(t2Path);
+        // NO .synched here!
+        Directory.CreateDirectory(Path.Combine(t2Path, ".data"));
+        File.WriteAllText(Path.Combine(t2Path, ".data", "details.json"), "{}");
+        File.WriteAllText(Path.Combine(t2Path, ".metadata"), "author=mario");
+
+        var registry = new LocalTripRegistry();
+        registry.Trips[tripSlug] = new TripRegistryEntry 
+        { 
+            RemoteStorage = new RemoteStorageConfig 
+            { 
+                Provider = "onedrive", 
+                Parameters = new Dictionary<string, string> 
+                { 
+                    { "folderId", "root_id" },
+                    { "accessToken", "fake_token" },
+                    { "accessTokenExpiry", DateTime.Now.AddHours(1).ToString("O") }
+                } 
+            } 
+        };
+        var localStorage = new LocalTripStorageService(_tempPath);
+        await localStorage.SaveTripRegistryAsync(registry);
+
+        // Catch-all mock to ensure ANY request is handled (specifically the write check)
+        _server.Given(Request.Create().UsingAnyMethod())
+            .RespondWith(Response.Create().WithStatusCode(200).WithBody("{ \"value\": [], \"id\": \"root_id\", \"name\": \"root\" }"));
+
+        // Mock Download phase (empty remote)
+        _server.Given(Request.Create().WithPath("/me/drive/items/root_id/children").UsingGet())
+            .RespondWith(Response.Create().WithStatusCode(200).WithBody("{ \"value\": [] }"));
+
+        // Mock Upload discovery
+        _server.Given(Request.Create().WithPath("/me/drive/items/root_id/children").UsingGet())
+            .RespondWith(Response.Create().WithStatusCode(200).WithBody("{ \"value\": [ { \"id\": \"trans_id\", \"name\": \"transactions\", \"folder\": {} } ] }"));
+
+        // Act
+        await _service.SynchronizeAsync(tripSlug);
+
+        // Assert
+        // We expect T2 to be processed but T1 to be completely ignored.
+        var t1Requests = _server.FindLogEntries(Request.Create().WithPath(new WildcardMatcher("*T1*")));
+        Assert.Empty(t1Requests);
+
+        // T2 or any of its descendants should have triggered a POST (creation)
+        var postRequests = _server.FindLogEntries(Request.Create().UsingPost());
+        // T2 folder creation should be there
+        Assert.NotEmpty(postRequests);
+    }
+
     public void Dispose()
     {
         _server.Stop();

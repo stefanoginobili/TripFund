@@ -103,8 +103,15 @@ public class RemoteStorageSyncEngine
             // 3. Upload Phase
             if (!entry.RemoteStorage.Readonly)
             {
-                logger.LogInfo("Starting UPLOAD phase...");
-                await SyncUpAsync(localTripPath, folderId, entry.RemoteStorage.Parameters, fileSystem);
+                if (HasPendingUploads(localTripPath))
+                {
+                    logger.LogInfo("Starting UPLOAD phase...");
+                    await SyncUpAsync(localTripPath, folderId, entry.RemoteStorage.Parameters, fileSystem);
+                }
+                else
+                {
+                    logger.LogInfo("Skipping UPLOAD phase (no local changes).");
+                }
             }
             else
             {
@@ -132,6 +139,27 @@ public class RemoteStorageSyncEngine
                 System.Diagnostics.Debug.WriteLine($"Failed to save sync log locally: {logEx.Message}");
             }
         }
+    }
+
+    private bool HasPendingUploads(string localPath)
+    {
+        if (!Directory.Exists(localPath)) return false;
+
+        // A folder has pending uploads if any of its descendant "Leaf" folders is not .synched.
+        // We identify a leaf folder by the presence of a .metadata file.
+        var allMetadataFiles = Directory.GetFiles(localPath, ".metadata", SearchOption.AllDirectories);
+        foreach (var metadataPath in allMetadataFiles)
+        {
+            var folderPath = Path.GetDirectoryName(metadataPath);
+            if (string.IsNullOrEmpty(folderPath)) continue;
+
+            if (!File.Exists(Path.Combine(folderPath, ".synched")))
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private async Task SaveSyncLogLocallyAsync(string tripSlug, IRemoteFileSystem fileSystem)
@@ -320,11 +348,18 @@ public class RemoteStorageSyncEngine
                 .Where(e => !VersionedStorageEngine.IgnoredSystemFiles.Any(r => r.IsMatch(Path.GetFileName(e))))
                 .ToList();
 
+            // OPTIMIZATION: If all local children are folders and all are already synched, 
+            // we can skip listing the remote children for this node.
+            if (localEntries.All(e => Directory.Exists(e) && !HasPendingUploads(e)))
+            {
+                return;
+            }
+
             var remoteChildren = await fileSystem.ListChildrenAsync(remoteFolderId, parameters);
 
             foreach (var entry in localEntries.Where(e => Directory.Exists(e)))
             {
-                if (File.Exists(Path.Combine(entry, ".synched"))) continue;
+                if (!HasPendingUploads(entry)) continue;
 
                 var name = Path.GetFileName(entry);
                 var remoteMatch = remoteChildren.FirstOrDefault(c => c.Name == name && c.IsFolder);
