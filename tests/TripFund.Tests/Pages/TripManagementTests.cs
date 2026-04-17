@@ -63,7 +63,7 @@ public class TripManagementTests : BunitContext
 
         // Assert
         _storageMock.Verify(s => s.SaveTripConfigAsync("new-trip_123", It.Is<TripConfig>(c => 
-            c.Id == "123" && 
+            c.Id == "new-trip_123" && 
             c.Name == "New Trip" && 
             c.Currencies.ContainsKey("USD")), "mario", It.IsAny<bool>()), Times.Once);
 

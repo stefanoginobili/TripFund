@@ -279,7 +279,7 @@ namespace TripFund.App.Components.Pages
             openMenuMemberSlug = null;
             bool confirm = await Alerts.ConfirmAsync(
                 "Elimina Partecipante",
-                $"Sei sicuro di voler eliminare {config?.Members[slug].Name}? Questa azione non può essere annullata.",
+                $"Sei sicuro di voler eliminare <b>{config?.Members[slug].Name}</b>?",
                 "Elimina",
                 "Annulla");
 
@@ -322,7 +322,7 @@ namespace TripFund.App.Components.Pages
         {
             bool confirm = await Alerts.ConfirmAsync(
                 "Elimina Viaggio",
-                "Sei sicuro di voler eliminare questo viaggio dal dispositivo?",
+                $"Sei sicuro di voler eliminare <b>{config?.Name}</b> dal dispositivo?",
                 "Elimina",
                 "Annulla");
 

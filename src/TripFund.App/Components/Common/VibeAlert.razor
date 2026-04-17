@@ -11,7 +11,7 @@
     <div class="alert-backdrop-vibe" @onclick="() => alertService.Close(false)">
         <div class="alert-modal-vibe" @onclick:stopPropagation="true">
             <h2 class="alert-title-vibe">@alertService.Title</h2>
-            <p class="alert-message-vibe">@alertService.Message</p>
+            <p class="alert-message-vibe">@((MarkupString)alertService.Message)</p>
             <div class="alert-actions-vibe">
                 @if (alertService.IsConfirm)
                 {

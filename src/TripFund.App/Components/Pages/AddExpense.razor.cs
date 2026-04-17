@@ -262,7 +262,7 @@ namespace TripFund.App.Components.Pages
 
             bool confirm = await Alerts.ConfirmAsync(
                 "Elimina Spesa",
-                "Sei sicuro di voler eliminare questa spesa? L'operazione non può essere annullata.",
+                $"Sei sicuro di voler eliminare <b>{editingInfo.Transaction.Description}</b>?",
                 "Elimina",
                 "Annulla");
 

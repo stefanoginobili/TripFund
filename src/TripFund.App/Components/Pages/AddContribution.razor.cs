@@ -213,7 +213,7 @@ namespace TripFund.App.Components.Pages
 
             bool confirm = await AlertService.ConfirmAsync(
                 "Elimina Versamento",
-                "Sei sicuro di voler eliminare questo versamento? L'operazione non può essere annullata.",
+                $"Sei sicuro di voler eliminare <b>{editingTransaction.Description}</b>?",
                 "Elimina",
                 "Annulla");
 
@@ -343,7 +343,7 @@ namespace TripFund.App.Components.Pages
                 
                 if (config.Members.TryGetValue(selectedMemberSlug, out var member))
                 {
-                    bool confirm = await AlertService.ConfirmAsync("Invia ricevuta", $"Vuoi inviare una ricevuta via email a {member.Name}?", "Sì", "No");
+                    bool confirm = await AlertService.ConfirmAsync("Invia ricevuta", $"Vuoi inviare una ricevuta via email a <b>{member.Name}</b>?", "Sì", "No");
                     if (confirm)
                     {
                         try
