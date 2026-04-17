@@ -184,7 +184,8 @@ namespace TripFund.App.Components.Common
                 "Elimina Cassa",
                 $"Sei sicuro di voler eliminare la cassa in <b>{code}</b>?<br/><br/>Tutte le transazioni in questa valuta potrebbero non essere più visualizzate correttamente.",
                 "Elimina",
-                "Annulla");
+                "Annulla",
+                AlertType.Warning);
 
             if (confirm)
             {

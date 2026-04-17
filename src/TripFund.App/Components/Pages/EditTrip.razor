@@ -19,8 +19,8 @@
             </button>
             @if (isHeaderMenuOpen)
             {
-                <div class="popover-overlay" @onclick="ToggleHeaderMenu" @onclick:stopPropagation></div>
-                <div class="dropdown-menu-vibe" @onclick:stopPropagation>
+                <div class="popover-overlay" @onclick="ToggleHeaderMenu"></div>
+                <div class="dropdown-menu-vibe" @onclick="() => isHeaderMenuOpen = false">
                     <div class="dropdown-item-vibe text-danger" @onclick="HandleDelete">
                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="me-2">
                             <polyline points="3 6 5 6 21 6"></polyline>
@@ -155,8 +155,8 @@
                                             bool isFirst = index == 0;
                                             bool isLast = index == keys.Count - 1;
 
-                                            <div class="popover-overlay" @onclick="() => openMenuMemberSlug = null" @onclick:stopPropagation></div>
-                                            <div class="dropdown-menu-vibe" @onclick:stopPropagation>
+                                            <div class="popover-overlay" @onclick="() => openMenuMemberSlug = null"></div>
+                                            <div class="dropdown-menu-vibe" @onclick="() => openMenuMemberSlug = null">
                                                 <div class="dropdown-item-vibe" @onclick="async () => { openMenuMemberSlug = null; await StartEditMember(member.Key, member.Value); }">
                                                     Modifica
                                                 </div>

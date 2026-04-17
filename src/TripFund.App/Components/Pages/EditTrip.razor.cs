@@ -281,7 +281,8 @@ namespace TripFund.App.Components.Pages
                 "Elimina Partecipante",
                 $"Sei sicuro di voler eliminare <b>{config?.Members[slug].Name}</b>?",
                 "Elimina",
-                "Annulla");
+                "Annulla",
+                AlertType.Warning);
 
             if (confirm)
             {
@@ -324,7 +325,8 @@ namespace TripFund.App.Components.Pages
                 "Elimina Viaggio",
                 $"Sei sicuro di voler eliminare <b>{config?.Name}</b> dal dispositivo?",
                 "Elimina",
-                "Annulla");
+                "Annulla",
+                AlertType.Warning);
 
             if (confirm)
             {

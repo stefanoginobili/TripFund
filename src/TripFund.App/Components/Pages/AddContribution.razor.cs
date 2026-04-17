@@ -215,7 +215,8 @@ namespace TripFund.App.Components.Pages
                 "Elimina Versamento",
                 $"Sei sicuro di voler eliminare <b>{editingTransaction.Description}</b>?",
                 "Elimina",
-                "Annulla");
+                "Annulla",
+                AlertType.Warning);
 
             if (!confirm) return;
 
@@ -355,7 +356,7 @@ namespace TripFund.App.Components.Pages
                         }
                         catch (Exception emailEx)
                         {
-                            await AlertService.ShowAlertAsync("Errore Email", "Non è stato possibile preparare l'email: " + emailEx.Message);
+                            await AlertService.ShowAlertAsync("Errore Email", "Non è stato possibile preparare l'email: " + emailEx.Message, type: AlertType.Error);
                         }
                     }
                 }

@@ -78,8 +78,8 @@
                                     bool isFirst = index == 0;
                                     bool isLast = index == keys.Count - 1;
 
-                                    <div class="popover-overlay" @onclick="() => openMenuCurrencyCode = null" @onclick:stopPropagation></div>
-                                    <div class="dropdown-menu-vibe" @onclick:stopPropagation>
+                                    <div class="popover-overlay" @onclick="() => openMenuCurrencyCode = null"></div>
+                                    <div class="dropdown-menu-vibe" @onclick="() => openMenuCurrencyCode = null">
                                         <div class="dropdown-item-vibe" @onclick="() => { openMenuCurrencyCode = null; StartEditCurrency(curr.Key, curr.Value); }">
                                             Modifica
                                         </div>

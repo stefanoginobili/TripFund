@@ -131,7 +131,7 @@ namespace TripFund.App.Components.Pages
             }
             catch (Exception ex)
             {
-                await AlertService.ShowAlertAsync("Errore Email", "Non è stato possibile preparare l'email: " + ex.Message);
+                await AlertService.ShowAlertAsync("Errore Email", "Non è stato possibile preparare l'email: " + ex.Message, type: AlertType.Error);
             }
         }
 

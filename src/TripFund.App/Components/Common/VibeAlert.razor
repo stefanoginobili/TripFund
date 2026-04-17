@@ -8,8 +8,11 @@
 
 @if (alertService != null && alertService.IsVisible)
 {
+    var typeClass = alertService.Type.ToString().ToLower();
+    var primaryBtnClass = alertService.Type == AlertType.Information ? "btn-primary-vibe" : $"btn-{typeClass}-vibe";
+
     <div class="alert-backdrop-vibe" @onclick="() => alertService.Close(false)">
-        <div class="alert-modal-vibe" @onclick:stopPropagation="true">
+        <div class="alert-modal-vibe @typeClass" @onclick:stopPropagation="true">
             <h2 class="alert-title-vibe">@alertService.Title</h2>
             <p class="alert-message-vibe">@((MarkupString)alertService.Message)</p>
             <div class="alert-actions-vibe">
@@ -18,13 +21,13 @@
                     <button class="btn-secondary-vibe flex-1" @onclick="() => alertService.Close(false)">
                         @alertService.CancelText
                     </button>
-                    <button class="btn-primary-vibe flex-1" @onclick="() => alertService.Close(true)">
+                    <button class="@primaryBtnClass flex-1" @onclick="() => alertService.Close(true)">
                         @alertService.AcceptText
                     </button>
                 }
                 else
                 {
-                    <button class="btn-primary-vibe w-100" @onclick="() => alertService.Close(true)">
+                    <button class="@primaryBtnClass w-100" @onclick="() => alertService.Close(true)">
                         @alertService.AcceptText
                     </button>
                 }

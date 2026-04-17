@@ -122,7 +122,7 @@ public class HomeTests : BunitContext
         _remoteStorageMock.Setup(r => r.GetRemoteUniqueId(It.IsAny<string>(), It.IsAny<Dictionary<string, string>>()))
             .Returns("remote-123");
         
-        _alertMock.Setup(a => a.ConfirmAsync(It.IsAny<string>(), It.IsAny<string>(), "Conferma", "Annulla"))
+        _alertMock.Setup(a => a.ConfirmAsync(It.IsAny<string>(), It.IsAny<string>(), "Conferma", "Annulla", It.IsAny<AlertType>()))
             .ReturnsAsync(true);
 
         var cut = Render<Home>();
@@ -164,7 +164,7 @@ public class HomeTests : BunitContext
             if (task != null) await task;
         });
 
-        _alertMock.Verify(a => a.ShowAlertAsync("Errore", "Questo viaggio è già stato importato localmente."), Times.Once);
+        _alertMock.Verify(a => a.ShowAlertAsync("Errore", "Questo viaggio è già stato importato localmente.", "OK", AlertType.Error), Times.Once);
         
         // Cleanup
         if (Directory.Exists(tripsPath)) Directory.Delete(tripsPath, true);

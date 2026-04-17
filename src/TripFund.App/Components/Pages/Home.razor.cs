@@ -77,7 +77,7 @@ namespace TripFund.App.Components.Pages
                         var isEmpty = await RemoteStorage.IsRemoteLocationEmptyAsync(selection.Provider, selection.Parameters);
                         if (!isEmpty)
                         {
-                            await Alert.ShowAlertAsync("Errore", "La posizione remota deve esistere ed essere vuota.");
+                            await Alert.ShowAlertAsync("Errore", "La posizione remota deve esistere ed essere vuota.", type: AlertType.Error);
                             return;
                         }
                     }
@@ -139,7 +139,7 @@ namespace TripFund.App.Components.Pages
                 
                 if (remoteConfig == null)
                 {
-                    await Alert.ShowAlertAsync("Errore", "Impossibile trovare i dati del viaggio nella posizione specificata.");
+                    await Alert.ShowAlertAsync("Errore", "Impossibile trovare i dati del viaggio nella posizione specificata.", type: AlertType.Error);
                     return;
                 }
 
@@ -157,7 +157,7 @@ namespace TripFund.App.Components.Pages
                 var tripDir = Path.Combine(Storage.TripsPath, slug);
                 if (Directory.Exists(tripDir))
                 {
-                    await Alert.ShowAlertAsync("Errore", "Questo viaggio è già stato importato localmente.");
+                    await Alert.ShowAlertAsync("Errore", "Questo viaggio è già stato importato localmente.", type: AlertType.Error);
                     return;
                 }
 

@@ -59,6 +59,38 @@ public class VibeAlertTests : BunitContext
     }
 
     [Fact]
+    public void VibeAlert_ShouldRenderCorrectly_WhenWarning()
+    {
+        // Arrange
+        var service = new VibeAlertService();
+        Services.AddSingleton<IAlertService>(service);
+        var cut = Render<VibeAlert>();
+
+        // Act
+        _ = service.ConfirmAsync("Elimina", "Sei sicuro?", "Elimina", "Annulla", AlertType.Warning);
+
+        // Assert
+        cut.Find(".alert-modal-vibe").ClassList.Should().Contain("warning");
+        cut.Find("button.btn-warning-vibe").TextContent.Trim().Should().Be("Elimina");
+    }
+
+    [Fact]
+    public void VibeAlert_ShouldRenderCorrectly_WhenError()
+    {
+        // Arrange
+        var service = new VibeAlertService();
+        Services.AddSingleton<IAlertService>(service);
+        var cut = Render<VibeAlert>();
+
+        // Act
+        _ = service.ShowAlertAsync("Errore", "Messaggio errore", "Chiudi", AlertType.Error);
+
+        // Assert
+        cut.Find(".alert-modal-vibe").ClassList.Should().Contain("error");
+        cut.Find("button.btn-error-vibe").TextContent.Trim().Should().Be("Chiudi");
+    }
+
+    [Fact]
     public async Task VibeAlert_ClickButtons_ShouldCallServiceClose()
     {
         // Arrange

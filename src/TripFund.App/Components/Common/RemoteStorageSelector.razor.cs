@@ -70,7 +70,7 @@ namespace TripFund.App.Components.Common
                     var authResult = await OneDriveService.AuthenticateUserAsync();
                     if (authResult == null || !authResult.TryGetValue("accessToken", out var token))
                     {
-                        await AlertService.ShowAlertAsync("Errore", "Impossibile autenticare l'account Microsoft.");
+                        await AlertService.ShowAlertAsync("Errore", "Impossibile autenticare l'account Microsoft.", type: AlertType.Error);
                         return;
                     }
 
@@ -81,7 +81,7 @@ namespace TripFund.App.Components.Common
             }
             catch (Exception)
             {
-                await AlertService.ShowAlertAsync("Errore", "Si è verificato un errore durante l'apertura del selettore.");
+                await AlertService.ShowAlertAsync("Errore", "Si è verificato un errore durante l'apertura del selettore.", type: AlertType.Error);
             }
             finally
             {

@@ -248,7 +248,7 @@ public class TripManagementTests : BunitContext
         var config = new TripConfig { Id = "1", Name = "Test" };
         _storageMock.Setup(s => s.GetTripConfigAsync(tripSlug)).ReturnsAsync(config);
         _storageMock.Setup(s => s.GetAppSettingsAsync()).ReturnsAsync(new AppSettings { AuthorName = "M", DeviceId = "m" });
-        _alertMock.Setup(a => a.ConfirmAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>()))
+        _alertMock.Setup(a => a.ConfirmAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<AlertType>()))
             .ReturnsAsync(true);
 
         var cut = Render<EditTrip>(parameters => parameters.Add(p => p.tripSlug, tripSlug));
@@ -261,7 +261,7 @@ public class TripManagementTests : BunitContext
         await cut.Find(".dropdown-item-vibe.text-danger").ClickAsync();
 
         // Assert
-        _alertMock.Verify(a => a.ConfirmAsync("Elimina Viaggio", It.IsAny<string>(), "Elimina", "Annulla"), Times.Once);
+        _alertMock.Verify(a => a.ConfirmAsync("Elimina Viaggio", It.IsAny<string>(), "Elimina", "Annulla", AlertType.Warning), Times.Once);
         _storageMock.Verify(s => s.DeleteTripAsync(tripSlug), Times.Once);
     }
 }

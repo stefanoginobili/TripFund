@@ -70,7 +70,7 @@ public class EmailReceiptTests : BunitContext
             .Returns(Task.CompletedTask);
         
         // Mock alert confirmation to return TRUE (Sì)
-        _alertMock.Setup(a => a.ConfirmAsync("Invia ricevuta", It.IsAny<string>(), "Sì", "No"))
+        _alertMock.Setup(a => a.ConfirmAsync("Invia ricevuta", It.IsAny<string>(), "Sì", "No", It.IsAny<AlertType>()))
             .ReturnsAsync(true);
 
         var cut = Render<AddContribution>(parameters => parameters.Add(p => p.tripSlug, tripSlug));
@@ -88,7 +88,7 @@ public class EmailReceiptTests : BunitContext
 
         // Assert
         // 1. Verify Alert was shown
-        _alertMock.Verify(a => a.ConfirmAsync("Invia ricevuta", It.Is<string>(s => s.Contains("Mario")), "Sì", "No"), Times.Once);
+        _alertMock.Verify(a => a.ConfirmAsync("Invia ricevuta", It.Is<string>(s => s.Contains("Mario")), "Sì", "No", It.IsAny<AlertType>()), Times.Once);
         
         // 2. Verify Email was sent
         _emailMock.Verify(e => e.SendEmailAsync(
@@ -117,7 +117,7 @@ public class EmailReceiptTests : BunitContext
         _storageMock.Setup(s => s.GetTransactionsAsync(tripSlug)).ReturnsAsync(new List<Transaction>());
         
         // Mock alert confirmation to return FALSE (No)
-        _alertMock.Setup(a => a.ConfirmAsync("Invia ricevuta", It.IsAny<string>(), "Sì", "No"))
+        _alertMock.Setup(a => a.ConfirmAsync("Invia ricevuta", It.IsAny<string>(), "Sì", "No", It.IsAny<AlertType>()))
             .ReturnsAsync(false);
 
         var cut = Render<AddContribution>(parameters => parameters.Add(p => p.tripSlug, tripSlug));
@@ -135,7 +135,7 @@ public class EmailReceiptTests : BunitContext
 
         // Assert
         // 1. Verify Alert was shown
-        _alertMock.Verify(a => a.ConfirmAsync("Invia ricevuta", It.IsAny<string>(), "Sì", "No"), Times.Once);
+        _alertMock.Verify(a => a.ConfirmAsync("Invia ricevuta", It.IsAny<string>(), "Sì", "No", It.IsAny<AlertType>()), Times.Once);
 
         // 2. Verify Email was NEVER sent
         _emailMock.Verify(e => e.SendEmailAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<IEnumerable<string>>()), Times.Never);
@@ -168,7 +168,7 @@ public class EmailReceiptTests : BunitContext
             .Returns(Task.CompletedTask);
         
         // Mock alert confirmation to return TRUE (Sì)
-        _alertMock.Setup(a => a.ConfirmAsync("Invia ricevuta", It.IsAny<string>(), "Sì", "No"))
+        _alertMock.Setup(a => a.ConfirmAsync("Invia ricevuta", It.IsAny<string>(), "Sì", "No", It.IsAny<AlertType>()))
             .ReturnsAsync(true);
 
         var cut = Render<AddContribution>(parameters => parameters.Add(p => p.tripSlug, tripSlug));
@@ -186,7 +186,7 @@ public class EmailReceiptTests : BunitContext
 
         // Assert
         // 1. Verify Alert was shown
-        _alertMock.Verify(a => a.ConfirmAsync("Invia ricevuta", It.Is<string>(s => s.Contains("Mario")), "Sì", "No"), Times.Once);
+        _alertMock.Verify(a => a.ConfirmAsync("Invia ricevuta", It.Is<string>(s => s.Contains("Mario")), "Sì", "No", It.IsAny<AlertType>()), Times.Once);
         
         // 2. Verify Email was sent with empty recipients
         _emailMock.Verify(e => e.SendEmailAsync(

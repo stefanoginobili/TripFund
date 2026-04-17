@@ -14,7 +14,7 @@ public class VibeAlertServiceTests
         service.OnChange += () => notifyCalled = true;
 
         // Act
-        var task = service.ShowAlertAsync("Title", "Message", "Cancel");
+        var task = service.ShowAlertAsync("Title", "Message", "Cancel", AlertType.Error);
 
         // Assert
         service.IsVisible.Should().BeTrue();
@@ -22,6 +22,7 @@ public class VibeAlertServiceTests
         service.Message.Should().Be("Message");
         service.AcceptText.Should().Be("Cancel");
         service.IsConfirm.Should().BeFalse();
+        service.Type.Should().Be(AlertType.Error);
         notifyCalled.Should().BeTrue();
         task.IsCompleted.Should().BeFalse();
     }
@@ -31,13 +32,14 @@ public class VibeAlertServiceTests
     {
         // Arrange
         var service = new VibeAlertService();
-        var task = service.ConfirmAsync("Title", "Message", "Accept", "Cancel");
+        var task = service.ConfirmAsync("Title", "Message", "Accept", "Cancel", AlertType.Warning);
 
         // Act
         service.Close(true);
 
         // Assert
         service.IsVisible.Should().BeFalse();
+        service.Type.Should().Be(AlertType.Warning);
         var result = await task;
         result.Should().BeTrue();
     }

@@ -265,7 +265,8 @@ namespace TripFund.App.Components.Pages
                 "Elimina Spesa",
                 $"Sei sicuro di voler eliminare <b>{editingInfo.Transaction.Description}</b>?",
                 "Elimina",
-                "Annulla");
+                "Annulla",
+                AlertType.Warning);
 
             if (!confirm) return;
 

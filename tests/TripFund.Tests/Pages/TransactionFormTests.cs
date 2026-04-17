@@ -743,7 +743,7 @@ public class TransactionFormTests : BunitContext
         _storageMock.Setup(s => s.GetTripConfigAsync(tripSlug)).ReturnsAsync(config);
         _storageMock.Setup(s => s.GetLatestTransactionVersionWithDetailsAsync(tripSlug, transactionId))
             .ReturnsAsync(new LocalTripStorageService.TransactionVersionInfo { Transaction = transaction });
-        _alertMock.Setup(a => a.ConfirmAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>()))
+        _alertMock.Setup(a => a.ConfirmAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<AlertType>()))
             .ReturnsAsync(true);
 
         nav.NavigateTo($"/trip/{tripSlug}/add-expense?edit={transactionId}");
@@ -760,7 +760,7 @@ public class TransactionFormTests : BunitContext
         deleteBtn.Click();
 
         // Assert
-        _alertMock.Verify(a => a.ConfirmAsync("Elimina Spesa", It.IsAny<string>(), "Elimina", "Annulla"), Times.Once);
+        _alertMock.Verify(a => a.ConfirmAsync("Elimina Spesa", It.IsAny<string>(), "Elimina", "Annulla", AlertType.Warning), Times.Once);
         _storageMock.Verify(s => s.SaveTransactionAsync(tripSlug, transaction, "test-author", true, It.IsAny<Dictionary<string, byte[]>>()), Times.Once);
         nav.Uri.Should().Contain($"/trip/{tripSlug}?currency=EUR");
     }
