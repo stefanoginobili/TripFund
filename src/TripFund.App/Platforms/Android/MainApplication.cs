@@ -1,6 +1,5 @@
 ﻿using Android.App;
 using Android.Runtime;
-using Java.Util;
 
 namespace TripFund.App;
 
@@ -28,7 +27,7 @@ public class MainApplication : MauiApplication
 		#pragma warning restore CA1422
 
 		base.OnCreate();
-		}
+	}
 
 
 	protected override MauiApp CreateMauiApp() => MauiProgram.CreateMauiApp();
