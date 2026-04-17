@@ -59,7 +59,7 @@
                     <label class="tile-label">Importo Versamento</label>
                     <div class="amount-section">
                         <span class="currency-symbol">@GetCurrencySymbol()</span>
-                        <input type="text" inputmode="@(GetDecimals() > 0 ? "decimal" : "numeric")" class="amount-input" value="@amount.ToString("F" + GetDecimals())" @onchange="OnAmountChanged" onfocus="headerLogic.selectText(this)" placeholder="@(GetDecimals() > 0 ? "0," + new string('0', GetDecimals()) : "0")" />
+                        <input type="text" inputmode="@(GetDecimals() > 0 ? "decimal" : "numeric")" class="amount-input" value="@amount.ToString("F" + GetDecimals())" @onchange="OnAmountChanged" onfocus="appLogic.selectText(this)" placeholder="@(GetDecimals() > 0 ? "0," + new string('0', GetDecimals()) : "0")" />
                     </div>
                 </div>
 

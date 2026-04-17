@@ -39,16 +39,13 @@ html, body, #app {
 
 /* Header */
 .app-header {
-    position: sticky;
-    top: 0;
-    z-index: 999;
+    position: relative;
     display: flex;
     align-items: center;
     justify-content: space-between;
     padding: 1rem 1.5rem;
     background-color: #FFFFFF;
     border-bottom: 1px solid #F0F0F0;
-    transition: transform 0.3s ease-in-out;
 }
 
 .header-title {
@@ -415,16 +412,6 @@ h1:focus {
     background-color: #F8FBF9;
     width: 100%;
     z-index: 1000;
-}
-
-/* Fix flickering: when native pickers are active, the header shouldn't hide or jump, but still allow interaction */
-body:has(input[type="date"]:focus, input[type="time"]:focus) .app-header {
-    opacity: 0.8; /* Subtle indicator it's inactive/focused on picker */
-    transform: none !important; /* Force it to stay visible even if scroll logic tries to hide it */
-}
-
-.header-hidden {
-    transform: translateY(-100%);
 }
 
 .flex-column, .navbar-brand {

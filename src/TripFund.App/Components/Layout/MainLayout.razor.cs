@@ -13,7 +13,7 @@ namespace TripFund.App.Components.Layout
         {
             if (firstRender)
             {
-                await JSRuntime.InvokeVoidAsync("headerLogic.init");
+                await JSRuntime.InvokeVoidAsync("appLogic.init");
             }
         }
 
@@ -26,7 +26,7 @@ namespace TripFund.App.Components.Layout
         {
             try 
             {
-                await JSRuntime.InvokeVoidAsync("headerLogic.resetScroll");
+                await JSRuntime.InvokeVoidAsync("appLogic.resetScroll");
             }
             catch (Exception ex)
             {

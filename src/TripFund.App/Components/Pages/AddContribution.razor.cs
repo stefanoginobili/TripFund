@@ -176,7 +176,7 @@ namespace TripFund.App.Components.Pages
             if (shouldScroll && isMemberSelectorOpen)
             {
                 shouldScroll = false;
-                await JSRuntime.InvokeVoidAsync("headerLogic.scrollIntoView", "#selected-member-item", "center");
+                await JSRuntime.InvokeVoidAsync("appLogic.scrollIntoView", "#selected-member-item", "center");
             }
         }
 

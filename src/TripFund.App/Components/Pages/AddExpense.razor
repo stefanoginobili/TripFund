@@ -59,7 +59,7 @@
                     <label class="tile-label">IMPORTO SPESA</label>
                     <div class="amount-section">
                         <span class="currency-symbol">@GetCurrencySymbol()</span>
-                        <input type="text" inputmode="@(GetDecimals() > 0 ? "decimal" : "numeric")" class="amount-input" value="@totalAmount.ToString("F" + GetDecimals())" @onchange="OnAmountChanged" onfocus="headerLogic.selectText(this)" placeholder="@(GetDecimals() > 0 ? "0," + new string('0', GetDecimals()) : "0")" />
+                        <input type="text" inputmode="@(GetDecimals() > 0 ? "decimal" : "numeric")" class="amount-input" value="@totalAmount.ToString("F" + GetDecimals())" @onchange="OnAmountChanged" onfocus="appLogic.selectText(this)" placeholder="@(GetDecimals() > 0 ? "0," + new string('0', GetDecimals()) : "0")" />
                     </div>
                 </div>
 
@@ -98,7 +98,7 @@
                                         <input type="text" inputmode="@(GetDecimals() > 0 ? "decimal" : "numeric")" class="split-amount-input @(member.IsAuto ? "readonly" : "")" 
                                                value="@((member.IsAuto ? member.CalculatedAmount : member.ManualAmount).ToString("F" + GetDecimals()))"
                                                @onchange="(e) => OnManualAmountChanged(member, e)"
-                                               onfocus="headerLogic.selectText(this)"
+                                               onfocus="appLogic.selectText(this)"
                                                readonly="@member.IsAuto" />
                                     </div>
                                 }

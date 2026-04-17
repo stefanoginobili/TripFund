@@ -46,7 +46,7 @@ namespace TripFund.App.Components.Common
             if (_shouldScroll && _isOpen)
             {
                 _shouldScroll = false;
-                await JSRuntime.InvokeVoidAsync("headerLogic.scrollIntoView", "#selected-tz-item", "center");
+                await JSRuntime.InvokeVoidAsync("appLogic.scrollIntoView", "#selected-tz-item", "center");
             }
         }
 

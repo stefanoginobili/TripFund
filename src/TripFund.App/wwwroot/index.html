@@ -59,59 +59,7 @@
         <span class="dismiss">🗙</span>
     </div>
 
-    <script>
-        // Keyboard Overlap Management
-        window.addEventListener('focusin', (e) => {
-            // Exclude date and time pickers from padding logic to avoid layout shifts on dismissal
-            if (e.target.type === 'date' || e.target.type === 'time') return;
-
-            if (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT' || e.target.tagName === 'TEXTAREA') {
-                const main = document.querySelector('main');
-                if (main) {
-                    main.style.paddingBottom = '50vh';
-                    setTimeout(() => {
-                        e.target.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                    }, 300);
-                }
-            }
-        });
-        
-        window.addEventListener('focusout', (e) => {
-            if (e.target.type === 'date' || e.target.type === 'time') return;
-
-            if (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT' || e.target.tagName === 'TEXTAREA') {
-                const main = document.querySelector('main');
-                if (main) {
-                    main.style.paddingBottom = '';
-                }
-            }
-        });
-        
-        // Use visualViewport to handle orientation changes or keyboard resizing/closure
-        if (window.visualViewport) {
-            let lastHeight = window.visualViewport.height;
-            window.visualViewport.addEventListener('resize', () => {
-                const currentHeight = window.visualViewport.height;
-                const focused = document.activeElement;
-                const isInput = focused && (focused.tagName === 'INPUT' || focused.tagName === 'SELECT' || focused.tagName === 'TEXTAREA');
-
-                // If the viewport height increases significantly, the keyboard likely closed (e.g. via system button)
-                if (currentHeight > lastHeight + 100) {
-                    if (isInput) {
-                        focused.blur(); // Triggers focusout logic (removes padding)
-                    }
-                } else if (currentHeight < lastHeight - 100) {
-                    // Keyboard opened or expanded
-                    if (isInput) {
-                        focused.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                    }
-                }
-                lastHeight = currentHeight;
-            });
-        }
-    </script>
-
-    <script src="js/header.js"></script>
+    <script src="js/app.js"></script>
     <script src="_framework/blazor.webview.js" autostart="false"></script>
 
 </body>

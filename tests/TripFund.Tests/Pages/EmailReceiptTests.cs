@@ -35,7 +35,7 @@ public class EmailReceiptTests : BunitContext
         Services.AddSingleton(new Mock<IRemoteStorageService>().Object);
 
         // Mock JS Interop for scrolling (called in OnAfterRender)
-        JSInterop.SetupVoid("headerLogic.scrollIntoView", _ => true);
+        JSInterop.SetupVoid("appLogic.scrollIntoView", _ => true);
 
         // Mock AppSettings
         var settings = new AppSettings { AuthorName = "Test Author", DeviceId = "test-author" };

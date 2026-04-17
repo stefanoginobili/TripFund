@@ -29,14 +29,14 @@
                             </div>
                             <div class="new-curr-col">
                                 <label>DECIMALI</label>
-                                <input type="text" inputmode="numeric" value="@newCurrDecimals" @oninput="OnDecimalsChanged" onfocus="headerLogic.selectText(this)" />
+                                <input type="text" inputmode="numeric" value="@newCurrDecimals" @oninput="OnDecimalsChanged" onfocus="appLogic.selectText(this)" />
                             </div>
                         </div>
                         
                         <div class="new-currency-footer">
                             <div class="new-curr-col quota-col">
                                 <label>QUOTA</label>
-                                <input type="text" inputmode="decimal" value="@newCurrQuotaString" @oninput="OnQuotaChanged" onfocus="headerLogic.selectText(this)" placeholder="1000" />
+                                <input type="text" inputmode="decimal" value="@newCurrQuotaString" @oninput="OnQuotaChanged" onfocus="appLogic.selectText(this)" placeholder="1000" />
                             </div>
                             <div class="action-buttons">
                                 <button class="confirm-btn" @onmousedown="AddOrUpdateCurrency" @onclick="AddOrUpdateCurrency">
@@ -141,14 +141,14 @@
 
                         <div class="new-curr-col">
                             <label>DECIMALI</label>
-                            <input type="text" inputmode="numeric" value="@newCurrDecimals" @oninput="OnDecimalsChanged" onfocus="headerLogic.selectText(this)" />
+                            <input type="text" inputmode="numeric" value="@newCurrDecimals" @oninput="OnDecimalsChanged" onfocus="appLogic.selectText(this)" />
                         </div>
                     </div>
                     
                     <div class="new-currency-footer">
                         <div class="new-curr-col quota-col">
                             <label>QUOTA</label>
-                            <input type="text" inputmode="decimal" value="@newCurrQuotaString" @oninput="OnQuotaChanged" onfocus="headerLogic.selectText(this)" placeholder="1000" />
+                            <input type="text" inputmode="decimal" value="@newCurrQuotaString" @oninput="OnQuotaChanged" onfocus="appLogic.selectText(this)" placeholder="1000" />
                         </div>
                         <div class="action-buttons">
                             <button class="confirm-btn" @onmousedown="AddOrUpdateCurrency" @onclick="AddOrUpdateCurrency">

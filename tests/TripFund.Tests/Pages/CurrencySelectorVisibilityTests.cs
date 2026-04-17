@@ -37,8 +37,8 @@ public class CurrencySelectorVisibilityTests : BunitContext
         Services.AddSingleton(new Mock<IRemoteStorageService>().Object);
         Services.AddSingleton(new PdfReportService());
 
-        JSInterop.SetupVoid("headerLogic.scrollIntoView", _ => true);
-        JSInterop.SetupVoid("headerLogic.selectText", _ => true);
+        JSInterop.SetupVoid("appLogic.scrollIntoView", _ => true);
+        JSInterop.SetupVoid("appLogic.selectText", _ => true);
         
         var settings = new AppSettings { AuthorName = "Test Author", DeviceId = "test-author" };
         _storageMock.Setup(s => s.GetAppSettingsAsync()).ReturnsAsync(settings);
