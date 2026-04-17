@@ -764,4 +764,29 @@ public class TransactionFormTests : BunitContext
         _storageMock.Verify(s => s.SaveTransactionAsync(tripSlug, transaction, "test-author", true, It.IsAny<Dictionary<string, byte[]>>()), Times.Once);
         nav.Uri.Should().Contain($"/trip/{tripSlug}?currency=EUR");
     }
+
+    [Fact]
+    public async Task AddExpense_Back_ShouldNavigateToMemberDashboardWhenMemberPresent()
+    {
+        // Arrange
+        var tripSlug = "test-trip";
+        var memberSlug = "mario";
+        var config = new TripConfig
+        {
+            Currencies = new Dictionary<string, Currency> { { "USD", new Currency { Symbol = "$" } } },
+            Members = new Dictionary<string, User> { { memberSlug, new User { Name = "Mario" } } }
+        };
+        _storageMock.Setup(s => s.GetTripConfigAsync(tripSlug)).ReturnsAsync(config);
+        
+        var nav = Services.GetRequiredService<NavigationManager>();
+        nav.NavigateTo($"/trip/{tripSlug}/add-expense?member={memberSlug}&currency=USD");
+
+        var cut = Render<AddExpense>(parameters => parameters.Add(p => p.tripSlug, tripSlug));
+
+        // Act
+        await cut.Find("header .icon-btn").ClickAsync();
+
+        // Assert
+        nav.Uri.Should().Contain($"/trip/{tripSlug}/member/{memberSlug}?currency=USD");
+    }
 }

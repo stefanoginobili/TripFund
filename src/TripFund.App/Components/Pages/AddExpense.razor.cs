@@ -15,6 +15,7 @@ namespace TripFund.App.Components.Pages
         [Inject] private IThumbnailService Thumbnails { get; set; } = default!;
 
         [Parameter] public string tripSlug { get; set; } = "";
+        [SupplyParameterFromQuery] public string? member { get; set; }
         [SupplyParameterFromQuery] public string? currency { get; set; }
         [SupplyParameterFromQuery] public string? edit { get; set; }
 
@@ -281,7 +282,14 @@ namespace TripFund.App.Components.Pages
 
         private async Task GoBack()
         {
-            Nav.NavigateTo($"/trip/{tripSlug}?currency={selectedCurrency}");
+            if (!string.IsNullOrEmpty(member))
+            {
+                Nav.NavigateTo($"/trip/{tripSlug}/member/{member}?currency={selectedCurrency}");
+            }
+            else
+            {
+                Nav.NavigateTo($"/trip/{tripSlug}?currency={selectedCurrency}");
+            }
             await Task.CompletedTask;
         }
 

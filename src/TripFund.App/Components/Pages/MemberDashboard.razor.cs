@@ -102,7 +102,7 @@ namespace TripFund.App.Components.Pages
         {
             isTransactionModalOpen = false;
             var route = t.Type == "contribution" ? "add-contribution" : "add-expense";
-            Nav.NavigateTo($"/trip/{tripSlug}/{route}?edit={t.Id}&currency={selectedCurrency}");
+            Nav.NavigateTo($"/trip/{tripSlug}/{route}?edit={t.Id}&currency={selectedCurrency}&member={memberSlug}");
         }
 
         private void NavigateToContribution()
