@@ -1,0 +1,55 @@
+@using TripFund.App.Services
+@inject IAlertService AlertServiceBase
+@implements IDisposable
+
+@{
+    var alertService = AlertServiceBase as VibeAlertService;
+}
+
+@if (alertService != null && alertService.IsVisible)
+{
+    <div class="alert-backdrop-vibe" @onclick="() => alertService.Close(false)">
+        <div class="alert-modal-vibe" @onclick:stopPropagation="true">
+            <h2 class="alert-title-vibe">@alertService.Title</h2>
+            <p class="alert-message-vibe">@alertService.Message</p>
+            <div class="alert-actions-vibe">
+                @if (alertService.IsConfirm)
+                {
+                    <button class="btn-secondary-vibe flex-1" @onclick="() => alertService.Close(false)">
+                        @alertService.CancelText
+                    </button>
+                    <button class="btn-primary-vibe flex-1" @onclick="() => alertService.Close(true)">
+                        @alertService.AcceptText
+                    </button>
+                }
+                else
+                {
+                    <button class="btn-primary-vibe w-100" @onclick="() => alertService.Close(true)">
+                        @alertService.AcceptText
+                    </button>
+                }
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    private Action? _stateChanged;
+
+    protected override void OnInitialized()
+    {
+        if (AlertServiceBase is VibeAlertService alertService)
+        {
+            _stateChanged = () => InvokeAsync(StateHasChanged);
+            alertService.OnChange += _stateChanged;
+        }
+    }
+
+    public void Dispose()
+    {
+        if (AlertServiceBase is VibeAlertService alertService && _stateChanged != null)
+        {
+            alertService.OnChange -= _stateChanged;
+        }
+    }
+}

@@ -30,7 +30,7 @@ public static class MauiProgram
 		builder.Services.AddSingleton<Services.IMicrosoftAuthConfiguration, Services.MicrosoftAuthConfiguration>();
 		builder.Services.AddSingleton<Services.IWebAuthenticator, Services.MauiWebAuthenticator>();
 		builder.Services.AddSingleton<Services.IRemoteStorageService, Services.CompositeRemoteStorageService>();
-		builder.Services.AddSingleton<Services.IAlertService, Services.MauiAlertService>();
+		builder.Services.AddSingleton<Services.IAlertService, Services.VibeAlertService>();
 		builder.Services.AddSingleton<Services.IThumbnailService, Services.ThumbnailService>();
 		builder.Services.AddSingleton<Services.IEmailService, Services.EmailService>();
 		builder.Services.AddSingleton<Services.PdfReportService>();
