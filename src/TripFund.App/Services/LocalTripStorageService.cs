@@ -8,6 +8,7 @@ public class LocalTripStorageService
 {
     private readonly string _rootPath;
     private readonly string _tripsPath;
+    private const string INITIAL_IMPORT_MARKER = ".initial_import";
     private readonly VersionedStorageEngine _engine = new();
     private readonly JsonSerializerOptions _jsonOptions = new()
     {
@@ -370,6 +371,35 @@ public class LocalTripStorageService
         if (Directory.Exists(tripDir))
         {
             Directory.Delete(tripDir, true);
+        }
+    }
+
+    public virtual async Task InitializeInitialImportAsync(string tripSlug)
+    {
+        var tripDir = Path.Combine(_tripsPath, tripSlug);
+        if (!Directory.Exists(tripDir)) Directory.CreateDirectory(tripDir);
+        await File.WriteAllTextAsync(Path.Combine(tripDir, INITIAL_IMPORT_MARKER), DateTime.UtcNow.ToString("O"));
+    }
+
+    public virtual void CompleteInitialImport(string tripSlug)
+    {
+        var markerPath = Path.Combine(_tripsPath, tripSlug, INITIAL_IMPORT_MARKER);
+        if (File.Exists(markerPath)) File.Delete(markerPath);
+    }
+
+    public virtual async Task CleanupIncompleteImportsAsync()
+    {
+        if (!Directory.Exists(_tripsPath)) return;
+
+        var directories = Directory.GetDirectories(_tripsPath);
+        foreach (var tripDir in directories)
+        {
+            var slug = Path.GetFileName(tripDir);
+            var markerPath = Path.Combine(tripDir, INITIAL_IMPORT_MARKER);
+            if (File.Exists(markerPath))
+            {
+                await DeleteTripAsync(slug);
+            }
         }
     }
 }

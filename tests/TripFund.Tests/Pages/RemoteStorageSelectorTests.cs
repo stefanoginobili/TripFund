@@ -50,7 +50,7 @@ public class RemoteStorageSelectorTests : BunitContext
 
         // Assert
         cut.FindAll(".provider-item").Should().HaveCount(2);
-        cut.Find(".provider-item:nth-child(1) .provider-name").TextContent.Should().Be("Memoria Locale");
+        cut.Find(".provider-item:nth-child(1) .provider-name").TextContent.Should().Be("Memoria Dispositivo");
         cut.Find(".provider-item:nth-child(2) .provider-name").TextContent.Should().Be("Microsoft OneDrive");
     }
 

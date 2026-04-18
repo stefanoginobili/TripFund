@@ -24,6 +24,7 @@ namespace TripFund.App.Components.Pages
 
         protected override async Task OnInitializedAsync()
         {
+            await Storage.CleanupIncompleteImportsAsync();
             await LoadTrips();
         }
 
@@ -180,6 +181,8 @@ namespace TripFund.App.Components.Pages
                 };
                 await Storage.SaveTripRegistryAsync(registry);
 
+                await Storage.InitializeInitialImportAsync(slug);
+
                 loadingMessage = "Sincronizzazione in corso...";
                 loadingSubMessage = "Stiamo scaricando i dati completi del viaggio.";
                 isSearchingRemote = true;
@@ -188,6 +191,7 @@ namespace TripFund.App.Components.Pages
                 try
                 {
                     await RemoteStorage.SynchronizeAsync(slug);
+                    Storage.CompleteInitialImport(slug);
                     NavigateToTrip(slug);
                 }
                 catch (SyncConflictException)

@@ -282,4 +282,28 @@ public class LocalTripStorageTests : IDisposable
         File.Exists(Path.Combine(v2Dir, ".synched")).Should().BeFalse(".synched should NOT be copied");
         File.Exists(Path.Combine(v2Dir, ".uploading")).Should().BeFalse(".uploading should NOT be copied");
     }
+
+    [Fact]
+    public async Task CleanupIncompleteImports_ShouldRemoveMarkedFoldersAndRegistryEntries()
+    {
+        // Arrange
+        var slug = "interrupted-trip";
+        var registry = await _service.GetTripRegistryAsync();
+        registry.Trips[slug] = new TripRegistryEntry { CreatedAt = DateTime.UtcNow };
+        await _service.SaveTripRegistryAsync(registry);
+
+        await _service.InitializeInitialImportAsync(slug);
+        
+        var tripDir = Path.Combine(_tempPath, "trips", slug);
+        Directory.Exists(tripDir).Should().BeTrue();
+        File.Exists(Path.Combine(tripDir, ".initial_import")).Should().BeTrue();
+
+        // Act
+        await _service.CleanupIncompleteImportsAsync();
+
+        // Assert
+        Directory.Exists(tripDir).Should().BeFalse("Incomplete trip folder should be deleted");
+        var updatedRegistry = await _service.GetTripRegistryAsync();
+        updatedRegistry.Trips.ContainsKey(slug).Should().BeFalse("Incomplete trip should be removed from registry");
+    }
 }
