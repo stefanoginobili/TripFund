@@ -77,6 +77,8 @@ namespace TripFund.App.Components.Pages
                         var isEmpty = await RemoteStorage.IsRemoteLocationEmptyAsync(selection.Provider, selection.Parameters);
                         if (!isEmpty)
                         {
+                            isSearchingRemote = false;
+                            StateHasChanged();
                             await Alert.ShowAlertAsync("Errore", "La posizione remota deve esistere ed essere vuota.", type: AlertType.Error);
                             return;
                         }
@@ -137,6 +139,9 @@ namespace TripFund.App.Components.Pages
             {
                 var remoteConfig = await RemoteStorage.GetRemoteTripConfigAsync(selection.Provider, selection.Parameters);
                 
+                isSearchingRemote = false;
+                StateHasChanged();
+
                 if (remoteConfig == null)
                 {
                     await Alert.ShowAlertAsync("Errore", "Impossibile trovare i dati del viaggio nella posizione specificata.", type: AlertType.Error);
@@ -144,7 +149,7 @@ namespace TripFund.App.Components.Pages
                 }
 
                 var confirmed = await Alert.ConfirmAsync("Conferma", 
-                    $"Vuoi aggiungere il viaggio {remoteConfig.Name} dal {remoteConfig.StartDate:dd/MM/yyyy} al {remoteConfig.EndDate:dd/MM/yyyy}?",
+                    $"Vuoi aggiungere il viaggio<br/><b>{remoteConfig.Name}</b><br/>dal <b>{remoteConfig.StartDate:dd/MM/yyyy}</b> al <b>{remoteConfig.EndDate:dd/MM/yyyy}</b>?",
                     "Conferma", "Annulla");
 
                 if (!confirmed) return;
