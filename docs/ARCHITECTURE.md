@@ -116,3 +116,31 @@ To ensure data integrity, the sync process uses the following markers at the roo
 
 ### 5.4. Error Handling
 Any exception (API error, Disk Full, Conflict) during the process MUST abort the synchronization. Conflicts detected during the "Integrity Check" phase (between Download and Upload) will throw a `SyncConflictException` to be handled by the UI.
+
+## 6. Resilient Managed Operations
+
+To ensure the application remains stable and data-consistent under various failure scenarios (app crashes, power loss, network instability), the following resiliency algorithms are implemented.
+
+### 6.1. Atomic Global Configuration
+Global JSON files (`app_settings.json` and `known_trips.json`) are critical for app functionality. To prevent file corruption during write operations, the system employs a **temp-and-rename** pattern:
+1. Serialize the data to a temporary file (e.g., `known_trips.json.tmp`).
+2. Ensure the write to the temporary file is complete and flushed to disk.
+3. Replace the original file with the temporary file using an atomic `Move` operation.
+4. If a `JsonException` occurs during reading (indicating corruption), the system gracefully recovers by returning a default/empty state to prevent a startup loop.
+
+### 6.2. Leaf Folder Integrity ("Fully Copied" Rule)
+The versioning and sync systems rely on the integrity of "Leaf" folders. A folder is considered valid and committed ONLY if:
+1. It contains a valid `.metadata` file.
+2. It DOES NOT contain an active marker file (`.uploading` or `.downloading`).
+This ensures that incomplete transfers or local commits are ignored or cleaned up.
+
+### 6.3. Initial Import Protection
+When "Joining" or "Creating" a trip, the application performs multiple steps (registry entry, directory creation, initial sync). To handle failures during this multi-step process:
+1. An `.initial_import` marker file is created in the trip's root folder at the start.
+2. If the process completes successfully, the marker is deleted.
+3. On every app launch, the system scans for any trip folders still containing an `.initial_import` marker and automatically removes them and their registry entries, allowing the user to retry the operation cleanly.
+
+### 6.4. Diagnostic Sync Logs
+For troubleshooting purposes, every synchronization session generates a detailed execution log.
+- **Location:** `[AppData]/debug/sync/[TripSlug].txt`
+- **Retention:** These logs are **strictly local** and are never uploaded to remote storage. They provide a step-by-step audit of API calls, file transfers, and error details.

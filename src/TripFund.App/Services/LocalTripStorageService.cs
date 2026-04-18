@@ -46,23 +46,42 @@ public class LocalTripStorageService
     public virtual async Task SaveAppSettingsAsync(AppSettings settings)
     {
         var path = Path.Combine(_rootPath, "app_settings.json");
+        var tempPath = path + ".tmp";
+        
         var json = JsonSerializer.Serialize(settings, _jsonOptions);
-        await File.WriteAllTextAsync(path, json);
+        await File.WriteAllTextAsync(tempPath, json);
+        
+        if (File.Exists(path)) File.Delete(path);
+        File.Move(tempPath, path);
     }
 
     public virtual async Task<LocalTripRegistry> GetTripRegistryAsync()
     {
         var path = Path.Combine(_rootPath, "known_trips.json");
         if (!File.Exists(path)) return new LocalTripRegistry();
-        var json = await File.ReadAllTextAsync(path);
-        return JsonSerializer.Deserialize<LocalTripRegistry>(json, _jsonOptions) ?? new LocalTripRegistry();
+        
+        try
+        {
+            var json = await File.ReadAllTextAsync(path);
+            return JsonSerializer.Deserialize<LocalTripRegistry>(json, _jsonOptions) ?? new LocalTripRegistry();
+        }
+        catch (JsonException)
+        {
+            // If the file is corrupted, return empty registry to allow recovery
+            return new LocalTripRegistry();
+        }
     }
 
     public virtual async Task SaveTripRegistryAsync(LocalTripRegistry registry)
     {
         var path = Path.Combine(_rootPath, "known_trips.json");
+        var tempPath = path + ".tmp";
+
         var json = JsonSerializer.Serialize(registry, _jsonOptions);
-        await File.WriteAllTextAsync(path, json);
+        await File.WriteAllTextAsync(tempPath, json);
+        
+        if (File.Exists(path)) File.Delete(path);
+        File.Move(tempPath, path);
     }
 
     public virtual async Task<TripConfig?> GetTripConfigAsync(string tripSlug)

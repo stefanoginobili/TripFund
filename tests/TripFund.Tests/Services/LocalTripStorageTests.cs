@@ -306,4 +306,30 @@ public class LocalTripStorageTests : IDisposable
         var updatedRegistry = await _service.GetTripRegistryAsync();
         updatedRegistry.Trips.ContainsKey(slug).Should().BeFalse("Incomplete trip should be removed from registry");
     }
+
+    [Fact]
+    public async Task AtomicWrite_ShouldBeResilient()
+    {
+        // Arrange
+        var registry = new LocalTripRegistry();
+        registry.Trips["trip-1"] = new TripRegistryEntry { CreatedAt = DateTime.UtcNow };
+        
+        // Act 1: Normal save
+        await _service.SaveTripRegistryAsync(registry);
+        var path = Path.Combine(_tempPath, "known_trips.json");
+        File.Exists(path).Should().BeTrue();
+
+        // Act 2: Simulate corruption by writing invalid JSON
+        await File.WriteAllTextAsync(path, "{ \"invalid\": json... ");
+        
+        // Assert: Get should recover
+        var recovered = await _service.GetTripRegistryAsync();
+        recovered.Should().NotBeNull();
+        recovered.Trips.Should().BeEmpty();
+
+        // Act 3: Save again should fix it
+        await _service.SaveTripRegistryAsync(registry);
+        var fixedRegistry = await _service.GetTripRegistryAsync();
+        fixedRegistry.Trips.Should().ContainKey("trip-1");
+    }
 }
