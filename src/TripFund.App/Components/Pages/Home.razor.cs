@@ -166,19 +166,6 @@ namespace TripFund.App.Components.Pages
                     return;
                 }
 
-                var existingConfig = await Storage.GetTripConfigAsync(slug);
-                
-                if (existingConfig == null)
-                {
-                    var settings = await Storage.GetAppSettingsAsync();
-                    var deviceId = settings?.DeviceId ?? "unknown";
-                    
-                    // Ensure the ID matches our generated local slug
-                    remoteConfig.Id = slug;
-                    
-                    await Storage.SaveTripConfigAsync(slug, remoteConfig, deviceId);
-                }
-
                 var registry = await Storage.GetTripRegistryAsync();
                 registry.Trips[slug] = new TripRegistryEntry 
                 { 
@@ -188,17 +175,31 @@ namespace TripFund.App.Components.Pages
                         Provider = selection.Provider, 
                         RemoteUniqueId = remoteId,
                         Parameters = selection.Parameters,
-                        Readonly = true
+                        Readonly = false
                     } 
                 };
                 await Storage.SaveTripRegistryAsync(registry);
 
-                if (registry.Trips[slug].RemoteStorage != null)
-                {
-                    _ = RemoteStorage.SynchronizeAsync(slug);
-                }
+                loadingMessage = "Sincronizzazione in corso...";
+                loadingSubMessage = "Stiamo scaricando i dati completi del viaggio.";
+                isSearchingRemote = true;
+                StateHasChanged();
 
-                NavigateToTrip(slug);
+                try
+                {
+                    await RemoteStorage.SynchronizeAsync(slug);
+                    NavigateToTrip(slug);
+                }
+                catch (SyncConflictException)
+                {
+                    await Storage.DeleteTripAsync(slug);
+                    await Alert.ShowAlertAsync("Errore", "Il viaggio remoto contiene dei conflitti. Risolvili su un altro dispositivo prima di importarlo.", type: AlertType.Error);
+                }
+                catch (Exception)
+                {
+                    await Storage.DeleteTripAsync(slug);
+                    await Alert.ShowAlertAsync("Errore", "Sincronizzazione fallita. Assicurati di avere una connessione attiva.", type: AlertType.Error);
+                }
             }
             finally
             {

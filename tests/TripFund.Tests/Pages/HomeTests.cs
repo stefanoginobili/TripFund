@@ -143,12 +143,12 @@ public class HomeTests : BunitContext
 
         // Expected slug: existing-trip_remote-123
         var expectedSlug = "existing-trip_remote-123";
-        _storageMock.Verify(s => s.SaveTripConfigAsync(expectedSlug, It.IsAny<TripConfig>(), "dev-1", It.IsAny<bool>()), Times.Once);
+        _remoteStorageMock.Verify(s => s.SynchronizeAsync(expectedSlug), Times.Once);
         _storageMock.Verify(s => s.SaveTripRegistryAsync(It.Is<LocalTripRegistry>(r => 
             r.Trips.ContainsKey(expectedSlug) &&
             r.Trips[expectedSlug].RemoteStorage != null &&
             r.Trips[expectedSlug].RemoteStorage!.RemoteUniqueId == "remote-123" &&
-            r.Trips[expectedSlug].RemoteStorage!.Readonly == true)), Times.Once);
+            r.Trips[expectedSlug].RemoteStorage!.Readonly == false)), Times.Once);
 
         // Act & Assert 2: Join again, should fail because directory exists
         // We simulate Directory.Exists returning true by setting up a real directory or mocking if possible.
@@ -168,5 +168,47 @@ public class HomeTests : BunitContext
         
         // Cleanup
         if (Directory.Exists(tripsPath)) Directory.Delete(tripsPath, true);
+    }
+
+    [Fact]
+    public async Task HandleJoinTrip_ShouldRollbackOnSyncFailure()
+    {
+        // Arrange
+        var registry = new LocalTripRegistry();
+        _storageMock.Setup(s => s.GetTripRegistryAsync()).ReturnsAsync(registry);
+        _storageMock.Setup(s => s.TripsPath).Returns(Path.Combine(Path.GetTempPath(), "TripFundTests_Rollback"));
+        
+        var remoteConfig = new TripConfig { Name = "Fail Trip", StartDate = DateTime.Today, EndDate = DateTime.Today.AddDays(1) };
+        _remoteStorageMock.Setup(r => r.GetRemoteTripConfigAsync(It.IsAny<string>(), It.IsAny<Dictionary<string, string>>()))
+            .ReturnsAsync(remoteConfig);
+        _remoteStorageMock.Setup(r => r.GetRemoteUniqueId(It.IsAny<string>(), It.IsAny<Dictionary<string, string>>()))
+            .Returns("remote-fail");
+        
+        _alertMock.Setup(a => a.ConfirmAsync(It.IsAny<string>(), It.IsAny<string>(), "Conferma", "Annulla", It.IsAny<AlertType>()))
+            .ReturnsAsync(true);
+
+        _remoteStorageMock.Setup(r => r.SynchronizeAsync(It.IsAny<string>()))
+            .ThrowsAsync(new Exception("Sync failed"));
+
+        var cut = Render<Home>();
+
+        var selection = new RemoteStorageSelection 
+        { 
+            Provider = "onedrive", 
+            Parameters = new Dictionary<string, string> { { "folderId", "remote-fail" } } 
+        };
+
+        // Act
+        var handleJoinMethod = cut.Instance.GetType().GetMethod("HandleJoinTrip", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+        await cut.InvokeAsync(async () => 
+        {
+            var task = handleJoinMethod!.Invoke(cut.Instance, new object[] { selection }) as Task;
+            if (task != null) await task;
+        });
+
+        // Assert
+        var expectedSlug = "fail-trip_remote-fail";
+        _storageMock.Verify(s => s.DeleteTripAsync(expectedSlug), Times.Once);
+        _alertMock.Verify(a => a.ShowAlertAsync("Errore", "Sincronizzazione fallita. Assicurati di avere una connessione attiva.", "OK", AlertType.Error), Times.Once);
     }
 }
