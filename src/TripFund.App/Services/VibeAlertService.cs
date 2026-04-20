@@ -11,10 +11,11 @@ public class VibeAlertService : IAlertService
     public string CancelText { get; private set; } = "Annulla";
     public bool IsConfirm { get; private set; }
     public AlertType Type { get; private set; }
+    public string MessageAlignment { get; private set; } = "center";
     
     private TaskCompletionSource<bool>? _tcs;
 
-    public Task<bool> ConfirmAsync(string title, string message, string accept = "OK", string cancel = "Annulla", AlertType type = AlertType.Information)
+    public Task<bool> ConfirmAsync(string title, string message, string accept = "OK", string cancel = "Annulla", AlertType type = AlertType.Information, string messageAlignment = "center")
     {
         _tcs?.TrySetResult(false);
         _tcs = new TaskCompletionSource<bool>();
@@ -26,13 +27,14 @@ public class VibeAlertService : IAlertService
         IsConfirm = true;
         IsVisible = true;
         Type = type;
+        MessageAlignment = messageAlignment;
         
         NotifyStateChanged();
         
         return _tcs.Task;
     }
 
-    public Task ShowAlertAsync(string title, string message, string cancel = "OK", AlertType type = AlertType.Information)
+    public Task ShowAlertAsync(string title, string message, string cancel = "OK", AlertType type = AlertType.Information, string messageAlignment = "center")
     {
         _tcs?.TrySetResult(false);
         _tcs = new TaskCompletionSource<bool>();
@@ -44,6 +46,7 @@ public class VibeAlertService : IAlertService
         IsConfirm = false;
         IsVisible = true;
         Type = type;
+        MessageAlignment = messageAlignment;
         
         NotifyStateChanged();
         

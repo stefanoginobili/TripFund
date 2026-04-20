@@ -8,6 +8,7 @@ namespace TripFund.App.Components.Common;
 public partial class ConflictResolverModal
 {
     [Inject] private LocalTripStorageService Storage { get; set; } = default!;
+    [Inject] private IAlertService AlertService { get; set; } = default!;
 
     [Parameter] public bool IsVisible { get; set; }
     [Parameter] public string TripSlug { get; set; } = string.Empty;
@@ -21,7 +22,12 @@ public partial class ConflictResolverModal
     private bool isSaving = false;
     private string currentDeviceId = string.Empty;
 
+    private static readonly System.Globalization.CultureInfo _itCulture = new("it-IT");
+
     private Dictionary<string, bool> diffMap = new();
+    private Dictionary<(string Property, int VersionIndex), string> evaluationStrings = new();
+
+    private readonly string[] _clickableProperties = { "Members", "Currencies", "Location", "Attachments" };
 
     protected override async Task OnParametersSetAsync()
     {
@@ -32,6 +38,7 @@ public partial class ConflictResolverModal
 
             selectedIndex = null;
             diffMap.Clear();
+            evaluationStrings.Clear();
 
             var settings = await Storage.GetAppSettingsAsync();
             currentDeviceId = settings?.DeviceId ?? string.Empty;
@@ -54,11 +61,25 @@ public partial class ConflictResolverModal
         var versions = configVersions;
         if (versions == null || versions.Count < 2) return;
 
-        diffMap["Name"] = versions.Select(v => v.Data?.Name).Distinct().Count() > 1;
-        diffMap["Dates"] = versions.Select(v => v.Data == null ? "DELETED" : $"{v.Data.StartDate:d}-{v.Data.EndDate:d}").Distinct().Count() > 1;
-        diffMap["Description"] = versions.Select(v => v.Data?.Description).Distinct().Count() > 1;
-        diffMap["Members"] = versions.Select(v => NormalizeMembers(v.Data)).Distinct().Count() > 1;
-        diffMap["Currencies"] = versions.Select(v => NormalizeCurrencies(v.Data)).Distinct().Count() > 1;
+        var names = versions.Select(v => v.Data?.Name ?? "Nessun nome").ToList();
+        diffMap["Name"] = names.Distinct().Count() > 1;
+        for (int i = 0; i < versions.Count; i++) evaluationStrings[("Name", i)] = names[i];
+
+        var dates = versions.Select(v => v.Data == null ? "ELIMINATA" : $"{v.Data.StartDate.ToString("dd/MM/yyyy", _itCulture)} - {v.Data.EndDate.ToString("dd/MM/yyyy", _itCulture)}").ToList();
+        diffMap["Dates"] = dates.Distinct().Count() > 1;
+        for (int i = 0; i < versions.Count; i++) evaluationStrings[("Dates", i)] = dates[i];
+
+        var descriptions = versions.Select(v => v.Data?.Description ?? "Nessuna descrizione").ToList();
+        diffMap["Description"] = descriptions.Distinct().Count() > 1;
+        for (int i = 0; i < versions.Count; i++) evaluationStrings[("Description", i)] = descriptions[i];
+
+        var members = versions.Select(v => NormalizeMembers(v.Data)).ToList();
+        diffMap["Members"] = members.Distinct().Count() > 1;
+        for (int i = 0; i < versions.Count; i++) evaluationStrings[("Members", i)] = members[i];
+
+        var currencies = versions.Select(v => NormalizeCurrencies(v.Data)).ToList();
+        diffMap["Currencies"] = currencies.Distinct().Count() > 1;
+        for (int i = 0; i < versions.Count; i++) evaluationStrings[("Currencies", i)] = currencies[i];
     }
 
     private void CalculateTransactionDiffs()
@@ -66,44 +87,77 @@ public partial class ConflictResolverModal
         var versions = transactionVersions;
         if (versions == null || versions.Count < 2) return;
 
-        diffMap["Amount"] = versions.Select(v => v.Data?.Amount).Distinct().Count() > 1;
-        diffMap["Description"] = versions.Select(v => v.Data?.Description).Distinct().Count() > 1;
-        diffMap["DateTime"] = versions.Select(v => v.Data == null ? "DELETED" : $"{v.Data.Date:O}-{v.Data.Timezone}").Distinct().Count() > 1;
-        diffMap["Participant"] = versions.Select(v => v.Data?.Split?.Keys?.FirstOrDefault()).Distinct().Count() > 1;
-        diffMap["Participants"] = versions.Select(v => NormalizeSplit(v.Data)).Distinct().Count() > 1;
-        diffMap["Attachments"] = versions.Select(v => NormalizeAttachments(v.Data)).Distinct().Count() > 1;
-        diffMap["Location"] = versions.Select(v => NormalizeLocation(v.Data)).Distinct().Count() > 1;
+        var amounts = versions.Select(v => v.Data?.Amount.ToString("N2", _itCulture) ?? "0,00").ToList();
+        diffMap["Amount"] = amounts.Distinct().Count() > 1;
+        for (int i = 0; i < versions.Count; i++) evaluationStrings[("Amount", i)] = amounts[i];
+
+        var descriptions = versions.Select(v => v.Data?.Description ?? "Nessuna descrizione").ToList();
+        diffMap["Description"] = descriptions.Distinct().Count() > 1;
+        for (int i = 0; i < versions.Count; i++) evaluationStrings[("Description", i)] = descriptions[i];
+
+        var dateTimes = versions.Select(v => v.Data == null ? "ELIMINATA" : $"{v.Data.Date.ToString("dd/MM/yyyy HH:mm:ss", _itCulture)}").ToList();
+        diffMap["DateTime"] = dateTimes.Distinct().Count() > 1;
+        for (int i = 0; i < versions.Count; i++) evaluationStrings[("DateTime", i)] = dateTimes[i];
+
+        var participants = versions.Select(v => v.Data?.Split?.Keys?.FirstOrDefault() ?? "Nessuno").ToList();
+        diffMap["Participant"] = participants.Distinct().Count() > 1;
+        for (int i = 0; i < versions.Count; i++) evaluationStrings[("Participant", i)] = participants[i];
+
+        var splits = versions.Select(v => NormalizeSplit(v.Data)).ToList();
+        diffMap["Participants"] = splits.Distinct().Count() > 1;
+        for (int i = 0; i < versions.Count; i++) evaluationStrings[("Participants", i)] = splits[i];
+
+        var attachments = versions.Select(v => NormalizeAttachments(v.Data)).ToList();
+        diffMap["Attachments"] = attachments.Distinct().Count() > 1;
+        for (int i = 0; i < versions.Count; i++) evaluationStrings[("Attachments", i)] = attachments[i];
+
+        var locations = versions.Select(v => NormalizeLocation(v.Data)).ToList();
+        diffMap["Location"] = locations.Distinct().Count() > 1;
+        for (int i = 0; i < versions.Count; i++) evaluationStrings[("Location", i)] = locations[i];
     }
 
     private string NormalizeMembers(TripConfig? c)
     {
-        if (c == null) return "DELETED";
-        return string.Join("|", (c.Members ?? new()).OrderBy(m => m.Key).Select(m => $"{m.Key}:{m.Value.Name}:{m.Value.Email}:{m.Value.Avatar}"));
+        if (c == null) return "ELIMINATA";
+        if (c.Members == null || !c.Members.Any()) return "Nessun partecipante";
+        return string.Join("<br /><br />", c.Members.OrderBy(m => m.Key).Select(m => 
+            $"{($"{m.Value.Avatar} {m.Value.Name}").Trim()} ({m.Key})<br />" +
+            $"{(string.IsNullOrWhiteSpace(m.Value.Email) ? "nessuna email" : m.Value.Email)}"));
     }
 
     private string NormalizeCurrencies(TripConfig? c)
     {
-        if (c == null) return "DELETED";
-        return string.Join("|", (c.Currencies ?? new()).OrderBy(curr => curr.Key).Select(curr => $"{curr.Key}:{curr.Value.Symbol}:{curr.Value.Name}:{curr.Value.Decimals}:{curr.Value.ExpectedQuotaPerMember}"));
+        if (c == null) return "ELIMINATA";
+        if (c.Currencies == null || !c.Currencies.Any()) return "Nessuna cassa";
+        return string.Join("<br /><br />", c.Currencies.OrderBy(curr => curr.Key).Select(curr => 
+            $"{curr.Key} ({curr.Value.Symbol})<br />" +
+            $"Quota: {curr.Value.ExpectedQuotaPerMember.ToString("N" + curr.Value.Decimals, _itCulture)}"));
     }
 
     private string NormalizeSplit(Transaction? t)
     {
-        if (t == null) return "DELETED";
-        return string.Join("|", (t.Split ?? new()).OrderBy(s => s.Key).Select(s => $"{s.Key}:{s.Value.Amount}:{s.Value.Manual}"));
+        if (t == null) return "ELIMINATA";
+        if (t.Split == null || !t.Split.Any()) return "Nessun partecipante";
+        return string.Join("|", t.Split.OrderBy(s => s.Key).Select(s => $"{s.Key}:{s.Value.Amount}:{s.Value.Manual}"));
     }
 
     private string NormalizeAttachments(Transaction? t)
     {
-        if (t == null) return "DELETED";
-        return string.Join("|", (t.Attachments ?? new()).OrderBy(a => a.Name).Select(a => $"{a.Name}:{a.OriginalName}:{a.CreatedAt:O}"));
+        if (t == null) return "ELIMINATA";
+        if (t.Attachments == null || !t.Attachments.Any()) return "Nessun allegato";
+        return string.Join("<br /><br />", t.Attachments.OrderBy(a => a.Name).Select(a => 
+            $"{a.OriginalName}<br />" +
+            $"{a.Name}<br />" +
+            $"{a.CreatedAt.ToLocalTime().ToString("dd/MM/yyyy HH:mm:ss", _itCulture)}"));
     }
 
     private string NormalizeLocation(Transaction? t)
     {
-        if (t == null) return "DELETED";
-        if (t.Location == null) return "";
-        return $"{t.Location.Name}:{t.Location.Latitude:F6}:{t.Location.Longitude:F6}";
+        if (t == null) return "ELIMINATA";
+        if (t.Location == null) return "Nessun luogo";
+        return $"{t.Location.Name}<br />" +
+               $"Latitudine: {t.Location.Latitude.ToString(_itCulture)}<br />" +
+               $"Longitudine: {t.Location.Longitude.ToString(_itCulture)}";
     }
 
     private async Task Confirm()
@@ -135,6 +189,19 @@ public partial class ConflictResolverModal
         selectedIndex = index;
     }
 
+    private async Task ShowDiffInfo(string propertyName, int versionIndex)
+    {
+        if (!_clickableProperties.Contains(propertyName)) return;
+
+        if (diffMap.TryGetValue(propertyName, out var isDiff) && isDiff)
+        {
+            if (evaluationStrings.TryGetValue((propertyName, versionIndex), out var evalString))
+            {
+                await AlertService.ShowAlertAsync("Dettaglio", evalString, "Chiudi", AlertType.Information, messageAlignment: "left");
+            }
+        }
+    }
+
     private async Task Close()
     {
         if (!isSaving)
@@ -145,7 +212,16 @@ public partial class ConflictResolverModal
 
     private string GetDiffClass(string propertyName)
     {
-        return diffMap.TryGetValue(propertyName, out var isDiff) && isDiff ? "text-danger" : "text-neutral";
+        if (diffMap.TryGetValue(propertyName, out var isDiff) && isDiff)
+        {
+            var classes = "text-danger";
+            if (_clickableProperties.Contains(propertyName))
+            {
+                classes += " clickable-diff";
+            }
+            return classes;
+        }
+        return "text-neutral";
     }
 
     private string GetTimeZoneDisplayName(Transaction? tx)

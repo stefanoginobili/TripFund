@@ -68,7 +68,7 @@
                             </div>
                         }
 
-                        @if (_conflicts.Any())
+                        @if (string.IsNullOrEmpty(syncError) && _conflicts.Any())
                         {
                             <div class="sync-error-label">
                                 @(_conflicts.Count == 1 ? "Un conflitto da risolvere" : $"{_conflicts.Count} conflitti da risolvere")

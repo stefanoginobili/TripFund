@@ -25,7 +25,7 @@
                         {
                             var index = i;
                             var v = configVersions[i];
-                            <div class="version-tile @(selectedIndex == index ? "selected" : (selectedIndex.HasValue ? "dimmed" : ""))" @onclick="() => SelectVersion(index)">
+                            <div class="version-tile @(selectedIndex == index ? "selected" : (selectedIndex.HasValue ? "dimmed" : ""))">
                                 <div class="version-header">
                                     <div class="version-author">Versione di @v.Author</div>
                                     <div class="version-date">
@@ -45,38 +45,50 @@
                                     }
                                     else
                                     {
-                                        <div class="detail-item @GetDiffClass("Name")">
-                                            <i class="glyph">🏷️</i> @v.Data.Name
+                                        <div class="detail-item">
+                                            <i class="glyph">🏷️</i>
+                                            <span class="@GetDiffClass("Name")" @onclick='() => ShowDiffInfo("Name", index)'>@v.Data.Name</span>
                                         </div>
-                                        <div class="detail-item @GetDiffClass("Dates")">
-                                            <i class="glyph">📅</i> @v.Data.StartDate.ToString("dd/MM/yyyy") - @v.Data.EndDate.ToString("dd/MM/yyyy")
+                                        <div class="detail-item">
+                                            <i class="glyph">📅</i>
+                                            <span class="@GetDiffClass("Dates")" @onclick='() => ShowDiffInfo("Dates", index)'>@v.Data.StartDate.ToString("dd/MM/yyyy") - @v.Data.EndDate.ToString("dd/MM/yyyy")</span>
                                         </div>
-                                        <div class="detail-item @GetDiffClass("Description")">
+                                        <div class="detail-item">
                                             <i class="glyph">📝</i>
-                                            @if (string.IsNullOrWhiteSpace(v.Data.Description))
-                                            {
-                                                <i>Nessuna descrizione</i>
-                                            }
-                                            else
-                                            {
-                                                @v.Data.Description
-                                            }
+                                            <span class="@GetDiffClass("Description")" @onclick='() => ShowDiffInfo("Description", index)'>
+                                                @if (string.IsNullOrWhiteSpace(v.Data.Description))
+                                                {
+                                                    <i>Nessuna descrizione</i>
+                                                }
+                                                else
+                                                {
+                                                    @v.Data.Description
+                                                }
+                                            </span>
                                         </div>
-                                        <div class="detail-item @GetDiffClass("Members")">
-                                            <i class="glyph">👥</i> @(v.Data.Members.Count == 1 ? "Un partecipante" : $"{v.Data.Members.Count} partecipanti")
+                                        <div class="detail-item">
+                                            <i class="glyph">👥</i>
+                                            <span class="@GetDiffClass("Members")" @onclick='() => ShowDiffInfo("Members", index)'>@(v.Data.Members.Count == 1 ? "Un partecipante" : $"{v.Data.Members.Count} partecipanti")</span>
                                         </div>
-                                        <div class="detail-item @GetDiffClass("Currencies")">
+                                        <div class="detail-item">
                                             <i class="glyph">💰</i> 
-                                            @if (v.Data.Currencies != null && v.Data.Currencies.Any())
-                                            {
-                                                <span>@string.Join(" / ", v.Data.Currencies.Select(curr => $"{curr.Key} {curr.Value.Symbol}{curr.Value.ExpectedQuotaPerMember.ToString("N" + curr.Value.Decimals)}"))</span>
-                                            }
-                                            else
-                                            {
-                                                <i>Nessuna cassa</i>
-                                            }
+                                            <span class="@GetDiffClass("Currencies")" @onclick='() => ShowDiffInfo("Currencies", index)'>
+                                                @if (v.Data.Currencies != null && v.Data.Currencies.Any())
+                                                {
+                                                    <span>@string.Join(" / ", v.Data.Currencies.Select(curr => $"{curr.Key} {curr.Value.ExpectedQuotaPerMember.ToString("N" + curr.Value.Decimals)}"))</span>
+                                                }
+                                                else
+                                                {
+                                                    <i>Nessuna cassa</i>
+                                                }
+                                            </span>
                                         </div>
                                     }
+                                </div>
+                                <div class="version-footer">
+                                    <button class="btn-select-version-vibe" @onclick="() => SelectVersion(index)">
+                                        Usa questa versione
+                                    </button>
                                 </div>
                             </div>
                         }
@@ -87,7 +99,7 @@
                         {
                             var index = i;
                             var v = transactionVersions[i];
-                            <div class="version-tile @(selectedIndex == index ? "selected" : (selectedIndex.HasValue ? "dimmed" : ""))" @onclick="() => SelectVersion(index)">
+                            <div class="version-tile @(selectedIndex == index ? "selected" : (selectedIndex.HasValue ? "dimmed" : ""))">
                                 <div class="version-header">
                                     <div class="version-author">Versione di @v.Author</div>
                                     <div class="version-date">
@@ -107,57 +119,71 @@
                                     }
                                     else
                                     {
-                                        <div class="detail-item @GetDiffClass("Amount")">
-                                            <i class="glyph">💵</i> @v.Data.Currency @v.Data.Amount.ToString("N2")
+                                        <div class="detail-item">
+                                            <i class="glyph">💵</i>
+                                            <span class="@GetDiffClass("Amount")" @onclick='() => ShowDiffInfo("Amount", index)'>@v.Data.Currency @v.Data.Amount.ToString("N2")</span>
                                         </div>
-                                        <div class="detail-item @GetDiffClass("Description")">
+                                        <div class="detail-item">
                                             <i class="glyph">📝</i>
-                                            @if (string.IsNullOrWhiteSpace(v.Data.Description))
-                                            {
-                                                <i>Nessuna descrizione</i>
-                                            }
-                                            else
-                                            {
-                                                @v.Data.Description
-                                            }
+                                            <span class="@GetDiffClass("Description")" @onclick='() => ShowDiffInfo("Description", index)'>
+                                                @if (string.IsNullOrWhiteSpace(v.Data.Description))
+                                                {
+                                                    <i>Nessuna descrizione</i>
+                                                }
+                                                else
+                                                {
+                                                    @v.Data.Description
+                                                }
+                                            </span>
                                         </div>
-                                        <div class="detail-item @GetDiffClass("DateTime")">
-                                            <i class="glyph">🕒</i> @v.Data.Date.ToLocalTime().ToString("dd/MM/yyyy HH:mm")<br/>ora di @GetTimeZoneDisplayName(v.Data)
+                                        <div class="detail-item">
+                                            <i class="glyph">🕒</i>
+                                            <span class="@GetDiffClass("DateTime")" @onclick='() => ShowDiffInfo("DateTime", index)'>@v.Data.Date.ToLocalTime().ToString("dd/MM/yyyy HH:mm")<br/>ora di @GetTimeZoneDisplayName(v.Data)</span>
                                         </div>
                                         @if (v.Data.Type == "contribution")
                                         {
-                                            <div class="detail-item @GetDiffClass("Participant")">
-                                                <i class="glyph">👤</i> @v.Data.Split.Keys.FirstOrDefault()
+                                            <div class="detail-item">
+                                                <i class="glyph">👤</i>
+                                                <span class="@GetDiffClass("Participant")" @onclick='() => ShowDiffInfo("Participant", index)'>@v.Data.Split.Keys.FirstOrDefault()</span>
                                             </div>
                                         }
                                         else
                                         {
-                                            <div class="detail-item @GetDiffClass("Participants")">
-                                                <i class="glyph">👥</i> @(v.Data.Split.Count == 1 ? "Un partecipante" : $"{v.Data.Split.Count} partecipanti")
+                                            <div class="detail-item">
+                                                <i class="glyph">👥</i>
+                                                <span class="@GetDiffClass("Participants")" @onclick='() => ShowDiffInfo("Participants", index)'>@(v.Data.Split.Count == 1 ? "Un partecipante" : $"{v.Data.Split.Count} partecipanti")</span>
                                             </div>
-                                            <div class="detail-item @GetDiffClass("Attachments")">
-                                                <i class="glyph">📎</i> @(v.Data.Attachments.Count == 1 ? "Un allegato" : $"{v.Data.Attachments.Count} allegati")
+                                            <div class="detail-item">
+                                                <i class="glyph">📎</i>
+                                                <span class="@GetDiffClass("Attachments")" @onclick='() => ShowDiffInfo("Attachments", index)'>@(v.Data.Attachments.Count == 1 ? "Un allegato" : $"{v.Data.Attachments.Count} allegati")</span>
                                             </div>
-                                            <div class="detail-item @GetDiffClass("Location")">
+                                            <div class="detail-item">
                                                 <i class="glyph">📍</i>
-                                                @if (string.IsNullOrWhiteSpace(v.Data.Location?.Name))
-                                                {
-                                                    <i>Nessun luogo</i>
-                                                }
-                                                else
-                                                {
-                                                    @v.Data.Location.Name
-                                                }
+                                                <span class="@GetDiffClass("Location")" @onclick='() => ShowDiffInfo("Location", index)'>
+                                                    @if (string.IsNullOrWhiteSpace(v.Data.Location?.Name))
+                                                    {
+                                                        <i>Nessun luogo</i>
+                                                    }
+                                                    else
+                                                    {
+                                                        @v.Data.Location.Name
+                                                    }
+                                                </span>
                                             </div>
                                         }
                                     }
+                                </div>
+                                <div class="version-footer">
+                                    <button class="btn-select-version-vibe" @onclick="() => SelectVersion(index)">
+                                        Usa questa versione
+                                    </button>
                                 </div>
                             </div>
                         }
                     }
                 </div>
 
-                <div class="modal-footer-vibe">
+                <div class="confirm-action-container">
                     <button class="btn-primary-vibe w-100" @onclick="Confirm" disabled="@(!selectedIndex.HasValue || isSaving)">
                         @if (isSaving)
                         {
@@ -252,11 +278,13 @@
     .version-tile {
         background-color: #FFFFFF;
         border-radius: 16px;
-        padding: 1rem;
+        padding: 1.25rem;
         border: 2px solid transparent;
-        cursor: pointer;
         transition: all 0.2s ease;
         box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
     }
 
     .version-tile.selected {
@@ -264,7 +292,8 @@
         background-color: #F0F7F3;
     }
 
-    .version-tile.dimmed {
+    .version-tile.dimmed .version-header,
+    .version-tile.dimmed .version-details {
         opacity: 0.5;
         filter: grayscale(0.5);
     }
@@ -272,7 +301,6 @@
     .version-header {
         border-bottom: 1px solid #F0F0F0;
         padding-bottom: 0.5rem;
-        margin-bottom: 0.75rem;
     }
 
     .version-author {
@@ -299,6 +327,38 @@
         gap: 0.5rem;
     }
 
+    .clickable-diff {
+        cursor: pointer;
+        text-decoration: underline dotted;
+    }
+
+    .version-footer {
+        margin-top: 0.5rem;
+    }
+
+    .btn-select-version-vibe {
+        width: 100%;
+        background-color: #E8F0EC;
+        color: #20563C;
+        border: 1.5px solid #20563C;
+        padding: 0.6rem;
+        border-radius: 10px;
+        font-weight: 700;
+        font-size: 0.85rem;
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+
+    .btn-select-version-vibe:active {
+        background-color: #20563C;
+        color: white;
+    }
+
+    .selected .btn-select-version-vibe {
+        background-color: #20563C;
+        color: white;
+    }
+
     .glyph {
         font-style: normal;
         flex-shrink: 0;
@@ -320,10 +380,7 @@
         font-size: 0.8rem;
     }
 
-    .modal-footer-vibe {
-        position: sticky;
-        bottom: 0;
-        background-color: #F8FBF9;
+    .confirm-action-container {
         padding-top: 1rem;
     }
 
