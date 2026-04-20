@@ -4,6 +4,15 @@ using TripFund.App.Models;
 
 namespace TripFund.App.Services;
 
+public class ConflictVersion<T>
+{
+    public T? Data { get; set; }
+    public string Author { get; set; } = string.Empty;
+    public DateTime Timestamp { get; set; }
+    public string FolderName { get; set; } = string.Empty;
+    public string DeviceId { get; set; } = string.Empty;
+}
+
 public class LocalTripStorageService
 {
     private readonly string _rootPath;
@@ -292,90 +301,186 @@ public class LocalTripStorageService
         await _engine.CommitAsync(detailsRoot, deviceId, kind, changedFiles, metadata: metadata);
     }
 
-    public virtual async Task<Dictionary<string, Transaction>> GetConflictingVersionsAsync(string tripSlug, string transactionId)
+    public virtual async Task<List<ConflictVersion<Transaction>>> GetConflictingTransactionVersionsAsync(string tripSlug, string transactionId)
     {
         var detailsRoot = Path.Combine(_tripsPath, tripSlug, "transactions", transactionId, "details_versioned");
         var latestVersions = _engine.GetLatestVersionFolders(detailsRoot);
 
-        var result = new Dictionary<string, Transaction>();
+        var result = new List<ConflictVersion<Transaction>>();
         foreach (var v in latestVersions)
         {
             var leaf = new LocalLeafFolder(Path.Combine(detailsRoot, v.FolderName));
-            if (await leaf.IsDataEmptyAsync()) continue;
-
-            try 
+            var metadata = await leaf.GetMetadataAsync();
+            
+            var cv = new ConflictVersion<Transaction>
             {
-                var bytes = await leaf.ReadDataFileAsync("transaction_details.json");
-                var json = System.Text.Encoding.UTF8.GetString(bytes);
-                var trans = JsonSerializer.Deserialize<Transaction>(json, _jsonOptions);
-                if (trans != null) result[v.DeviceId] = trans;
+                FolderName = v.FolderName,
+                DeviceId = v.DeviceId,
+                Author = metadata.TryGetValue("author", out var author) ? author : "Unknown",
+            };
+
+            if (metadata.TryGetValue("timestamp", out var tsStr) && DateTime.TryParse(tsStr, out var ts))
+            {
+                cv.Timestamp = ts.ToUniversalTime();
             }
-            catch (FileNotFoundException) { }
+
+            if (!(await leaf.IsDataEmptyAsync()))
+            {
+                try 
+                {
+                    var bytes = await leaf.ReadDataFileAsync("transaction_details.json");
+                    var json = System.Text.Encoding.UTF8.GetString(bytes);
+                    cv.Data = JsonSerializer.Deserialize<Transaction>(json, _jsonOptions);
+                }
+                catch (FileNotFoundException) { }
+            }
+            
+            result.Add(cv);
         }
         return result;
     }
 
-    public virtual async Task ResolveConflictAsync(string tripSlug, Transaction resolvedTransaction, string deviceId)
+    public virtual async Task<List<ConflictVersion<TripConfig>>> GetConflictingConfigVersionsAsync(string tripSlug)
     {
-        var detailsRoot = Path.Combine(_tripsPath, tripSlug, "transactions", resolvedTransaction.Id, "details_versioned");
-        
-        var settings = await GetAppSettingsAsync();
-        var author = settings?.AuthorName ?? "Unknown";
-        resolvedTransaction.Author = author;
-        
-        IReadOnlyList<VersionFolderInfo> latestVersions;
-        if (resolvedTransaction.CreatedAt == default)
+        var configRoot = Path.Combine(_tripsPath, tripSlug, "config_versioned");
+        var latestVersions = _engine.GetLatestVersionFolders(configRoot);
+
+        var result = new List<ConflictVersion<TripConfig>>();
+        foreach (var v in latestVersions)
         {
-            latestVersions = _engine.GetLatestVersionFolders(detailsRoot);
-            if (latestVersions.Count > 0)
+            var leaf = new LocalLeafFolder(Path.Combine(configRoot, v.FolderName));
+            var metadata = await leaf.GetMetadataAsync();
+            
+            var cv = new ConflictVersion<TripConfig>
             {
-                var latest = latestVersions[0];
-                var leaf = new LocalLeafFolder(Path.Combine(detailsRoot, latest.FolderName));
-                try
+                FolderName = v.FolderName,
+                DeviceId = v.DeviceId,
+                Author = metadata.TryGetValue("author", out var author) ? author : "Unknown",
+            };
+
+            if (metadata.TryGetValue("timestamp", out var tsStr) && DateTime.TryParse(tsStr, out var ts))
+            {
+                cv.Timestamp = ts.ToUniversalTime();
+            }
+
+            if (!(await leaf.IsDataEmptyAsync()))
+            {
+                try 
                 {
-                    var prevBytes = await leaf.ReadDataFileAsync("transaction_details.json");
-                    var prevJson = System.Text.Encoding.UTF8.GetString(prevBytes);
-                    var prev = JsonSerializer.Deserialize<Transaction>(prevJson, _jsonOptions);
-                    if (prev != null) resolvedTransaction.CreatedAt = prev.CreatedAt;
+                    var bytes = await leaf.ReadDataFileAsync("trip_config.json");
+                    var json = System.Text.Encoding.UTF8.GetString(bytes);
+                    cv.Data = JsonSerializer.Deserialize<TripConfig>(json, _jsonOptions);
                 }
                 catch (FileNotFoundException) { }
             }
+            
+            result.Add(cv);
+        }
+        return result;
+    }
 
+    public virtual async Task ResolveConfigConflictAsync(string tripSlug, TripConfig? resolvedConfig, string deviceId)
+    {
+        var configRoot = Path.Combine(_tripsPath, tripSlug, "config_versioned");
+        var latestVersions = _engine.GetLatestVersionFolders(configRoot);
+
+        var settings = await GetAppSettingsAsync();
+        var author = settings?.AuthorName ?? "Unknown";
+
+        var changedFiles = new Dictionary<string, byte[]>();
+        if (resolvedConfig != null)
+        {
+            resolvedConfig.Author = author;
+            resolvedConfig.UpdatedAt = DateTime.UtcNow;
+            var json = JsonSerializer.Serialize(resolvedConfig, _jsonOptions);
+            changedFiles["trip_config.json"] = System.Text.Encoding.UTF8.GetBytes(json);
+        }
+
+        var resolvedFolders = latestVersions.Select(v => v.FolderName).ToList();
+
+        var metadata = new Dictionary<string, string>
+        {
+            { "author", author },
+            { "device", deviceId },
+            { "timestamp", DateTime.UtcNow.ToString("yyyy-MM-ddTHH:mm:ssZ") }
+        };
+
+        await _engine.CommitAsync(configRoot, deviceId, CommitKind.Res, changedFiles, metadata: metadata, resolvedFolders: resolvedFolders);
+    }
+
+    public virtual async Task ResolveConflictAsync(string tripSlug, Transaction? resolvedTransaction, string deviceId)
+    {
+        if (resolvedTransaction == null)
+        {
+            // We need to know which transactionId we are resolving.
+            // This is a bit tricky if we only have null. 
+            // But ResolveConflictAsync is called from the modal which knows the transactionId from the ConflictInfo.
+            // I will add an overload or change signature to include transactionId.
+            throw new ArgumentNullException(nameof(resolvedTransaction), "TransactionId is required for deletion resolution.");
+        }
+        await ResolveConflictAsync(tripSlug, resolvedTransaction.Id, resolvedTransaction, deviceId);
+    }
+
+    public virtual async Task ResolveConflictAsync(string tripSlug, string transactionId, Transaction? resolvedTransaction, string deviceId)
+    {
+        var detailsRoot = Path.Combine(_tripsPath, tripSlug, "transactions", transactionId, "details_versioned");
+        
+        var settings = await GetAppSettingsAsync();
+        var author = settings?.AuthorName ?? "Unknown";
+        
+        IReadOnlyList<VersionFolderInfo> latestVersions = _engine.GetLatestVersionFolders(detailsRoot);
+
+        var changedFiles = new Dictionary<string, byte[]>();
+        if (resolvedTransaction != null)
+        {
+            resolvedTransaction.Author = author;
             if (resolvedTransaction.CreatedAt == default)
             {
-                var allVersions = _engine.GetVersionFolders(detailsRoot).OrderByDescending(v => v.Sequence);
-                foreach (var v in allVersions)
+                if (latestVersions.Count > 0)
                 {
-                    var leaf = new LocalLeafFolder(Path.Combine(detailsRoot, v.FolderName));
+                    var latest = latestVersions[0];
+                    var leaf = new LocalLeafFolder(Path.Combine(detailsRoot, latest.FolderName));
                     try
                     {
                         var prevBytes = await leaf.ReadDataFileAsync("transaction_details.json");
                         var prevJson = System.Text.Encoding.UTF8.GetString(prevBytes);
                         var prev = JsonSerializer.Deserialize<Transaction>(prevJson, _jsonOptions);
-                        if (prev != null && prev.CreatedAt != default)
-                        {
-                            resolvedTransaction.CreatedAt = prev.CreatedAt;
-                            break;
-                        }
+                        if (prev != null) resolvedTransaction.CreatedAt = prev.CreatedAt;
                     }
                     catch (FileNotFoundException) { }
                 }
+
+                if (resolvedTransaction.CreatedAt == default)
+                {
+                    var allVersions = _engine.GetVersionFolders(detailsRoot).OrderByDescending(v => v.Sequence);
+                    foreach (var v in allVersions)
+                    {
+                        var leaf = new LocalLeafFolder(Path.Combine(detailsRoot, v.FolderName));
+                        try
+                        {
+                            var prevBytes = await leaf.ReadDataFileAsync("transaction_details.json");
+                            var prevJson = System.Text.Encoding.UTF8.GetString(prevBytes);
+                            var prev = JsonSerializer.Deserialize<Transaction>(prevJson, _jsonOptions);
+                            if (prev != null && prev.CreatedAt != default)
+                            {
+                                resolvedTransaction.CreatedAt = prev.CreatedAt;
+                                break;
+                            }
+                        }
+                        catch (FileNotFoundException) { }
+                    }
+                }
+                
+                if (resolvedTransaction.CreatedAt == default)
+                {
+                    resolvedTransaction.CreatedAt = DateTime.UtcNow;
+                }
             }
             
-            if (resolvedTransaction.CreatedAt == default)
-            {
-                resolvedTransaction.CreatedAt = DateTime.UtcNow;
-            }
+            resolvedTransaction.UpdatedAt = DateTime.UtcNow;
+            var json = JsonSerializer.Serialize(resolvedTransaction, _jsonOptions);
+            changedFiles["transaction_details.json"] = System.Text.Encoding.UTF8.GetBytes(json);
         }
-        else
-        {
-            latestVersions = _engine.GetLatestVersionFolders(detailsRoot);
-        }
-        
-        resolvedTransaction.UpdatedAt = DateTime.UtcNow;
-
-        var json = JsonSerializer.Serialize(resolvedTransaction, _jsonOptions);
-        var changedFiles = new Dictionary<string, byte[]> { { "transaction_details.json", System.Text.Encoding.UTF8.GetBytes(json) } };
 
         var resolvedFolders = latestVersions.Select(v => v.FolderName).ToList();
 

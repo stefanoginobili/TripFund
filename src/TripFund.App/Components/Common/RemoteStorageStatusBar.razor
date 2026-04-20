@@ -77,7 +77,7 @@
                                 @foreach (var conflict in _conflicts)
                                 {
                                     <li class="conflict-item-vibe">
-                                        <button class="conflict-link-vibe" @onclick="ShowPlaceholder">
+                                        <button class="conflict-link-vibe" @onclick="() => ShowConflictResolver(conflict)">
                                             @conflict.Label
                                         </button>
                                     </li>
@@ -90,28 +90,12 @@
         </div>
     </div>
 
-    @if (_showPlaceholder)
-    {
-        <div class="modal-backdrop-vibe" @onclick="HidePlaceholder">
-            <div class="modal-sheet-vibe" @onclick:stopPropagation="true">
-                <header class="modal-header-vibe">
-                    <h2 class="modal-title-vibe">Risoluzione Conflitti</h2>
-                    <button class="close-btn-vibe" @onclick="HidePlaceholder">
-                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <line x1="18" y1="6" x2="6" y2="18"></line>
-                            <line x1="6" y1="6" x2="18" y2="18"></line>
-                        </svg>
-                    </button>
-                </header>
-                <div class="modal-body-vibe">
-                    <div class="placeholder-content-vibe">
-                        <p>Presto in arrivo la risoluzione dei conflitti</p>
-                        <button class="btn-primary-vibe w-100 mt-4" @onclick="HidePlaceholder">Ho capito</button>
-                    </div>
-                </div>
-            </div>
-        </div>
-    }
+    <ConflictResolverModal 
+        IsVisible="@_showResolver" 
+        TripSlug="@TripSlug" 
+        Conflict="@_selectedConflict" 
+        OnClose="HideConflictResolver" 
+        OnResolved="HandleConflictResolved" />
 }
 
 @code {
@@ -126,7 +110,8 @@
     private System.Timers.Timer? refreshTimer;
     
     private List<ConflictInfo> _conflicts = new();
-    private bool _showPlaceholder = false;
+    private bool _showResolver = false;
+    private ConflictInfo? _selectedConflict;
 
     private bool IsModal => isSyncing;
 
@@ -207,8 +192,24 @@
         }
     }
 
-    private void ShowPlaceholder() => _showPlaceholder = true;
-    private void HidePlaceholder() => _showPlaceholder = false;
+    private void ShowConflictResolver(ConflictInfo conflict)
+    {
+        _selectedConflict = conflict;
+        _showResolver = true;
+    }
+
+    private void HideConflictResolver()
+    {
+        _showResolver = false;
+        _selectedConflict = null;
+    }
+
+    private async Task HandleConflictResolved()
+    {
+        await LoadSyncStatus();
+        await OnSyncCompleted.InvokeAsync();
+        await InvokeAsync(StateHasChanged);
+    }
 
     private string GetRelativeSyncTime(DateTime? syncTime)
     {

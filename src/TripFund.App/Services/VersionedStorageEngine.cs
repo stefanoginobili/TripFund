@@ -88,7 +88,7 @@ public class VersionedStorageEngine
             if (v.Kind == CommitKind.Res)
             {
                 var leaf = new LocalLeafFolder(Path.Combine(rootPath, v.FolderName));
-                var metadata = leaf.GetMetadataAsync().GetAwaiter().GetResult();
+                var metadata = leaf.GetMetadata();
                 if (metadata.TryGetValue("resolved_versions", out var resolved))
                 {
                     v.ResolvedFolders = resolved.Split(',', StringSplitOptions.RemoveEmptyEntries).ToList();

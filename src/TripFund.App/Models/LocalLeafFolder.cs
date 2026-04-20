@@ -36,12 +36,39 @@ public class LocalLeafFolder : LeafFolder
         return result;
     }
 
+    public override Dictionary<string, string> GetMetadata()
+    {
+        var metadataPath = Path.Combine(_path, MetadataFileName);
+        var result = new Dictionary<string, string>();
+        if (File.Exists(metadataPath))
+        {
+            var lines = File.ReadAllLines(metadataPath);
+            foreach (var line in lines)
+            {
+                var parts = line.Split('=', 2);
+                if (parts.Length == 2)
+                {
+                    result[parts[0]] = parts[1];
+                }
+            }
+        }
+        return result;
+    }
+
     public override async Task SaveMetadataAsync(Dictionary<string, string> metadata)
     {
         if (!Directory.Exists(_path)) Directory.CreateDirectory(_path);
         var metadataPath = Path.Combine(_path, MetadataFileName);
         var lines = metadata.Select(kv => $"{kv.Key}={kv.Value}");
         await File.WriteAllLinesAsync(metadataPath, lines);
+    }
+
+    public override void SaveMetadata(Dictionary<string, string> metadata)
+    {
+        if (!Directory.Exists(_path)) Directory.CreateDirectory(_path);
+        var metadataPath = Path.Combine(_path, MetadataFileName);
+        var lines = metadata.Select(kv => $"{kv.Key}={kv.Value}");
+        File.WriteAllLines(metadataPath, lines);
     }
 
     public override Task<bool> IsDataEmptyAsync()
@@ -53,12 +80,17 @@ public class LocalLeafFolder : LeafFolder
 
     public override Task EnsureDataDirectoryAsync()
     {
+        EnsureDataDirectory();
+        return Task.CompletedTask;
+    }
+
+    public override void EnsureDataDirectory()
+    {
         var dataPath = Path.Combine(_path, DataFolderName);
         if (!Directory.Exists(dataPath))
         {
             Directory.CreateDirectory(dataPath);
         }
-        return Task.CompletedTask;
     }
 
     public override Task<List<string>> ListDataFilesAsync()
@@ -77,7 +109,7 @@ public class LocalLeafFolder : LeafFolder
 
     public override Task WriteDataFileAsync(string fileName, byte[] content)
     {
-        EnsureDataDirectoryAsync().Wait();
+        EnsureDataDirectory();
         var filePath = Path.Combine(_path, DataFolderName, fileName);
         return File.WriteAllBytesAsync(filePath, content);
     }
