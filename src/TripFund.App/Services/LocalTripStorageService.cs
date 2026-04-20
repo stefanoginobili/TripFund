@@ -92,6 +92,13 @@ public class LocalTripStorageService
         var latestVersions = _engine.GetLatestVersionFolders(configPath);
         if (latestVersions.Count == 0) return null;
 
+        if (latestVersions.Count > 1)
+        {
+            var settings = await GetAppSettingsAsync();
+            var local = await GetLocalBranchTripConfigAsync(tripSlug, settings?.DeviceId ?? "unknown");
+            if (local != null) return local;
+        }
+
         var latest = latestVersions[0];
         var leaf = new LocalLeafFolder(Path.Combine(configPath, latest.FolderName));
         
@@ -163,9 +170,16 @@ public class LocalTripStorageService
 
         if (latestVersions.Count > 1)
         {
-            var diverging = latestVersions.Select(v => v.FolderName).ToList();
-            var baseVer = _engine.GetBaseVersionFolder(detailsRoot, latestVersions[0].Sequence);
-            throw new TransactionConflictException(transactionId, diverging, baseVer);
+            var settings = await GetAppSettingsAsync();
+            var local = await GetLocalBranchTransactionAsync(tripSlug, transactionId, settings?.DeviceId ?? "unknown");
+            if (local != null)
+            {
+                return new TransactionVersionInfo
+                {
+                    Transaction = local,
+                    VersionFolderName = "conflict-local-fallback" // Custom folder name to indicate local fallback
+                };
+            }
         }
 
         var latest = latestVersions[0];
@@ -420,6 +434,178 @@ public class LocalTripStorageService
                 await DeleteTripAsync(slug);
             }
         }
+    }
+
+    public virtual async Task<List<ConflictInfo>> GetConflictsAsync(string tripSlug)
+    {
+        var conflicts = new List<ConflictInfo>();
+        var settings = await GetAppSettingsAsync();
+        var deviceId = settings?.DeviceId ?? "unknown";
+
+        // 1. Check Trip Config
+        var configPath = Path.Combine(_tripsPath, tripSlug, "config_versioned");
+        if (Directory.Exists(configPath))
+        {
+            var configVersions = _engine.GetLatestVersionFolders(configPath);
+            if (configVersions.Count > 1)
+            {
+                conflicts.Add(new ConflictInfo
+                {
+                    Id = "config",
+                    Type = "config",
+                    Label = "Configurazione Viaggio"
+                });
+            }
+        }
+
+        // 2. Check Transactions
+        var transDir = Path.Combine(_tripsPath, tripSlug, "transactions");
+        if (Directory.Exists(transDir))
+        {
+            var transactionIds = Directory.GetDirectories(transDir).Select(Path.GetFileName);
+            
+            foreach (var transId in transactionIds)
+            {
+                if (string.IsNullOrEmpty(transId)) continue;
+
+                var detailsPath = Path.Combine(transDir, transId, "details_versioned");
+                if (!Directory.Exists(detailsPath)) continue;
+
+                var transVersions = _engine.GetLatestVersionFolders(detailsPath);
+                if (transVersions.Count > 1)
+                {
+                    // Use LCA for labeling to show what was there BEFORE the conflict
+                    var lcaFolderName = _engine.GetBaseVersionFolder(detailsPath, transVersions);
+                    Transaction? labelTrans = null;
+                    
+                    if (lcaFolderName != null)
+                    {
+                        labelTrans = await GetTransactionFromFolderAsync(detailsPath, lcaFolderName);
+                    }
+                    
+                    // Fallback to local branch if LCA is missing or is a deletion
+                    if (labelTrans == null)
+                    {
+                        labelTrans = await GetLocalBranchTransactionAsync(tripSlug, transId, deviceId);
+                    }
+                    
+                    // Final fallback: try any version that isn't a deletion
+                    if (labelTrans == null)
+                    {
+                        foreach (var v in transVersions)
+                        {
+                            labelTrans = await GetTransactionFromFolderAsync(detailsPath, v.FolderName);
+                            if (labelTrans != null) break;
+                        }
+                    }
+
+                    if (labelTrans != null)
+                    {
+                        if (labelTrans.Type == "expense")
+                        {
+                            conflicts.Add(new ConflictInfo
+                            {
+                                Id = transId,
+                                Type = "expense",
+                                Label = $"Spesa \"{labelTrans.Description}\""
+                            });
+                        }
+                        else if (labelTrans.Type == "contribution")
+                        {
+                            var currentConfig = await GetTripConfigAsync(tripSlug);
+                            var memberSlug = labelTrans.Split.Keys.FirstOrDefault() ?? "unknown";
+                            var memberName = (currentConfig != null && currentConfig.Members.TryGetValue(memberSlug, out var m)) ? m.Name : memberSlug;
+                            
+                            conflicts.Add(new ConflictInfo
+                            {
+                                Id = transId,
+                                Type = "contribution",
+                                Label = $"Versamento di {memberName}"
+                            });
+                        }
+                    }
+                    else
+                    {
+                        conflicts.Add(new ConflictInfo
+                        {
+                            Id = transId,
+                            Type = "unknown",
+                            Label = $"Conflitto transazione {transId}"
+                        });
+                    }
+                }
+            }
+        }
+
+        return conflicts;
+    }
+
+    private async Task<Transaction?> GetTransactionFromFolderAsync(string detailsPath, string folderName)
+    {
+        var leaf = new LocalLeafFolder(Path.Combine(detailsPath, folderName));
+        try
+        {
+            if (await leaf.IsDataEmptyAsync()) return null; // Likely a DEL version
+            var bytes = await leaf.ReadDataFileAsync("transaction_details.json");
+            return JsonSerializer.Deserialize<Transaction>(System.Text.Encoding.UTF8.GetString(bytes), _jsonOptions);
+        }
+        catch { return null; }
+    }
+
+    private async Task<TripConfig?> GetTripConfigFromFolderAsync(string configPath, string folderName)
+    {
+        var leaf = new LocalLeafFolder(Path.Combine(configPath, folderName));
+        try
+        {
+            if (await leaf.IsDataEmptyAsync()) return null;
+            var bytes = await leaf.ReadDataFileAsync("trip_config.json");
+            return JsonSerializer.Deserialize<TripConfig>(System.Text.Encoding.UTF8.GetString(bytes), _jsonOptions);
+        }
+        catch { return null; }
+    }
+
+    private async Task<TripConfig?> GetLocalBranchTripConfigAsync(string tripSlug, string deviceId)
+    {
+        var configPath = Path.Combine(_tripsPath, tripSlug, "config_versioned");
+        if (!Directory.Exists(configPath)) return null;
+
+        var allVersions = _engine.GetVersionFolders(configPath);
+        var localLatest = allVersions
+            .Where(v => v.DeviceId == deviceId)
+            .OrderByDescending(v => v.Sequence)
+            .FirstOrDefault();
+
+        if (localLatest == null) return null;
+
+        var leaf = new LocalLeafFolder(Path.Combine(configPath, localLatest.FolderName));
+        try
+        {
+            var bytes = await leaf.ReadDataFileAsync("trip_config.json");
+            return JsonSerializer.Deserialize<TripConfig>(System.Text.Encoding.UTF8.GetString(bytes), _jsonOptions);
+        }
+        catch { return null; }
+    }
+
+    private async Task<Transaction?> GetLocalBranchTransactionAsync(string tripSlug, string transactionId, string deviceId)
+    {
+        var detailsPath = Path.Combine(_tripsPath, tripSlug, "transactions", transactionId, "details_versioned");
+        if (!Directory.Exists(detailsPath)) return null;
+
+        var allVersions = _engine.GetVersionFolders(detailsPath);
+        var localLatest = allVersions
+            .Where(v => v.DeviceId == deviceId)
+            .OrderByDescending(v => v.Sequence)
+            .FirstOrDefault();
+
+        if (localLatest == null) return null;
+
+        var leaf = new LocalLeafFolder(Path.Combine(detailsPath, localLatest.FolderName));
+        try
+        {
+            var bytes = await leaf.ReadDataFileAsync("transaction_details.json");
+            return JsonSerializer.Deserialize<Transaction>(System.Text.Encoding.UTF8.GetString(bytes), _jsonOptions);
+        }
+        catch { return null; }
     }
 }
 

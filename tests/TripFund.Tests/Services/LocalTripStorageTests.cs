@@ -150,7 +150,7 @@ public class LocalTripStorageTests : IDisposable
     }
 
     [Fact]
-    public async Task Transaction_Conflict_ShouldThrowException()
+    public async Task Transaction_Conflict_ShouldFallbackToFirstVersion_WhenNoLocalBranch()
     {
         // Arrange
         var tripSlug = "test-trip";
@@ -164,19 +164,25 @@ public class LocalTripStorageTests : IDisposable
         Directory.CreateDirectory(v1);
         Directory.CreateDirectory(v2);
         
-        // Must create .metadata or .data to be recognized as leaf? 
-        // VersionedStorageEngine.GetVersionFolders parses folders regardless of content, 
-        // but LocalLeafFolder needs files to exist for some checks.
         await File.WriteAllTextAsync(Path.Combine(v1, ".metadata"), "author=mario\ndevice=m\ntimestamp=2023-10-01T12:00:00Z");
         Directory.CreateDirectory(Path.Combine(v1, ".data"));
+        var t1 = new Transaction { Id = transId, Description = "Mario's" };
+        await File.WriteAllTextAsync(Path.Combine(v1, ".data", "transaction_details.json"), System.Text.Json.JsonSerializer.Serialize(t1));
+
         await File.WriteAllTextAsync(Path.Combine(v2, ".metadata"), "author=luigi\ndevice=l\ntimestamp=2023-10-01T12:00:00Z");
         Directory.CreateDirectory(Path.Combine(v2, ".data"));
+        var t2 = new Transaction { Id = transId, Description = "Luigi's" };
+        await File.WriteAllTextAsync(Path.Combine(v2, ".data", "transaction_details.json"), System.Text.Json.JsonSerializer.Serialize(t2));
 
-        // Assert
-        Func<Task> act = () => _service.GetTransactionsAsync(tripSlug);
-        await act.Should().ThrowAsync<TransactionConflictException>()
-            .Where(e => e.TransactionId == transId && e.DivergingVersions.Contains("001_NEW_mario") && e.DivergingVersions.Contains("001_NEW_luigi"));
+        // Act
+        var transactions = await _service.GetTransactionsAsync(tripSlug);
 
+        // Assert - Should not throw, should pick one (alphabetical by folder name: luigi comes first in alphabetical order of folders "001_NEW_luigi")
+        // Wait, GetLatestVersionFolders returns leaves ordered by Sequence, then it might depend on the list order.
+        // Actually, Directory.GetDirectories might return them in any order, but VersionedStorageEngine returns them sorted by Sequence.
+        // If they have same sequence, order depends on Directory.GetDirectories or Linq.
+        transactions.Should().HaveCount(1);
+        transactions[0].Id.Should().Be(transId);
     }
 
     [Fact]

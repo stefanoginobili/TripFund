@@ -8,14 +8,14 @@
 {
     <div class="sync-overlay @(IsModal ? "visible" : "")"></div>
     <div class="sync-status-container @(IsModal ? "modal-container" : "")">
-        <div class="sync-status-card @(IsModal ? "modal-active" : "")">
-            <div class="sync-header">
-                <div class="sync-indicator">
-                    <img src="images/@(remoteStorageProvider).svg" width="20" height="20" alt="@remoteStorageProvider" />
-                </div>
-                
-                @if (IsModal)
-                {
+        <div class="sync-status-card @(IsModal ? "modal-active" : "") @(!IsModal && (_conflicts.Any() || !string.IsNullOrEmpty(syncError)) ? "with-conflicts" : "")">
+            @if (IsModal)
+            {
+                <div class="sync-header">
+                    <div class="sync-indicator">
+                        <img src="images/@(remoteStorageProvider).svg" width="20" height="20" alt="@remoteStorageProvider" />
+                    </div>
+                    
                     <button class="sync-now-btn @(isSyncing ? "spinning" : "")" disabled="@isSyncing">
                         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                             <path d="M23 4v6h-6"></path>
@@ -23,55 +23,95 @@
                             <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
                         </svg>
                     </button>
-                }
-            </div>
+                </div>
 
-            <div class="sync-info">
-                @if (IsModal)
-                {
+                <div class="sync-info">
                     <div class="modal-content">
-                        @if (isSyncing)
+                        <span class="sync-title syncing">Sincronizzazione in corso...</span>
+                        <p class="sync-warning">Ti invitiamo a rimanere su questa pagina durante la sincronizzazione per evitare che il processo venga interrotto dal sistema.</p>
+                    </div>
+                </div>
+            }
+            else
+            {
+                <div class="sync-card-top">
+                    <div class="sync-header">
+                        <div class="sync-indicator">
+                            <img src="images/@(remoteStorageProvider).svg" width="20" height="20" alt="@remoteStorageProvider" />
+                        </div>
+                    </div>
+
+                    <div class="sync-info-top">
+                        <span class="sync-text">@GetRelativeSyncTime(lastSynchronized)</span>
+                        @if (isReadonly)
                         {
-                            <span class="sync-title syncing">Sincronizzazione in corso...</span>
-                            <p class="sync-warning">Ti invitiamo a rimanere su questa pagina durante la sincronizzazione per evitare che il processo venga interrotto dal sistema.</p>
+                            <span class="sync-text readonly-label">Sola lettura</span>
                         }
-                        else if (!string.IsNullOrEmpty(syncError))
+                    </div>
+
+                    <button class="sync-now-btn @(isSyncing ? "spinning" : "")" @onclick="TriggerSync" disabled="@isSyncing">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M23 4v6h-6"></path>
+                            <path d="M1 20v-6h6"></path>
+                            <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+                        </svg>
+                    </button>
+                </div>
+
+                @if (_conflicts.Any() || !string.IsNullOrEmpty(syncError))
+                {
+                    <div class="sync-card-bottom">
+                        @if (!string.IsNullOrEmpty(syncError))
                         {
-                            <span class="sync-title error">Sincronizzazione fallita</span>
-                            <p class="sync-error-msg">@syncError</p>
-                            <button class="btn-dismiss" @onclick="DismissError">Ok</button>
+                            <div class="sync-error-label">
+                                @syncError
+                            </div>
+                        }
+
+                        @if (_conflicts.Any())
+                        {
+                            <div class="sync-error-label">
+                                @(_conflicts.Count == 1 ? "Un conflitto da risolvere" : $"{_conflicts.Count} conflitti da risolvere")
+                            </div>
+                            <ul class="conflicts-list-vibe bulleted">
+                                @foreach (var conflict in _conflicts)
+                                {
+                                    <li class="conflict-item-vibe">
+                                        <button class="conflict-link-vibe" @onclick="ShowPlaceholder">
+                                            @conflict.Label
+                                        </button>
+                                    </li>
+                                }
+                            </ul>
                         }
                     </div>
                 }
-                else
-                {
-                    @if (isSyncing)
-                    {
-                        <span class="sync-text syncing">Sincronizzazione in corso...</span>
-                    }
-                    else
-                    {
-                        <span class="sync-text">@GetRelativeSyncTime(lastSynchronized)</span>
-                    }
-                    @if (isReadonly)
-                    {
-                        <span class="sync-text readonly-label">Sola lettura</span>
-                    }
-                }
-            </div>
-
-            @if (!IsModal)
-            {
-                <button class="sync-now-btn @(isSyncing ? "spinning" : "")" @onclick="TriggerSync" disabled="@isSyncing">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M23 4v6h-6"></path>
-                        <path d="M1 20v-6h6"></path>
-                        <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
-                    </svg>
-                </button>
             }
         </div>
     </div>
+
+    @if (_showPlaceholder)
+    {
+        <div class="modal-backdrop-vibe" @onclick="HidePlaceholder">
+            <div class="modal-sheet-vibe" @onclick:stopPropagation="true">
+                <header class="modal-header-vibe">
+                    <h2 class="modal-title-vibe">Risoluzione Conflitti</h2>
+                    <button class="close-btn-vibe" @onclick="HidePlaceholder">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <line x1="18" y1="6" x2="6" y2="18"></line>
+                            <line x1="6" y1="6" x2="18" y2="18"></line>
+                        </svg>
+                    </button>
+                </header>
+                <div class="modal-body-vibe">
+                    <div class="placeholder-content-vibe">
+                        <p>Presto in arrivo la risoluzione dei conflitti</p>
+                        <button class="btn-primary-vibe w-100 mt-4" @onclick="HidePlaceholder">Ho capito</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
 }
 
 @code {
@@ -84,8 +124,11 @@
     private bool isSyncing = false;
     private string? syncError;
     private System.Timers.Timer? refreshTimer;
+    
+    private List<ConflictInfo> _conflicts = new();
+    private bool _showPlaceholder = false;
 
-    private bool IsModal => isSyncing || !string.IsNullOrEmpty(syncError);
+    private bool IsModal => isSyncing;
 
     protected override async Task OnInitializedAsync()
     {
@@ -115,11 +158,22 @@
     private async Task LoadSyncStatus()
     {
         var registry = await Storage.GetTripRegistryAsync();
+        bool hasConflictsFlag = false;
         if (registry?.Trips != null && registry.Trips.TryGetValue(TripSlug, out var entry))
         {
             remoteStorageProvider = entry.RemoteStorage?.Provider;
             lastSynchronized = entry.RemoteStorage?.LastSynchronized;
             isReadonly = entry.RemoteStorage?.Readonly ?? false;
+            hasConflictsFlag = entry.RemoteStorage?.HasConflicts ?? false;
+        }
+
+        if (hasConflictsFlag)
+        {
+            _conflicts = await Storage.GetConflictsAsync(TripSlug);
+        }
+        else
+        {
+            _conflicts.Clear();
         }
 
         if (refreshTimer == null)
@@ -140,6 +194,11 @@
         {
             await RemoteStorage.SynchronizeAsync(TripSlug);
         }
+        catch (SyncConflictException)
+        {
+            _conflicts = await Storage.GetConflictsAsync(TripSlug);
+            await InvokeAsync(StateHasChanged);
+        }
         catch (Exception ex)
         {
             syncError = ex.Message;
@@ -148,11 +207,8 @@
         }
     }
 
-    private void DismissError()
-    {
-        syncError = null;
-        StateHasChanged();
-    }
+    private void ShowPlaceholder() => _showPlaceholder = true;
+    private void HidePlaceholder() => _showPlaceholder = false;
 
     private string GetRelativeSyncTime(DateTime? syncTime)
     {
@@ -248,6 +304,35 @@
         border: none;
     }
 
+    .sync-status-card.with-conflicts {
+        flex-direction: column;
+        align-items: stretch;
+        padding: 1rem;
+    }
+
+    .sync-card-top {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 100%;
+        gap: 0.75rem;
+    }
+
+    .sync-info-top {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        flex: 1;
+        flex-direction: column;
+    }
+
+    .sync-card-bottom {
+        width: 100%;
+        margin-top: 0.75rem;
+        padding-top: 0.75rem;
+        border-top: 1px solid #F0F0F0;
+    }
+
     .sync-header {
         display: flex;
         align-items: center;
@@ -288,10 +373,6 @@
         color: #20563C;
     }
 
-    .sync-title.error {
-        color: #DC3545;
-    }
-
     .sync-warning {
         font-size: 0.95rem;
         color: #6C757D;
@@ -299,20 +380,15 @@
         margin: 0;
     }
 
-    .sync-error-msg {
-        font-size: 0.95rem;
-        color: #DC3545;
-        margin-bottom: 1rem;
-    }
-
-    .btn-dismiss {
-        background-color: #20563C;
-        color: white;
-        border: none;
-        padding: 0.5rem 2rem;
+    .sync-error-label {
+        background-color: #FFF5F5;
+        padding: 0.5rem 0.75rem;
         border-radius: 8px;
+        color: #DC3545;
+        font-size: 0.85rem;
         font-weight: 600;
-        cursor: pointer;
+        border: 1px solid rgba(220, 53, 69, 0.1);
+        text-align: center;
     }
 
     .sync-text {
@@ -371,6 +447,144 @@
 
     .sync-now-btn.spinning svg {
         animation: spin 1s linear infinite;
+    }
+
+    .conflicts-title-vibe {
+        text-align: center;
+        font-size: 0.85rem;
+        font-weight: 700;
+        color: #DC3545;
+        margin-bottom: 0.75rem;
+    }
+
+    .conflicts-list-vibe.bulleted {
+        list-style-type: none;
+        padding: 0;
+        margin: 0.75rem 0 0;
+    }
+
+    .conflict-item-vibe {
+        display: flex;
+        align-items: flex-start;
+        gap: 0.4rem;
+        font-size: 0.85rem;
+        margin-top: 0.25rem;
+        color: #DC3545;
+        line-height: 1.4;
+    }
+
+    .conflict-item-vibe::before {
+        content: "•";
+        color: #DC3545;
+        font-size: 1.2rem;
+        line-height: 1.2;
+        flex-shrink: 0;
+    }
+
+    .conflict-link-vibe {
+        background: none;
+        border: none;
+        color: #DC3545;
+        text-decoration: underline;
+        padding: 0;
+        font-weight: 600;
+        cursor: pointer;
+        text-align: left;
+        word-break: break-word;
+    }
+
+    .conflict-link-vibe:hover {
+        color: #BD2130;
+    }
+
+    /* Modal Styles Replicated from RemoteStorageSelector */
+    .modal-backdrop-vibe {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.5);
+        display: flex;
+        align-items: flex-end;
+        justify-content: center;
+        z-index: 2000;
+        backdrop-filter: blur(4px);
+    }
+
+    .modal-sheet-vibe {
+        width: 100%;
+        max-width: 600px;
+        background-color: #F8FBF9;
+        border-top-left-radius: 32px;
+        border-top-right-radius: 32px;
+        display: flex;
+        flex-direction: column;
+        max-height: 90vh;
+        animation: slide-up 0.3s ease-out;
+        box-shadow: 0 -8px 32px rgba(0, 0, 0, 0.1);
+    }
+
+    @@keyframes slide-up {
+        from { transform: translateY(100%); }
+        to { transform: translateY(0); }
+    }
+
+    .modal-header-vibe {
+        padding: 1.5rem;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        border-bottom: 1px solid rgba(0,0,0,0.05);
+    }
+
+    .modal-title-vibe {
+        font-size: 1.25rem;
+        font-weight: 700;
+        color: #1A3C2F;
+        margin: 0;
+    }
+
+    .close-btn-vibe {
+        background: none;
+        border: none;
+        color: #6C757D;
+        cursor: pointer;
+        padding: 4px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 50%;
+        transition: background-color 0.2s;
+    }
+
+    .modal-body-vibe {
+        flex: 1;
+        overflow-y: auto;
+        padding: 1.5rem 1.5rem 3rem;
+    }
+
+    .placeholder-content-vibe {
+        text-align: center;
+        color: #1A3C2F;
+        font-size: 1.1rem;
+        font-weight: 600;
+        padding: 2rem 0;
+    }
+
+    .btn-primary-vibe {
+        background-color: #20563C;
+        color: white;
+        border: none;
+        padding: 1rem;
+        border-radius: 12px;
+        font-weight: 700;
+        cursor: pointer;
+        transition: opacity 0.2s;
+    }
+
+    .btn-primary-vibe:hover {
+        opacity: 0.9;
     }
 
     @@keyframes spin {

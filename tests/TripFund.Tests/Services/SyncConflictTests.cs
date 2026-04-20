@@ -181,5 +181,116 @@ public class SyncConflictTests : IDisposable
         
         // Base should be 001_mario because sequence 2 was conflicted
         baseVer.Should().Be("001_NEW_mario");
-    }
-}
+        }
+
+        [Fact]
+        public async Task GetConflictsAsync_ShouldReturnLabeledConflicts()
+        {
+        // Arrange
+        var tripSlug = "labeled-conflict-trip";
+        var localTripPath = Path.Combine(_localStorage.TripsPath, tripSlug);
+        Directory.CreateDirectory(localTripPath);
+
+        var myDeviceId = "my-device";
+        await _localStorage.SaveAppSettingsAsync(new AppSettings { DeviceId = myDeviceId, AuthorName = "Me" });
+
+        // 1. Config Conflict
+        var configPath = Path.Combine(localTripPath, "config_versioned");
+        Directory.CreateDirectory(configPath);
+        Directory.CreateDirectory(Path.Combine(configPath, "001_NEW_mario"));
+        Directory.CreateDirectory(Path.Combine(configPath, "001_NEW_luigi"));
+
+        // Local version of config for member names
+        var myConfigDir = Path.Combine(configPath, "001_NEW_my-device");
+        Directory.CreateDirectory(myConfigDir);
+        var config = new TripConfig { Name = "Test Trip" };
+        config.Members["mario-slug"] = new User { Name = "Mario Rossi" };
+        var configJson = System.Text.Json.JsonSerializer.Serialize(config);
+        Directory.CreateDirectory(Path.Combine(myConfigDir, ".data"));
+        await File.WriteAllTextAsync(Path.Combine(myConfigDir, ".data", "trip_config.json"), configJson);
+
+        // 2. Expense Conflict
+        var expId = "exp-1";
+        var expPath = Path.Combine(localTripPath, "transactions", expId, "details_versioned");
+        Directory.CreateDirectory(expPath);
+        Directory.CreateDirectory(Path.Combine(expPath, "001_NEW_mario"));
+        Directory.CreateDirectory(Path.Combine(expPath, "001_NEW_luigi"));
+
+        var myExpDir = Path.Combine(expPath, "001_NEW_my-device");
+        Directory.CreateDirectory(myExpDir);
+        var exp = new Transaction { Id = expId, Type = "expense", Description = "Pizza" };
+        var expJson = System.Text.Json.JsonSerializer.Serialize(exp);
+        Directory.CreateDirectory(Path.Combine(myExpDir, ".data"));
+        await File.WriteAllTextAsync(Path.Combine(myExpDir, ".data", "transaction_details.json"), expJson);
+
+        // 3. Contribution Conflict
+        var conId = "con-1";
+        var conPath = Path.Combine(localTripPath, "transactions", conId, "details_versioned");
+        Directory.CreateDirectory(conPath);
+        Directory.CreateDirectory(Path.Combine(conPath, "001_NEW_mario"));
+        Directory.CreateDirectory(Path.Combine(conPath, "001_NEW_luigi"));
+
+        var myConDir = Path.Combine(conPath, "001_NEW_my-device");
+        Directory.CreateDirectory(myConDir);
+        var con = new Transaction { Id = conId, Type = "contribution" };
+        con.Split["mario-slug"] = new SplitInfo { Amount = 50 };
+        var conJson = System.Text.Json.JsonSerializer.Serialize(con);
+        Directory.CreateDirectory(Path.Combine(myConDir, ".data"));
+        await File.WriteAllTextAsync(Path.Combine(myConDir, ".data", "transaction_details.json"), conJson);
+
+        // Act
+        var conflicts = await _localStorage.GetConflictsAsync(tripSlug);
+
+        // Assert
+        conflicts.Should().HaveCount(3);
+
+        var cConfig = conflicts.Single(c => c.Type == "config");
+        cConfig.Label.Should().Be("Configurazione Viaggio");
+
+        var cExp = conflicts.Single(c => c.Type == "expense");
+        cExp.Label.Should().Be("Spesa \"Pizza\"");
+
+        var cCon = conflicts.Single(c => c.Type == "contribution");
+        cCon.Label.Should().Be("Versamento di Mario Rossi");
+        }
+
+        [Fact]
+        public async Task GetConflictsAsync_ShouldUseLCA_WhenLocalIsDelete()
+        {
+        // Arrange
+        var tripSlug = "lca-delete-trip";
+        var localTripPath = Path.Combine(_localStorage.TripsPath, tripSlug);
+        Directory.CreateDirectory(localTripPath);
+
+        var myDeviceId = "my-device";
+        await _localStorage.SaveAppSettingsAsync(new AppSettings { DeviceId = myDeviceId, AuthorName = "Me" });
+
+        var expId = "exp-lca";
+        var expPath = Path.Combine(localTripPath, "transactions", expId, "details_versioned");
+        Directory.CreateDirectory(expPath);
+
+        // 001: LCA (the original expense)
+        var v1 = Path.Combine(expPath, "001_NEW_mario");
+        Directory.CreateDirectory(v1);
+        Directory.CreateDirectory(Path.Combine(v1, ".data"));
+        var exp1 = new Transaction { Id = expId, Type = "expense", Description = "Original Pizza" };
+        await File.WriteAllTextAsync(Path.Combine(v1, ".data", "transaction_details.json"), System.Text.Json.JsonSerializer.Serialize(exp1));
+
+        // 002: Conflict - Me deleted it, Someone else updated it
+        var v2my = Path.Combine(expPath, "002_DEL_my-device");
+        var v2other = Path.Combine(expPath, "002_UPD_luigi");
+        Directory.CreateDirectory(v2my);
+        Directory.CreateDirectory(v2other);
+        // v2my is empty (DEL)
+        Directory.CreateDirectory(Path.Combine(v2other, ".data"));
+        var exp2 = new Transaction { Id = expId, Type = "expense", Description = "Updated Pizza" };
+        await File.WriteAllTextAsync(Path.Combine(v2other, ".data", "transaction_details.json"), System.Text.Json.JsonSerializer.Serialize(exp2));
+
+        // Act
+        var conflicts = await _localStorage.GetConflictsAsync(tripSlug);
+
+        // Assert - Label should come from LCA (001), not the local branch (DEL)
+        conflicts.Should().HaveCount(1);
+        conflicts[0].Label.Should().Be("Spesa \"Original Pizza\"");
+        }
+        }
