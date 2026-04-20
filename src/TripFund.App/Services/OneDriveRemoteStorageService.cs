@@ -121,7 +121,7 @@ public class OneDriveRemoteStorageService : IRemoteStorageService, IRemoteFileSy
 
     public bool IsSyncing(string tripSlug) => false;
 
-    public async Task SynchronizeAsync(string tripSlug)
+    public virtual async Task SynchronizeAsync(string tripSlug)
     {
         await _syncEngine.SynchronizeAsync(tripSlug, this, (s, b) => OnSyncStateChanged?.Invoke(s, b));
     }

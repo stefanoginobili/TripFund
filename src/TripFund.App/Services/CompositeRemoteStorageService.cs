@@ -1,4 +1,6 @@
 using TripFund.App.Models;
+using Microsoft.Maui.Devices;
+using Microsoft.Maui.ApplicationModel;
 
 namespace TripFund.App.Services;
 
@@ -63,6 +65,7 @@ public class CompositeRemoteStorageService : IRemoteStorageService
             _syncingTrips.Add(tripSlug);
         }
 
+        UpdateKeepScreenOn();
         OnSyncStateChanged?.Invoke(tripSlug, true);
         try
         {
@@ -89,8 +92,41 @@ public class CompositeRemoteStorageService : IRemoteStorageService
             {
                 _syncingTrips.Remove(tripSlug);
             }
+            UpdateKeepScreenOn();
             // Always ensure we fire false at the very end of the composite operation
             OnSyncStateChanged?.Invoke(tripSlug, false);
+        }
+    }
+
+    private void UpdateKeepScreenOn()
+    {
+        try
+        {
+            bool shouldKeepOn;
+            lock (_syncingTrips)
+            {
+                shouldKeepOn = _syncingTrips.Count > 0;
+            }
+
+            // Always call on main thread for MAUI Essentials
+            MainThread.BeginInvokeOnMainThread(() =>
+            {
+                try
+                {
+                    // DeviceDisplay.Current.KeepScreenOn is a cross-platform API for Android and iOS
+                    DeviceDisplay.Current.KeepScreenOn = shouldKeepOn;
+                }
+                catch (Exception ex)
+                {
+                    // Fail silently as it might be called on non-supported platforms or in tests
+                    System.Diagnostics.Debug.WriteLine($"Failed to set KeepScreenOn: {ex.Message}");
+                }
+            });
+        }
+        catch (Exception ex)
+        {
+            // Fail silently as it might be called on non-supported platforms or in tests
+            System.Diagnostics.Debug.WriteLine($"UpdateKeepScreenOn error: {ex.Message}");
         }
     }
 }
