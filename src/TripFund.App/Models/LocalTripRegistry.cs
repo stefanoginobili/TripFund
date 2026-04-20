@@ -33,9 +33,6 @@ public class RemoteStorageConfig
     [JsonPropertyName("lastSynchronized")]
     public DateTime? LastSynchronized { get; set; }
 
-    [JsonPropertyName("hasConflicts")]
-    public bool HasConflicts { get; set; }
-
     [JsonPropertyName("readonly")]
     public bool Readonly { get; set; }
 }

@@ -91,9 +91,6 @@ public class RemoteStorageSyncEngine
                 }
             }
 
-            entry.RemoteStorage.HasConflicts = conflicts.Count > 0;
-            await _localStorage.SaveTripRegistryAsync(registry);
-
             if (conflicts.Count > 0)
             {
                 logger.LogInfo($"Conflict detected ({conflicts.Count}). Sync aborted. Resolution required.");

@@ -46,7 +46,7 @@ namespace TripFund.App.Components.Pages
             var registry = await Storage.GetTripRegistryAsync();
             if (registry != null && registry.Trips.TryGetValue(tripSlug, out var entry))
             {
-                isReadonly = (entry.RemoteStorage?.Readonly ?? false) || (entry.RemoteStorage?.HasConflicts ?? false);
+                isReadonly = (entry.RemoteStorage?.Readonly ?? false) || await Storage.HasConflictsAsync(tripSlug);
             }
 
             if (config != null)

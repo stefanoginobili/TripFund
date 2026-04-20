@@ -147,8 +147,7 @@ public class ModelSerializationTests
                 ""parameters"": {
                   ""folderId"": ""abcdef1234567890""
                 },
-                ""lastSynchronized"": ""2026-05-23T13:45:00Z"",
-                ""hasConflicts"": false
+                ""lastSynchronized"": ""2026-05-23T13:45:00Z""
               }
             }
           }

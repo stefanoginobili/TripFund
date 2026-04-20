@@ -149,8 +149,9 @@
             remoteStorageProvider = entry.RemoteStorage?.Provider;
             lastSynchronized = entry.RemoteStorage?.LastSynchronized;
             isReadonly = entry.RemoteStorage?.Readonly ?? false;
-            hasConflictsFlag = entry.RemoteStorage?.HasConflicts ?? false;
         }
+        
+        hasConflictsFlag = await Storage.HasConflictsAsync(TripSlug);
 
         if (hasConflictsFlag)
         {

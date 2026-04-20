@@ -93,6 +93,34 @@ public class LocalTripStorageService
         File.Move(tempPath, path);
     }
 
+    public virtual Task<bool> HasConflictsAsync(string tripSlug)
+    {
+        var localTripPath = Path.Combine(_tripsPath, tripSlug);
+        
+        var configPath = Path.Combine(localTripPath, "config_versioned");
+        if (Directory.Exists(configPath))
+        {
+            var latest = _engine.GetLatestVersionFolders(configPath);
+            if (latest.Count > 1) return Task.FromResult(true);
+        }
+
+        var transDir = Path.Combine(localTripPath, "transactions");
+        if (Directory.Exists(transDir))
+        {
+            foreach (var t in Directory.GetDirectories(transDir))
+            {
+                var detailsRoot = Path.Combine(t, "details_versioned");
+                if (Directory.Exists(detailsRoot))
+                {
+                    var latest = _engine.GetLatestVersionFolders(detailsRoot);
+                    if (latest.Count > 1) return Task.FromResult(true);
+                }
+            }
+        }
+
+        return Task.FromResult(false);
+    }
+
     public virtual async Task<TripConfig?> GetTripConfigAsync(string tripSlug)
     {
         var configPath = Path.Combine(_tripsPath, tripSlug, "config_versioned");

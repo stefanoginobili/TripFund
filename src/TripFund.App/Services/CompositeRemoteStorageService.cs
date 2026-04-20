@@ -77,7 +77,7 @@ public class CompositeRemoteStorageService : IRemoteStorageService
                     await _onedrive.SynchronizeAsync(tripSlug);
                 }
 
-                // Reload registry to get updates from the provider (hasConflicts, readonly)
+                // Reload registry to get updates from the provider (readonly)
                 registry = await _storage.GetTripRegistryAsync();
                 if (registry.Trips.TryGetValue(tripSlug, out var updatedEntry) && updatedEntry.RemoteStorage != null)
                 {
