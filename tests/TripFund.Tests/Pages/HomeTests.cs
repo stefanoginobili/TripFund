@@ -116,13 +116,15 @@ public class HomeTests : BunitContext
         _storageMock.Setup(s => s.GetAppSettingsAsync()).ReturnsAsync(new AppSettings { DeviceId = "dev-1" });
         _storageMock.Setup(s => s.TripsPath).Returns(Path.Combine(Path.GetTempPath(), "TripFundTests_Trips"));
         
-        var remoteConfig = new TripConfig { Name = "Existing Trip", StartDate = DateTime.Today, EndDate = DateTime.Today.AddDays(1) };
-        _remoteStorageMock.Setup(r => r.GetRemoteTripConfigAsync(It.IsAny<string>(), It.IsAny<Dictionary<string, string>>()))
-            .ReturnsAsync(remoteConfig);
+        var metadata = new RemoteTripMetadata { IsValid = true, TripSlug = "existing-trip", Author = "Mario Rossi", CreatedAt = new DateTime(2024, 1, 1) };
+        _remoteStorageMock.Setup(r => r.GetRemoteTripMetadataAsync(It.IsAny<string>(), It.IsAny<Dictionary<string, string>>()))
+            .ReturnsAsync(metadata);
         _remoteStorageMock.Setup(r => r.GetRemoteUniqueId(It.IsAny<string>(), It.IsAny<Dictionary<string, string>>()))
             .Returns("remote-123");
         
-        _alertMock.Setup(a => a.ConfirmAsync(It.IsAny<string>(), It.IsAny<string>(), "Conferma", "Annulla", It.IsAny<AlertType>()))
+        _alertMock.Setup(a => a.ConfirmAsync(It.IsAny<string>(), 
+            It.Is<string>(s => s.Contains("Mario Rossi") && s.Contains("01/01/2024")), 
+            "Conferma", "Annulla", It.IsAny<AlertType>()))
             .ReturnsAsync(true);
 
         var cut = Render<Home>();
@@ -178,9 +180,9 @@ public class HomeTests : BunitContext
         _storageMock.Setup(s => s.GetTripRegistryAsync()).ReturnsAsync(registry);
         _storageMock.Setup(s => s.TripsPath).Returns(Path.Combine(Path.GetTempPath(), "TripFundTests_Rollback"));
         
-        var remoteConfig = new TripConfig { Name = "Fail Trip", StartDate = DateTime.Today, EndDate = DateTime.Today.AddDays(1) };
-        _remoteStorageMock.Setup(r => r.GetRemoteTripConfigAsync(It.IsAny<string>(), It.IsAny<Dictionary<string, string>>()))
-            .ReturnsAsync(remoteConfig);
+        var metadata = new RemoteTripMetadata { IsValid = true, TripSlug = "fail-trip", Author = "Mario Rossi", CreatedAt = new DateTime(2024, 1, 1) };
+        _remoteStorageMock.Setup(r => r.GetRemoteTripMetadataAsync(It.IsAny<string>(), It.IsAny<Dictionary<string, string>>()))
+            .ReturnsAsync(metadata);
         _remoteStorageMock.Setup(r => r.GetRemoteUniqueId(It.IsAny<string>(), It.IsAny<Dictionary<string, string>>()))
             .Returns("remote-fail");
         

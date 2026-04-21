@@ -79,8 +79,20 @@ public class SyncConflictTests : IDisposable
         await _localStorage.SaveTripRegistryAsync(registry);
 
         var mockFileSystem = new Mock<IRemoteFileSystem>();
-        mockFileSystem.Setup(f => f.ListChildrenAsync(It.IsAny<string>(), It.IsAny<Dictionary<string, string>>()))
+        mockFileSystem.Setup(f => f.ListChildrenAsync("remote-folder-id", It.IsAny<Dictionary<string, string>>()))
+            .ReturnsAsync(new List<RemoteItem> { 
+                new RemoteItem { Id = "devices_id", Name = "devices", IsFolder = true },
+                new RemoteItem { Id = "packages_id", Name = "packages", IsFolder = true }
+            });
+        mockFileSystem.Setup(f => f.ListChildrenAsync("devices_id", It.IsAny<Dictionary<string, string>>()))
+            .ReturnsAsync(new List<RemoteItem> {
+                new RemoteItem { Id = "device_root_id", Name = "unknown-device", IsFolder = true }
+            });
+        mockFileSystem.Setup(f => f.ListChildrenAsync("packages_id", It.IsAny<Dictionary<string, string>>()))
             .ReturnsAsync(new List<RemoteItem>());
+        
+        mockFileSystem.Setup(f => f.UploadFileAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<byte[]>(), It.IsAny<Dictionary<string, string>>()))
+            .ReturnsAsync(new RemoteItem { Id = "check_id" });
 
         // Act
         Func<Task> act = () => _syncEngine.SynchronizeAsync(tripSlug, mockFileSystem.Object);

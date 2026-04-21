@@ -56,49 +56,63 @@ public class OneDriveRemoteStorageService : IRemoteStorageService, IRemoteFileSy
         return null;
     }
 
-    public async Task<TripConfig?> GetRemoteTripConfigAsync(string provider, Dictionary<string, string> parameters)
+    public async Task<RemoteTripMetadata?> GetRemoteTripMetadataAsync(string provider, Dictionary<string, string> parameters)
     {
         if (provider != "onedrive") return null;
 
         if (!parameters.TryGetValue("folderId", out var folderId)) return null;
-        parameters.TryGetValue("driveId", out var driveId);
 
         await EnsureAuthenticatedAsync(parameters);
         
-        // In Microsoft Graph, we browse config_versioned/trip_config.json
-        // 1. Look for config_versioned folder
-        var configFolder = await GetChildItemAsync(folderId, "config_versioned", parameters);
-        if (configFolder == null || configFolder.Folder == null) return null;
+        var tripFile = await GetChildItemAsync(folderId, ".tripfund", parameters);
+        if (tripFile == null) return null;
 
-        // 2. Look for latest version folder in config
-        var children = await ListChildrenAsync(configFolder.Id, parameters);
-        var folderNames = children.Where(v => v.Folder != null).Select(v => v.Name);
+        var content = await DownloadFileContentAsync(tripFile.Id, parameters);
+        if (content == null) return null;
+
+        var text = System.Text.Encoding.UTF8.GetString(content);
+        var metadata = new RemoteTripMetadata();
         
-        string? latestVersionName;
-        try
+        var lines = text.Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries);
+        foreach (var line in lines)
         {
-            latestVersionName = _engine.GetLatestVersionFolder(folderNames);
+            var parts = line.Split('=', 2);
+            if (parts.Length < 2) continue;
+
+            var key = parts[0].Trim();
+            var val = parts[1].Trim();
+
+            if (key == "contentType") metadata.IsValid = (val == "tripfund/trip");
+            else if (key == "tripSlug") metadata.TripSlug = val;
+            else if (key == "author") metadata.Author = val;
+            else if (key == "createdAt") 
+            {
+                if (DateTime.TryParse(val, out var dt)) metadata.CreatedAt = dt;
+            }
         }
-        catch (VersionedFolderConflictException)
-        {
-            return null;
-        }
-            
-        if (latestVersionName == null) return null;
-        var latestVersion = children.First(c => c.Name == latestVersionName);
 
-        // 3. Find .data subfolder inside the version folder
-        var dataFolder = await GetChildItemAsync(latestVersion.Id, ".data", parameters);
-        if (dataFolder == null || dataFolder.Folder == null) return null;
+        return metadata.IsValid ? metadata : null;
+    }
 
-        // 4. Find trip_config.json inside the .data folder
-        var configFile = await GetChildItemAsync(dataFolder.Id, "trip_config.json", parameters);
-        if (configFile == null) return null;
+    public async Task InitializeRemoteLocationAsync(string tripSlug, string provider, Dictionary<string, string> parameters)
+    {
+        if (provider != "onedrive") return;
 
-        var configJson = await DownloadFileContentAsync(configFile.Id, parameters);
-        if (configJson == null) return null;
+        if (!parameters.TryGetValue("folderId", out var folderId)) return;
 
-        return JsonSerializer.Deserialize<TripConfig>(configJson, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+        await EnsureAuthenticatedAsync(parameters);
+
+        var settings = await _localStorage.GetAppSettingsAsync();
+        var author = settings?.AuthorName ?? "Unknown";
+
+        var sb = new System.Text.StringBuilder();
+        sb.AppendLine("contentType=tripfund/trip");
+        sb.AppendLine($"tripSlug={tripSlug}");
+        sb.AppendLine($"author={author}");
+        sb.AppendLine($"createdAt={DateTime.UtcNow:yyyy-MM-ddTHH:mm:ss.fffZ}");
+
+        var content = System.Text.Encoding.UTF8.GetBytes(sb.ToString());
+        await UploadFileAsync(folderId, ".tripfund", content, parameters);
     }
 
     public async Task<bool> IsRemoteLocationEmptyAsync(string provider, Dictionary<string, string> parameters)
@@ -190,6 +204,11 @@ public class OneDriveRemoteStorageService : IRemoteStorageService, IRemoteFileSy
         await DeleteFileAsync(fileId, parameters);
     }
 
+    async Task IRemoteFileSystem.RenameAsync(string itemId, string newName, Dictionary<string, string> parameters)
+    {
+        await RenameAsync(itemId, newName, parameters);
+    }
+
     private async Task DeleteFileAsync(string fileId, Dictionary<string, string> parameters)
     {
         var driveId = parameters.TryGetValue("driveId", out var d) ? d : null;
@@ -209,6 +228,37 @@ public class OneDriveRemoteStorageService : IRemoteStorageService, IRemoteFileSy
             var error = await response.Content.ReadAsStringAsync();
             Logger?.LogError($"Failed to delete file {fileId}: {response.StatusCode} - {error}");
             throw new Exception("Failed to delete file from OneDrive");
+        }
+    }
+
+    private async Task RenameAsync(string itemId, string newName, Dictionary<string, string> parameters)
+    {
+        var driveId = parameters.TryGetValue("driveId", out var d) ? d : null;
+        var url = string.IsNullOrEmpty(driveId)
+            ? $"{_graphBaseUrl}/me/drive/items/{itemId}"
+            : $"{_graphBaseUrl}/drives/{driveId}/items/{itemId}";
+
+        var oldName = _idToNameCache.TryGetValue(itemId, out var n) ? $"'{n}'" : $"ID: {itemId}";
+        Logger?.LogApiCall("PATCH", url, $"Renaming {oldName} to '{newName}'");
+
+        var body = new { name = newName };
+
+        using var request = new HttpRequestMessage(HttpMethod.Patch, url);
+        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", parameters["accessToken"]);
+        request.Content = JsonContent.Create(body);
+
+        var response = await _httpClient.SendAsync(request);
+        if (!response.IsSuccessStatusCode)
+        {
+            var error = await response.Content.ReadAsStringAsync();
+            Logger?.LogError($"Failed to rename item {itemId} to {newName}: {response.StatusCode} - {error}");
+            throw new Exception($"Failed to rename item on OneDrive: {error}");
+        }
+
+        var item = await response.Content.ReadFromJsonAsync<OneDriveItemInternal>();
+        if (item != null && !string.IsNullOrEmpty(item.Id) && !string.IsNullOrEmpty(item.Name))
+        {
+            _idToNameCache[item.Id] = item.Name;
         }
     }
 
@@ -349,7 +399,13 @@ public class OneDriveRemoteStorageService : IRemoteStorageService, IRemoteFileSy
 
         using var request = new HttpRequestMessage(HttpMethod.Put, url);
         request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", parameters["accessToken"]);
-        request.Content = new ByteArrayContent(content);
+        
+        var byteArrayContent = new ByteArrayContent(content);
+        var contentType = name.EndsWith(".zip") || name.EndsWith(".zip.part") 
+            ? "application/zip" 
+            : (name.EndsWith(".json") ? "application/json" : "application/octet-stream");
+        byteArrayContent.Headers.ContentType = new MediaTypeHeaderValue(contentType);
+        request.Content = byteArrayContent;
 
         var response = await _httpClient.SendAsync(request);
         if (!response.IsSuccessStatusCode)

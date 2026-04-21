@@ -13,8 +13,8 @@ This file is stored inside the specific version folder of the trip's `config_ver
   "description": "Roadtrip in Argentina and Chile",
   "startDate": "2026-11-01",
   "endDate": "2026-11-20",
-  "createdAt": "2026-03-24T12:00:00Z",
-  "updatedAt": "2026-03-27T13:40:00Z",
+  "createdAt": "2026-03-24T12:00:00.000Z",
+  "updatedAt": "2026-03-27T13:40:00.000Z",
   "author": "Mario Rossi",
   "currencies": {
     "EUR": {
@@ -57,8 +57,8 @@ This file is stored inside the specific version folder of the trip's `transactio
   "type": "expense",
   "date": "2026-03-25T14:30:00+02:00",
   "timezone": "Europe/Paris",
-  "createdAt": "2026-03-25T14:30:00Z",
-  "updatedAt": "2026-03-26T11:20:00Z",
+  "createdAt": "2026-03-25T14:30:00.000Z",
+  "updatedAt": "2026-03-26T11:20:00.000Z",
   "currency": "ARS",
   "amount": 15000.50,
   "description": "Cena a Buenos Aires",
@@ -82,7 +82,7 @@ This file is stored inside the specific version folder of the trip's `transactio
     {
       "name": "ATT_20260406T133421555Z",
       "originalName": "PXL_20260406_133421_Z.jpg",
-      "createdAt": "2026-04-06T13:34:21Z"
+      "createdAt": "2026-04-06T13:34:21.555Z"
     }
   ]
 }
@@ -101,24 +101,24 @@ This file is stored in the root of the app's local storage. It acts purely as a 
 {
   "trips": {
     "patagonia-2026": {
-      "createdAt": "2026-05-01T13:30:00Z",
+      "createdAt": "2026-05-01T13:30:00.000Z",
       "remoteStorage": {
         "provider": "onedrive",
         "parameters": {
           "folderId": "abcdef1234567890"
         },
-        "lastSynchronized": "2026-05-23T13:45:00Z",
+        "lastSynchronized": "2026-05-23T13:45:00.000Z",
         "readonly": false
       }
     },
     "giappone-2027": {
-      "createdAt": "2026-04-01T13:30:00Z",
+      "createdAt": "2026-04-01T13:30:00.000Z",
       "remoteStorage": {
         "provider": "git",
         "parameters": {
           "repository": "https://github.com/mario/giappone.git"
         },
-        "lastSynchronized": "2026-05-05T13:45:00Z",
+        "lastSynchronized": "2026-05-05T13:45:00.000Z",
         "readonly": true
       }
     }
@@ -140,3 +140,64 @@ This file is stored in the root of the app's local storage (next to `known_trips
 ```
 
 Note: `deviceId` is auto-generated from `authorName` during the first launch/settings and is used as the suffix for transaction version folders. Its value is composed by the slug of the `authorName` (with leading/trailing hyphens trimmed) and the first 8 characters of a random GUID.
+
+## 5. Trip Sync State (`sync_state.json`)
+This file is stored in the root of the specific trip folder (`[AppData]/trips/[TripSlug]/sync_state.json`). It is local-only and tracks the progress of the differential synchronization.
+
+```json
+{
+  "sync": {
+    "remote": {
+      "appliedPackages": [
+        "pack_20260413T143255890Z_mario-rossi-abcd1234.zip",
+        "pack_20260416T123155230Z_luigi-efgh5678.zip"
+      ]
+    },
+    "local": {
+      "pending": [
+        {
+          "path": "config_versioned/001_NEW_mario-rossi-abcd1234",
+          "createdAt": "2026-04-12T22:33:12.890Z"
+        },
+        {
+          "path": "transactions/20260416T204312Z-021c3e7b/details_versioned/001_NEW_mario-rossi-abcd1234",
+          "createdAt": "2026-04-16T20:43:12.450Z"
+        }
+      ]
+    }
+  }
+}
+```
+
+* Note 1: `remote.appliedPackages` is a flat list of strings containing the filenames of all ZIP packages already downloaded and extracted into the local trip folder.
+* Note 2: `local.pending` is a list of local leaf folders (relative paths from the trip root) that have been created or modified locally but not yet uploaded in a package.
+* Note 3: `pending.createdAt` uses the standard GMT format including milliseconds (`yyyy-MM-ddTHH:mm:ss.fffZ`) to ensure precise ordering and unique identification of packages.
+* Note 4: This file MUST be saved using the atomic **temp-and-rename** strategy to prevent corruption.
+
+## 6. Remote Trip Initialization (`.tripfund`)
+This is a plain text file (UTF-8) stored in the root of the remote storage folder. It is used for quick discovery and validation.
+
+```
+contentType=tripfund/trip
+tripSlug=patagonia-2026
+author=Mario Rossi
+createdAt=2026-03-24T12:00:00.000Z
+```
+
+* Note 1: `contentType` MUST be exactly `tripfund/trip`.
+* Note 2: `tripSlug` is the original slug of the trip (used as the base for the local folder name).
+* Note 3: `author` and `createdAt` are used to display a confirmation message to the user when adding an existing trip.
+
+## 7. Leaf Folder Metadata (`.metadata`)
+Every leaf folder contains a `.metadata` file (plain text, key-value pairs).
+
+**Mandatory Keys:**
+- `author`: Physical user name.
+- `device`: Device ID.
+- `createdAt`: `yyyy-MM-ddTHH:mm:ss.fffZ`.
+- `contentType`: Explicit semantic type.
+
+**Allowed Content Types:**
+- `tripfund/trip-config`: For trip configuration versions.
+- `tripfund/transaction-detail`: For transaction detail versions.
+- `tripfund/transaction-attachment`: For transaction attachments.

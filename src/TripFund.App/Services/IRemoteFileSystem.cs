@@ -11,5 +11,6 @@ public interface IRemoteFileSystem
     Task<RemoteItem?> CreateFolderAsync(string parentId, string name, Dictionary<string, string> parameters);
     Task<RemoteItem?> UploadFileAsync(string parentId, string name, byte[] content, Dictionary<string, string> parameters);
     Task DeleteFileAsync(string fileId, Dictionary<string, string> parameters);
+    Task RenameAsync(string itemId, string newName, Dictionary<string, string> parameters);
     Task EnsureAuthenticatedAsync(Dictionary<string, string> parameters);
 }

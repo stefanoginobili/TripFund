@@ -1,6 +1,7 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using TripFund.App.Models;
+using TripFund.App.Utilities;
 
 namespace TripFund.App.Services;
 
@@ -22,7 +23,8 @@ public class LocalTripStorageService
     private readonly JsonSerializerOptions _jsonOptions = new()
     {
         WriteIndented = true,
-        PropertyNameCaseInsensitive = true
+        PropertyNameCaseInsensitive = true,
+        Converters = { new DateTimeJsonConverter() }
     };
 
     public virtual string TripsPath => _tripsPath;
@@ -172,10 +174,11 @@ public class LocalTripStorageService
         {
             { "author", author },
             { "device", deviceId },
-            { "timestamp", DateTime.UtcNow.ToString("yyyy-MM-ddTHH:mm:ssZ") }
+            { "createdAt", DateTime.UtcNow.ToString("yyyy-MM-ddTHH:mm:ss.fffZ") }
         };
 
-        await _engine.CommitAsync(configPath, deviceId, kind, changedFiles, metadata: metadata);
+        var folderName = await _engine.CommitAsync(configPath, deviceId, kind, changedFiles, metadata: metadata, contentType: "tripfund/trip-config");
+        await RegisterPendingUploadAsync(tripSlug, Path.Combine("config_versioned", folderName));
     }
 
     public virtual async Task<List<Transaction>> GetTransactionsAsync(string tripSlug)
@@ -285,7 +288,7 @@ public class LocalTripStorageService
         {
             { "author", author },
             { "device", deviceId },
-            { "timestamp", DateTime.UtcNow.ToString("yyyy-MM-ddTHH:mm:ssZ") }
+            { "createdAt", DateTime.UtcNow.ToString("yyyy-MM-ddTHH:mm:ss.fffZ") }
         };
 
         if (!isDelete)
@@ -317,16 +320,27 @@ public class LocalTripStorageService
                     var attMetadata = transaction.Attachments.FirstOrDefault(a => a.Name == attachmentName);
                     if (attMetadata != null)
                     {
+                        var attMetadataDict = new Dictionary<string, string>
+                        {
+                            { "author", author },
+                            { "device", deviceId },
+                            { "createdAt", DateTime.UtcNow.ToString("yyyy-MM-ddTHH:mm:ss.fffZ") },
+                            { "contentType", "tripfund/transaction-attachment" }
+                        };
+
                         var leafDir = Path.Combine(attachmentsDir, attachmentName);
                         var attLeaf = new LocalLeafFolder(leafDir);
                         await attLeaf.WriteDataFileAsync(attMetadata.OriginalName, content);
-                        await attLeaf.SaveMetadataAsync(metadata);
+                        await attLeaf.SaveMetadataAsync(attMetadataDict);
+                        await attLeaf.WriteMarkerAsync(".active");
+                        await RegisterPendingUploadAsync(tripSlug, Path.Combine("transactions", transaction.Id, "attachments", attachmentName));
                     }
                 }
             }
         }
 
-        await _engine.CommitAsync(detailsRoot, deviceId, kind, changedFiles, metadata: metadata);
+        var folderName = await _engine.CommitAsync(detailsRoot, deviceId, kind, changedFiles, metadata: metadata, contentType: "tripfund/transaction-detail");
+        await RegisterPendingUploadAsync(tripSlug, Path.Combine("transactions", transaction.Id, "details_versioned", folderName));
     }
 
     public virtual async Task<List<ConflictVersion<Transaction>>> GetConflictingTransactionVersionsAsync(string tripSlug, string transactionId)
@@ -347,7 +361,7 @@ public class LocalTripStorageService
                 Author = metadata.TryGetValue("author", out var author) ? author : "Unknown",
             };
 
-            if (metadata.TryGetValue("timestamp", out var tsStr) && DateTime.TryParse(tsStr, out var ts))
+            if (metadata.TryGetValue("createdAt", out var tsStr) && DateTime.TryParse(tsStr, out var ts))
             {
                 cv.Timestamp = ts.ToUniversalTime();
             }
@@ -386,7 +400,7 @@ public class LocalTripStorageService
                 Author = metadata.TryGetValue("author", out var author) ? author : "Unknown",
             };
 
-            if (metadata.TryGetValue("timestamp", out var tsStr) && DateTime.TryParse(tsStr, out var ts))
+            if (metadata.TryGetValue("createdAt", out var tsStr) && DateTime.TryParse(tsStr, out var ts))
             {
                 cv.Timestamp = ts.ToUniversalTime();
             }
@@ -430,10 +444,11 @@ public class LocalTripStorageService
         {
             { "author", author },
             { "device", deviceId },
-            { "timestamp", DateTime.UtcNow.ToString("yyyy-MM-ddTHH:mm:ssZ") }
+            { "createdAt", DateTime.UtcNow.ToString("yyyy-MM-ddTHH:mm:ss.fffZ") }
         };
 
-        await _engine.CommitAsync(configRoot, deviceId, CommitKind.Res, changedFiles, metadata: metadata, resolvedFolders: resolvedFolders);
+        var folderName = await _engine.CommitAsync(configRoot, deviceId, CommitKind.Res, changedFiles, metadata: metadata, resolvedFolders: resolvedFolders, contentType: "tripfund/trip-config");
+        await RegisterPendingUploadAsync(tripSlug, Path.Combine("config_versioned", folderName));
     }
 
     public virtual async Task ResolveConflictAsync(string tripSlug, Transaction? resolvedTransaction, string deviceId)
@@ -516,10 +531,11 @@ public class LocalTripStorageService
         {
             { "author", author },
             { "device", deviceId },
-            { "timestamp", DateTime.UtcNow.ToString("yyyy-MM-ddTHH:mm:ssZ") }
+            { "createdAt", DateTime.UtcNow.ToString("yyyy-MM-ddTHH:mm:ss.fffZ") }
         };
 
-        await _engine.CommitAsync(detailsRoot, deviceId, CommitKind.Res, changedFiles, metadata: metadata, resolvedFolders: resolvedFolders);
+        var folderName = await _engine.CommitAsync(detailsRoot, deviceId, CommitKind.Res, changedFiles, metadata: metadata, resolvedFolders: resolvedFolders, contentType: "tripfund/transaction-detail");
+        await RegisterPendingUploadAsync(tripSlug, Path.Combine("transactions", transactionId, "details_versioned", folderName));
     }
 
     public virtual async Task DeleteTripAsync(string tripSlug)
@@ -567,6 +583,51 @@ public class LocalTripStorageService
                 await DeleteTripAsync(slug);
             }
         }
+    }
+
+    public virtual async Task<SyncState> GetSyncStateAsync(string tripSlug)
+    {
+        var path = Path.Combine(_tripsPath, tripSlug, "sync_state.json");
+        if (!File.Exists(path)) return new SyncState();
+
+        try
+        {
+            var json = await File.ReadAllTextAsync(path);
+            return JsonSerializer.Deserialize<SyncState>(json, _jsonOptions) ?? new SyncState();
+        }
+        catch (JsonException)
+        {
+            return new SyncState();
+        }
+    }
+
+    public virtual async Task SaveSyncStateAsync(string tripSlug, SyncState state)
+    {
+        var path = Path.Combine(_tripsPath, tripSlug, "sync_state.json");
+        var tempPath = path + ".tmp";
+
+        var json = JsonSerializer.Serialize(state, _jsonOptions);
+        await File.WriteAllTextAsync(tempPath, json);
+
+        if (File.Exists(path)) File.Delete(path);
+        File.Move(tempPath, path);
+    }
+
+    public virtual async Task RegisterPendingUploadAsync(string tripSlug, string relativePath)
+    {
+        var normalizedPath = relativePath.Replace('\\', '/');
+        var state = await GetSyncStateAsync(tripSlug);
+        
+        // Avoid duplicates
+        if (state.Sync.Local.Pending.Any(u => u.Path == normalizedPath)) return;
+
+        state.Sync.Local.Pending.Add(new PendingUpload
+        {
+            Path = normalizedPath,
+            CreatedAt = DateTime.UtcNow.ToString("yyyy-MM-ddTHH:mm:ss.fffZ", System.Globalization.CultureInfo.InvariantCulture)
+        });
+
+        await SaveSyncStateAsync(tripSlug, state);
     }
 
     public virtual async Task<List<ConflictInfo>> GetConflictsAsync(string tripSlug)

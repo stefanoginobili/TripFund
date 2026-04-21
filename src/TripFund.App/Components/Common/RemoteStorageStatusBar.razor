@@ -217,7 +217,7 @@
         if (!syncTime.HasValue) return "Mai sincronizzato";
         
         string relative;
-        var diff = DateTime.Now - syncTime.Value;
+        var diff = DateTime.UtcNow - syncTime.Value;
         if (diff.TotalMinutes < 60)
         {
             int minutes = (int)diff.TotalMinutes;

@@ -1,5 +1,6 @@
 using IWebAuthenticator = TripFund.App.Services.IWebAuthenticator;
 using System.Net;
+using System.IO.Compression;
 using Moq;
 using TripFund.App.Models;
 using TripFund.App.Services;
@@ -17,6 +18,7 @@ public class OneDriveSyncLogicTests : IDisposable
     private readonly Mock<IWebAuthenticator> _authenticatorMock;
     private readonly Mock<IMicrosoftAuthConfiguration> _configMock;
     private readonly OneDriveRemoteStorageService _service;
+    private readonly LocalTripStorageService _localStorage;
     private readonly string _tempPath;
 
     public OneDriveSyncLogicTests()
@@ -28,18 +30,18 @@ public class OneDriveSyncLogicTests : IDisposable
         _tempPath = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString());
         Directory.CreateDirectory(_tempPath);
         
-        var localStorage = new LocalTripStorageService(_tempPath);
+        _localStorage = new LocalTripStorageService(_tempPath);
         
         var httpClientFactoryMock = new Mock<IHttpClientFactory>();
         var client = new HttpClient { BaseAddress = new Uri(_server.Urls[0]) };
         httpClientFactoryMock.Setup(f => f.CreateClient(nameof(OneDriveRemoteStorageService))).Returns(client);
 
-        var syncEngine = new RemoteStorageSyncEngine(localStorage);
+        var syncEngine = new RemoteStorageSyncEngine(_localStorage);
 
         _service = new OneDriveRemoteStorageService(
             httpClientFactoryMock.Object,
             _authenticatorMock.Object,
-            localStorage,
+            _localStorage,
             _configMock.Object,
             syncEngine,
             _server.Urls[0]);
@@ -50,296 +52,150 @@ public class OneDriveSyncLogicTests : IDisposable
     }
 
     [Fact]
-    public async Task GetRemoteTripConfigAsync_CorrectlyLoadsConfig_WhenGivenTripRootId()
+    public async Task GetRemoteTripMetadataAsync_CorrectlyLoadsMetadata_WhenTripFundFileExists()
     {
         var parameters = new Dictionary<string, string> { { "folderId", "root_id" }, { "accessToken", "fake_token" }, { "accessTokenExpiry", DateTime.Now.AddHours(1).ToString("O") } };
         
-        // 1. Mock GetChildItemAsync(root_id, "config_versioned")
-        _server.Given(Request.Create().WithPath("/me/drive/items/root_id:/config_versioned").UsingGet())
-            .RespondWith(Response.Create().WithStatusCode(200).WithBody("{ \"id\": \"config_versioned_id\", \"name\": \"config_versioned\", \"folder\": {} }"));
+        // 1. Mock GetChildItemAsync(root_id, ".tripfund")
+        _server.Given(Request.Create().WithPath("/me/drive/items/root_id:/.tripfund").UsingGet())
+            .RespondWith(Response.Create().WithStatusCode(200).WithBody("{ \"id\": \"tripfund_id\", \"name\": \".tripfund\", \"file\": {} }"));
 
-        // 2. Mock ListChildrenAsync(config_versioned_id)
-        _server.Given(Request.Create().WithPath("/me/drive/items/config_versioned_id/children").UsingGet())
-            .RespondWith(Response.Create().WithStatusCode(200).WithBody("{ \"value\": [ { \"id\": \"v1_id\", \"name\": \"001_NEW_dev1\", \"folder\": {} } ] }"));
-
-        // 3. Mock GetChildItemAsync(v1_id, ".data")
-        _server.Given(Request.Create().WithPath("/me/drive/items/v1_id:/.data").UsingGet())
-            .RespondWith(Response.Create().WithStatusCode(200).WithBody("{ \"id\": \"data_id\", \"name\": \".data\", \"folder\": {} }"));
-
-        // 4. Mock GetChildItemAsync(data_id, "trip_config.json")
-        _server.Given(Request.Create().WithPath("/me/drive/items/data_id:/trip_config.json").UsingGet())
-            .RespondWith(Response.Create().WithStatusCode(200).WithBody("{ \"id\": \"file_id\", \"name\": \"trip_config.json\", \"file\": {} }"));
-
-        // 5. Mock DownloadFileContentAsync(file_id)
-        var tripConfig = new TripConfig { Name = "Test Trip", StartDate = DateTime.Today, EndDate = DateTime.Today.AddDays(7) };
-        var json = System.Text.Json.JsonSerializer.Serialize(tripConfig);
-        _server.Given(Request.Create().WithPath("/me/drive/items/file_id/content").UsingGet())
-            .RespondWith(Response.Create().WithStatusCode(200).WithBody(json));
+        // 2. Mock DownloadFileContentAsync(tripfund_id)
+        var sb = new System.Text.StringBuilder();
+        sb.AppendLine("contentType=tripfund/trip");
+        sb.AppendLine("tripSlug=test-trip");
+        sb.AppendLine("author=Mario Rossi");
+        sb.AppendLine("createdAt=2024-01-01T12:00:00.000Z");
+        
+        _server.Given(Request.Create().WithPath("/me/drive/items/tripfund_id/content").UsingGet())
+            .RespondWith(Response.Create().WithStatusCode(200).WithBody(sb.ToString()));
 
         // Act
-        var result = await _service.GetRemoteTripConfigAsync("onedrive", parameters);
+        var result = await _service.GetRemoteTripMetadataAsync("onedrive", parameters);
 
         // Assert
         Assert.NotNull(result);
-        Assert.Equal("Test Trip", result.Name);
+        Assert.True(result.IsValid);
+        Assert.Equal("test-trip", result.TripSlug);
+        Assert.Equal("Mario Rossi", result.Author);
     }
 
-    [Fact]
-    public async Task SyncDown_RestartsCopy_IfLocalFolderHasDownloadingMarker()
-    {
-        // Arrange
-        var tripSlug = "test-trip";
-        var localTripPath = Path.Combine(_tempPath, "trips", tripSlug);
-        var leafPath = Path.Combine(localTripPath, "config_versioned", "001_NEW_dev1");
-        Directory.CreateDirectory(leafPath);
-        
-        var localLeaf = new LocalLeafFolder(leafPath);
-        await localLeaf.WriteMarkerAsync(".downloading", "begin=2023-10-01T12:00:00Z");
-        await localLeaf.WriteDataFileAsync("old_file.json", System.Text.Encoding.UTF8.GetBytes("old content"));
-
-        // Mock OneDrive responses
-        // 1. List config_versioned children
-        _server.Given(Request.Create().WithPath("/me/drive/items/root_id/children").UsingGet())
-            .RespondWith(Response.Create().WithStatusCode(200).WithBody("{ \"value\": [ { \"id\": \"config_versioned_id\", \"name\": \"config_versioned\", \"folder\": {} } ] }"));
-
-        // 2. List 001_NEW_dev1 children (to detect leaf)
-        _server.Given(Request.Create().WithPath("/me/drive/items/config_versioned_id/children").UsingGet())
-            .RespondWith(Response.Create().WithStatusCode(200).WithBody("{ \"value\": [ { \"id\": \"v1_id\", \"name\": \"001_NEW_dev1\", \"folder\": {} } ] }"));
-
-        // 3. List children of v1_id (Leaf folder) -> Has .metadata and .data
-        _server.Given(Request.Create().WithPath("/me/drive/items/v1_id/children").UsingGet())
-            .RespondWith(Response.Create().WithStatusCode(200).WithBody("{ \"value\": [ { \"id\": \"meta_id\", \"name\": \".metadata\", \"file\": {} }, { \"id\": \"data_id\", \"name\": \".data\", \"folder\": {} } ] }"));
-
-        // 4. Download .metadata
-        _server.Given(Request.Create().WithPath("/me/drive/items/v1_id:/.metadata").UsingGet())
-            .RespondWith(Response.Create().WithStatusCode(200).WithBody("{ \"id\": \"meta_id\", \"name\": \".metadata\", \"file\": {} }"));
-        _server.Given(Request.Create().WithPath("/me/drive/items/meta_id/content").UsingGet())
-            .RespondWith(Response.Create().WithStatusCode(200).WithBody("author=mario\ndevice=dev1\ntimestamp=2023-10-01T12:00:00Z"));
-
-        // 5. Get .data folder
-        _server.Given(Request.Create().WithPath("/me/drive/items/v1_id:/.data").UsingGet())
-            .RespondWith(Response.Create().WithStatusCode(200).WithBody("{ \"id\": \"data_id\", \"name\": \".data\", \"folder\": {} }"));
-
-        // 6. List children of .data
-        _server.Given(Request.Create().WithPath("/me/drive/items/data_id/children").UsingGet())
-            .RespondWith(Response.Create().WithStatusCode(200).WithBody("{ \"value\": [ { \"id\": \"file1_id\", \"name\": \"trip_config.json\", \"file\": {} } ] }"));
-
-        // 6b. Get trip_config.json in .data
-        _server.Given(Request.Create().WithPath("/me/drive/items/data_id:/trip_config.json").UsingGet())
-            .RespondWith(Response.Create().WithStatusCode(200).WithBody("{ \"id\": \"file1_id\", \"name\": \"trip_config.json\", \"file\": {} }"));
-
-        // 7. Download trip_config.json
-        _server.Given(Request.Create().WithPath("/me/drive/items/file1_id/content").UsingGet())
-            .RespondWith(Response.Create().WithStatusCode(200).WithBody("{ \"TripName\": \"Test Trip\" }"));
-
-        var registry = new LocalTripRegistry();
-        registry.Trips[tripSlug] = new TripRegistryEntry 
-        { 
-            RemoteStorage = new RemoteStorageConfig 
-            { 
-                Provider = "onedrive", 
-                Parameters = new Dictionary<string, string> 
-                { 
-                    { "folderId", "root_id" },
-                    { "accessToken", "fake_token" },
-                    { "accessTokenExpiry", DateTime.Now.AddHours(1).ToString("O") }
-                } 
-            } 
-        };
-        var localStorage = new LocalTripStorageService(_tempPath);
-        await localStorage.SaveTripRegistryAsync(registry);
-
-        // Mock write test
-        _server.Given(Request.Create().WithPath("/me/drive/items/root_id:/ .rw-test-unknown-device").UsingGet())
-            .RespondWith(Response.Create().WithStatusCode(404));
-        _server.Given(Request.Create().WithPath("/me/drive/items/root_id/children").UsingPost())
-            .RespondWith(Response.Create().WithStatusCode(201).WithBody("{ \"id\": \"test_file_id\" }"));
-        _server.Given(Request.Create().WithPath("/me/drive/items/test_file_id").UsingDelete())
-            .RespondWith(Response.Create().WithStatusCode(204));
-
-        await _service.SynchronizeAsync(tripSlug);
-
-        // Assert
-        Assert.True(File.Exists(Path.Combine(leafPath, ".data", "trip_config.json")));
-        Assert.False(File.Exists(Path.Combine(leafPath, ".downloading")));
-        Assert.True(File.Exists(Path.Combine(leafPath, ".synched")));
-        Assert.False(File.Exists(Path.Combine(leafPath, ".data", "old_file.json"))); // Should have been cleared
-    }
+    private bool _testFailed = false;
 
     [Fact]
-    public async Task SyncDown_SkipsRemoteList_IfLocalFolderHasSynchedMarker()
+    public async Task SynchronizeAsync_EvaluatesDownloadAndUploadCorrectly()
     {
-        // Arrange
-        var tripSlug = "test-trip";
-        var localTripPath = Path.Combine(_tempPath, "trips", tripSlug);
-        var leafPath = Path.Combine(localTripPath, "config_versioned", "001_NEW_dev1");
-        Directory.CreateDirectory(leafPath);
-        File.WriteAllText(Path.Combine(leafPath, ".synched"), "");
-        Directory.CreateDirectory(Path.Combine(leafPath, ".data"));
-        File.WriteAllText(Path.Combine(leafPath, ".data", "trip_config.json"), "{}");
-        File.WriteAllText(Path.Combine(leafPath, ".metadata"), "author=mario");
+        try 
+        {
+            // Arrange
+            var tripSlug = "test-trip";
+            var localTripPath = Path.Combine(_tempPath, "trips", tripSlug);
+            Directory.CreateDirectory(localTripPath);
+            
+            var deviceId = "local-device-id";
+            await _localStorage.SaveAppSettingsAsync(new AppSettings { DeviceId = deviceId });
 
-        var registry = new LocalTripRegistry();
-        registry.Trips[tripSlug] = new TripRegistryEntry 
-        { 
-            RemoteStorage = new RemoteStorageConfig 
+            var registry = new LocalTripRegistry();
+            registry.Trips[tripSlug] = new TripRegistryEntry 
             { 
-                Provider = "onedrive", 
-                Parameters = new Dictionary<string, string> 
+                RemoteStorage = new RemoteStorageConfig 
                 { 
-                    { "folderId", "root_id" },
-                    { "accessToken", "fake_token" },
-                    { "accessTokenExpiry", DateTime.Now.AddHours(1).ToString("O") }
+                    Provider = "onedrive", 
+                    Parameters = new Dictionary<string, string> 
+                    { 
+                        { "folderId", "root_id" },
+                        { "accessToken", "fake_token" },
+                        { "accessTokenExpiry", DateTime.Now.AddHours(1).ToString("O") }
+                    } 
                 } 
-            } 
-        };
-        var localStorage = new LocalTripStorageService(_tempPath);
-        await localStorage.SaveTripRegistryAsync(registry);
+            };
+            await _localStorage.SaveTripRegistryAsync(registry);
 
-        // Mock write test (SynchronizeAsync always calls this first)
-        _server.Given(Request.Create().WithPath("/me/drive/items/root_id:/ .rw-test-unknown-device").UsingGet())
-            .RespondWith(Response.Create().WithStatusCode(404));
-        _server.Given(Request.Create().WithPath("/me/drive/items/root_id/children").UsingPost())
-            .RespondWith(Response.Create().WithStatusCode(201).WithBody("{ \"id\": \"test_file_id\" }"));
-        _server.Given(Request.Create().WithPath("/me/drive/items/test_file_id").UsingDelete())
-            .RespondWith(Response.Create().WithStatusCode(204));
+            // 1. EVALUATION PHASE mocks
+            // Initialize metadata (.tripfund)
+            _server.Given(Request.Create().WithPath("/me/drive/items/root_id:/.tripfund:/content").UsingPut())
+                .RespondWith(Response.Create().WithStatusCode(201).WithBody("{ \"id\": \"tripfund_id\" }"));
 
-        _server.Given(Request.Create().WithPath("/me/drive/items/root_id/children").UsingGet())
-            .RespondWith(Response.Create().WithStatusCode(200).WithBody("{ \"value\": [ { \"id\": \"config_versioned_id\", \"name\": \"config_versioned\", \"folder\": {} } ] }"));
+            // Discover "devices" and "packages" folders via ListChildrenAsync(root_id)
+            _server.Given(Request.Create().WithPath("/me/drive/items/root_id/children").UsingGet())
+                .RespondWith(Response.Create().WithStatusCode(200).WithBody("{ \"value\": [ { \"id\": \"devices_id\", \"name\": \"devices\", \"folder\": {} }, { \"id\": \"packages_id\", \"name\": \"packages\", \"folder\": {} } ] }"));
 
-        _server.Given(Request.Create().WithPath("/me/drive/items/config_versioned_id/children").UsingGet())
-            .RespondWith(Response.Create().WithStatusCode(200).WithBody("{ \"value\": [ { \"id\": \"v1_id\", \"name\": \"001_NEW_dev1\", \"folder\": {} } ] }"));
+            // Get or Create device folder via discovery in ListChildrenAsync(devices_id)
+            _server.Given(Request.Create().WithPath("/me/drive/items/devices_id/children").UsingGet())
+                .RespondWith(Response.Create().WithStatusCode(200).WithBody($"{{ \"value\": [ {{ \"id\": \"device_root_id\", \"name\": \"{deviceId}\", \"folder\": {{}} }} ] }}"));
 
-        // NO mapping for /me/drive/items/v1_id/children should be hit!
-        
-        // Act
-        await _service.SynchronizeAsync(tripSlug);
+            // Check write permission (.last-seen)
+            _server.Given(Request.Create().WithPath("/me/drive/items/device_root_id:/.last-seen:/content").UsingPut())
+                .RespondWith(Response.Create().WithStatusCode(201).WithBody("{ \"id\": \"check_id\" }"));
 
-        // Assert
-        var requests = _server.FindLogEntries(Request.Create().WithPath("/me/drive/items/v1_id/children"));
-        Assert.Empty(requests);
-    }
+            // 2. DOWNLOAD PHASE mocks
+            var remotePkgName = "pack_20240101T000000Z_remote-dev.zip";
+            _server.Given(Request.Create().WithPath("/me/drive/items/packages_id/children").UsingGet())
+                .RespondWith(Response.Create().WithStatusCode(200).WithBody($"{{ \"value\": [ {{ \"id\": \"pkg_id\", \"name\": \"{remotePkgName}\", \"file\": {{}} }} ] }}"));
 
-    [Fact]
-    public async Task SyncUp_SkipsRemoteAPI_IfAllLocalLeavesAreSynched()
-    {
-        // Arrange
-        var tripSlug = "test-trip";
-        var localTripPath = Path.Combine(_tempPath, "trips", tripSlug);
-        
-        // Create a synched leaf
-        var leafPath = Path.Combine(localTripPath, "config_versioned", "001_NEW_dev1");
-        Directory.CreateDirectory(leafPath);
-        File.WriteAllText(Path.Combine(leafPath, ".synched"), "");
-        Directory.CreateDirectory(Path.Combine(leafPath, ".data"));
-        File.WriteAllText(Path.Combine(leafPath, ".data", "trip_config.json"), "{}");
-        File.WriteAllText(Path.Combine(leafPath, ".metadata"), "author=mario");
+            // Create a fake ZIP content for download
+            byte[] zipBytes;
+            using (var ms = new MemoryStream())
+            {
+                using (var archive = new ZipArchive(ms, ZipArchiveMode.Create, true))
+                {
+                    var entry = archive.CreateEntry("config_versioned/002_UPD_remote-dev/.metadata");
+                    using (var writer = new StreamWriter(entry.Open())) writer.Write("author=remote-user");
+                    
+                    var dataEntry = archive.CreateEntry("config_versioned/002_UPD_remote-dev/.data/trip_config.json");
+                    using (var writer = new StreamWriter(dataEntry.Open())) writer.Write("{ \"Name\": \"Remote Trip\" }");
+                }
+                zipBytes = ms.ToArray();
+            }
 
-        var registry = new LocalTripRegistry();
-        registry.Trips[tripSlug] = new TripRegistryEntry 
-        { 
-            RemoteStorage = new RemoteStorageConfig 
-            { 
-                Provider = "onedrive", 
-                Parameters = new Dictionary<string, string> 
-                { 
-                    { "folderId", "root_id" },
-                    { "accessToken", "fake_token" },
-                    { "accessTokenExpiry", DateTime.Now.AddHours(1).ToString("O") }
-                } 
-            } 
-        };
-        var localStorage = new LocalTripStorageService(_tempPath);
-        await localStorage.SaveTripRegistryAsync(registry);
+            _server.Given(Request.Create().WithPath("/me/drive/items/pkg_id/content").UsingGet())
+                .RespondWith(Response.Create().WithStatusCode(200).WithBody(zipBytes));
 
-        // Catch-all mock to ensure ANY request is handled (specifically the write check)
-        _server.Given(Request.Create().UsingAnyMethod())
-            .RespondWith(Response.Create().WithStatusCode(200).WithBody("{ \"value\": [], \"id\": \"root_id\", \"name\": \"root\" }"));
+            // 3. UPLOAD PHASE mocks
+            // Prepare a local pending upload
+            await _localStorage.SaveTripConfigAsync(tripSlug, new TripConfig { Name = "Local Trip" }, deviceId);
+            // This creates config_versioned/001_NEW_local-device-id/ with .active
 
-        // Mock Download phase (empty remote)
-        _server.Given(Request.Create().WithPath("/me/drive/items/root_id/children").UsingGet())
-            .RespondWith(Response.Create().WithStatusCode(200).WithBody("{ \"value\": [] }"));
+            // Expect upload of .part
+            _server.Given(Request.Create().WithPath($"/me/drive/items/packages_id:/pack_*.zip.part:/content").UsingPut())
+                .RespondWith(Response.Create().WithStatusCode(201).WithBody("{ \"id\": \"uploaded_pkg_id\", \"name\": \"pack_...zip.part\" }"));
+            
+            // Expect rename of .part to .zip
+            _server.Given(Request.Create().WithPath(new WildcardMatcher("*/items/uploaded_pkg_id")).UsingPatch())
+                .RespondWith(Response.Create().WithStatusCode(200).WithBody("{ \"id\": \"uploaded_pkg_id\", \"name\": \"pack_...zip\" }"));
 
-        // Act
-        await _service.SynchronizeAsync(tripSlug);
+            // Act
+            await _service.InitializeRemoteLocationAsync(tripSlug, "onedrive", registry.Trips[tripSlug]!.RemoteStorage!.Parameters);
+            await _service.SynchronizeAsync(tripSlug);
 
-        // Assert
-        // The upload phase should have been skipped entirely.
-        // We check if ListChildren was called TWICE:
-        // 1. CheckFolderWritePermissionAsync
-        // 2. SyncDownAsync
-        var requests = _server.FindLogEntries(Request.Create().WithPath("/me/drive/items/root_id/children").UsingGet());
-        Assert.Equal(2, requests.Count); 
-    }
+            // Assert
+            // Verify Download worked
+            var remoteLeaf = Path.Combine(localTripPath, "config_versioned", "002_UPD_remote-dev");
+            Assert.True(File.Exists(Path.Combine(remoteLeaf, ".active")));
+            Assert.True(File.Exists(Path.Combine(remoteLeaf, ".metadata")));
+            Assert.True(File.Exists(Path.Combine(remoteLeaf, ".data", "trip_config.json")));
 
-    [Fact]
-    public async Task SyncUp_SkipsSubtreeAPI_IfSubtreeIsSynched()
-    {
-        // Arrange
-        var tripSlug = "test-trip";
-        var localTripPath = Path.Combine(_tempPath, "trips", tripSlug);
-        
-        // 1. A synched subtree (Transaction T1)
-        var t1Path = Path.Combine(localTripPath, "transactions", "T1", "details_versioned", "001_NEW_dev1");
-        Directory.CreateDirectory(t1Path);
-        File.WriteAllText(Path.Combine(t1Path, ".synched"), "");
-        Directory.CreateDirectory(Path.Combine(t1Path, ".data"));
-        File.WriteAllText(Path.Combine(t1Path, ".metadata"), "author=mario");
-
-        // 2. A PENDING subtree (Transaction T2)
-        var t2Path = Path.Combine(localTripPath, "transactions", "T2", "details_versioned", "001_NEW_dev1");
-        Directory.CreateDirectory(t2Path);
-        // NO .synched here!
-        Directory.CreateDirectory(Path.Combine(t2Path, ".data"));
-        File.WriteAllText(Path.Combine(t2Path, ".data", "details.json"), "{}");
-        File.WriteAllText(Path.Combine(t2Path, ".metadata"), "author=mario");
-
-        var registry = new LocalTripRegistry();
-        registry.Trips[tripSlug] = new TripRegistryEntry 
-        { 
-            RemoteStorage = new RemoteStorageConfig 
-            { 
-                Provider = "onedrive", 
-                Parameters = new Dictionary<string, string> 
-                { 
-                    { "folderId", "root_id" },
-                    { "accessToken", "fake_token" },
-                    { "accessTokenExpiry", DateTime.Now.AddHours(1).ToString("O") }
-                } 
-            } 
-        };
-        var localStorage = new LocalTripStorageService(_tempPath);
-        await localStorage.SaveTripRegistryAsync(registry);
-
-        // Catch-all mock to ensure ANY request is handled (specifically the write check)
-        _server.Given(Request.Create().UsingAnyMethod())
-            .RespondWith(Response.Create().WithStatusCode(200).WithBody("{ \"value\": [], \"id\": \"root_id\", \"name\": \"root\" }"));
-
-        // Mock Download phase (empty remote)
-        _server.Given(Request.Create().WithPath("/me/drive/items/root_id/children").UsingGet())
-            .RespondWith(Response.Create().WithStatusCode(200).WithBody("{ \"value\": [] }"));
-
-        // Mock Upload discovery
-        _server.Given(Request.Create().WithPath("/me/drive/items/root_id/children").UsingGet())
-            .RespondWith(Response.Create().WithStatusCode(200).WithBody("{ \"value\": [ { \"id\": \"trans_id\", \"name\": \"transactions\", \"folder\": {} } ] }"));
-
-        // Act
-        await _service.SynchronizeAsync(tripSlug);
-
-        // Assert
-        // We expect T2 to be processed but T1 to be completely ignored.
-        var t1Requests = _server.FindLogEntries(Request.Create().WithPath(new WildcardMatcher("*T1*")));
-        Assert.Empty(t1Requests);
-
-        // T2 or any of its descendants should have triggered a POST (creation)
-        var postRequests = _server.FindLogEntries(Request.Create().UsingPost());
-        // T2 folder creation should be there
-        Assert.NotEmpty(postRequests);
+            // Verify SyncState updated
+            var syncState = await _localStorage.GetSyncStateAsync(tripSlug);
+            Assert.Contains(remotePkgName, syncState.Sync.Remote.AppliedPackages);
+            Assert.Empty(syncState.Sync.Local.Pending); // Should be cleared after success
+            // Verify Upload was called
+            var uploadRequests = _server.FindLogEntries(Request.Create().UsingPut().WithPath(new WildcardMatcher("*/packages_id:/*.zip.part:/content")));
+            Assert.Single(uploadRequests);
+            
+            var renameRequests = _server.FindLogEntries(Request.Create().UsingPatch().WithPath(new WildcardMatcher("*/items/uploaded_pkg_id")));
+            Assert.Single(renameRequests);
+        }
+        catch (Exception)
+        {
+            _testFailed = true;
+            throw;
+        }
     }
 
     public void Dispose()
     {
         _server.Stop();
-        if (Directory.Exists(_tempPath)) Directory.Delete(_tempPath, true);
+        if (!_testFailed && Directory.Exists(_tempPath)) Directory.Delete(_tempPath, true);
     }
 }

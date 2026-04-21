@@ -138,26 +138,25 @@ namespace TripFund.App.Components.Pages
             
             try
             {
-                var remoteConfig = await RemoteStorage.GetRemoteTripConfigAsync(selection.Provider, selection.Parameters);
+                var metadata = await RemoteStorage.GetRemoteTripMetadataAsync(selection.Provider, selection.Parameters);
                 
                 isSearchingRemote = false;
                 StateHasChanged();
 
-                if (remoteConfig == null)
+                if (metadata == null)
                 {
-                    await Alert.ShowAlertAsync("Errore", "Impossibile trovare i dati del viaggio nella posizione specificata.", type: AlertType.Error);
+                    await Alert.ShowAlertAsync("Errore", "Impossibile trovare un viaggio valido nella posizione specificata.", type: AlertType.Error);
                     return;
                 }
 
                 var confirmed = await Alert.ConfirmAsync("Conferma", 
-                    $"Vuoi aggiungere il viaggio<br/><b>{remoteConfig.Name}</b><br/>dal <b>{remoteConfig.StartDate:dd/MM/yyyy}</b> al <b>{remoteConfig.EndDate:dd/MM/yyyy}</b>?",
+                    $"Vuoi aggiungere il viaggio creato da <b>{metadata.Author}</b> in data <b>{metadata.CreatedAt:dd/MM/yyyy}</b>?",
                     "Conferma", "Annulla");
 
                 if (!confirmed) return;
 
-                string baseSlug = SlugUtility.GenerateSlug(remoteConfig.Name);
                 string remoteId = RemoteStorage.GetRemoteUniqueId(selection.Provider, selection.Parameters) ?? "";
-                string slug = SlugUtility.GenerateSlug(baseSlug + "_" + remoteId);
+                string slug = SlugUtility.GenerateSlug(metadata.TripSlug + "_" + remoteId);
 
                 // Safety check: fail if local folder already exists
                 var tripDir = Path.Combine(Storage.TripsPath, slug);

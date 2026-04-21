@@ -121,6 +121,8 @@ namespace TripFund.App.Components.Pages
 
             if (remoteStorage != null)
             {
+                await RemoteStorage.InitializeRemoteLocationAsync(finalSlug, remoteStorage.Provider, remoteStorage.Parameters);
+                
                 // Start sync in background or wait?
                 // The PRD says "Synchronization process ensures eventually consistent".
                 // Let's at least start it.

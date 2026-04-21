@@ -27,14 +27,24 @@ public class CompositeRemoteStorageService : IRemoteStorageService
         }
     }
 
-    public Task<TripConfig?> GetRemoteTripConfigAsync(string provider, Dictionary<string, string> parameters)
+    public Task<RemoteTripMetadata?> GetRemoteTripMetadataAsync(string provider, Dictionary<string, string> parameters)
     {
         if (provider == "onedrive")
         {
-            return _onedrive.GetRemoteTripConfigAsync(provider, parameters);
+            return _onedrive.GetRemoteTripMetadataAsync(provider, parameters);
         }
 
-        return Task.FromResult<TripConfig?>(null);
+        return Task.FromResult<RemoteTripMetadata?>(null);
+    }
+
+    public Task InitializeRemoteLocationAsync(string tripSlug, string provider, Dictionary<string, string> parameters)
+    {
+        if (provider == "onedrive")
+        {
+            return _onedrive.InitializeRemoteLocationAsync(tripSlug, provider, parameters);
+        }
+
+        return Task.CompletedTask;
     }
 
     public Task<bool> IsRemoteLocationEmptyAsync(string provider, Dictionary<string, string> parameters)
@@ -81,7 +91,7 @@ public class CompositeRemoteStorageService : IRemoteStorageService
                 registry = await _storage.GetTripRegistryAsync();
                 if (registry.Trips.TryGetValue(tripSlug, out var updatedEntry) && updatedEntry.RemoteStorage != null)
                 {
-                    updatedEntry.RemoteStorage.LastSynchronized = DateTime.Now;
+                    updatedEntry.RemoteStorage.LastSynchronized = DateTime.UtcNow;
                     await _storage.SaveTripRegistryAsync(registry);
                 }
             }

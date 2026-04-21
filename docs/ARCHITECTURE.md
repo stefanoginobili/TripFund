@@ -40,7 +40,9 @@ Every Leaf folder (whether a version folder or an attachment folder) MUST strict
 - **`.metadata`**: A text file containing key-value pairs (one per line). Default keys added upon creation:
     - `author`: The name of the user who created the leaf.
     - `device`: The `deviceId` that initiated the commit.
-    - `timestamp`: The creation time in `yyyy-MM-ddTHH:mm:ssZ` format.
+    - `createdAt`: The creation time in `yyyy-MM-ddTHH:mm:ss.fffZ` format.
+    - `contentType`: Explicit semantic type (e.g., `tripfund/trip-config`, `tripfund/transaction-detail`, `tripfund/transaction-attachment`).
+- **`.active`**: A local-only empty marker file created as the absolute LAST step of a successful local commit or remote package extraction.
 
 ### 3.2. Version Sub-Folder Naming Convention
 Versioned folders (like Config or details_versioned) contain sub-folders adhering to this regex:
@@ -91,48 +93,54 @@ A folder **A** supersedes folder **B** if:
 4.  **Payload**: Copy the winning data payload into the `.data/` folder.
 
 ## 5. Remote Storage Synchronization
-The synchronization process ensures the local offline-first storage and the remote provider are eventually consistent.
+The synchronization process groups local changes into differential ZIP packages to minimize network overhead and ensure consistency.
 
-### 5.1. Synchronization Flow
-The process navigates recursively through the `trips/[TripSlug]` structure. For each leaf folder (identified by the presence of `.metadata` or `.data/`):
-- Only the `.metadata` file and the `.data/` folder (recursively) are synchronized.
-- Application-local markers (like `.synched`) are NEVER synchronized.
+### 5.1. Remote Layout
+The remote storage is organized per-trip:
+- **`.tripfund`**: A text file in the root for quick discovery and validation. Contains `contentType=tripfund/trip`, `tripSlug`, `author`, and `createdAt`.
+- `/devices/[DeviceId]/`: A folder dedicated to the specific device for permission checks and discovery.
+- `/packages/`: Contains ZIP packages named `pack_[Timestamp]_[DeviceId].zip`.
 
-### 5.2. Atomic Leaf Folder Sync & Markers
-To ensure data integrity, the sync process uses the following markers at the root of the Leaf folder:
+### 5.2. Synchronization State (`sync_state.json`)
+A local-only file in the trip's root folder tracks sync progress:
+- **`sync.remote.appliedPackages`**: A flat list of applied remote package filenames.
+- **`sync.local.pending`**: A list of objects `{ path, createdAt }` for local leaf folders awaiting upload.
 
-- **`.uploading`**: Created in the **remote** destination folder when copying from local to remote. It contains:
-    - `source=[deviceId]`
-    - `begin=[timestamp]`
-- **`.downloading`**: Created in the **local** destination folder when copying from remote to local. It contains:
-    - `begin=[timestamp]`
-
-**"Fully Copied" Rule**: A leaf folder is considered fully copied ONLY if it contains a `.metadata` file and DOES NOT contain the appropriate `.uploading` or `.downloading` marker.
-
-### 5.3. Sync Optimization (".synched" Marker)
-- **The ".synched" Marker**: A local-only file named `.synched` is created inside a local leaf folder immediately after successful synchronization.
-- **Fast-Path Skip**: If the engine detects a `.synched` file, it **immediately skips** both the download and upload phases for that folder.
-- **Local-Only**: The `.synched` file MUST NEVER be uploaded to the remote storage provider.
+### 5.3. Synchronization Flow
+1. **Evaluation Phase**:
+    - Verifies Read/Write permissions by writing a timestamped file (`.last-seen`) in the `/devices/[DeviceId]/` folder.
+2. **Download Phase**:
+    - Lists all files in `/packages/`.
+    - Discards packages created by the local device and those already in `appliedPackages`.
+    - Downloads and extracts remaining packages in alphabetical order (timestamp-based).
+    - Merges content into the local filesystem (overwriting existing files).
+    - Marks all extracted leaf folders as `.active`.
+    - Updates `appliedPackages`.
+3. **Integrity & Conflict Check**:
+    - Scans for local conflicts. If any are detected, the **Upload phase is aborted** until the user resolves them.
+4. **Upload Phase**:
+    - Gathers all leaf folders from the `pending` list.
+    - Packs them into a single ZIP (only `.data/` and `.metadata` included).
+    - Package name uses the **lowest** timestamp from the pending list: `pack_[LowestTimestamp]_[DeviceId].zip`.
+    - Uploads as `.part`, then renames to finalize.
+    - Removes successfully uploaded folders from the `pending` list.
 
 ### 5.4. Error Handling
-Any exception (API error, Disk Full, Conflict) during the process MUST abort the synchronization. Conflicts detected during the "Integrity Check" phase (between Download and Upload) will throw a `SyncConflictException` to be handled by the UI.
+Any exception (API error, Disk Full) during the process MUST abort the synchronization. Conflicts detected during the "Integrity Check" phase will throw a `SyncConflictException` to be handled by the UI.
 
 ## 6. Resilient Managed Operations
 
 To ensure the application remains stable and data-consistent under various failure scenarios (app crashes, power loss, network instability), the following resiliency algorithms are implemented.
 
 ### 6.1. Atomic Global Configuration
-Global JSON files (`app_settings.json` and `known_trips.json`) are critical for app functionality. To prevent file corruption during write operations, the system employs a **temp-and-rename** pattern:
-1. Serialize the data to a temporary file (e.g., `known_trips.json.tmp`).
+Global JSON files (`app_settings.json`, `known_trips.json`, and `sync_state.json`) are critical for app functionality. To prevent file corruption during write operations, the system employs a **temp-and-rename** pattern:
+1. Serialize the data to a temporary file (e.g., `sync_state.json.tmp`).
 2. Ensure the write to the temporary file is complete and flushed to disk.
 3. Replace the original file with the temporary file using an atomic `Move` operation.
 4. If a `JsonException` occurs during reading (indicating corruption), the system gracefully recovers by returning a default/empty state to prevent a startup loop.
 
-### 6.2. Leaf Folder Integrity ("Fully Copied" Rule)
-The versioning and sync systems rely on the integrity of "Leaf" folders. A folder is considered valid and committed ONLY if:
-1. It contains a valid `.metadata` file.
-2. It DOES NOT contain an active marker file (`.uploading` or `.downloading`).
-This ensures that incomplete transfers or local commits are ignored or cleaned up.
+### 6.2. Leaf Folder Integrity (".active" Marker)
+The versioning and sync systems rely on the integrity of "Leaf" folders. A folder is considered valid and committed ONLY if it contains an `.active` marker. This marker is written only after `.data/` and `.metadata` have been successfully committed to disk.
 
 ### 6.3. Initial Import Protection
 When "Joining" or "Creating" a trip, the application performs multiple steps (registry entry, directory creation, initial sync). To handle failures during this multi-step process:

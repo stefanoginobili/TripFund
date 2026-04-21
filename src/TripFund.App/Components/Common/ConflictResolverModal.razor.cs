@@ -27,7 +27,7 @@ public partial class ConflictResolverModal
     private Dictionary<string, bool> diffMap = new();
     private Dictionary<(string Property, int VersionIndex), string> evaluationStrings = new();
 
-    private readonly string[] _clickableProperties = { "Members", "Currencies", "Location", "Attachments" };
+    private readonly string[] _clickableProperties = { "Members", "Currencies", "Location", "Attachments", "DateTime" };
 
     protected override async Task OnParametersSetAsync()
     {
@@ -97,7 +97,11 @@ public partial class ConflictResolverModal
 
         var dateTimes = versions.Select(v => v.Data == null ? "ELIMINATA" : $"{v.Data.Date.ToString("dd/MM/yyyy HH:mm:ss", _itCulture)}").ToList();
         diffMap["DateTime"] = dateTimes.Distinct().Count() > 1;
-        for (int i = 0; i < versions.Count; i++) evaluationStrings[("DateTime", i)] = dateTimes[i];
+        for (int i = 0; i < versions.Count; i++) 
+        {
+            var v = versions[i];
+            evaluationStrings[("DateTime", i)] = v.Data == null ? "ELIMINATA" : $"Data: {v.Data.Date.ToString("dd/MM/yyyy HH:mm:ss", _itCulture)}<br />Fuso orario: {v.Data.Timezone}";
+        }
 
         var participants = versions.Select(v => v.Data?.Split?.Keys?.FirstOrDefault() ?? "Nessuno").ToList();
         diffMap["Participant"] = participants.Distinct().Count() > 1;

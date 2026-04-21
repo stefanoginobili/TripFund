@@ -139,7 +139,7 @@ public class DashboardTests : BunitContext
         // Arrange
         var tripSlug = "test-trip";
         var config = new TripConfig { Id = "1", Name = "Test Trip", Currencies = new Dictionary<string, Currency> { { "EUR", new Currency { Symbol = "€" } } } };
-        var lastSynchronized = DateTime.Now.AddMinutes(-minutesAgo);
+        var lastSynchronized = DateTime.UtcNow.AddMinutes(-minutesAgo);
         var registry = new LocalTripRegistry
         {
             Trips = new Dictionary<string, TripRegistryEntry>

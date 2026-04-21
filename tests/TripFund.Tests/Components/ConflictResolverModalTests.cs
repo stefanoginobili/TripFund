@@ -102,10 +102,11 @@ public class ConflictResolverModalTests : BunitContext
         // Assert
         var expectedString = $"Data: 01/01/2024 12:00:00<br />Fuso orario: Europe/Rome";
         _alertServiceMock.Verify(s => s.ShowAlertAsync(
-            "Dettaglio Valutazione", 
+            "Dettaglio", 
             expectedString,
             "Chiudi", 
-            AlertType.Information), Times.Once);
+            AlertType.Information,
+            "left"), Times.Once);
     }
 
     [Fact]

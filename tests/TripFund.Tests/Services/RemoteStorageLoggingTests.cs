@@ -119,15 +119,22 @@ public class RemoteStorageLoggingTests : IDisposable
         var localTripDir = Path.Combine(localStorage.TripsPath, tripSlug);
         Directory.CreateDirectory(localTripDir);
 
-        // Mock permission check: List empty
+        // EVALUATION PHASE mocks
+        // 1. Mock root_id children to discover "devices" and "packages"
         _server.Given(Request.Create().WithPath("/me/drive/items/root_id/children").UsingGet())
+            .RespondWith(Response.Create().WithStatusCode(200).WithBody("{ \"value\": [ { \"id\": \"devices_id\", \"name\": \"devices\", \"folder\": {} }, { \"id\": \"packages_id\", \"name\": \"packages\", \"folder\": {} } ] }"));
+
+        // 2. Mock devices_id children to discover device folder
+        _server.Given(Request.Create().WithPath("/me/drive/items/devices_id/children").UsingGet())
+            .RespondWith(Response.Create().WithStatusCode(200).WithBody("{ \"value\": [ { \"id\": \"device_root_id\", \"name\": \"unknown-device\", \"folder\": {} } ] }"));
+
+        // 3. Mock packages_id children (empty download phase)
+        _server.Given(Request.Create().WithPath("/me/drive/items/packages_id/children").UsingGet())
             .RespondWith(Response.Create().WithStatusCode(200).WithBody("{ \"value\": [] }"));
-        // Mock permission check: Upload test file
-        _server.Given(Request.Create().UsingPut().WithPath(new WildcardMatcher("/me/drive/items/root_id:/.rw-test-*:/content")))
+
+        // 4. Mock permission check: Upload test file in device_root_id
+        _server.Given(Request.Create().UsingPut().WithPath(new WildcardMatcher("/me/drive/items/device_root_id:/.last-seen:/content")))
             .RespondWith(Response.Create().WithStatusCode(201).WithBody("{ \"id\": \"test_file_id\" }"));
-        // Mock permission check: Delete test file
-        _server.Given(Request.Create().UsingDelete().WithPath("/me/drive/items/test_file_id"))
-            .RespondWith(Response.Create().WithStatusCode(204));
 
         // Act
         await _service.SynchronizeAsync(tripSlug);

@@ -7,6 +7,7 @@ public interface IRemoteStorageLogger
     string? CurrentFolderName { get; set; }
     void LogApiCall(string method, string url, string description);
     void LogInfo(string message);
+    void LogWarning(string message);
     void LogError(string message, Exception? ex = null);
     string GetLogContent();
     void Clear();
@@ -36,6 +37,15 @@ public class RemoteStorageLogger : IRemoteStorageLogger
         {
             var prefix = string.IsNullOrEmpty(CurrentFolderName) ? "" : $"[{CurrentFolderName}] ";
             _log.AppendLine($"[{DateTime.Now:yyyy-MM-dd HH:mm:ss}] INFO: {prefix}{message}");
+        }
+    }
+
+    public void LogWarning(string message)
+    {
+        lock (_lock)
+        {
+            var prefix = string.IsNullOrEmpty(CurrentFolderName) ? "" : $"[{CurrentFolderName}] ";
+            _log.AppendLine($"[{DateTime.Now:yyyy-MM-dd HH:mm:ss}] WARNING: {prefix}{message}");
         }
     }
 

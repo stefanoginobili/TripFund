@@ -259,13 +259,14 @@ public class VersionedStorageEngine
     }
 
     public async Task<string> CommitAsync(
-        string rootPath, 
-        string deviceId, 
-        CommitKind kind, 
-        Dictionary<string, byte[]> changedFiles, 
+        string rootPath,
+        string deviceId,
+        CommitKind kind,
+        Dictionary<string, byte[]> changedFiles,
         List<string>? deletedFiles = null,
         Dictionary<string, string>? metadata = null,
-        IEnumerable<string>? resolvedFolders = null)
+        IEnumerable<string>? resolvedFolders = null,
+        string? contentType = null)
     {
         var versions = GetVersionFolders(rootPath);
         int nextSeq = (versions.Count == 0) ? 1 : versions.Max(v => v.Sequence) + 1;
@@ -274,9 +275,15 @@ public class VersionedStorageEngine
         Directory.CreateDirectory(newDirPath);
 
         var leaf = new LocalLeafFolder(newDirPath);
-        var metaDict = metadata ?? new Dictionary<string, string>();
+        var metaDict = metadata != null ? new Dictionary<string, string>(metadata) : new Dictionary<string, string>();
+
+        if (!metaDict.ContainsKey("author")) metaDict["author"] = "unknown";
+        if (!metaDict.ContainsKey("device")) metaDict["device"] = deviceId;
+        if (!metaDict.ContainsKey("createdAt")) metaDict["createdAt"] = DateTime.UtcNow.ToString("yyyy-MM-ddTHH:mm:ss.fffZ");
+        if (!string.IsNullOrEmpty(contentType)) metaDict["contentType"] = contentType;
 
         if (kind == CommitKind.Res && resolvedFolders != null)
+
         {
             metaDict["resolved_versions"] = string.Join(",", resolvedFolders);
         }
@@ -324,6 +331,8 @@ public class VersionedStorageEngine
         {
             await leaf.WriteDataFileAsync(file.Key, file.Value);
         }
+
+        await leaf.WriteMarkerAsync(".active");
 
         return folderName;
     }

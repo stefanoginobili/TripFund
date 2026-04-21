@@ -139,14 +139,14 @@ public class LocalTripStorageTests : IDisposable
         var content = await File.ReadAllTextAsync(metadataFile);
         content.Should().Contain("author=Mario Rossi");
         content.Should().Contain("device=mario-123");
-        content.Should().Contain("timestamp=");
+        content.Should().Contain("createdAt=");
         
-        // Verify timestamp format: yyyy-MM-ddTHH:mm:ssZ
+        // Verify format: yyyy-MM-ddTHH:mm:ss.fffZ
         var lines = content.Split('\n', '\r').Where(l => !string.IsNullOrEmpty(l));
-        var timestampLine = lines.FirstOrDefault(l => l.StartsWith("timestamp="));
-        timestampLine.Should().NotBeNull();
-        var timestamp = timestampLine!.Substring("timestamp=".Length);
-        timestamp.Should().MatchRegex(@"^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$");
+        var createdAtLine = lines.FirstOrDefault(l => l.StartsWith("createdAt="));
+        createdAtLine.Should().NotBeNull();
+        var createdAt = createdAtLine!.Substring("createdAt=".Length);
+        createdAt.Should().MatchRegex(@"^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$");
     }
 
     [Fact]
@@ -164,12 +164,12 @@ public class LocalTripStorageTests : IDisposable
         Directory.CreateDirectory(v1);
         Directory.CreateDirectory(v2);
         
-        await File.WriteAllTextAsync(Path.Combine(v1, ".metadata"), "author=mario\ndevice=m\ntimestamp=2023-10-01T12:00:00Z");
+        await File.WriteAllTextAsync(Path.Combine(v1, ".metadata"), "author=mario\ndevice=m\ncreatedAt=2023-10-01T12:00:00.000Z");
         Directory.CreateDirectory(Path.Combine(v1, ".data"));
         var t1 = new Transaction { Id = transId, Description = "Mario's" };
         await File.WriteAllTextAsync(Path.Combine(v1, ".data", "transaction_details.json"), System.Text.Json.JsonSerializer.Serialize(t1));
 
-        await File.WriteAllTextAsync(Path.Combine(v2, ".metadata"), "author=luigi\ndevice=l\ntimestamp=2023-10-01T12:00:00Z");
+        await File.WriteAllTextAsync(Path.Combine(v2, ".metadata"), "author=luigi\ndevice=l\ncreatedAt=2023-10-01T12:00:00.000Z");
         Directory.CreateDirectory(Path.Combine(v2, ".data"));
         var t2 = new Transaction { Id = transId, Description = "Luigi's" };
         await File.WriteAllTextAsync(Path.Combine(v2, ".data", "transaction_details.json"), System.Text.Json.JsonSerializer.Serialize(t2));
@@ -201,8 +201,8 @@ public class LocalTripStorageTests : IDisposable
         Directory.CreateDirectory(v2);
         Directory.CreateDirectory(Path.Combine(v1, ".data"));
         Directory.CreateDirectory(Path.Combine(v2, ".data"));
-        await File.WriteAllTextAsync(Path.Combine(v1, ".metadata"), "author=m\ndevice=m\ntimestamp=2023-10-01T12:00:00Z");
-        await File.WriteAllTextAsync(Path.Combine(v2, ".metadata"), "author=l\ndevice=l\ntimestamp=2023-10-01T12:00:00Z");
+        await File.WriteAllTextAsync(Path.Combine(v1, ".metadata"), "author=m\ndevice=m\ncreatedAt=2023-10-01T12:00:00.000Z");
+        await File.WriteAllTextAsync(Path.Combine(v2, ".metadata"), "author=l\ndevice=l\ncreatedAt=2023-10-01T12:00:00.000Z");
 
         var resolvedTrans = new Transaction { Id = transId, Description = "Resolved" };
 
@@ -244,8 +244,8 @@ public class LocalTripStorageTests : IDisposable
         Directory.CreateDirectory(v2l);
         Directory.CreateDirectory(Path.Combine(v2m, ".data"));
         Directory.CreateDirectory(Path.Combine(v2l, ".data"));
-        await File.WriteAllTextAsync(Path.Combine(v2m, ".metadata"), "author=m\ndevice=m\ntimestamp=2023-10-01T12:00:00Z");
-        await File.WriteAllTextAsync(Path.Combine(v2l, ".metadata"), "author=l\ndevice=l\ntimestamp=2023-10-01T12:00:00Z");
+        await File.WriteAllTextAsync(Path.Combine(v2m, ".metadata"), "author=m\ndevice=m\ncreatedAt=2023-10-01T12:00:00.000Z");
+        await File.WriteAllTextAsync(Path.Combine(v2l, ".metadata"), "author=l\ndevice=l\ncreatedAt=2023-10-01T12:00:00.000Z");
 
         var resolvedTrans = new Transaction { Id = transId, Description = "Resolved" };
 
