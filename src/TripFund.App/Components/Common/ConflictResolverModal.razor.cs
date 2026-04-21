@@ -28,8 +28,6 @@ public partial class ConflictResolverModal
     private Dictionary<string, bool> diffMap = new();
     private Dictionary<(string Property, int VersionIndex), string> evaluationStrings = new();
 
-    private readonly string[] _clickableProperties = { "Name", "Dates", "Description", "Members", "Currencies", "Amount", "DateTime", "Participant", "Participants", "Attachments", "Location" };
-
     protected override async Task OnParametersSetAsync()
     {
         if (IsVisible && Conflict != null)
@@ -89,7 +87,7 @@ public partial class ConflictResolverModal
         var versions = transactionVersions;
         if (versions == null || versions.Count < 2) return;
 
-        var amounts = versions.Select(v => v.Data?.Amount.ToString("N2", _itCulture) ?? "0,00").ToList();
+        var amounts = versions.Select(v => v.Data == null ? "ELIMINATA" : $"{v.Data.Currency} {v.Data.Amount.ToString(_itCulture)}").ToList();
         diffMap["Amount"] = amounts.Distinct().Count() > 1;
         for (int i = 0; i < versions.Count; i++) evaluationStrings[("Amount", i)] = amounts[i];
 
@@ -145,14 +143,8 @@ public partial class ConflictResolverModal
         if (t == null) return "ELIMINATA";
         if (t.Split == null || !t.Split.Any()) return "Nessun partecipante";
         
-        var decimals = 2;
-        if (currentConfig != null && currentConfig.Currencies.TryGetValue(t.Currency, out var currency))
-        {
-            decimals = currency.Decimals;
-        }
-
         return string.Join("<br /><br />", t.Split.OrderBy(s => s.Key).Select(s => 
-            $"{s.Key}: {s.Value.Amount.ToString("N" + decimals, _itCulture)} ({(s.Value.Manual ? "manuale" : "auto")})"));
+            $"{s.Key}: {s.Value.Amount.ToString(_itCulture)} ({(s.Value.Manual ? "manuale" : "auto")})"));
     }
 
     private string NormalizeAttachments(Transaction? t)
@@ -205,8 +197,6 @@ public partial class ConflictResolverModal
 
     private async Task ShowDiffInfo(string propertyName, int versionIndex)
     {
-        if (!_clickableProperties.Contains(propertyName)) return;
-
         if (diffMap.TryGetValue(propertyName, out var isDiff) && isDiff)
         {
             if (evaluationStrings.TryGetValue((propertyName, versionIndex), out var evalString))
@@ -228,12 +218,7 @@ public partial class ConflictResolverModal
     {
         if (diffMap.TryGetValue(propertyName, out var isDiff) && isDiff)
         {
-            var classes = "text-danger";
-            if (_clickableProperties.Contains(propertyName))
-            {
-                classes += " clickable-diff";
-            }
-            return classes;
+            return "text-danger clickable-diff";
         }
         return "text-neutral";
     }

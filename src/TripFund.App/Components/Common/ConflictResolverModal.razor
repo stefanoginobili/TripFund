@@ -121,7 +121,7 @@
                                     {
                                         <div class="detail-item">
                                             <i class="glyph">💵</i>
-                                            <span class="@GetDiffClass("Amount")" @onclick='() => ShowDiffInfo("Amount", index)'>@v.Data.Currency @v.Data.Amount.ToString("N2")</span>
+                                            <span class="@GetDiffClass("Amount")" @onclick='() => ShowDiffInfo("Amount", index)'>@v.Data.Currency @v.Data.Amount.ToString(_itCulture)</span>
                                         </div>
                                         <div class="detail-item">
                                             <i class="glyph">📝</i>
