@@ -302,9 +302,10 @@ public class OneDriveRemoteStorageService : IRemoteStorageService, IRemoteFileSy
     private async Task<OneDriveItemInternal?> GetChildItemAsync(string parentId, string name, Dictionary<string, string> parameters)
     {
         var driveId = parameters.TryGetValue("driveId", out var d) ? d : null;
+        var encodedName = Uri.EscapeDataString(name);
         var url = string.IsNullOrEmpty(driveId)
-            ? $"{_graphBaseUrl}/me/drive/items/{parentId}:/{name}"
-            : $"{_graphBaseUrl}/drives/{driveId}/items/{parentId}:/{name}";
+            ? $"{_graphBaseUrl}/me/drive/items/{parentId}:/{encodedName}"
+            : $"{_graphBaseUrl}/drives/{driveId}/items/{parentId}:/{encodedName}";
 
         var parentName = _idToNameCache.TryGetValue(parentId, out var n) ? $"'{n}'" : $"ID: {parentId}";
         Logger?.LogApiCall("GET", url, $"Getting item '{name}' in parent folder {parentName}");
@@ -365,7 +366,12 @@ public class OneDriveRemoteStorageService : IRemoteStorageService, IRemoteFileSy
         var parentName = _idToNameCache.TryGetValue(parentId, out var n) ? $"'{n}'" : $"ID: {parentId}";
         Logger?.LogApiCall("POST", url, $"Creating folder '{name}' in parent folder {parentName}");
 
-        var body = new { name = name, folder = new { }, @microsoft_graph_conflictBehavior = "replace" };
+        var body = new Dictionary<string, object>
+        {
+            { "name", name },
+            { "folder", new { } },
+            { "@microsoft.graph.conflictBehavior", "replace" }
+        };
         
         using var request = new HttpRequestMessage(HttpMethod.Post, url);
         request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", parameters["accessToken"]);
@@ -395,12 +401,13 @@ public class OneDriveRemoteStorageService : IRemoteStorageService, IRemoteFileSy
         // Threshold: 2 MB
         const int uploadSessionThreshold = 2 * 1024 * 1024; 
 
+        var encodedName = Uri.EscapeDataString(name);
         if (content.Length <= uploadSessionThreshold)
         {
             // --- SIMPLE UPLOAD ---
             var url = string.IsNullOrEmpty(driveId)
-                ? $"{_graphBaseUrl}/me/drive/items/{parentId}:/{name}:/content"
-                : $"{_graphBaseUrl}/drives/{driveId}/items/{parentId}:/{name}:/content";
+                ? $"{_graphBaseUrl}/me/drive/items/{parentId}:/{encodedName}:/content"
+                : $"{_graphBaseUrl}/drives/{driveId}/items/{parentId}:/{encodedName}:/content";
 
             Logger?.LogApiCall("PUT", url, $"Uploading file '{name}' to parent folder {parentName} (Simple Upload)");
 
@@ -433,12 +440,18 @@ public class OneDriveRemoteStorageService : IRemoteStorageService, IRemoteFileSy
         {
             // --- UPLOAD SESSION (Resumable) ---
             var createSessionUrl = string.IsNullOrEmpty(driveId)
-                ? $"{_graphBaseUrl}/me/drive/items/{parentId}:/{name}:/createUploadSession"
-                : $"{_graphBaseUrl}/drives/{driveId}/items/{parentId}:/{name}:/createUploadSession";
+                ? $"{_graphBaseUrl}/me/drive/items/{parentId}:/{encodedName}:/createUploadSession"
+                : $"{_graphBaseUrl}/drives/{driveId}/items/{parentId}:/{encodedName}:/createUploadSession";
 
             Logger?.LogApiCall("POST", createSessionUrl, $"Creating upload session for file '{name}' in parent folder {parentName}");
 
-            var sessionBody = new { item = new { @microsoft_graph_conflictBehavior = "replace" } };
+            var sessionBody = new
+            {
+                item = new Dictionary<string, object>
+                {
+                    { "@microsoft.graph.conflictBehavior", "replace" }
+                }
+            };
             using var sessionReq = new HttpRequestMessage(HttpMethod.Post, createSessionUrl);
             sessionReq.Headers.Authorization = new AuthenticationHeaderValue("Bearer", parameters["accessToken"]);
             sessionReq.Content = JsonContent.Create(sessionBody);
