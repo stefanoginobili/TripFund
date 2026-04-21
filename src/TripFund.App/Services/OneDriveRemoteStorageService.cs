@@ -390,37 +390,113 @@ public class OneDriveRemoteStorageService : IRemoteStorageService, IRemoteFileSy
     private async Task<OneDriveItemInternal?> UploadFileAsync(string parentId, string name, byte[] content, Dictionary<string, string> parameters)
     {
         var driveId = parameters.TryGetValue("driveId", out var d) ? d : null;
-        var url = string.IsNullOrEmpty(driveId)
-            ? $"{_graphBaseUrl}/me/drive/items/{parentId}:/{name}:/content"
-            : $"{_graphBaseUrl}/drives/{driveId}/items/{parentId}:/{name}:/content";
-
         var parentName = _idToNameCache.TryGetValue(parentId, out var n) ? $"'{n}'" : $"ID: {parentId}";
-        Logger?.LogApiCall("PUT", url, $"Uploading file '{name}' to parent folder {parentName}");
-
-        using var request = new HttpRequestMessage(HttpMethod.Put, url);
-        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", parameters["accessToken"]);
         
-        var byteArrayContent = new ByteArrayContent(content);
-        var contentType = name.EndsWith(".zip") || name.EndsWith(".zip.part") 
-            ? "application/zip" 
-            : (name.EndsWith(".json") ? "application/json" : "application/octet-stream");
-        byteArrayContent.Headers.ContentType = new MediaTypeHeaderValue(contentType);
-        request.Content = byteArrayContent;
+        // Threshold: 2 MB
+        const int uploadSessionThreshold = 2 * 1024 * 1024; 
 
-        var response = await _httpClient.SendAsync(request);
-        if (!response.IsSuccessStatusCode)
+        if (content.Length <= uploadSessionThreshold)
         {
-            var error = await response.Content.ReadAsStringAsync();
-            Logger?.LogError($"Failed to upload file '{name}' to {parentId}: {response.StatusCode} - {error}");
-            return null;
-        }
+            // --- SIMPLE UPLOAD ---
+            var url = string.IsNullOrEmpty(driveId)
+                ? $"{_graphBaseUrl}/me/drive/items/{parentId}:/{name}:/content"
+                : $"{_graphBaseUrl}/drives/{driveId}/items/{parentId}:/{name}:/content";
 
-        var item = await response.Content.ReadFromJsonAsync<OneDriveItemInternal>();
-        if (item != null && !string.IsNullOrEmpty(item.Id) && !string.IsNullOrEmpty(item.Name))
-        {
-            _idToNameCache[item.Id] = item.Name;
+            Logger?.LogApiCall("PUT", url, $"Uploading file '{name}' to parent folder {parentName} (Simple Upload)");
+
+            using var request = new HttpRequestMessage(HttpMethod.Put, url);
+            request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", parameters["accessToken"]);
+            
+            var byteArrayContent = new ByteArrayContent(content);
+            var contentType = name.EndsWith(".zip") || name.EndsWith(".zip.part") 
+                ? "application/zip" 
+                : (name.EndsWith(".json") ? "application/json" : "application/octet-stream");
+            byteArrayContent.Headers.ContentType = new MediaTypeHeaderValue(contentType);
+            request.Content = byteArrayContent;
+
+            var response = await _httpClient.SendAsync(request);
+            if (!response.IsSuccessStatusCode)
+            {
+                var error = await response.Content.ReadAsStringAsync();
+                Logger?.LogError($"Failed to upload file '{name}' to {parentId}: {response.StatusCode} - {error}");
+                return null;
+            }
+
+            var item = await response.Content.ReadFromJsonAsync<OneDriveItemInternal>();
+            if (item != null && !string.IsNullOrEmpty(item.Id) && !string.IsNullOrEmpty(item.Name))
+            {
+                _idToNameCache[item.Id] = item.Name;
+            }
+            return item;
         }
-        return item;
+        else
+        {
+            // --- UPLOAD SESSION (Resumable) ---
+            var createSessionUrl = string.IsNullOrEmpty(driveId)
+                ? $"{_graphBaseUrl}/me/drive/items/{parentId}:/{name}:/createUploadSession"
+                : $"{_graphBaseUrl}/drives/{driveId}/items/{parentId}:/{name}:/createUploadSession";
+
+            Logger?.LogApiCall("POST", createSessionUrl, $"Creating upload session for file '{name}' in parent folder {parentName}");
+
+            var sessionBody = new { item = new { @microsoft_graph_conflictBehavior = "replace" } };
+            using var sessionReq = new HttpRequestMessage(HttpMethod.Post, createSessionUrl);
+            sessionReq.Headers.Authorization = new AuthenticationHeaderValue("Bearer", parameters["accessToken"]);
+            sessionReq.Content = JsonContent.Create(sessionBody);
+
+            var sessionRes = await _httpClient.SendAsync(sessionReq);
+            if (!sessionRes.IsSuccessStatusCode)
+            {
+                var error = await sessionRes.Content.ReadAsStringAsync();
+                Logger?.LogError($"Failed to create upload session for '{name}' in {parentId}: {sessionRes.StatusCode} - {error}");
+                return null;
+            }
+
+            var sessionInfo = await sessionRes.Content.ReadFromJsonAsync<UploadSessionResponseInternal>();
+            if (sessionInfo == null || string.IsNullOrEmpty(sessionInfo.UploadUrl))
+            {
+                Logger?.LogError($"Upload session response was invalid for '{name}'");
+                return null;
+            }
+
+            // Microsoft requires chunks to be a multiple of 320 KiB. We'll use 3.2 MB chunks.
+            const int chunkSize = 320 * 1024 * 10; 
+            OneDriveItemInternal? finalItem = null;
+
+            for (int offset = 0; offset < content.Length; offset += chunkSize)
+            {
+                int currentChunkSize = Math.Min(chunkSize, content.Length - offset);
+                var chunk = new byte[currentChunkSize];
+                Array.Copy(content, offset, chunk, 0, currentChunkSize);
+
+                using var chunkReq = new HttpRequestMessage(HttpMethod.Put, sessionInfo.UploadUrl);
+                var chunkContent = new ByteArrayContent(chunk);
+                chunkContent.Headers.ContentRange = new ContentRangeHeaderValue(offset, offset + currentChunkSize - 1, content.Length);
+                chunkReq.Content = chunkContent;
+
+                Logger?.LogApiCall("PUT", sessionInfo.UploadUrl, $"Uploading chunk {offset}-{offset + currentChunkSize - 1} of {content.Length}");
+
+                var chunkRes = await _httpClient.SendAsync(chunkReq);
+                if (!chunkRes.IsSuccessStatusCode)
+                {
+                    var error = await chunkRes.Content.ReadAsStringAsync();
+                    Logger?.LogError($"Failed to upload chunk for '{name}': {chunkRes.StatusCode} - {error}");
+                    return null;
+                }
+
+                // HTTP 201 Created or 200 OK means the upload session is complete
+                if (chunkRes.StatusCode == System.Net.HttpStatusCode.Created || chunkRes.StatusCode == System.Net.HttpStatusCode.OK)
+                {
+                    finalItem = await chunkRes.Content.ReadFromJsonAsync<OneDriveItemInternal>();
+                }
+            }
+
+            if (finalItem != null && !string.IsNullOrEmpty(finalItem.Id) && !string.IsNullOrEmpty(finalItem.Name))
+            {
+                _idToNameCache[finalItem.Id] = finalItem.Name;
+            }
+
+            return finalItem;
+        }
     }
 
     #endregion
@@ -564,5 +640,11 @@ public class OneDriveRemoteStorageService : IRemoteStorageService, IRemoteFileSy
     private class RemoteItemInternal
     {
         [JsonPropertyName("folder")] public object? Folder { get; set; }
+    }
+
+    private class UploadSessionResponseInternal
+    {
+        [JsonPropertyName("uploadUrl")] public string UploadUrl { get; set; } = string.Empty;
+        [JsonPropertyName("expirationDateTime")] public DateTime? ExpirationDateTime { get; set; }
     }
 }

@@ -212,18 +212,10 @@ public class RemoteStorageSyncEngine
                     if (uploadedPaths.Count > 0)
                     {
                         var zipContent = await File.ReadAllBytesAsync(tempZipPath);
-                        var partName = packageName + ".part";
                         
-                        // Clean up previous partial uploads
-                        var existingPart = (await fileSystem.ListChildrenAsync(packagesFolder.Id, entry.RemoteStorage.Parameters))
-                            .FirstOrDefault(p => p.Name == partName);
-                        if (existingPart != null) await fileSystem.DeleteFileAsync(existingPart.Id, entry.RemoteStorage.Parameters);
-
-                        var uploaded = await fileSystem.UploadFileAsync(packagesFolder.Id, partName, zipContent, entry.RemoteStorage.Parameters);
+                        var uploaded = await fileSystem.UploadFileAsync(packagesFolder.Id, packageName, zipContent, entry.RemoteStorage.Parameters);
                         if (uploaded == null) throw new Exception("Failed to upload ZIP package.");
 
-                        await fileSystem.RenameAsync(uploaded.Id, packageName, entry.RemoteStorage.Parameters);
-                        
                         // Success: cleanup local state
                         syncState.Sync.Local.Pending.RemoveAll(u => uploadedPaths.Contains(u.Path));
                         await _localStorage.SaveSyncStateAsync(tripSlug, syncState);

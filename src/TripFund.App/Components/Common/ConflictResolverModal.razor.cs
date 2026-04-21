@@ -28,7 +28,7 @@ public partial class ConflictResolverModal
     private Dictionary<string, bool> diffMap = new();
     private Dictionary<(string Property, int VersionIndex), string> evaluationStrings = new();
 
-    private readonly string[] _clickableProperties = { "Members", "Currencies", "Participant", "Participants", "Attachments", "Location" };
+    private readonly string[] _clickableProperties = { "Name", "Dates", "Description", "Members", "Currencies", "Amount", "DateTime", "Participant", "Participants", "Attachments", "Location" };
 
     protected override async Task OnParametersSetAsync()
     {

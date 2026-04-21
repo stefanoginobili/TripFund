@@ -123,7 +123,9 @@ A local-only file in the trip's `sync/` subfolder tracks sync progress:
     - Gathers all leaf folders from the `pending` list.
     - Packs them into a single ZIP (only `.data/` and `.metadata` included).
     - Package name uses the **lowest** timestamp from the pending list: `pack_[LowestTimestamp]_[DeviceId].zip`.
-    - Uploads as `.part`, then renames to finalize.
+    - **Atomic Upload**: To ensure remote atomicity and avoid partial files:
+        - Small files (<= 2MB) use a single **Simple Upload** (PUT).
+        - Larger files use a chunked **Upload Session** (resumable), where the file is only visible in the remote folder once the final chunk is successfully committed.
     - Removes successfully uploaded folders from the `pending` list.
 
 ### 5.4. Error Handling
@@ -133,7 +135,13 @@ Any exception (API error, Disk Full) during the process MUST abort the synchroni
 
 To ensure the application remains stable and data-consistent under various failure scenarios (app crashes, power loss, network instability), the following resiliency algorithms are implemented.
 
-### 6.1. Atomic Global Configuration
+### 6.1. HTTP Resilience & Retries
+All remote storage operations (OneDrive/Graph API) are protected by a standardized **Resilience Policy**:
+- **Transient Fault Handling**: Automatically retries on HTTP 429 (Rate Limit), 500, 502, 503, and 504.
+- **Strategy**: Uses exponential backoff with jitter to prevent slamming the server during recovery.
+- **Timeouts & Circuit Breaker**: Prevents the application from hanging indefinitely on non-responsive endpoints.
+
+### 6.2. Atomic Global Configuration
 Global JSON files (`app_settings.json`, `known_trips.json`, and `sync/sync_state.json`) are critical for app functionality. To prevent file corruption during write operations, the system employs a **temp-and-rename** pattern:
 1. Serialize the data to a temporary file (e.g., `sync_state.json.tmp`).
 2. Ensure the write to the temporary file is complete and flushed to disk.

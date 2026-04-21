@@ -156,14 +156,10 @@ public class OneDriveSyncLogicTests : IDisposable
             await _localStorage.SaveTripConfigAsync(tripSlug, new TripConfig { Name = "Local Trip" }, deviceId);
             // This creates config_versioned/001_NEW_local-device-id/ with .active
 
-            // Expect upload of .part
-            _server.Given(Request.Create().WithPath($"/me/drive/items/packages_id:/pack_*.zip.part:/content").UsingPut())
-                .RespondWith(Response.Create().WithStatusCode(201).WithBody("{ \"id\": \"uploaded_pkg_id\", \"name\": \"pack_...zip.part\" }"));
+            // Expect upload of .zip directly
+            _server.Given(Request.Create().WithPath($"/me/drive/items/packages_id:/pack_*.zip:/content").UsingPut())
+                .RespondWith(Response.Create().WithStatusCode(201).WithBody("{ \"id\": \"uploaded_pkg_id\", \"name\": \"pack_...zip\" }"));
             
-            // Expect rename of .part to .zip
-            _server.Given(Request.Create().WithPath(new WildcardMatcher("*/items/uploaded_pkg_id")).UsingPatch())
-                .RespondWith(Response.Create().WithStatusCode(200).WithBody("{ \"id\": \"uploaded_pkg_id\", \"name\": \"pack_...zip\" }"));
-
             // Act
             await _service.InitializeRemoteLocationAsync(tripSlug, "onedrive", registry.Trips[tripSlug]!.RemoteStorage!.Parameters);
             await _service.SynchronizeAsync(tripSlug);
@@ -180,17 +176,81 @@ public class OneDriveSyncLogicTests : IDisposable
             Assert.Contains(remotePkgName, syncState.Sync.Remote.AppliedPackages);
             Assert.Empty(syncState.Sync.Local.Pending); // Should be cleared after success
             // Verify Upload was called
-            var uploadRequests = _server.FindLogEntries(Request.Create().UsingPut().WithPath(new WildcardMatcher("*/packages_id:/*.zip.part:/content")));
+            var uploadRequests = _server.FindLogEntries(Request.Create().UsingPut().WithPath(new WildcardMatcher("*/packages_id:/*.zip:/content")));
             Assert.Single(uploadRequests);
-            
-            var renameRequests = _server.FindLogEntries(Request.Create().UsingPatch().WithPath(new WildcardMatcher("*/items/uploaded_pkg_id")));
-            Assert.Single(renameRequests);
         }
         catch (Exception)
         {
             _testFailed = true;
             throw;
         }
+    }
+
+    [Fact]
+    public async Task SynchronizeAsync_UsesUploadSession_WhenPackageIsLarge()
+    {
+        // Arrange
+        var tripSlug = "large-trip";
+        var localTripPath = Path.Combine(_tempPath, "trips", tripSlug);
+        Directory.CreateDirectory(localTripPath);
+        var deviceId = "large-device";
+        await _localStorage.SaveAppSettingsAsync(new AppSettings { DeviceId = deviceId });
+
+        var registry = new LocalTripRegistry();
+        registry.Trips[tripSlug] = new TripRegistryEntry 
+        { 
+            RemoteStorage = new RemoteStorageConfig 
+            { 
+                Provider = "onedrive", 
+                Parameters = new Dictionary<string, string> 
+                { 
+                    { "folderId", "root_id" },
+                    { "accessToken", "fake_token" },
+                    { "accessTokenExpiry", DateTime.Now.AddHours(1).ToString("O") }
+                } 
+            } 
+        };
+        await _localStorage.SaveTripRegistryAsync(registry);
+
+        // Mocks for Phase 1 & 2 (Evaluation & Download - empty)
+        _server.Given(Request.Create().WithPath("/me/drive/items/root_id/children").UsingGet())
+            .RespondWith(Response.Create().WithStatusCode(200).WithBody("{ \"value\": [ { \"id\": \"devices_id\", \"name\": \"devices\", \"folder\": {} }, { \"id\": \"packages_id\", \"name\": \"packages\", \"folder\": {} } ] }"));
+        _server.Given(Request.Create().WithPath("/me/drive/items/devices_id/children").UsingGet())
+            .RespondWith(Response.Create().WithStatusCode(200).WithBody("{ \"value\": [] }"));
+        _server.Given(Request.Create().WithPath("/me/drive/items/devices_id/children").UsingPost())
+            .RespondWith(Response.Create().WithStatusCode(201).WithBody("{ \"id\": \"device_root_id\", \"name\": \"large-device\" }"));
+        _server.Given(Request.Create().WithPath("/me/drive/items/device_root_id:/.last-seen:/content").UsingPut())
+            .RespondWith(Response.Create().WithStatusCode(201).WithBody("{ \"id\": \"check_id\" }"));
+        _server.Given(Request.Create().WithPath("/me/drive/items/packages_id/children").UsingGet())
+            .RespondWith(Response.Create().WithStatusCode(200).WithBody("{ \"value\": [] }"));
+
+        // Phase 3: Prepare LARGE content (> 2MB)
+        await _localStorage.SaveTripConfigAsync(tripSlug, new TripConfig { Name = "Large Trip" }, deviceId);
+        var pendingLeaf = Path.Combine(localTripPath, "config_versioned", $"001_NEW_{deviceId}");
+        var largeFile = Path.Combine(pendingLeaf, ".data", "large.bin");
+        Directory.CreateDirectory(Path.GetDirectoryName(largeFile)!);
+        byte[] largeData = new byte[3 * 1024 * 1024]; // 3 MB
+        new Random().NextBytes(largeData);
+        await File.WriteAllBytesAsync(largeFile, largeData);
+
+        // Mock Upload Session
+        var uploadUrl = $"{_server.Urls[0]}/upload/session/123";
+        _server.Given(Request.Create().WithPath(new WildcardMatcher("*/packages_id:/*.zip:/createUploadSession")).UsingPost())
+            .RespondWith(Response.Create().WithStatusCode(200).WithBody($"{{ \"uploadUrl\": \"{uploadUrl}\" }}"));
+
+        // Mock Chunk Uploads
+        _server.Given(Request.Create().WithPath("/upload/session/123").UsingPut())
+            .RespondWith(Response.Create().WithStatusCode(201).WithBody("{ \"id\": \"uploaded_pkg_id\", \"name\": \"large.zip\" }"));
+
+        // Act
+        await _service.SynchronizeAsync(tripSlug);
+
+        // Assert
+        var sessionRequests = _server.FindLogEntries(Request.Create().UsingPost().WithPath(new WildcardMatcher("*/createUploadSession")));
+        Assert.Single(sessionRequests);
+
+        var chunkRequests = _server.FindLogEntries(Request.Create().UsingPut().WithPath("/upload/session/123"));
+        Assert.NotEmpty(chunkRequests);
     }
 
     public void Dispose()

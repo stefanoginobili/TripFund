@@ -46,6 +46,7 @@ public class ScreenLockTests
         };
 
         _storageMock.Setup(s => s.GetTripRegistryAsync()).ReturnsAsync(registry);
+        _storageMock.Setup(s => s.GetSyncStateAsync(tripSlug)).ReturnsAsync(new SyncState());
         _onedriveMock.Setup(s => s.SynchronizeAsync(tripSlug)).Returns(Task.CompletedTask);
 
         // Act

@@ -53,7 +53,7 @@ public class NormalizeSplitTests
         // Assert
         // Result should use it-IT culture (comma as decimal separator)
         // Order by key: user1, user2
-        result.Should().Be("user1: 10,50 (auto)\r\nuser2: 20,00 (manuale)");
+        result.Should().Be("user1: 10,50 (auto)<br /><br />user2: 20,00 (manuale)");
     }
 
     [Fact]
