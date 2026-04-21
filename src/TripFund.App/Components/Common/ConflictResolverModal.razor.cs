@@ -21,13 +21,14 @@ public partial class ConflictResolverModal
     private int? selectedIndex;
     private bool isSaving = false;
     private string currentDeviceId = string.Empty;
+    private TripConfig? currentConfig;
 
     private static readonly System.Globalization.CultureInfo _itCulture = new("it-IT");
 
     private Dictionary<string, bool> diffMap = new();
     private Dictionary<(string Property, int VersionIndex), string> evaluationStrings = new();
 
-    private readonly string[] _clickableProperties = { "Members", "Currencies", "Location", "Attachments", "DateTime" };
+    private readonly string[] _clickableProperties = { "Members", "Currencies", "Participant", "Participants", "Attachments", "Location" };
 
     protected override async Task OnParametersSetAsync()
     {
@@ -42,6 +43,7 @@ public partial class ConflictResolverModal
 
             var settings = await Storage.GetAppSettingsAsync();
             currentDeviceId = settings?.DeviceId ?? string.Empty;
+            currentConfig = await Storage.GetTripConfigAsync(TripSlug);
 
             if (conflictType == "config")
             {
@@ -142,7 +144,15 @@ public partial class ConflictResolverModal
     {
         if (t == null) return "ELIMINATA";
         if (t.Split == null || !t.Split.Any()) return "Nessun partecipante";
-        return string.Join("|", t.Split.OrderBy(s => s.Key).Select(s => $"{s.Key}:{s.Value.Amount}:{s.Value.Manual}"));
+        
+        var decimals = 2;
+        if (currentConfig != null && currentConfig.Currencies.TryGetValue(t.Currency, out var currency))
+        {
+            decimals = currency.Decimals;
+        }
+
+        return string.Join("<br /><br />", t.Split.OrderBy(s => s.Key).Select(s => 
+            $"{s.Key}: {s.Value.Amount.ToString("N" + decimals, _itCulture)} ({(s.Value.Manual ? "manuale" : "auto")})"));
     }
 
     private string NormalizeAttachments(Transaction? t)

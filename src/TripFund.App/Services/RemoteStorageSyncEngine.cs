@@ -75,10 +75,12 @@ public class RemoteStorageSyncEngine
             var remotePackages = await fileSystem.ListChildrenAsync(packagesFolder.Id, entry.RemoteStorage.Parameters);
             
             // Filter and sort:
+            // - Starts with pack_
             // - Ends with .zip
             // - Does NOT contain local DeviceId
             // - Not already in appliedPackages
             var toDownload = remotePackages
+                .Where(p => p.Name.StartsWith("pack_", StringComparison.OrdinalIgnoreCase))
                 .Where(p => p.Name.EndsWith(".zip", StringComparison.OrdinalIgnoreCase))
                 .Where(p => !p.Name.Contains($"_{deviceId}.zip", StringComparison.OrdinalIgnoreCase))
                 .Where(p => !syncState.Sync.Remote.AppliedPackages.Contains(p.Name))
