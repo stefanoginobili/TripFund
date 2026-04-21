@@ -143,8 +143,14 @@ public partial class ConflictResolverModal
         if (t == null) return "ELIMINATA";
         if (t.Split == null || !t.Split.Any()) return "Nessun partecipante";
         
+        int decimals = 2;
+        if (currentConfig?.Currencies != null && t.Currency != null && currentConfig.Currencies.TryGetValue(t.Currency, out var curr))
+        {
+            decimals = curr.Decimals;
+        }
+
         return string.Join("<br /><br />", t.Split.OrderBy(s => s.Key).Select(s => 
-            $"{s.Key}: {s.Value.Amount.ToString(_itCulture)} ({(s.Value.Manual ? "manuale" : "auto")})"));
+            $"{s.Key}: {s.Value.Amount.ToString("N" + decimals, _itCulture)} ({(s.Value.Manual ? "manuale" : "auto")})"));
     }
 
     private string NormalizeAttachments(Transaction? t)
