@@ -314,6 +314,36 @@ public class LocalTripStorageTests : IDisposable
     }
 
     [Fact]
+    public async Task CleanupTempFolders_ShouldRemoveTempDirectories()
+    {
+        // Arrange
+        var slug1 = "trip-1";
+        var slug2 = "trip-2";
+        var temp1 = Path.Combine(_tempPath, "trips", slug1, "temp");
+        var temp2 = Path.Combine(_tempPath, "trips", slug2, "temp");
+        
+        Directory.CreateDirectory(temp1);
+        Directory.CreateDirectory(temp2);
+        
+        await File.WriteAllTextAsync(Path.Combine(temp1, "garbage.txt"), "junk");
+        await File.WriteAllTextAsync(Path.Combine(temp2, "junk.zip"), "binary");
+
+        Directory.Exists(temp1).Should().BeTrue();
+        Directory.Exists(temp2).Should().BeTrue();
+
+        // Act
+        await _service.CleanupTempFoldersAsync();
+
+        // Assert
+        Directory.Exists(temp1).Should().BeFalse();
+        Directory.Exists(temp2).Should().BeFalse();
+        
+        // Ensure parent directories still exist
+        Directory.Exists(Path.GetDirectoryName(temp1)).Should().BeTrue();
+        Directory.Exists(Path.GetDirectoryName(temp2)).Should().BeTrue();
+    }
+
+    [Fact]
     public async Task AtomicWrite_ShouldBeResilient()
     {
         // Arrange

@@ -585,6 +585,29 @@ public class LocalTripStorageService
         }
     }
 
+    public virtual Task CleanupTempFoldersAsync()
+    {
+        if (!Directory.Exists(_tripsPath)) return Task.CompletedTask;
+
+        var directories = Directory.GetDirectories(_tripsPath);
+        foreach (var tripDir in directories)
+        {
+            var tempPath = Path.Combine(tripDir, "temp");
+            if (Directory.Exists(tempPath))
+            {
+                try
+                {
+                    Directory.Delete(tempPath, true);
+                }
+                catch
+                {
+                    // Ignore errors during cleanup (e.g. file in use)
+                }
+            }
+        }
+        return Task.CompletedTask;
+    }
+
     public virtual async Task<SyncState> GetSyncStateAsync(string tripSlug)
     {
         var path = Path.Combine(_tripsPath, tripSlug, "sync", "sync_state.json");
