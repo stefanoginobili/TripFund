@@ -338,4 +338,27 @@ public class LocalTripStorageTests : IDisposable
         var fixedRegistry = await _service.GetTripRegistryAsync();
         fixedRegistry.Trips.Should().ContainKey("trip-1");
     }
+
+    [Fact]
+    public async Task SyncState_SaveAndLoad_ShouldWorkInNewPath()
+    {
+        // Arrange
+        var tripSlug = "sync-test-trip";
+        var state = new SyncState();
+        state.Sync.Remote.AppliedPackages.Add("pack1.zip");
+        state.Sync.Local.Pending.Add(new PendingUpload { Path = "config_versioned/001_NEW_mario", CreatedAt = DateTime.UtcNow.ToString("O") });
+
+        // Act
+        await _service.SaveSyncStateAsync(tripSlug, state);
+        var loaded = await _service.GetSyncStateAsync(tripSlug);
+
+        // Assert
+        loaded.Should().NotBeNull();
+        loaded.Sync.Remote.AppliedPackages.Should().Contain("pack1.zip");
+        loaded.Sync.Local.Pending.Should().HaveCount(1);
+        loaded.Sync.Local.Pending[0].Path.Should().Be("config_versioned/001_NEW_mario");
+
+        var syncPath = Path.Combine(_tempPath, "trips", tripSlug, "sync", "sync_state.json");
+        File.Exists(syncPath).Should().BeTrue("sync_state.json should be in the 'sync' subfolder");
+    }
 }

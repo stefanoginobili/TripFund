@@ -15,6 +15,9 @@ public class SyncData
 
     [JsonPropertyName("local")]
     public LocalSyncData Local { get; set; } = new();
+
+    [JsonPropertyName("lastSuccessAt")]
+    public DateTime? LastSuccessAt { get; set; }
 }
 
 public class RemoteSyncData

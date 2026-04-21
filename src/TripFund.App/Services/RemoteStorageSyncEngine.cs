@@ -264,15 +264,36 @@ public class RemoteStorageSyncEngine
 
         var logContent = fileSystem.Logger.GetLogContent();
 
-        // The requirement is debug/sync/[TripSlug].txt as a sibling of "trips"
-        var debugPath = Path.Combine(_localStorage.AppDataPath, "debug", "sync");
-        if (!Directory.Exists(debugPath))
+        // The requirement is trips/[TripSlug]/sync/logs/{yyyyMMddTHHmmssZ}.log
+        var logsDir = Path.Combine(_localStorage.TripsPath, tripSlug, "sync", "logs");
+        if (!Directory.Exists(logsDir))
         {
-            Directory.CreateDirectory(debugPath);
+            Directory.CreateDirectory(logsDir);
         }
 
-        var logFile = Path.Combine(debugPath, $"{tripSlug}.txt");
+        var timestamp = DateTime.UtcNow.ToString("yyyyMMddTHHmmssZ");
+        var logFile = Path.Combine(logsDir, $"{timestamp}.log");
         await File.WriteAllTextAsync(logFile, logContent);
+
+        // Rotate logs: keep only the last 20
+        var logFiles = Directory.GetFiles(logsDir, "*.log")
+            .OrderByDescending(f => f)
+            .ToList();
+
+        if (logFiles.Count > 20)
+        {
+            foreach (var file in logFiles.Skip(20))
+            {
+                try
+                {
+                    File.Delete(file);
+                }
+                catch
+                {
+                    // Ignore deletion errors for logs
+                }
+            }
+        }
     }
 
     private async Task<RemoteItem?> GetOrCreateFolderAsync(string parentId, string name, Dictionary<string, string> parameters, IRemoteFileSystem fileSystem)

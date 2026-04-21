@@ -587,7 +587,7 @@ public class LocalTripStorageService
 
     public virtual async Task<SyncState> GetSyncStateAsync(string tripSlug)
     {
-        var path = Path.Combine(_tripsPath, tripSlug, "sync_state.json");
+        var path = Path.Combine(_tripsPath, tripSlug, "sync", "sync_state.json");
         if (!File.Exists(path)) return new SyncState();
 
         try
@@ -603,7 +603,13 @@ public class LocalTripStorageService
 
     public virtual async Task SaveSyncStateAsync(string tripSlug, SyncState state)
     {
-        var path = Path.Combine(_tripsPath, tripSlug, "sync_state.json");
+        var syncDir = Path.Combine(_tripsPath, tripSlug, "sync");
+        if (!Directory.Exists(syncDir))
+        {
+            Directory.CreateDirectory(syncDir);
+        }
+
+        var path = Path.Combine(syncDir, "sync_state.json");
         var tempPath = path + ".tmp";
 
         var json = JsonSerializer.Serialize(state, _jsonOptions);

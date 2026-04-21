@@ -146,8 +146,7 @@ public class ModelSerializationTests
                 ""provider"": ""onedrive"",
                 ""parameters"": {
                   ""folderId"": ""abcdef1234567890""
-                },
-                ""lastSynchronized"": ""2026-05-23T13:45:00Z""
+                }
               }
             }
           }

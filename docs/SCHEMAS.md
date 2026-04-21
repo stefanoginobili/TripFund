@@ -107,7 +107,6 @@ This file is stored in the root of the app's local storage. It acts purely as a 
         "parameters": {
           "folderId": "abcdef1234567890"
         },
-        "lastSynchronized": "2026-05-23T13:45:00.000Z",
         "readonly": false
       }
     },
@@ -118,7 +117,6 @@ This file is stored in the root of the app's local storage. It acts purely as a 
         "parameters": {
           "repository": "https://github.com/mario/giappone.git"
         },
-        "lastSynchronized": "2026-05-05T13:45:00.000Z",
         "readonly": true
       }
     }
@@ -142,11 +140,12 @@ This file is stored in the root of the app's local storage (next to `known_trips
 Note: `deviceId` is auto-generated from `authorName` during the first launch/settings and is used as the suffix for transaction version folders. Its value is composed by the slug of the `authorName` (with leading/trailing hyphens trimmed) and the first 8 characters of a random GUID.
 
 ## 5. Trip Sync State (`sync_state.json`)
-This file is stored in the root of the specific trip folder (`[AppData]/trips/[TripSlug]/sync_state.json`). It is local-only and tracks the progress of the differential synchronization.
+This file is stored in a subfolder of the specific trip (`[AppData]/trips/[TripSlug]/sync/sync_state.json`). It is local-only and tracks the progress of the differential synchronization.
 
 ```json
 {
   "sync": {
+    "lastSuccessAt": "2026-04-12T22:33:12.890Z",
     "remote": {
       "appliedPackages": [
         "pack_20260413T143255890Z_mario-rossi-abcd1234.zip",

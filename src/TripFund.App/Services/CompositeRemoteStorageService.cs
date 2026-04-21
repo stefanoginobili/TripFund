@@ -87,13 +87,10 @@ public class CompositeRemoteStorageService : IRemoteStorageService
                     await _onedrive.SynchronizeAsync(tripSlug);
                 }
 
-                // Reload registry to get updates from the provider (readonly)
-                registry = await _storage.GetTripRegistryAsync();
-                if (registry.Trips.TryGetValue(tripSlug, out var updatedEntry) && updatedEntry.RemoteStorage != null)
-                {
-                    updatedEntry.RemoteStorage.LastSynchronized = DateTime.UtcNow;
-                    await _storage.SaveTripRegistryAsync(registry);
-                }
+                // Update sync state with last success timestamp
+                var syncState = await _storage.GetSyncStateAsync(tripSlug);
+                syncState.Sync.LastSuccessAt = DateTime.UtcNow;
+                await _storage.SaveSyncStateAsync(tripSlug, syncState);
             }
         }
         finally

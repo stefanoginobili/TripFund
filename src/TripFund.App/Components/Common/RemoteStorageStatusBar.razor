@@ -147,9 +147,11 @@
         if (registry?.Trips != null && registry.Trips.TryGetValue(TripSlug, out var entry))
         {
             remoteStorageProvider = entry.RemoteStorage?.Provider;
-            lastSynchronized = entry.RemoteStorage?.LastSynchronized;
             isReadonly = entry.RemoteStorage?.Readonly ?? false;
         }
+
+        var syncState = await Storage.GetSyncStateAsync(TripSlug);
+        lastSynchronized = syncState?.Sync?.LastSuccessAt;
         
         hasConflictsFlag = await Storage.HasConflictsAsync(TripSlug);
 

@@ -140,23 +140,64 @@ public class RemoteStorageLoggingTests : IDisposable
         await _service.SynchronizeAsync(tripSlug);
 
         // Assert
-        // 1. Verify log was saved LOCALLY in sibling debug folder
-        var debugSyncDir = Path.Combine(localStorage.AppDataPath, "debug", "sync");
-        var logFile = Path.Combine(debugSyncDir, $"{tripSlug}.txt");
-        Assert.True(File.Exists(logFile));
+        // 1. Verify log was saved LOCALLY in the timestamped path
+        var logsDir = Path.Combine(localStorage.TripsPath, tripSlug, "sync", "logs");
+        Assert.True(Directory.Exists(logsDir));
+        var logFiles = Directory.GetFiles(logsDir, "*.log");
+        Assert.Single(logFiles);
         
+        var logFile = logFiles[0];
         var capturedLog = await File.ReadAllTextAsync(logFile);
         Assert.Contains("Starting synchronization for trip: local-log-test", capturedLog);
         Assert.Contains("API CALL: GET", capturedLog);
         Assert.Contains("Synchronization completed successfully.", capturedLog);
 
         // 2. Verify NO log upload happened
-        var logUploadRequest = _server.LogEntries.FirstOrDefault(e => e.RequestMessage != null && e.RequestMessage.Method == "PUT" && e.RequestMessage.Path.Contains($"{tripSlug}.txt"));
+        var logUploadRequest = _server.LogEntries.FirstOrDefault(e => e.RequestMessage != null && e.RequestMessage.Method == "PUT" && (e.RequestMessage.Path.Contains($"{tripSlug}.txt") || e.RequestMessage.Path.Contains(".log")));
         Assert.Null(logUploadRequest);
         
         // Also verify no "debug" or "sync" folders were created on remote
         var createFolderRequest = _server.LogEntries.FirstOrDefault(e => e.RequestMessage != null && e.RequestMessage.Method == "POST" && (e.RequestMessage.Body?.Contains("debug") == true || e.RequestMessage.Body?.Contains("sync") == true));
         Assert.Null(createFolderRequest);
+    }
+
+    [Fact]
+    public async Task SaveSyncLogLocallyAsync_ShouldRotateLogsKeepingOnlyLast20()
+    {
+        // Arrange
+        var tripSlug = "rotation-test";
+        var localStorage = new LocalTripStorageService(_tempPath);
+        var engine = new RemoteStorageSyncEngine(localStorage);
+        
+        // Create 25 dummy log files in the sync/logs directory
+        var logsDir = Path.Combine(_tempPath, "trips", tripSlug, "sync", "logs");
+        Directory.CreateDirectory(logsDir);
+        for (int i = 0; i < 25; i++)
+        {
+            // Use different timestamps to ensure they are distinct
+            var oldTimestamp = DateTime.UtcNow.AddMinutes(-30 + i).ToString("yyyyMMddTHHmmssZ");
+            File.WriteAllText(Path.Combine(logsDir, $"{oldTimestamp}.log"), "Old log content");
+        }
+
+        var mockFileSystem = new Mock<IRemoteFileSystem>();
+        var logger = new RemoteStorageLogger();
+        logger.LogInfo("New log entry");
+        mockFileSystem.Setup(f => f.Logger).Returns(logger);
+
+        // Act: Invoke private method using reflection
+        var method = typeof(RemoteStorageSyncEngine).GetMethod("SaveSyncLogLocallyAsync", 
+            System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+        
+        await (Task)method!.Invoke(engine, new object[] { tripSlug, mockFileSystem.Object })!;
+
+        // Assert
+        var logFiles = Directory.GetFiles(logsDir, "*.log");
+        // We had 25, we added 1 during sync = 26. Rotation should keep 20.
+        Assert.Equal(20, logFiles.Length);
+        
+        // Ensure the newest one exists
+        var newestTimestamp = DateTime.UtcNow.ToString("yyyyMMddTHH"); // Check only up to hour to be safe with timing
+        Assert.Contains(logFiles, f => Path.GetFileName(f).Contains(newestTimestamp));
     }
 
     public void Dispose()

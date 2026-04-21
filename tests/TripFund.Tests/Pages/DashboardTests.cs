@@ -144,13 +144,16 @@ public class DashboardTests : BunitContext
         {
             Trips = new Dictionary<string, TripRegistryEntry>
             {
-                { tripSlug, new TripRegistryEntry { RemoteStorage = new RemoteStorageConfig { Provider = "onedrive", LastSynchronized = lastSynchronized } } }
+                { tripSlug, new TripRegistryEntry { RemoteStorage = new RemoteStorageConfig { Provider = "onedrive" } } }
             }
         };
+        var syncState = new SyncState();
+        syncState.Sync.LastSuccessAt = lastSynchronized;
 
         _storageMock.Setup(s => s.GetTripConfigAsync(tripSlug)).ReturnsAsync(config);
         _storageMock.Setup(s => s.GetTransactionsAsync(tripSlug)).ReturnsAsync(new List<Transaction>());
         _storageMock.Setup(s => s.GetTripRegistryAsync()).ReturnsAsync(registry);
+        _storageMock.Setup(s => s.GetSyncStateAsync(tripSlug)).ReturnsAsync(syncState);
 
         // Act
         var cut = Render<TripDashboard>(parameters => parameters.Add(p => p.tripSlug, tripSlug));
@@ -170,13 +173,15 @@ public class DashboardTests : BunitContext
         {
             Trips = new Dictionary<string, TripRegistryEntry>
             {
-                { tripSlug, new TripRegistryEntry { RemoteStorage = new RemoteStorageConfig { Provider = "onedrive", LastSynchronized = null } } }
+                { tripSlug, new TripRegistryEntry { RemoteStorage = new RemoteStorageConfig { Provider = "onedrive" } } }
             }
         };
+        var syncState = new SyncState { Sync = new SyncData { LastSuccessAt = null } };
 
         _storageMock.Setup(s => s.GetTripConfigAsync(tripSlug)).ReturnsAsync(config);
         _storageMock.Setup(s => s.GetTransactionsAsync(tripSlug)).ReturnsAsync(new List<Transaction>());
         _storageMock.Setup(s => s.GetTripRegistryAsync()).ReturnsAsync(registry);
+        _storageMock.Setup(s => s.GetSyncStateAsync(tripSlug)).ReturnsAsync(syncState);
 
         // Act
         var cut = Render<TripDashboard>(parameters => parameters.Add(p => p.tripSlug, tripSlug));

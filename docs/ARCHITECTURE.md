@@ -102,7 +102,8 @@ The remote storage is organized per-trip:
 - `/packages/`: Contains ZIP packages named `pack_[Timestamp]_[DeviceId].zip`.
 
 ### 5.2. Synchronization State (`sync_state.json`)
-A local-only file in the trip's root folder tracks sync progress:
+A local-only file in the trip's `sync/` subfolder tracks sync progress:
+- **`sync.lastSuccessAt`**: The timestamp of the last successful synchronization.
 - **`sync.remote.appliedPackages`**: A flat list of applied remote package filenames.
 - **`sync.local.pending`**: A list of objects `{ path, createdAt }` for local leaf folders awaiting upload.
 
@@ -133,7 +134,7 @@ Any exception (API error, Disk Full) during the process MUST abort the synchroni
 To ensure the application remains stable and data-consistent under various failure scenarios (app crashes, power loss, network instability), the following resiliency algorithms are implemented.
 
 ### 6.1. Atomic Global Configuration
-Global JSON files (`app_settings.json`, `known_trips.json`, and `sync_state.json`) are critical for app functionality. To prevent file corruption during write operations, the system employs a **temp-and-rename** pattern:
+Global JSON files (`app_settings.json`, `known_trips.json`, and `sync/sync_state.json`) are critical for app functionality. To prevent file corruption during write operations, the system employs a **temp-and-rename** pattern:
 1. Serialize the data to a temporary file (e.g., `sync_state.json.tmp`).
 2. Ensure the write to the temporary file is complete and flushed to disk.
 3. Replace the original file with the temporary file using an atomic `Move` operation.
@@ -150,5 +151,5 @@ When "Joining" or "Creating" a trip, the application performs multiple steps (re
 
 ### 6.4. Diagnostic Sync Logs
 For troubleshooting purposes, every synchronization session generates a detailed execution log.
-- **Location:** `[AppData]/debug/sync/[TripSlug].txt`
-- **Retention:** These logs are **strictly local** and are never uploaded to remote storage. They provide a step-by-step audit of API calls, file transfers, and error details.
+- **Location:** `[AppData]/trips/[TripSlug]/sync/logs/[yyyyMMddTHHmmssZ].log`
+- **Retention:** These logs are **strictly local** and are never uploaded to remote storage. The system maintains only the **last 20 logs** per trip, automatically rotating out older entries. They provide a step-by-step audit of API calls, file transfers, and error details.

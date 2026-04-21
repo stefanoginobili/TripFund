@@ -30,9 +30,6 @@ public class RemoteStorageConfig
     [JsonPropertyName("parameters")]
     public Dictionary<string, string> Parameters { get; set; } = new();
 
-    [JsonPropertyName("lastSynchronized")]
-    public DateTime? LastSynchronized { get; set; }
-
     [JsonPropertyName("readonly")]
     public bool Readonly { get; set; }
 }
