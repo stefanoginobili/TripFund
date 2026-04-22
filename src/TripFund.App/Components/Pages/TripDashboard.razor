@@ -95,28 +95,15 @@
 
             <!-- MEMBERS SECTION -->
             <section class="info-section">
-                <h3 class="section-header-vibe">PARTECIPANTI</h3>
-                <div class="members-list">
-                    @if (!membersStats.Any())
-                    {
-                        <p class="empty-text">Nessun partecipante.</p>
-                    }
-                    @foreach (var m in membersStats)
-                    {
-                        <div class="member-row @(m.IsMissing ? "missing-member" : "")" @onclick='() => Nav.NavigateTo($"/trip/{tripSlug}/member/{m.Slug}?currency={selectedCurrency}")'>
-                            <div class="member-avatar">@m.Avatar</div>
-                            <div class="member-info">
-                                <div class="member-name">@m.Name</div>
-                                <div class="member-stats">
-                                    <span>Quota versata: @FormatCurrency(m.TotalContributed, selectedCurrency)</span>
-                                </div>
-                            </div>
-                            <div class="member-balance @(m.RemainingBalance < 0 ? "text-danger" : "text-success")">
-                                @FormatCurrency(m.RemainingBalance, selectedCurrency)
-                            </div>
-                        </div>
-                    }
-                </div>
+                <button class="btn-secondary-vibe w-100" @onclick="() => isMembersModalOpen = true">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="me-2">
+                        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                        <circle cx="9" cy="7" r="4"></circle>
+                        <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                        <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                    </svg>
+                    Riepilogo Partecipanti
+                </button>
             </section>
 
             <!-- TRANSACTIONS SECTION -->
@@ -181,6 +168,14 @@
                   TripSlug="@tripSlug"
                   OnClose="CloseTransactionModal"
                   OnEdit="EditTransaction" />
+
+<MembersModal IsVisible="@isMembersModalOpen" 
+              MembersStats="@membersStats" 
+              TripSlug="@tripSlug" 
+              SelectedCurrency="@selectedCurrency" 
+              Config="@config"
+              OnClose="() => isMembersModalOpen = false" 
+              OnMemberSelected="OpenMemberDashboard" />
 
 <style>
     .me-2 {
@@ -283,13 +278,13 @@
         color: #DC3545;
     }
 
-    .members-list, .transactions-list {
+    .transactions-list {
         display: flex;
         flex-direction: column;
         gap: 0.75rem;
     }
 
-    .member-row, .transaction-row {
+    .transaction-row {
         background-color: #FFFFFF;
         padding: 1rem;
         border-radius: 16px;
@@ -298,44 +293,6 @@
         box-shadow: 0 2px 8px rgba(0,0,0,0.02);
         cursor: pointer;
         border: 1px solid #F0F0F0;
-    }
-
-    .member-row.missing-member {
-        filter: grayscale(100%);
-        opacity: 0.7;
-    }
-
-    .member-avatar {
-        font-size: 1.8rem;
-        margin-right: 1rem;
-        width: 48px;
-        height: 48px;
-        background-color: #F8FBF9;
-        border-radius: 50%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-    }
-
-    .member-info {
-        flex: 1;
-    }
-
-    .member-name {
-        font-weight: 700;
-        color: #1A3C2F;
-        margin-bottom: 0.2rem;
-    }
-
-    .member-stats {
-        font-size: 0.85rem;
-        color: #6C757D;
-    }
-
-    .member-balance {
-        font-weight: 700;
-        font-size: 1.1rem;
     }
 
     .transaction-icon {

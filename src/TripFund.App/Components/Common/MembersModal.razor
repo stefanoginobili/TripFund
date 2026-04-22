@@ -1,0 +1,121 @@
+@using TripFund.App.Models
+
+@if (IsVisible)
+{
+    <div class="modal-backdrop-vibe" @onclick="Close">
+        <div class="modal-sheet-vibe" @onclick:stopPropagation="true">
+            <header class="modal-header-vibe members-modal-header">
+                <button class="close-btn-vibe left-aligned" @onclick="Close">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                </button>
+                <h2 class="modal-title-vibe">Riepilogo Partecipanti</h2>
+            </header>
+
+            <div class="modal-body-vibe">
+                <div class="members-list">
+                    @if (MembersStats == null || !MembersStats.Any())
+                    {
+                        <p class="empty-text">Nessun partecipante.</p>
+                    }
+                    else
+                    {
+                        @foreach (var m in MembersStats)
+                        {
+                            <div class="member-row @(m.IsMissing ? "missing-member" : "")" @onclick="() => SelectMember(m.Slug)">
+                                <div class="member-avatar">@m.Avatar</div>
+                                <div class="member-info">
+                                    <div class="member-name">@m.Name</div>
+                                    <div class="member-stats">
+                                        <span>Quota versata: @FormatCurrency(m.TotalContributed)</span>
+                                    </div>
+                                </div>
+                                <div class="member-balance @(m.RemainingBalance < 0 ? "text-danger" : "text-success")">
+                                    @FormatCurrency(m.RemainingBalance)
+                                </div>
+                            </div>
+                        }
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+<style>
+    .members-modal-header {
+        justify-content: flex-start !important;
+        gap: 1rem;
+    }
+
+    .left-aligned {
+        margin-left: -0.5rem;
+    }
+
+    .members-list {
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+    }
+
+    .member-row {
+        background-color: #FFFFFF;
+        padding: 1rem;
+        border-radius: 16px;
+        display: flex;
+        align-items: center;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.02);
+        cursor: pointer;
+        border: 1px solid #F0F0F0;
+    }
+
+    .member-row.missing-member {
+        filter: grayscale(100%);
+        opacity: 0.7;
+    }
+
+    .member-avatar {
+        font-size: 1.8rem;
+        margin-right: 1rem;
+        width: 48px;
+        height: 48px;
+        background-color: #F8FBF9;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    }
+
+    .member-info {
+        flex: 1;
+    }
+
+    .member-name {
+        font-weight: 700;
+        color: #1A3C2F;
+        margin-bottom: 0.2rem;
+    }
+
+    .member-stats {
+        font-size: 0.85rem;
+        color: #6C757D;
+    }
+
+    .member-balance {
+        font-weight: 700;
+        font-size: 1.1rem;
+    }
+
+    .empty-text {
+        color: #6C757D;
+        font-style: italic;
+        text-align: center;
+        padding: 1rem;
+    }
+
+    .text-danger { color: #DC3545 !important; }
+    .text-success { color: #20563C !important; }
+</style>

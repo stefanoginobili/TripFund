@@ -99,6 +99,9 @@ public class DashboardTests : BunitContext
         var summarySub = cut.Find(".summary-sub").TextContent;
         summarySub.Should().Contain("300"); // Quota versata
 
+        // Open Modal
+        cut.Find(".btn-secondary-vibe").Click();
+
         var memberRows = cut.FindAll(".member-row");
         memberRows.Should().HaveCount(2);
 
@@ -109,6 +112,10 @@ public class DashboardTests : BunitContext
         var luigiRow = memberRows.First(r => r.InnerHtml.Contains("Luigi"));
         luigiRow.InnerHtml.Should().Contain("0"); // Versato
         luigiRow.InnerHtml.Should().Contain("-50"); // Rimasto
+
+        // Close Modal
+        cut.Find(".close-btn-vibe.left-aligned").Click();
+        cut.FindAll(".member-row").Should().BeEmpty();
 
         // Act - Switch to USD
         var usdBtn = cut.FindAll(".currency-pill").First(b => b.TextContent.Contains("USD"));
@@ -124,6 +131,8 @@ public class DashboardTests : BunitContext
         summaryTotal = cut.Find(".summary-total").TextContent;
         summaryTotal.Should().Contain("100");
 
+        // Open Modal for USD
+        cut.Find(".btn-secondary-vibe").Click();
         marioRow = cut.FindAll(".member-row").First(r => r.InnerHtml.Contains("Mario"));
         marioRow.InnerHtml.Should().Contain("0"); // Versato
     }
@@ -286,6 +295,9 @@ public class DashboardTests : BunitContext
         // Act
         var cut = Render<TripDashboard>(parameters => parameters.Add(p => p.tripSlug, tripSlug));
 
+        // Open Modal
+        cut.Find(".btn-secondary-vibe").Click();
+
         // Assert
         var memberRows = cut.FindAll(".member-row");
         memberRows.Should().HaveCount(2);
@@ -342,6 +354,11 @@ public class DashboardTests : BunitContext
 
         // In it-IT, N0 for 50001 is "50.001"
         summarySub.Should().Contain("50.001");
+
+        // Open Modal to check member balance
+        cut.Find(".btn-secondary-vibe").Click();
+        var memberRow = cut.Find(".member-row");
+        memberRow.InnerHtml.Should().Contain("¥ 50.001");
 
         var txRow = cut.Find(".transaction-row");
         txRow.InnerHtml.Should().Contain("¥ 50.001");

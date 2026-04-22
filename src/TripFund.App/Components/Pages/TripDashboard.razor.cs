@@ -36,6 +36,7 @@ namespace TripFund.App.Components.Pages
 
         private Transaction? selectedTransaction;
         private bool isTransactionModalOpen = false;
+        private bool isMembersModalOpen = false;
 
         protected override async Task OnInitializedAsync()
         {
@@ -94,6 +95,12 @@ namespace TripFund.App.Components.Pages
         private void CloseTransactionModal()
         {
             isTransactionModalOpen = false;
+        }
+
+        private void OpenMemberDashboard(string slug)
+        {
+            isMembersModalOpen = false;
+            Nav.NavigateTo($"/trip/{tripSlug}/member/{slug}?currency={selectedCurrency}");
         }
 
         private async Task GenerateReport()
@@ -239,16 +246,6 @@ namespace TripFund.App.Components.Pages
             var offsetStr = TimeZoneMapper.GetFormattedOffset(tz, displayDate);
             
             return $"{displayDate.ToString("dd/MM/yyyy HH:mm")} {offsetStr}";
-        }
-
-        private class MemberStats
-        {
-            public string Slug { get; set; } = "";
-            public string Name { get; set; } = "";
-            public string Avatar { get; set; } = "";
-            public decimal TotalContributed { get; set; }
-            public decimal RemainingBalance { get; set; }
-            public bool IsMissing { get; set; }
         }
     }
 }
