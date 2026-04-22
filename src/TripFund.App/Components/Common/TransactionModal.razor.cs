@@ -33,14 +33,30 @@ namespace TripFund.App.Components.Common
                 lastLoadedTxId = Transaction.Id;
 
                 canEdit = Transaction.Split.Keys.All(slug => Config.Members.ContainsKey(slug));
+
+                // Initialize placeholders IMMEDIATELY before any await to avoid layout jump
+                TimeZoneInfo tz = GetTransactionTimeZone(Transaction);
+                previews = Transaction.Attachments.Select(att => {
+                    var localizedTime = TimeZoneInfo.ConvertTimeFromUtc(att.CreatedAt, tz);
+                    return new AttachmentPreview 
+                    { 
+                        FileName = att.Name, 
+                        OriginalName = att.OriginalName,
+                        DisplayTimestamp = localizedTime.ToString("dd/MM/yyyy HH:mm"),
+                        IsLoading = true
+                    };
+                }).ToList();
                 
+                // Start loading previews
+                var previewTask = LoadPreviews();
+
                 var registry = await Storage.GetTripRegistryAsync();
                 if (registry != null && registry.Trips.TryGetValue(TripSlug, out var entry))
                 {
                     isReadonly = entry.RemoteStorage?.Readonly ?? false;
                 }
                 
-                await LoadPreviews();
+                await previewTask;
             }
             else if (!IsVisible)
             {
@@ -49,37 +65,35 @@ namespace TripFund.App.Components.Common
             }
         }
 
-        private async Task LoadPreviews()
+        private TimeZoneInfo GetTransactionTimeZone(Transaction tx)
         {
-            if (Transaction == null) return;
-            var currentTxId = Transaction.Id;
-            var newPreviews = new List<AttachmentPreview>();
-
-            TimeZoneInfo tz;
             try
             {
-                tz = string.IsNullOrEmpty(Transaction.Timezone) ? TimeZoneInfo.Local : TimeZoneInfo.FindSystemTimeZoneById(Transaction.Timezone);
+                return string.IsNullOrEmpty(tx.Timezone) ? TimeZoneInfo.Local : TimeZoneInfo.FindSystemTimeZoneById(tx.Timezone);
             }
             catch
             {
-                tz = TimeZoneInfo.Local;
+                return TimeZoneInfo.Local;
             }
+        }
 
-            foreach (var att in Transaction.Attachments)
+        private async Task LoadPreviews()
+        {
+            if (Transaction == null || !previews.Any()) return;
+            var currentTxId = Transaction.Id;
+
+            // Wait for modal opening animation to complete (400ms + buffer)
+            await Task.Delay(500);
+
+            foreach (var preview in previews)
             {
-                var fileName = att.Name;
-                var path = await Storage.GetAttachmentPath(TripSlug, Transaction.Id, fileName);
+                if (Transaction?.Id != currentTxId) return;
+
+                var path = await Storage.GetAttachmentPath(TripSlug, Transaction.Id, preview.FileName);
                 
-                var localizedTime = TimeZoneInfo.ConvertTimeFromUtc(att.CreatedAt, tz);
-                var preview = new AttachmentPreview 
-                { 
-                    FileName = fileName, 
-                    OriginalName = att.OriginalName,
-                    DisplayTimestamp = localizedTime.ToString("dd/MM/yyyy HH:mm")
-                };
                 if (!string.IsNullOrEmpty(path))
                 {
-                    var ext = Path.GetExtension(fileName).ToLower();
+                    var ext = Path.GetExtension(preview.FileName).ToLower();
                     var nativeThumb = await Thumbnails.GetThumbnailBase64Async(path);
                     if (!string.IsNullOrEmpty(nativeThumb))
                     {
@@ -98,12 +112,11 @@ namespace TripFund.App.Components.Common
                         catch { /* ignore */ }
                     }
                 }
-                newPreviews.Add(preview);
+                preview.IsLoading = false;
             }
 
             if (Transaction?.Id == currentTxId)
             {
-                previews = newPreviews;
                 StateHasChanged();
             }
         }
@@ -212,6 +225,7 @@ namespace TripFund.App.Components.Common
             public string DisplayTimestamp { get; set; } = "";
             public string? PreviewUrl { get; set; }
             public bool IsImage { get; set; }
+            public bool IsLoading { get; set; }
         }
     }
 }

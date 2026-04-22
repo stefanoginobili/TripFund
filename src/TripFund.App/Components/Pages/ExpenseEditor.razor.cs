@@ -6,7 +6,7 @@ using TripFund.App.Utilities;
 
 namespace TripFund.App.Components.Pages
 {
-    public partial class AddExpense
+    public partial class ExpenseEditor
     {
         [Inject] private LocalTripStorageService Storage { get; set; } = default!;
         [Inject] private NavigationManager Nav { get; set; } = default!;
@@ -292,15 +292,6 @@ namespace TripFund.App.Components.Pages
                 Nav.NavigateTo($"/trip/{tripSlug}?currency={selectedCurrency}");
             }
             await Task.CompletedTask;
-        }
-
-        private string GetCurrencySymbol()
-        {
-            if (config != null && config.Currencies.TryGetValue(selectedCurrency, out var c))
-            {
-                return c.Symbol;
-            }
-            return "";
         }
 
         private int GetDecimals()

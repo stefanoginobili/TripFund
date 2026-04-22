@@ -45,7 +45,7 @@ public class CurrencySelectorVisibilityTests : BunitContext
     }
 
     [Fact]
-    public void AddContribution_ShouldShowRequestedCurrencyWhenTripHasMultipleCurrencies()
+    public void ContributionEditor_ShouldNOTShowCurrencySelectorEvenWithMultipleCurrencies()
     {
         // Arrange
         var tripSlug = "test-trip";
@@ -62,20 +62,21 @@ public class CurrencySelectorVisibilityTests : BunitContext
 
         // Act - Request USD
         var nav = Services.GetRequiredService<NavigationManager>();
-        nav.NavigateTo($"/trip/{tripSlug}/add-contribution?currency=USD");
+        nav.NavigateTo($"/trip/{tripSlug}/contribution?currency=USD");
         
-        var cut = Render<AddContribution>(parameters => parameters
+        var cut = Render<ContributionEditor>(parameters => parameters
             .Add(p => p.tripSlug, tripSlug)
         );
 
-        // Assert - Should show selector because trip has > 1 currency
-        var pills = cut.FindAll(".currency-pill");
-        pills.Should().HaveCount(1);
-        pills[0].TextContent.Trim().Should().Be("USD");
+        // Assert - Should NOT show selector anymore
+        cut.FindAll(".currency-selector-container").Should().BeEmpty();
+        
+        // Assert - Should show currency code in amount section
+        cut.Find(".currency-symbol").TextContent.Trim().Should().Be("USD");
     }
 
     [Fact]
-    public void AddExpense_ShouldHideCurrencySelectorWhenTripHasOnlyOneCurrency()
+    public void ExpenseEditor_ShouldNOTShowCurrencySelectorEvenWithMultipleCurrencies()
     {
         // Arrange
         var tripSlug = "test-trip";
@@ -83,7 +84,8 @@ public class CurrencySelectorVisibilityTests : BunitContext
         {
             Currencies = new Dictionary<string, Currency> 
             { 
-                { "EUR", new Currency { Symbol = "€" } }
+                { "EUR", new Currency { Symbol = "€" } },
+                { "USD", new Currency { Symbol = "$" } }
             },
             Members = new Dictionary<string, User> { { "mario", new User { Name = "Mario" } } }
         };
@@ -91,14 +93,17 @@ public class CurrencySelectorVisibilityTests : BunitContext
 
         // Act - Request EUR
         var nav = Services.GetRequiredService<NavigationManager>();
-        nav.NavigateTo($"/trip/{tripSlug}/add-expense?currency=EUR");
+        nav.NavigateTo($"/trip/{tripSlug}/expense?currency=EUR");
 
-        var cut = Render<AddExpense>(parameters => parameters
+        var cut = Render<ExpenseEditor>(parameters => parameters
             .Add(p => p.tripSlug, tripSlug)
         );
 
-        // Assert - Should NOT show because trip has only 1 currency
+        // Assert - Should NOT show selector anymore
         cut.FindAll(".currency-selector-container").Should().BeEmpty();
+        
+        // Assert - Should show currency code in amount section
+        cut.Find(".currency-symbol").TextContent.Trim().Should().Be("EUR");
     }
 
     [Fact]
@@ -171,7 +176,7 @@ public class CurrencySelectorVisibilityTests : BunitContext
     }
 
     [Fact]
-    public async Task AddContribution_Save_ShouldNavigateBackWithCurrency()
+    public async Task ContributionEditor_Save_ShouldNavigateBackWithCurrency()
     {
         // Arrange
         var tripSlug = "test-trip";
@@ -183,9 +188,9 @@ public class CurrencySelectorVisibilityTests : BunitContext
         _storageMock.Setup(s => s.GetTripConfigAsync(tripSlug)).ReturnsAsync(config);
         
         var nav = Services.GetRequiredService<NavigationManager>();
-        nav.NavigateTo($"/trip/{tripSlug}/add-contribution?currency=EUR");
+        nav.NavigateTo($"/trip/{tripSlug}/contribution?currency=EUR");
 
-        var cut = Render<AddContribution>(parameters => parameters.Add(p => p.tripSlug, tripSlug));
+        var cut = Render<ContributionEditor>(parameters => parameters.Add(p => p.tripSlug, tripSlug));
 
         // Act
         cut.Find(".amount-input").Change("10");
@@ -205,7 +210,7 @@ public class CurrencySelectorVisibilityTests : BunitContext
     }
 
     [Fact]
-    public async Task AddContribution_Back_ShouldNavigateToMemberDashboardWhenMemberPresent()
+    public async Task ContributionEditor_Back_ShouldNavigateToMemberDashboardWhenMemberPresent()
     {
         // Arrange
         var tripSlug = "test-trip";
@@ -218,9 +223,9 @@ public class CurrencySelectorVisibilityTests : BunitContext
         _storageMock.Setup(s => s.GetTripConfigAsync(tripSlug)).ReturnsAsync(config);
         
         var nav = Services.GetRequiredService<NavigationManager>();
-        nav.NavigateTo($"/trip/{tripSlug}/add-contribution?member={memberSlug}&currency=USD");
+        nav.NavigateTo($"/trip/{tripSlug}/contribution?member={memberSlug}&currency=USD");
 
-        var cut = Render<AddContribution>(parameters => parameters.Add(p => p.tripSlug, tripSlug));
+        var cut = Render<ContributionEditor>(parameters => parameters.Add(p => p.tripSlug, tripSlug));
 
         // Act
         await cut.Find("header .icon-btn").ClickAsync();

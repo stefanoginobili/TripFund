@@ -6,7 +6,7 @@ using TripFund.App.Utilities;
 
 namespace TripFund.App.Components.Pages
 {
-    public partial class AddContribution
+    public partial class ContributionEditor
     {
         [Inject] private LocalTripStorageService Storage { get; set; } = default!;
         [Inject] private IEmailService EmailService { get; set; } = default!;

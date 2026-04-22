@@ -77,14 +77,14 @@
             </div>
 
             <div class="quick-actions">
-                <button class="action-btn contribute-btn" @onclick='() => Nav.NavigateTo($"/trip/{tripSlug}/add-contribution?currency={selectedCurrency}")' disabled="@isReadonly">
+                <button class="action-btn contribute-btn" @onclick='() => Nav.NavigateTo($"/trip/{tripSlug}/contribution?currency={selectedCurrency}")' disabled="@isReadonly">
                     <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline>
                         <polyline points="17 6 23 6 23 12"></polyline>
                     </svg>
                     Registra Versamento
                 </button>
-                <button class="action-btn expense-btn" @onclick='() => Nav.NavigateTo($"/trip/{tripSlug}/add-expense?currency={selectedCurrency}")' disabled="@isReadonly">
+                <button class="action-btn expense-btn" @onclick='() => Nav.NavigateTo($"/trip/{tripSlug}/expense?currency={selectedCurrency}")' disabled="@isReadonly">
                     <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <polyline points="23 18 13.5 8.5 8.5 13.5 1 6"></polyline>
                         <polyline points="17 18 23 18 23 12"></polyline>

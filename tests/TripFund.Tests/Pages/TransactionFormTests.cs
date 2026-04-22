@@ -50,7 +50,7 @@ public class TransactionFormTests : BunitContext
     }
 
     [Fact]
-    public void AddExpense_AutoSplit_ShouldDivideEqually()
+    public void ExpenseEditor_AutoSplit_ShouldDivideEqually()
     {
         // Arrange
         var tripSlug = "test-trip";
@@ -68,7 +68,7 @@ public class TransactionFormTests : BunitContext
         };
         _storageMock.Setup(s => s.GetTripConfigAsync(tripSlug)).ReturnsAsync(config);
 
-        var cut = Render<AddExpense>(parameters => parameters.Add(p => p.tripSlug, tripSlug));
+        var cut = Render<ExpenseEditor>(parameters => parameters.Add(p => p.tripSlug, tripSlug));
 
         // Act - Set amount to 30,00
         cut.Find(".amount-input").Change("30,00");
@@ -83,7 +83,7 @@ public class TransactionFormTests : BunitContext
     }
 
     [Fact]
-    public void AddExpense_MixedSplit_ShouldCalculateCorrectly()
+    public void ExpenseEditor_MixedSplit_ShouldCalculateCorrectly()
     {
         // Arrange
         var tripSlug = "test-trip";
@@ -101,7 +101,7 @@ public class TransactionFormTests : BunitContext
         };
         _storageMock.Setup(s => s.GetTripConfigAsync(tripSlug)).ReturnsAsync(config);
 
-        var cut = Render<AddExpense>(parameters => parameters.Add(p => p.tripSlug, tripSlug));
+        var cut = Render<ExpenseEditor>(parameters => parameters.Add(p => p.tripSlug, tripSlug));
 
         // Act
         // 1. Set total amount to 100
@@ -125,7 +125,7 @@ public class TransactionFormTests : BunitContext
     }
 
     [Fact]
-    public void AddExpense_ExcludeMember_ShouldDistributeAmongOthers()
+    public void ExpenseEditor_ExcludeMember_ShouldDistributeAmongOthers()
     {
         // Arrange
         var tripSlug = "test-trip";
@@ -142,7 +142,7 @@ public class TransactionFormTests : BunitContext
         };
         _storageMock.Setup(s => s.GetTripConfigAsync(tripSlug)).ReturnsAsync(config);
 
-        var cut = Render<AddExpense>(parameters => parameters.Add(p => p.tripSlug, tripSlug));
+        var cut = Render<ExpenseEditor>(parameters => parameters.Add(p => p.tripSlug, tripSlug));
 
         // Act
         cut.Find(".amount-input").Change("100");
@@ -162,7 +162,7 @@ public class TransactionFormTests : BunitContext
     }
 
     [Fact]
-    public void AddExpense_Rounding_ShouldHandleRemainder()
+    public void ExpenseEditor_Rounding_ShouldHandleRemainder()
     {
         // Arrange
         var tripSlug = "test-trip";
@@ -180,7 +180,7 @@ public class TransactionFormTests : BunitContext
         };
         _storageMock.Setup(s => s.GetTripConfigAsync(tripSlug)).ReturnsAsync(config);
 
-        var cut = Render<AddExpense>(parameters => parameters.Add(p => p.tripSlug, tripSlug));
+        var cut = Render<ExpenseEditor>(parameters => parameters.Add(p => p.tripSlug, tripSlug));
 
         // Act - Set amount to 10,00
         // 10 / 3 = 3.3333...
@@ -197,7 +197,7 @@ public class TransactionFormTests : BunitContext
     }
 
     [Fact]
-    public void AddExpense_ZeroDecimals_ShouldRoundAndSplitCorrectly()
+    public void ExpenseEditor_ZeroDecimals_ShouldRoundAndSplitCorrectly()
     {
         // Arrange
         var tripSlug = "test-trip";
@@ -215,7 +215,7 @@ public class TransactionFormTests : BunitContext
         };
         _storageMock.Setup(s => s.GetTripConfigAsync(tripSlug)).ReturnsAsync(config);
 
-        var cut = Render<AddExpense>(parameters => parameters.Add(p => p.tripSlug, tripSlug));
+        var cut = Render<ExpenseEditor>(parameters => parameters.Add(p => p.tripSlug, tripSlug));
 
         // Assert UI Attributes
         var amountInput = cut.Find(".amount-input");
@@ -242,7 +242,7 @@ public class TransactionFormTests : BunitContext
     }
 
     [Fact]
-    public async Task AddExpense_Submit_ShouldSaveManualFlagCorrectly()
+    public async Task ExpenseEditor_Submit_ShouldSaveManualFlagCorrectly()
     {
         // Arrange
         var tripSlug = "test-trip";
@@ -264,7 +264,7 @@ public class TransactionFormTests : BunitContext
             .Callback<string, Transaction, string, bool, Dictionary<string, byte[]>>((s, t, d, b, a) => savedTransaction = t)
             .Returns(Task.CompletedTask);
 
-        var cut = Render<AddExpense>(parameters => parameters.Add(p => p.tripSlug, tripSlug));
+        var cut = Render<ExpenseEditor>(parameters => parameters.Add(p => p.tripSlug, tripSlug));
 
         // Act
         cut.Find(".amount-input").Change("100");
@@ -290,7 +290,7 @@ public class TransactionFormTests : BunitContext
     }
 
     [Fact]
-    public async Task AddContribution_Submit_ShouldAlwaysSaveAsManual()
+    public async Task ContributionEditor_Submit_ShouldAlwaysSaveAsManual()
     {
         // Arrange
         var tripSlug = "test-trip";
@@ -311,7 +311,7 @@ public class TransactionFormTests : BunitContext
             .Callback<string, Transaction, string, bool, Dictionary<string, byte[]>>((s, t, d, b, a) => savedTransaction = t)
             .Returns(Task.CompletedTask);
 
-        var cut = Render<AddContribution>(parameters => parameters.Add(p => p.tripSlug, tripSlug));
+        var cut = Render<ContributionEditor>(parameters => parameters.Add(p => p.tripSlug, tripSlug));
 
         // Act
         cut.Find(".amount-input").Change("500");
@@ -331,7 +331,7 @@ public class TransactionFormTests : BunitContext
     }
 
     [Fact]
-    public async Task AddContribution_Submit_ShouldUseDefaultDescription()
+    public async Task ContributionEditor_Submit_ShouldUseDefaultDescription()
     {
         // Arrange
         var tripSlug = "test-trip";
@@ -352,7 +352,7 @@ public class TransactionFormTests : BunitContext
             .Callback<string, Transaction, string, bool, Dictionary<string, byte[]>>((s, t, d, b, a) => savedTransaction = t)
             .Returns(Task.CompletedTask);
 
-        var cut = Render<AddContribution>(parameters => parameters.Add(p => p.tripSlug, tripSlug));
+        var cut = Render<ContributionEditor>(parameters => parameters.Add(p => p.tripSlug, tripSlug));
 
         // Act
         cut.Find(".amount-input").Change("100");
@@ -371,7 +371,7 @@ public class TransactionFormTests : BunitContext
     }
 
     [Fact]
-    public async Task AddContribution_Submit_ShouldUseManualDescription()
+    public async Task ContributionEditor_Submit_ShouldUseManualDescription()
     {
         // Arrange
         var tripSlug = "test-trip";
@@ -392,7 +392,7 @@ public class TransactionFormTests : BunitContext
             .Callback<string, Transaction, string, bool, Dictionary<string, byte[]>>((s, t, d, b, a) => savedTransaction = t)
             .Returns(Task.CompletedTask);
 
-        var cut = Render<AddContribution>(parameters => parameters.Add(p => p.tripSlug, tripSlug));
+        var cut = Render<ContributionEditor>(parameters => parameters.Add(p => p.tripSlug, tripSlug));
 
         // Act
         cut.Find(".amount-input").Change("100");
@@ -412,7 +412,7 @@ public class TransactionFormTests : BunitContext
     }
 
     [Fact]
-    public void AddContribution_WhenNavigatingFromMemberDashboard_ShouldPresetRemainingQuota()
+    public void ContributionEditor_WhenNavigatingFromMemberDashboard_ShouldPresetRemainingQuota()
     {
         // Arrange
         var tripSlug = "test-trip";
@@ -449,10 +449,10 @@ public class TransactionFormTests : BunitContext
         _storageMock.Setup(s => s.GetTransactionsAsync(tripSlug)).ReturnsAsync(transactions);
 
         var nav = Services.GetRequiredService<NavigationManager>();
-        nav.NavigateTo($"/trip/{tripSlug}/add-contribution?member={memberSlug}&currency={currencyCode}");
+        nav.NavigateTo($"/trip/{tripSlug}/contribution?member={memberSlug}&currency={currencyCode}");
 
         // Act
-        var cut = Render<AddContribution>(parameters => parameters.Add(p => p.tripSlug, tripSlug));
+        var cut = Render<ContributionEditor>(parameters => parameters.Add(p => p.tripSlug, tripSlug));
 
         // Assert
         // Expected: 500 (quota) - 200 (already contributed) = 300
@@ -461,7 +461,7 @@ public class TransactionFormTests : BunitContext
     }
 
     [Fact]
-    public void AddContribution_WhenQuotaAlreadyReached_ShouldPresetZero()
+    public void ContributionEditor_WhenQuotaAlreadyReached_ShouldPresetZero()
     {
         // Arrange
         var tripSlug = "test-trip";
@@ -498,10 +498,10 @@ public class TransactionFormTests : BunitContext
         _storageMock.Setup(s => s.GetTransactionsAsync(tripSlug)).ReturnsAsync(transactions);
 
         var nav = Services.GetRequiredService<NavigationManager>();
-        nav.NavigateTo($"/trip/{tripSlug}/add-contribution?member={memberSlug}&currency={currencyCode}");
+        nav.NavigateTo($"/trip/{tripSlug}/contribution?member={memberSlug}&currency={currencyCode}");
 
         // Act
-        var cut = Render<AddContribution>(parameters => parameters.Add(p => p.tripSlug, tripSlug));
+        var cut = Render<ContributionEditor>(parameters => parameters.Add(p => p.tripSlug, tripSlug));
 
         // Assert
         // Expected: 500 (quota) - 600 (already contributed) = -100 -> should be 0
@@ -510,7 +510,7 @@ public class TransactionFormTests : BunitContext
     }
 
     [Fact]
-    public async Task AddExpense_Submit_ShouldUseNumberedAttachmentNaming()
+    public async Task ExpenseEditor_Submit_ShouldUseNumberedAttachmentNaming()
     {
         // Arrange
         var tripSlug = "test-trip";
@@ -527,14 +527,14 @@ public class TransactionFormTests : BunitContext
             .Callback<string, Transaction, string, bool, Dictionary<string, byte[]>>((s, t, d, b, a) => savedTransaction = t)
             .Returns(Task.CompletedTask);
 
-        var cut = Render<AddExpense>(parameters => parameters.Add(p => p.tripSlug, tripSlug));
+        var cut = Render<ExpenseEditor>(parameters => parameters.Add(p => p.tripSlug, tripSlug));
 
         // Use reflection to add attachments to the private list
-        var attachmentsField = typeof(AddExpense).GetField("attachments", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+        var attachmentsField = typeof(ExpenseEditor).GetField("attachments", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
         var attachmentsList = (System.Collections.IList)attachmentsField!.GetValue(cut.Instance)!;
 
         // Add 1 existing attachment with a non-conforming name
-        var attachmentInfoType = typeof(AddExpense).GetNestedType("AttachmentInfo", System.Reflection.BindingFlags.NonPublic);
+        var attachmentInfoType = typeof(ExpenseEditor).GetNestedType("AttachmentInfo", System.Reflection.BindingFlags.NonPublic);
         
         var existing1 = System.Activator.CreateInstance(attachmentInfoType!);
         attachmentInfoType!.GetProperty("FileName")!.SetValue(existing1, "old_style_guid.jpg");
@@ -592,7 +592,7 @@ public class TransactionFormTests : BunitContext
     }
 
     [Fact]
-    public async Task AddExpense_ChangeDateTime_ShouldUpdateTransactionDate()
+    public async Task ExpenseEditor_ChangeDateTime_ShouldUpdateTransactionDate()
     {
         // Arrange
         var tripSlug = "test-trip";
@@ -609,7 +609,7 @@ public class TransactionFormTests : BunitContext
             .Callback<string, Transaction, string, bool, Dictionary<string, byte[]>>((s, t, d, b, a) => savedTransaction = t)
             .Returns(Task.CompletedTask);
 
-        var cut = Render<AddExpense>(parameters => parameters.Add(p => p.tripSlug, tripSlug));
+        var cut = Render<ExpenseEditor>(parameters => parameters.Add(p => p.tripSlug, tripSlug));
 
         // Act
         cut.Find(".amount-input").Change("10");
@@ -637,7 +637,7 @@ public class TransactionFormTests : BunitContext
     }
 
     [Fact]
-    public async Task AddExpense_WithTimezone_ShouldSaveDateTimeOffsetCorrectly()
+    public async Task ExpenseEditor_WithTimezone_ShouldSaveDateTimeOffsetCorrectly()
     {
         // Arrange
         var tripSlug = "test-trip";
@@ -654,7 +654,7 @@ public class TransactionFormTests : BunitContext
             .Callback<string, Transaction, string, bool, Dictionary<string, byte[]>>((s, t, d, b, a) => savedTransaction = t)
             .Returns(Task.CompletedTask);
 
-        var cut = Render<AddExpense>(parameters => parameters.Add(p => p.tripSlug, tripSlug));
+        var cut = Render<ExpenseEditor>(parameters => parameters.Add(p => p.tripSlug, tripSlug));
 
         // Act
         cut.Find(".amount-input").Change("10");
@@ -687,7 +687,7 @@ public class TransactionFormTests : BunitContext
     }
 
     [Fact]
-    public async Task AddExpense_WithDifferentTimezone_ShouldNotCrash()
+    public async Task ExpenseEditor_WithDifferentTimezone_ShouldNotCrash()
     {
         // Arrange
         var tripSlug = "test-trip";
@@ -704,7 +704,7 @@ public class TransactionFormTests : BunitContext
             .Callback<string, Transaction, string, bool, Dictionary<string, byte[]>>((s, t, d, b, a) => savedTransaction = t)
             .Returns(Task.CompletedTask);
 
-        var cut = Render<AddExpense>(parameters => parameters.Add(p => p.tripSlug, tripSlug));
+        var cut = Render<ExpenseEditor>(parameters => parameters.Add(p => p.tripSlug, tripSlug));
 
         // Act
         cut.Find(".amount-input").Change("10");
@@ -746,8 +746,8 @@ public class TransactionFormTests : BunitContext
         _alertMock.Setup(a => a.ConfirmAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<AlertType>()))
             .ReturnsAsync(true);
 
-        nav.NavigateTo($"/trip/{tripSlug}/add-expense?edit={transactionId}");
-        var cut = Render<AddExpense>(parameters => parameters
+        nav.NavigateTo($"/trip/{tripSlug}/expense?edit={transactionId}");
+        var cut = Render<ExpenseEditor>(parameters => parameters
             .Add(p => p.tripSlug, tripSlug)
         );
 
@@ -766,7 +766,7 @@ public class TransactionFormTests : BunitContext
     }
 
     [Fact]
-    public async Task AddExpense_Back_ShouldNavigateToMemberDashboardWhenMemberPresent()
+    public async Task ExpenseEditor_Back_ShouldNavigateToMemberDashboardWhenMemberPresent()
     {
         // Arrange
         var tripSlug = "test-trip";
@@ -779,9 +779,9 @@ public class TransactionFormTests : BunitContext
         _storageMock.Setup(s => s.GetTripConfigAsync(tripSlug)).ReturnsAsync(config);
         
         var nav = Services.GetRequiredService<NavigationManager>();
-        nav.NavigateTo($"/trip/{tripSlug}/add-expense?member={memberSlug}&currency=USD");
+        nav.NavigateTo($"/trip/{tripSlug}/expense?member={memberSlug}&currency=USD");
 
-        var cut = Render<AddExpense>(parameters => parameters.Add(p => p.tripSlug, tripSlug));
+        var cut = Render<ExpenseEditor>(parameters => parameters.Add(p => p.tripSlug, tripSlug));
 
         // Act
         await cut.Find("header .icon-btn").ClickAsync();

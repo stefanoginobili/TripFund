@@ -126,7 +126,7 @@ namespace TripFund.App.Components.Pages
         private void EditTransaction(Transaction t)
         {
             isTransactionModalOpen = false;
-            var route = t.Type == "contribution" ? "add-contribution" : "add-expense";
+            var route = t.Type == "contribution" ? "contribution" : "expense";
             Nav.NavigateTo($"/trip/{tripSlug}/{route}?edit={t.Id}&currency={selectedCurrency}");
         }
 

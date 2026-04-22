@@ -44,7 +44,7 @@ public class EmailReceiptTests : BunitContext
     }
 
     [Fact]
-    public async Task AddContribution_ShouldPromptAndSendEmail_IfAccepted()
+    public async Task ContributionEditor_ShouldPromptAndSendEmail_IfAccepted()
     {
         // Arrange
         var tripSlug = "test-trip";
@@ -73,7 +73,7 @@ public class EmailReceiptTests : BunitContext
         _alertMock.Setup(a => a.ConfirmAsync("Invia ricevuta", It.IsAny<string>(), "Sì", "No", It.IsAny<AlertType>()))
             .ReturnsAsync(true);
 
-        var cut = Render<AddContribution>(parameters => parameters.Add(p => p.tripSlug, tripSlug));
+        var cut = Render<ContributionEditor>(parameters => parameters.Add(p => p.tripSlug, tripSlug));
 
         // Act
         cut.Find(".amount-input").Change("500");
@@ -99,7 +99,7 @@ public class EmailReceiptTests : BunitContext
     }
 
     [Fact]
-    public async Task AddContribution_ShouldNotSendEmail_IfDeclined()
+    public async Task ContributionEditor_ShouldNotSendEmail_IfDeclined()
     {
         // Arrange
         var tripSlug = "test-trip";
@@ -120,7 +120,7 @@ public class EmailReceiptTests : BunitContext
         _alertMock.Setup(a => a.ConfirmAsync("Invia ricevuta", It.IsAny<string>(), "Sì", "No", It.IsAny<AlertType>()))
             .ReturnsAsync(false);
 
-        var cut = Render<AddContribution>(parameters => parameters.Add(p => p.tripSlug, tripSlug));
+        var cut = Render<ContributionEditor>(parameters => parameters.Add(p => p.tripSlug, tripSlug));
 
         // Act
         cut.Find(".amount-input").Change("500");
@@ -142,7 +142,7 @@ public class EmailReceiptTests : BunitContext
     }
 
     [Fact]
-    public async Task AddContribution_ShouldPromptAndSendEmail_EvenIfNoEmailConfigured()
+    public async Task ContributionEditor_ShouldPromptAndSendEmail_EvenIfNoEmailConfigured()
     {
         // Arrange
         var tripSlug = "test-trip";
@@ -171,7 +171,7 @@ public class EmailReceiptTests : BunitContext
         _alertMock.Setup(a => a.ConfirmAsync("Invia ricevuta", It.IsAny<string>(), "Sì", "No", It.IsAny<AlertType>()))
             .ReturnsAsync(true);
 
-        var cut = Render<AddContribution>(parameters => parameters.Add(p => p.tripSlug, tripSlug));
+        var cut = Render<ContributionEditor>(parameters => parameters.Add(p => p.tripSlug, tripSlug));
 
         // Act
         cut.Find(".amount-input").Change("500");

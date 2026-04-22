@@ -1,4 +1,4 @@
-@page "/trip/{tripSlug}/add-expense"
+@page "/trip/{tripSlug}/expense"
 
 <div class="app-page">
     <header class="app-header">
@@ -44,10 +44,6 @@
     else
     {
         <div class="content">
-            @if (config.Currencies.Count > 1)
-            {
-                <CurrencySelector Currencies="@(new[] { selectedCurrency })" SelectedCurrency="@selectedCurrency" OnCurrencySelected="SelectCurrency" />
-            }
             <div class="form-container-vibe">
                 <div class="amount-tile amount-tile-expense">
                     <div class="tile-icon">
@@ -58,7 +54,7 @@
                     </div>
                     <label class="tile-label">IMPORTO SPESA</label>
                     <div class="amount-section">
-                        <span class="currency-symbol">@GetCurrencySymbol()</span>
+                        <span class="currency-symbol">@selectedCurrency</span>
                         <input type="text" inputmode="@(GetDecimals() > 0 ? "decimal" : "numeric")" class="amount-input" value="@totalAmount.ToString("F" + GetDecimals())" @onchange="OnAmountChanged" onfocus="appLogic.selectText(this)" placeholder="@(GetDecimals() > 0 ? "0," + new string('0', GetDecimals()) : "0")" />
                     </div>
                 </div>
