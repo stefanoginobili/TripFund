@@ -25,7 +25,7 @@ public class RemoteStorageLogger : IRemoteStorageLogger
         lock (_lock)
         {
             var prefix = string.IsNullOrEmpty(CurrentFolderName) ? "" : $"[{CurrentFolderName}] ";
-            _log.AppendLine($"[{DateTime.Now:yyyy-MM-dd HH:mm:ss.fff}] API CALL: {method} {url}");
+            _log.AppendLine($"[{DateTime.UtcNow:yyyy-MM-dd HH:mm:ss.fff} Z] API CALL: {method} {url}");
             _log.AppendLine($"             Description: {prefix}{description}");
             _log.AppendLine();
         }
@@ -36,7 +36,7 @@ public class RemoteStorageLogger : IRemoteStorageLogger
         lock (_lock)
         {
             var prefix = string.IsNullOrEmpty(CurrentFolderName) ? "" : $"[{CurrentFolderName}] ";
-            _log.AppendLine($"[{DateTime.Now:yyyy-MM-dd HH:mm:ss}] INFO: {prefix}{message}");
+            _log.AppendLine($"[{DateTime.UtcNow:yyyy-MM-dd HH:mm:ss.fff} Z] INFO: {prefix}{message}");
         }
     }
 
@@ -45,7 +45,7 @@ public class RemoteStorageLogger : IRemoteStorageLogger
         lock (_lock)
         {
             var prefix = string.IsNullOrEmpty(CurrentFolderName) ? "" : $"[{CurrentFolderName}] ";
-            _log.AppendLine($"[{DateTime.Now:yyyy-MM-dd HH:mm:ss}] WARNING: {prefix}{message}");
+            _log.AppendLine($"[{DateTime.UtcNow:yyyy-MM-dd HH:mm:ss.fff} Z] WARNING: {prefix}{message}");
         }
     }
 
@@ -54,7 +54,7 @@ public class RemoteStorageLogger : IRemoteStorageLogger
         lock (_lock)
         {
             var prefix = string.IsNullOrEmpty(CurrentFolderName) ? "" : $"[{CurrentFolderName}] ";
-            _log.AppendLine($"[{DateTime.Now:yyyy-MM-dd HH:mm:ss}] ERROR: {prefix}{message}");
+            _log.AppendLine($"[{DateTime.UtcNow:yyyy-MM-dd HH:mm:ss.fff} Z] ERROR: {prefix}{message}");
             if (ex != null)
             {
                 _log.AppendLine($"            Exception: {ex.Message}");

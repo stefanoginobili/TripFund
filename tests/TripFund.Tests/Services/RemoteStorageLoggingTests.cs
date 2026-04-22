@@ -48,6 +48,22 @@ public class RemoteStorageLoggingTests : IDisposable
     }
 
     [Fact]
+    public void LogEntry_FollowsCorrectTimestampFormat()
+    {
+        // Arrange
+        var logger = new RemoteStorageLogger();
+        
+        // Act
+        logger.LogInfo("Testing format");
+        var log = logger.GetLogContent();
+        
+        // Assert: [yyyy-MM-dd HH:mm:ss.fff Z]
+        // Regex to match: [2023-10-27 10:00:00.000 Z]
+        var pattern = @"\[\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d{3} Z\] INFO: Testing format";
+        Assert.Matches(pattern, log);
+    }
+
+    [Fact]
     public async Task LogApiCall_IncludesFolderName_WhenSet()
     {
         // Arrange
