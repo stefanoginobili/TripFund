@@ -17,8 +17,10 @@ public class NormalizeSplitTests
             var field = typeof(ConflictResolverModal).GetField("currentConfig", BindingFlags.NonPublic | BindingFlags.Instance);
             field?.SetValue(this, config);
             
-            var method = typeof(ConflictResolverModal).GetMethod("NormalizeSplit", BindingFlags.NonPublic | BindingFlags.Instance);
-            return (string)method?.Invoke(this, new object[] { t })!;
+            var method = typeof(ConflictResolverModal).GetMethod("NormalizeSplit", BindingFlags.NonPublic | BindingFlags.Instance)
+                ?? throw new Exception("Method NormalizeSplit not found");
+            var result = method.Invoke(this, new object?[] { t });
+            return (string)result!;
         }
     }
 

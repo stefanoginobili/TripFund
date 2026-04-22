@@ -1,7 +1,7 @@
 @using TripFund.App.Models
 @using TripFund.App.Utilities
 
-@if (IsVisible)
+@if (IsVisible && Conflict != null)
 {
     <div class="modal-backdrop-vibe modal-z-resolver" @onclick="Close">
         <div class="modal-sheet-vibe" @onclick:stopPropagation="true">

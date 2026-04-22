@@ -80,7 +80,7 @@ public class ConflictResolutionLogicTests
         await _storage.ResolveConfigConflictAsync(tripSlug, winner, resolverDevice);
 
         // Assert
-        var folders = Directory.GetDirectories(configPath).Select(Path.GetFileName).ToList();
+        var folders = Directory.GetDirectories(configPath).Select(Path.GetFileName).Where(f => f != null).Cast<string>().ToList();
         Assert.Contains(folders, f => f.Contains("_RES_"));
         
         var finalConfig = await _storage.GetTripConfigAsync(tripSlug);
@@ -142,7 +142,7 @@ public class ConflictResolutionLogicTests
         await _storage.ResolveConflictAsync(tripSlug, txId, null, resolverDevice);
 
         // Assert
-        var folders = Directory.GetDirectories(detailsPath).Select(Path.GetFileName).ToList();
+        var folders = Directory.GetDirectories(detailsPath).Select(Path.GetFileName).Where(f => f != null).Cast<string>().ToList();
         var resFolder = folders.First(f => f.Contains("_RES_"));
         var leaf = new LocalLeafFolder(Path.Combine(detailsPath, resFolder));
         
