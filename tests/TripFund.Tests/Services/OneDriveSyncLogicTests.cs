@@ -154,7 +154,7 @@ public class OneDriveSyncLogicTests : IDisposable
             // 3. UPLOAD PHASE mocks
             // Prepare a local pending upload
             await _localStorage.SaveTripConfigAsync(tripSlug, new TripConfig { Name = "Local Trip" }, deviceId);
-            // This creates config_versioned/001_NEW_local-device-id/ with .active
+            // This creates config_versioned/001_NEW_local-device-id/
 
             // Expect upload of .zip directly
             _server.Given(Request.Create().WithPath($"/me/drive/items/packages_id:/pack_*.zip:/content").UsingPut())
@@ -167,7 +167,6 @@ public class OneDriveSyncLogicTests : IDisposable
             // Assert
             // Verify Download worked
             var remoteLeaf = Path.Combine(localTripPath, "config_versioned", "002_UPD_remote-dev");
-            Assert.True(File.Exists(Path.Combine(remoteLeaf, ".active")));
             Assert.True(File.Exists(Path.Combine(remoteLeaf, ".metadata")));
             Assert.True(File.Exists(Path.Combine(remoteLeaf, ".data", "trip_config.json")));
 

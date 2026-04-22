@@ -177,7 +177,8 @@ public class LocalTripStorageService
             { "createdAt", DateTime.UtcNow.ToString("yyyy-MM-ddTHH:mm:ss.fffZ") }
         };
 
-        var folderName = await _engine.CommitAsync(configPath, deviceId, kind, changedFiles, metadata: metadata, contentType: "tripfund/trip-config");
+        var tempRoot = Path.Combine(_tripsPath, tripSlug, "temp", "commits", "config");
+        var folderName = await _engine.CommitAsync(configPath, deviceId, kind, changedFiles, metadata: metadata, contentType: "tripfund/trip-config", tempRootPath: tempRoot);
         await RegisterPendingUploadAsync(tripSlug, Path.Combine("config_versioned", folderName));
     }
 
@@ -328,18 +329,26 @@ public class LocalTripStorageService
                             { "contentType", "tripfund/transaction-attachment" }
                         };
 
-                        var leafDir = Path.Combine(attachmentsDir, attachmentName);
-                        var attLeaf = new LocalLeafFolder(leafDir);
+                        var tempAttDir = Path.Combine(_tripsPath, tripSlug, "temp", "commits", "attachments", transaction.Id, attachmentName);
+                        if (Directory.Exists(tempAttDir)) Directory.Delete(tempAttDir, true);
+                        Directory.CreateDirectory(tempAttDir);
+
+                        var attLeaf = new LocalLeafFolder(tempAttDir);
                         await attLeaf.WriteDataFileAsync(attMetadata.OriginalName, content);
                         await attLeaf.SaveMetadataAsync(attMetadataDict);
-                        await attLeaf.WriteMarkerAsync(".active");
+
+                        var finalAttDir = Path.Combine(attachmentsDir, attachmentName);
+                        if (Directory.Exists(finalAttDir)) Directory.Delete(finalAttDir, true);
+                        Directory.Move(tempAttDir, finalAttDir);
+
                         await RegisterPendingUploadAsync(tripSlug, Path.Combine("transactions", transaction.Id, "attachments", attachmentName));
                     }
                 }
             }
         }
 
-        var folderName = await _engine.CommitAsync(detailsRoot, deviceId, kind, changedFiles, metadata: metadata, contentType: "tripfund/transaction-detail");
+        var tempRoot = Path.Combine(_tripsPath, tripSlug, "temp", "commits", "transactions", transaction.Id);
+        var folderName = await _engine.CommitAsync(detailsRoot, deviceId, kind, changedFiles, metadata: metadata, contentType: "tripfund/transaction-detail", tempRootPath: tempRoot);
         await RegisterPendingUploadAsync(tripSlug, Path.Combine("transactions", transaction.Id, "details_versioned", folderName));
     }
 
@@ -447,7 +456,8 @@ public class LocalTripStorageService
             { "createdAt", DateTime.UtcNow.ToString("yyyy-MM-ddTHH:mm:ss.fffZ") }
         };
 
-        var folderName = await _engine.CommitAsync(configRoot, deviceId, CommitKind.Res, changedFiles, metadata: metadata, resolvedFolders: resolvedFolders, contentType: "tripfund/trip-config");
+        var tempRoot = Path.Combine(_tripsPath, tripSlug, "temp", "commits", "config");
+        var folderName = await _engine.CommitAsync(configRoot, deviceId, CommitKind.Res, changedFiles, metadata: metadata, resolvedFolders: resolvedFolders, contentType: "tripfund/trip-config", tempRootPath: tempRoot);
         await RegisterPendingUploadAsync(tripSlug, Path.Combine("config_versioned", folderName));
     }
 
@@ -534,7 +544,8 @@ public class LocalTripStorageService
             { "createdAt", DateTime.UtcNow.ToString("yyyy-MM-ddTHH:mm:ss.fffZ") }
         };
 
-        var folderName = await _engine.CommitAsync(detailsRoot, deviceId, CommitKind.Res, changedFiles, metadata: metadata, resolvedFolders: resolvedFolders, contentType: "tripfund/transaction-detail");
+        var tempRoot = Path.Combine(_tripsPath, tripSlug, "temp", "commits", "transactions", transactionId);
+        var folderName = await _engine.CommitAsync(detailsRoot, deviceId, CommitKind.Res, changedFiles, metadata: metadata, resolvedFolders: resolvedFolders, contentType: "tripfund/transaction-detail", tempRootPath: tempRoot);
         await RegisterPendingUploadAsync(tripSlug, Path.Combine("transactions", transactionId, "details_versioned", folderName));
     }
 

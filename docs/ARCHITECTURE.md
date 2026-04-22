@@ -42,7 +42,6 @@ Every Leaf folder (whether a version folder or an attachment folder) MUST strict
     - `device`: The `deviceId` that initiated the commit.
     - `createdAt`: The creation time in `yyyy-MM-ddTHH:mm:ss.fffZ` format.
     - `contentType`: Explicit semantic type (e.g., `tripfund/trip-config`, `tripfund/transaction-detail`, `tripfund/transaction-attachment`).
-- **`.active`**: A local-only empty marker file created as the absolute LAST step of a successful local commit or remote package extraction.
 
 ### 3.2. Version Sub-Folder Naming Convention
 Versioned folders (like Config or details_versioned) contain sub-folders adhering to this regex:
@@ -71,10 +70,11 @@ Commits are **atomic**. A single version bump MUST be able to process a batch of
 When a user modifies data and saves:
 1. Scan the versioned folder for all sub-folders to find the latest state.
 2. Calculate the next sequence number: `NextSeq = MAX([nnn]) + 1`.
-3. Create the new folder and its `.data/` subdirectory.
-4. Populate `.data/` resolving the changes against the previous state.
-5. Write the `.metadata` file.
-6. Commit the operation atomically to the file system.
+3. Create a temporary work directory (e.g., `temp/commits/`).
+4. Build the new leaf folder and its `.data/` subdirectory inside the temporary directory.
+5. Populate `.data/` resolving the changes against the previous state.
+6. Write the `.metadata` file.
+7. Once all files are written, atomically `Move` the completed folder to its final destination.
 
 ### 3.5. Conflict Detection & Resolution (DAG)
 The versioning system operates as a **Directed Acyclic Graph (DAG)** of folders.
@@ -113,9 +113,8 @@ A local-only file in the trip's `sync/` subfolder tracks sync progress:
 2. **Download Phase**:
     - Lists all files in `/packages/`.
     - Discards packages created by the local device and those already in `appliedPackages`.
-    - Downloads and extracts remaining packages in alphabetical order (timestamp-based).
-    - Merges content into the local filesystem (overwriting existing files).
-    - Marks all extracted leaf folders as `.active`.
+    - Downloads and extracts remaining packages in alphabetical order into a temporary staging folder (`temp/packages/expanded/`).
+    - Once all packages are extracted successfully, atomically `Move` the extracted leaf folders into the local trip directory (overwriting existing folders if necessary).
     - Updates `appliedPackages`.
 3. **Integrity & Conflict Check**:
     - Scans for local conflicts. If any are detected, the **Upload phase is aborted** until the user resolves them.
@@ -148,8 +147,8 @@ Global JSON files (`app_settings.json`, `known_trips.json`, and `sync/sync_state
 3. Replace the original file with the temporary file using an atomic `Move` operation.
 4. If a `JsonException` occurs during reading (indicating corruption), the system gracefully recovers by returning a default/empty state to prevent a startup loop.
 
-### 6.2. Leaf Folder Integrity (".active" Marker)
-The versioning and sync systems rely on the integrity of "Leaf" folders. A folder is considered valid and committed ONLY if it contains an `.active` marker. This marker is written only after `.data/` and `.metadata` have been successfully committed to disk.
+### 6.2. Leaf Folder Integrity (Atomic Move)
+The versioning and sync systems ensure the integrity of "Leaf" folders through atomicity. Leaf folders are always constructed in a temporary location and moved to their final destination only after all files (`.data/` and `.metadata`) have been successfully committed to disk. This prevents partial folders from being read or synchronized.
 
 ### 6.3. Initial Import Protection
 When "Joining" or "Creating" a trip, the application performs multiple steps (registry entry, directory creation, initial sync). To handle failures during this multi-step process:

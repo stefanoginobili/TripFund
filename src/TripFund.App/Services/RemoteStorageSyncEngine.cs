@@ -91,18 +91,23 @@ public class RemoteStorageSyncEngine
             {
                 logger.LogInfo($"Found {toDownload.Count} new packages to apply.");
                 var tempPath = Path.Combine(localTripPath, "temp", "packages");
-                if (!Directory.Exists(tempPath)) Directory.CreateDirectory(tempPath);
+                var downloadPath = Path.Combine(tempPath, "downloaded");
+                var expandedPath = Path.Combine(tempPath, "expanded");
+                
+                if (Directory.Exists(tempPath)) Directory.Delete(tempPath, true);
+                Directory.CreateDirectory(downloadPath);
+                Directory.CreateDirectory(expandedPath);
 
                 foreach (var package in toDownload)
                 {
-                    logger.LogInfo($"Applying package {package.Name}...");
+                    logger.LogInfo($"Downloading package {package.Name}...");
                     var zipBytes = await fileSystem.DownloadFileContentAsync(package.Id, entry.RemoteStorage.Parameters);
                     if (zipBytes == null) throw new Exception($"Failed to download package {package.Name}");
 
-                    var zipFile = Path.Combine(tempPath, package.Name);
+                    var zipFile = Path.Combine(downloadPath, package.Name);
                     await File.WriteAllBytesAsync(zipFile, zipBytes);
 
-                    // Extract and Merge
+                    // Extract into expanded folder
                     try
                     {
                         using (var archive = ZipFile.OpenRead(zipFile))
@@ -112,29 +117,36 @@ public class RemoteStorageSyncEngine
                                 if (string.IsNullOrEmpty(zipEntry.Name)) continue; // Directory entry
 
                                 var entryPath = zipEntry.FullName.Replace('\\', '/');
-                                var targetFile = Path.Combine(localTripPath, entryPath);
+                                var targetFile = Path.Combine(expandedPath, entryPath);
                                 var targetDir = Path.GetDirectoryName(targetFile);
                                 if (!string.IsNullOrEmpty(targetDir) && !Directory.Exists(targetDir)) Directory.CreateDirectory(targetDir);
 
                                 zipEntry.ExtractToFile(targetFile, true);
                             }
                         }
-
-                        // Mark extracted leaf folders as .active
-                        await MarkExtractedLeavesAsActiveAsync(zipFile);
-
-                        // Update sync state
-                        syncState.Sync.Remote.AppliedPackages.Add(package.Name);
-
-                        await _localStorage.SaveSyncStateAsync(tripSlug, syncState);
-                        File.Delete(zipFile);
+                        // Package is kept in 'downloaded' until the end of the phase for clarity, 
+                        // or deleted here if memory/storage is an issue. Keeping it simple as per request.
                     }
                     catch (Exception ex)
                     {
-                        logger.LogError($"Failed to apply package {package.Name}", ex);
+                        logger.LogError($"Failed to extract package {package.Name}", ex);
                         throw;
                     }
                 }
+
+                // Move expanded folders to final destination
+                logger.LogInfo("Applying extracted updates to local storage...");
+                await MoveExpandedFoldersAsync(expandedPath, localTripPath);
+
+                // Update sync state
+                foreach (var package in toDownload)
+                {
+                    syncState.Sync.Remote.AppliedPackages.Add(package.Name);
+                }
+                await _localStorage.SaveSyncStateAsync(tripSlug, syncState);
+                
+                // Cleanup expanded path
+                Directory.Delete(tempPath, true);
             }
             else
             {
@@ -181,13 +193,6 @@ public class RemoteStorageSyncEngine
                             {
                                 logger.LogWarning($"Pending folder {pending.Path} not found locally. Skipping.");
                                 uploadedPaths.Add(pending.Path);
-                                continue;
-                            }
-
-                            // Only pack if .active is present
-                            if (!File.Exists(Path.Combine(fullPath, ".active")))
-                            {
-                                logger.LogWarning($"Pending folder {pending.Path} is not marked as .active. Skipping.");
                                 continue;
                             }
 
@@ -240,7 +245,29 @@ public class RemoteStorageSyncEngine
         {
             onSyncStateChanged?.Invoke(tripSlug, false);
             await SaveSyncLogLocallyAsync(tripSlug, fileSystem);
+            await _localStorage.CleanupTempFoldersAsync();
         }
+    }
+
+    private async Task MoveExpandedFoldersAsync(string sourceRoot, string targetRoot)
+    {
+        // Recursively find leaf folders in expanded/ and move them to final destination.
+        // Leaf folders are identified by containing a .metadata file (as per ARCHITECTURE.md).
+        var directories = Directory.GetDirectories(sourceRoot, "*", SearchOption.AllDirectories);
+        foreach (var dir in directories)
+        {
+            if (File.Exists(Path.Combine(dir, ".metadata")))
+            {
+                var relativePath = Path.GetRelativePath(sourceRoot, dir);
+                var finalPath = Path.Combine(targetRoot, relativePath);
+                var finalDir = Path.GetDirectoryName(finalPath);
+                if (!string.IsNullOrEmpty(finalDir) && !Directory.Exists(finalDir)) Directory.CreateDirectory(finalDir);
+
+                if (Directory.Exists(finalPath)) Directory.Delete(finalPath, true);
+                Directory.Move(dir, finalPath);
+            }
+        }
+        await Task.CompletedTask;
     }
 
     private bool HasPendingUploads(string tripSlug)
@@ -309,28 +336,6 @@ public class RemoteStorageSyncEngine
         catch
         {
             return false;
-        }
-    }
-
-    private async Task MarkExtractedLeavesAsActiveAsync(string zipFilePath)
-    {
-        var rootPath = Path.GetDirectoryName(Path.GetDirectoryName(Path.GetDirectoryName(zipFilePath))); // Up from temp/packages/
-        if (rootPath == null) return;
-
-        using var archive = ZipFile.OpenRead(zipFilePath);
-        var leafFolders = archive.Entries
-            .Select(e => e.FullName.Replace('\\', '/'))
-            .Select(f => Path.GetDirectoryName(f))
-            .Where(d => !string.IsNullOrEmpty(d))
-            .Distinct();
-
-        foreach (var folder in leafFolders)
-        {
-            var activeMarker = Path.Combine(rootPath, folder!, ".active");
-            if (!File.Exists(activeMarker))
-            {
-                await File.WriteAllTextAsync(activeMarker, "");
-            }
         }
     }
 

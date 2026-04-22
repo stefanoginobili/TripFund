@@ -266,15 +266,21 @@ public class VersionedStorageEngine
         List<string>? deletedFiles = null,
         Dictionary<string, string>? metadata = null,
         IEnumerable<string>? resolvedFolders = null,
-        string? contentType = null)
+        string? contentType = null,
+        string? tempRootPath = null)
     {
         var versions = GetVersionFolders(rootPath);
         int nextSeq = (versions.Count == 0) ? 1 : versions.Max(v => v.Sequence) + 1;
         string folderName = $"{nextSeq:D3}_{kind.ToString().ToUpperInvariant()}_{deviceId}";
-        string newDirPath = Path.Combine(rootPath, folderName);
-        Directory.CreateDirectory(newDirPath);
 
-        var leaf = new LocalLeafFolder(newDirPath);
+        string workDirPath = string.IsNullOrEmpty(tempRootPath)
+            ? Path.Combine(rootPath, folderName)
+            : Path.Combine(tempRootPath, folderName);
+
+        if (Directory.Exists(workDirPath)) Directory.Delete(workDirPath, true);
+        Directory.CreateDirectory(workDirPath);
+
+        var leaf = new LocalLeafFolder(workDirPath);
         var metaDict = metadata != null ? new Dictionary<string, string>(metadata) : new Dictionary<string, string>();
 
         if (!metaDict.ContainsKey("author")) metaDict["author"] = "unknown";
@@ -283,56 +289,59 @@ public class VersionedStorageEngine
         if (!string.IsNullOrEmpty(contentType)) metaDict["contentType"] = contentType;
 
         if (kind == CommitKind.Res && resolvedFolders != null)
-
         {
             metaDict["resolved_versions"] = string.Join(",", resolvedFolders);
         }
 
         await leaf.SaveMetadataAsync(metaDict);
-        await leaf.EnsureDataDirectoryAsync();
 
-        if (kind == CommitKind.Del)
+        if (kind != CommitKind.Del)
         {
-            return folderName;
-        }
+            await leaf.EnsureDataDirectoryAsync();
 
-        // For 'upd' and 'res', we need to copy previous state
-        if (kind == CommitKind.Upd || kind == CommitKind.Res)
-        {
-            // We need to find the latest version BEFORE nextSeq
-            var previousVersions = versions.Where(v => v.Sequence < nextSeq).ToList();
-            if (previousVersions.Any())
+            // For 'upd' and 'res', we need to copy previous state
+            if (kind == CommitKind.Upd || kind == CommitKind.Res)
             {
-                var maxPrevSeq = previousVersions.Max(v => v.Sequence);
-                var latestOfPrev = previousVersions.Where(v => v.Sequence == maxPrevSeq).ToList();
-                
-                // Prioritize 'res' if it exists at the previous level
-                var resOfPrev = latestOfPrev.Where(v => v.Kind == CommitKind.Res).ToList();
-                var sourceInfo = resOfPrev.Any() ? resOfPrev.First() : latestOfPrev.First();
-
-                var prevLeaf = new LocalLeafFolder(Path.Combine(rootPath, sourceInfo.FolderName));
-                
-                if (!(await prevLeaf.IsDataEmptyAsync()))
+                // We need to find the latest version BEFORE nextSeq
+                var previousVersions = versions.Where(v => v.Sequence < nextSeq).ToList();
+                if (previousVersions.Any())
                 {
-                    var prevFiles = await prevLeaf.ListDataFilesAsync();
-                    foreach (var fileName in prevFiles)
+                    var maxPrevSeq = previousVersions.Max(v => v.Sequence);
+                    var latestOfPrev = previousVersions.Where(v => v.Sequence == maxPrevSeq).ToList();
+
+                    // Prioritize 'res' if it exists at the previous level
+                    var resOfPrev = latestOfPrev.Where(v => v.Kind == CommitKind.Res).ToList();
+                    var sourceInfo = resOfPrev.Any() ? resOfPrev.First() : latestOfPrev.First();
+
+                    var prevLeaf = new LocalLeafFolder(Path.Combine(rootPath, sourceInfo.FolderName));
+
+                    if (!(await prevLeaf.IsDataEmptyAsync()))
                     {
-                        if (deletedFiles != null && deletedFiles.Contains(fileName)) continue;
-                        if (changedFiles.ContainsKey(fileName)) continue;
-                        
-                        var content = await prevLeaf.ReadDataFileAsync(fileName);
-                        await leaf.WriteDataFileAsync(fileName, content);
+                        var prevFiles = await prevLeaf.ListDataFilesAsync();
+                        foreach (var fileName in prevFiles)
+                        {
+                            if (deletedFiles != null && deletedFiles.Contains(fileName)) continue;
+                            if (changedFiles.ContainsKey(fileName)) continue;
+
+                            var content = await prevLeaf.ReadDataFileAsync(fileName);
+                            await leaf.WriteDataFileAsync(fileName, content);
+                        }
                     }
                 }
             }
+
+            foreach (var file in changedFiles)
+            {
+                await leaf.WriteDataFileAsync(file.Key, file.Value);
+            }
         }
 
-        foreach (var file in changedFiles)
+        if (!string.IsNullOrEmpty(tempRootPath))
         {
-            await leaf.WriteDataFileAsync(file.Key, file.Value);
+            string finalPath = Path.Combine(rootPath, folderName);
+            if (Directory.Exists(finalPath)) Directory.Delete(finalPath, true);
+            Directory.Move(workDirPath, finalPath);
         }
-
-        await leaf.WriteMarkerAsync(".active");
 
         return folderName;
     }
