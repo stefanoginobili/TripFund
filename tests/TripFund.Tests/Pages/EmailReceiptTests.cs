@@ -36,6 +36,9 @@ public class EmailReceiptTests : BunitContext
 
         // Mock JS Interop for scrolling (called in OnAfterRender)
         JSInterop.SetupVoid("appLogic.scrollIntoView", _ => true);
+        JSInterop.SetupVoid("appLogic.lockScroll");
+        JSInterop.SetupVoid("appLogic.unlockScroll");
+        JSInterop.SetupVoid("appLogic.positionMenu", _ => true);
 
         // Mock AppSettings
         var settings = new AppSettings { AuthorName = "Test Author", DeviceId = "test-author" };

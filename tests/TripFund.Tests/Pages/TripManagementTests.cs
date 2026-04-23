@@ -32,6 +32,10 @@ public class TripManagementTests : BunitContext
         Services.AddSingleton(_remoteStorageMock.Object);
         Services.AddSingleton(_alertMock.Object);
         Services.AddSingleton(_datePickerMock.Object);
+
+        JSInterop.SetupVoid("appLogic.lockScroll");
+        JSInterop.SetupVoid("appLogic.unlockScroll");
+        JSInterop.SetupVoid("appLogic.positionMenu", _ => true);
     }
 
     [Fact]
@@ -194,13 +198,13 @@ public class TripManagementTests : BunitContext
         await cut.Find(".avatar-input-box").ClickAsync();
         
         // Assert picker is open
-        cut.FindAll(".emoji-picker-popover").Should().NotBeEmpty();
+        cut.FindAll(".emoji-picker-container").Should().NotBeEmpty();
 
         // Click overlay to close
         await cut.Find(".popover-overlay").ClickAsync();
 
         // Assert picker is closed
-        cut.FindAll(".emoji-picker-popover").Should().BeEmpty();
+        cut.FindAll(".emoji-picker-container").Should().BeEmpty();
     }
 
     [Fact]

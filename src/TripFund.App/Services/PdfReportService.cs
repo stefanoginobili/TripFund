@@ -54,10 +54,16 @@ public class PdfReportService
 
             // Main Table
             yPos = DrawExpenseTable(gfx, document, ref page, config!, expenses, yPos);
-            yPos += 30;
+        }
 
-            // Summary Tiles
-            DrawSummaryTiles(gfx, document, ref page, config!, transactions!, yPos);
+        // Summary Tiles - ALWAYS on a new page
+        var summaryPage = document.AddPage();
+        using (var summaryGfx = XGraphics.FromPdfPage(summaryPage))
+        {
+            var titleFont = new XFont("Sans-Serif", 14, XFontStyleEx.Bold);
+            summaryGfx.DrawString("Riepilogo Valute", titleFont, XBrushes.Black, Margin, Margin + 15);
+            
+            DrawSummaryTiles(summaryGfx, document, ref summaryPage, config!, transactions!, Margin + 35);
         }
 
         // Add Page Numbers in Footer
@@ -174,12 +180,10 @@ public class PdfReportService
         var monoFont = new XFont("Monospace", 9, XFontStyleEx.Regular);
         var monoBoldFont = new XFont("Monospace", 9, XFontStyleEx.Bold);
 
-        yPos += 5; // Small buffer instead of title
-
         int membersCount = config.Members?.Count ?? 0;
         double spacing = 10;
         double tileWidth = (PageWidth - 2 * Margin - 2 * spacing) / 3;
-        double tileHeight = 85;
+        double tileHeight = 110;
         double currentX = Margin;
         int count = 0;
 
@@ -221,7 +225,8 @@ public class PdfReportService
             var diffBrush = diff <= 0 ? XBrushes.Green : XBrushes.Red;
 
             // Draw the 3-value block aligned to the bottom right
-            DrawPaddedSummaryLine(gfx, "Totale:", totalStr, maxLen, monoBoldFont, XBrushes.Black, currentX, yPos + tileHeight - 52, tileWidth, charWidth);
+            // Adjusted offsets to avoid overlap with currency name and fit background
+            DrawPaddedSummaryLine(gfx, "Totale:", totalStr, maxLen, monoBoldFont, XBrushes.Black, currentX, yPos + tileHeight - 50, tileWidth, charWidth);
             DrawPaddedSummaryLine(gfx, "Quota:", quotaStr, maxLen, monoFont, XBrushes.Gray, currentX, yPos + tileHeight - 35, tileWidth, charWidth);
             DrawPaddedSummaryLine(gfx, "Differenza:", diffStr, maxLen, monoFont, diffBrush, currentX, yPos + tileHeight - 20, tileWidth, charWidth);
 

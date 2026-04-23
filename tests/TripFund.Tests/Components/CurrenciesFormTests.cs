@@ -22,6 +22,9 @@ namespace TripFund.Tests.Components
             
             // Mock JS Interop
             JSInterop.SetupVoid("appLogic.selectText", _ => true);
+            JSInterop.SetupVoid("appLogic.lockScroll");
+            JSInterop.SetupVoid("appLogic.unlockScroll");
+            JSInterop.SetupVoid("appLogic.positionMenu", _ => true);
         }
 
         [Fact]

@@ -36,7 +36,6 @@ namespace TripFund.App.Components.Pages
         private string authorName = "";
         private bool isSubmitting = false;
         private bool isMemberSelectorOpen = false;
-        private bool isMenuOpen = false;
         private bool shouldScroll = false;
 
         protected override async Task OnInitializedAsync()
@@ -204,11 +203,8 @@ namespace TripFund.App.Components.Pages
             }
         }
 
-        private void ToggleMenu() => isMenuOpen = !isMenuOpen;
-
         private async Task DeleteTransaction()
         {
-            isMenuOpen = false;
             if (editingTransaction == null) return;
 
             bool confirm = await AlertService.ConfirmAsync(

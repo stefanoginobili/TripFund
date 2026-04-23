@@ -29,6 +29,10 @@ public class DashboardTests : BunitContext
         Services.AddSingleton(new Mock<IThumbnailService>().Object);
         Services.AddSingleton(new Mock<IRemoteStorageService>().Object);
         Services.AddSingleton(new PdfReportService());
+        
+        JSInterop.SetupVoid("appLogic.lockScroll");
+        JSInterop.SetupVoid("appLogic.unlockScroll");
+        JSInterop.SetupVoid("appLogic.positionMenu", _ => true);
     }
 
     [Fact]

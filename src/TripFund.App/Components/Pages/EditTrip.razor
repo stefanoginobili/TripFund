@@ -10,26 +10,26 @@
         </button>
         <h1 class="header-title">Modifica Viaggio</h1>
         <div class="header-actions">
-            <button class="icon-btn" @onclick="ToggleHeaderMenu">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#20563C" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <circle cx="12" cy="5" r="1"></circle>
-                    <circle cx="12" cy="12" r="1"></circle>
-                    <circle cx="12" cy="19" r="1"></circle>
-                </svg>
-            </button>
-            @if (isHeaderMenuOpen)
-            {
-                <div class="popover-overlay" @onclick="ToggleHeaderMenu"></div>
-                <div class="dropdown-menu-vibe" @onclick="() => isHeaderMenuOpen = false">
-                    <div class="dropdown-item-vibe text-danger" @onclick="HandleDelete">
+            <VibeMenu>
+                <Trigger>
+                    <button class="icon-btn">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#20563C" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="12" cy="5" r="1"></circle>
+                            <circle cx="12" cy="12" r="1"></circle>
+                            <circle cx="12" cy="19" r="1"></circle>
+                        </svg>
+                    </button>
+                </Trigger>
+                <ChildContent>
+                    <button class="dropdown-item-vibe text-danger" @onclick="HandleDelete">
                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="me-2">
                             <polyline points="3 6 5 6 21 6"></polyline>
                             <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
                         </svg>
                         Elimina Viaggio
-                    </div>
-                </div>
-            }
+                    </button>
+                </ChildContent>
+            </VibeMenu>
         </div>
     </header>
 
@@ -79,12 +79,14 @@
 
                                     <div class="member-form-row">
                                         <div class="avatar-col">
-                                            <div class="avatar-input-box" @onclick="ToggleEmojiPicker">
-                                                <span>@newMemberAvatar</span>
-                                                @if (showEmojiPicker)
-                                                {
-                                                    <div class="popover-overlay" @onclick="ToggleEmojiPicker" @onclick:stopPropagation></div>
-                                                    <div class="emoji-picker-popover" @onclick:stopPropagation>
+                                            <VibeMenu>
+                                                <Trigger>
+                                                    <div class="avatar-input-box" @onclick="ToggleEmojiPicker">
+                                                        <span>@newMemberAvatar</span>
+                                                    </div>
+                                                </Trigger>
+                                                <ChildContent>
+                                                    <div class="emoji-picker-container">
                                                         <div class="emoji-grid">
                                                             @foreach (var emoji in emojis)
                                                             {
@@ -94,8 +96,8 @@
                                                             }
                                                         </div>
                                                     </div>
-                                                }
-                                            </div>
+                                                </ChildContent>
+                                            </VibeMenu>
                                         </div>
                                         <div class="name-col">
                                             <label>NOME</label>
@@ -141,36 +143,37 @@
                                 @if (!isReadonly)
                                 {
                                     <div class="more-actions-container">
-                                        <div class="action-trigger" @onclick="() => ToggleMemberMenu(member.Key)">
-                                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                                <circle cx="12" cy="5" r="1"></circle>
-                                                <circle cx="12" cy="12" r="1"></circle>
-                                                <circle cx="12" cy="19" r="1"></circle>
-                                            </svg>
-                                        </div>
-                                        @if (openMenuMemberSlug == member.Key)
-                                        {
-                                            var keys = config.Members.Keys.ToList();
-                                            int index = keys.IndexOf(member.Key);
-                                            bool isFirst = index == 0;
-                                            bool isLast = index == keys.Count - 1;
-
-                                            <div class="popover-overlay" @onclick="() => openMenuMemberSlug = null"></div>
-                                            <div class="dropdown-menu-vibe" @onclick="() => openMenuMemberSlug = null">
-                                                <div class="dropdown-item-vibe" @onclick="async () => { openMenuMemberSlug = null; await StartEditMember(member.Key, member.Value); }">
+                                        <VibeMenu>
+                                            <Trigger>
+                                                <div class="action-trigger">
+                                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                        <circle cx="12" cy="5" r="1"></circle>
+                                                        <circle cx="12" cy="12" r="1"></circle>
+                                                        <circle cx="12" cy="19" r="1"></circle>
+                                                    </svg>
+                                                </div>
+                                            </Trigger>
+                                            <ChildContent>
+                                                @{
+                                                    var keys = config.Members.Keys.ToList();
+                                                    int index = keys.IndexOf(member.Key);
+                                                    bool isFirst = index == 0;
+                                                    bool isLast = index == keys.Count - 1;
+                                                }
+                                                <button class="dropdown-item-vibe" @onclick="async () => { await StartEditMember(member.Key, member.Value); }">
                                                     Modifica
-                                                </div>
-                                                <div class="dropdown-item-vibe @(isFirst ? "disabled" : "")" @onclick="() => { if(!isFirst) { openMenuMemberSlug = null; MoveMemberUp(member.Key); } }">
+                                                </button>
+                                                <button class="dropdown-item-vibe @(isFirst ? "disabled" : "")" @onclick="() => { if(!isFirst) { MoveMemberUp(member.Key); } }">
                                                     Sposta su
-                                                </div>
-                                                <div class="dropdown-item-vibe @(isLast ? "disabled" : "")" @onclick="() => { if(!isLast) { openMenuMemberSlug = null; MoveMemberDown(member.Key); } }">
+                                                </button>
+                                                <button class="dropdown-item-vibe @(isLast ? "disabled" : "")" @onclick="() => { if(!isLast) { MoveMemberDown(member.Key); } }">
                                                     Sposta giù
-                                                </div>
-                                                <div class="dropdown-item-vibe text-danger" @onclick="async () => { openMenuMemberSlug = null; await ConfirmDeleteMember(member.Key); }">
+                                                </button>
+                                                <button class="dropdown-item-vibe text-danger" @onclick="async () => { await ConfirmDeleteMember(member.Key); }">
                                                     Elimina
-                                                </div>
-                                            </div>
-                                        }
+                                                </button>
+                                            </ChildContent>
+                                        </VibeMenu>
                                     </div>
                                 }
                             </div>
@@ -208,12 +211,14 @@
 
                                 <div class="member-form-row">
                                     <div class="avatar-col">
-                                        <div class="avatar-input-box" @onclick="ToggleEmojiPicker">
-                                            <span>@newMemberAvatar</span>
-                                            @if (showEmojiPicker)
-                                            {
-                                                <div class="popover-overlay" @onclick="ToggleEmojiPicker" @onclick:stopPropagation></div>
-                                                <div class="emoji-picker-popover" @onclick:stopPropagation>
+                                        <VibeMenu>
+                                            <Trigger>
+                                                <div class="avatar-input-box" @onclick="ToggleEmojiPicker">
+                                                    <span>@newMemberAvatar</span>
+                                                </div>
+                                            </Trigger>
+                                            <ChildContent>
+                                                <div class="emoji-picker-container">
                                                     <div class="emoji-grid">
                                                         @foreach (var emoji in emojis)
                                                         {
@@ -223,8 +228,8 @@
                                                         }
                                                     </div>
                                                 </div>
-                                            }
-                                        </div>
+                                            </ChildContent>
+                                        </VibeMenu>
                                     </div>
                                     <div class="name-col">
                                         <label>NOME</label>
@@ -400,7 +405,6 @@
         justify-content: center;
         font-size: 2rem;
         cursor: pointer;
-        position: relative;
     }
 
     .name-col {
@@ -459,18 +463,11 @@
         padding: 0;
     }
 
-    .emoji-picker-popover {
-        position: absolute;
-        top: 70px;
-        left: 0;
-        z-index: 1101;
-        background-color: #FFFFFF;
-        border-radius: 16px;
-        box-shadow: 0 8px 32px rgba(0,0,0,0.15);
-        padding: 0.75rem;
-        width: 280px;
-        max-height: 300px;
-        overflow-y: auto;
+    .emoji-picker-container {
+        display: flex;
+        flex-direction: column;
+        width: 100%;
+        max-width: calc(100vw - 3rem);
     }
 
     .more-actions-container {
@@ -492,6 +489,8 @@
         display: grid;
         grid-template-columns: repeat(6, 1fr);
         gap: 0.5rem;
+        max-height: 300px;
+        overflow-y: auto;
     }
 
     .emoji-btn {
@@ -517,16 +516,6 @@
 
     .error-container { min-height: 1.5rem; text-align: center; }
     .error-text { color: #DC3545; font-size: 0.85rem; font-weight: 600; }
-
-    .popover-overlay {
-        position: absolute;
-        top: -1000vh;
-        left: -1000vw;
-        width: 2000vw;
-        height: 2000vh;
-        background: rgba(0,0,0,0.05);
-        z-index: 1000;
-    }
 
     .action-buttons {
         display: flex;

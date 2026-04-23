@@ -1,0 +1,23 @@
+@using Microsoft.JSInterop
+@inject IJSRuntime JSRuntime
+
+<div class="vibe-menu-container" @onclick:stopPropagation>
+    <div @ref="_triggerRef" @onclick="ToggleMenu">
+        @Trigger
+    </div>
+
+    @if (IsOpen)
+    {
+        <div class="popover-overlay" @onclick="CloseMenu" @onclick:stopPropagation="false"></div>
+        <div @ref="_menuRef" class="dropdown-menu-vibe" @onclick="CloseMenu">
+            @ChildContent
+        </div>
+    }
+</div>
+
+<style>
+    .vibe-menu-container {
+        display: inline-block;
+        position: relative;
+    }
+</style>

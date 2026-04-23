@@ -14,7 +14,6 @@ namespace TripFund.App.Components.Common
         [Parameter] public string Class { get; set; } = string.Empty;
 
         private List<TimeZoneInfo> _timeZones = new();
-        private bool _isOpen = false;
         private bool _shouldScroll = false;
 
         protected override void OnInitialized()
@@ -32,18 +31,15 @@ namespace TripFund.App.Components.Common
             }
         }
 
-        private void ToggleDropdown()
+        private async Task OpenDropdown()
         {
-            _isOpen = !_isOpen;
-            if (_isOpen)
-            {
-                _shouldScroll = true;
-            }
+            _shouldScroll = true;
+            await Task.CompletedTask;
         }
 
         protected override async Task OnAfterRenderAsync(bool firstRender)
         {
-            if (_shouldScroll && _isOpen)
+            if (_shouldScroll)
             {
                 _shouldScroll = false;
                 await JSRuntime.InvokeVoidAsync("appLogic.scrollIntoView", "#selected-tz-item", "center");
@@ -53,7 +49,6 @@ namespace TripFund.App.Components.Common
         private async Task SelectTimeZone(string id)
         {
             Value = id;
-            _isOpen = false;
             await ValueChanged.InvokeAsync(id);
         }
 

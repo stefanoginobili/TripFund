@@ -42,6 +42,9 @@ public class TransactionFormTests : BunitContext
 
         // Mock JS Interop for scrolling (called in OnAfterRender)
         JSInterop.SetupVoid("appLogic.scrollIntoView", _ => true);
+        JSInterop.SetupVoid("appLogic.lockScroll");
+        JSInterop.SetupVoid("appLogic.unlockScroll");
+        JSInterop.SetupVoid("appLogic.positionMenu", _ => true);
         
         // Mock AppSettings
         var settings = new AppSettings { AuthorName = "Test Author", DeviceId = "test-author" };
@@ -752,7 +755,7 @@ public class TransactionFormTests : BunitContext
         );
 
         // Act - Open menu
-        var menuBtn = cut.Find("header .dropdown button.icon-btn");
+        var menuBtn = cut.Find(".header-actions button.icon-btn");
         menuBtn.Click();
 
         // Click delete

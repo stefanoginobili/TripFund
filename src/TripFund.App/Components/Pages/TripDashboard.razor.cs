@@ -24,7 +24,6 @@ namespace TripFund.App.Components.Pages
         private List<Transaction> transactions = new();
         
         private string selectedCurrency = "";
-        private bool isMenuOpen = false;
         private bool isReadonly = false;
         
         private decimal totalContributed = 0;
@@ -79,8 +78,6 @@ namespace TripFund.App.Components.Pages
             StateHasChanged();
         }
 
-        private void ToggleMenu() => isMenuOpen = !isMenuOpen;
-
         private void SelectCurrency(string currencyCode)
         {
             selectedCurrency = currencyCode;
@@ -108,7 +105,6 @@ namespace TripFund.App.Components.Pages
         {
             if (config == null) return;
             
-            isMenuOpen = false;
             try
             {
                 var filePath = await PdfService.GenerateExpenseReportAsync(config, transactions);

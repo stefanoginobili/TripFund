@@ -33,7 +33,6 @@ namespace TripFund.App.Components.Pages
         private string errorMessage = "";
         private bool isSubmitting = false;
         private bool isLocating = false;
-        private bool isMenuOpen = false;
         private string deviceId = "";
         private string authorName = "";
 
@@ -254,11 +253,8 @@ namespace TripFund.App.Components.Pages
             };
         }
 
-        private void ToggleMenu() => isMenuOpen = !isMenuOpen;
-
         private async Task DeleteTransaction()
         {
-            isMenuOpen = false;
             if (editingInfo?.Transaction == null) return;
 
             bool confirm = await Alerts.ConfirmAsync(

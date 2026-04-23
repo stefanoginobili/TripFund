@@ -39,6 +39,9 @@ public class CurrencySelectorVisibilityTests : BunitContext
 
         JSInterop.SetupVoid("appLogic.scrollIntoView", _ => true);
         JSInterop.SetupVoid("appLogic.selectText", _ => true);
+        JSInterop.SetupVoid("appLogic.lockScroll");
+        JSInterop.SetupVoid("appLogic.unlockScroll");
+        JSInterop.SetupVoid("appLogic.positionMenu", _ => true);
         
         var settings = new AppSettings { AuthorName = "Test Author", DeviceId = "test-author" };
         _storageMock.Setup(s => s.GetAppSettingsAsync()).ReturnsAsync(settings);

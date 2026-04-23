@@ -27,7 +27,6 @@ namespace TripFund.App.Components.Pages
         private string newMemberAvatar = "👤";
         private bool showEmojiPicker = false;
         private bool isAddingMember = false;
-        private string? openMenuMemberSlug = null;
         private string? editingMemberSlug = null;
         private string[] emojis = new[] { 
             // People & Faces
@@ -58,10 +57,7 @@ namespace TripFund.App.Components.Pages
             "🌊", "🎒", "📸", "🍕", "🍔", "🍦", "🍩", "🍷", "🍺", "☕", "⚽", "🏀"
         };
 
-        private bool isHeaderMenuOpen = false;
         private bool isReadonly = false;
-
-        private void ToggleHeaderMenu() => isHeaderMenuOpen = !isHeaderMenuOpen;
 
         protected override async Task OnInitializedAsync()
         {
@@ -202,12 +198,6 @@ namespace TripFund.App.Components.Pages
             config?.Members.Remove(slug);
         }
 
-        private void ToggleMemberMenu(string slug)
-        {
-            if (openMenuMemberSlug == slug) openMenuMemberSlug = null;
-            else openMenuMemberSlug = slug;
-        }
-
         private async Task StartEditMember(string slug, User m)
         {
             isAddingMember = false;
@@ -216,7 +206,6 @@ namespace TripFund.App.Components.Pages
             newMemberName = m.Name;
             newMemberEmail = m.Email ?? "";
             newMemberAvatar = m.Avatar;
-            openMenuMemberSlug = null;
             await Task.Yield();
             StateHasChanged();
         }
@@ -249,7 +238,6 @@ namespace TripFund.App.Components.Pages
                 else newDict[key] = config.Members[key];
             }
             config.Members = newDict;
-            openMenuMemberSlug = null;
         }
 
         private void MoveMemberDown(string slug)
@@ -271,12 +259,10 @@ namespace TripFund.App.Components.Pages
                 else newDict[key] = config.Members[key];
             }
             config.Members = newDict;
-            openMenuMemberSlug = null;
         }
 
         private async Task ConfirmDeleteMember(string slug)
         {
-            openMenuMemberSlug = null;
             bool confirm = await Alerts.ConfirmAsync(
                 "Elimina Partecipante",
                 $"Sei sicuro di voler eliminare <b>{config?.Members[slug].Name}</b>?",

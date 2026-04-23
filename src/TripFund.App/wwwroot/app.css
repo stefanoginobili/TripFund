@@ -311,9 +311,7 @@ html, body, #app {
 
 /* Dropdown Menu */
 .dropdown-menu-vibe {
-    position: absolute;
-    top: 100%;
-    right: 0;
+    position: fixed;
     background-color: #FFFFFF;
     border-radius: 12px;
     box-shadow: 0 8px 24px rgba(0,0,0,0.12);
@@ -323,6 +321,7 @@ html, body, #app {
     display: flex;
     flex-direction: column;
     border: 1px solid #F0F0F0;
+    visibility: hidden; /* Hidden until positioned by JS */
 }
 
 .dropdown-item-vibe {
@@ -436,6 +435,10 @@ h1:focus {
     background-color: transparent;
     z-index: 1100; /* Above everything */
     touch-action: pan-y;
+}
+
+.no-scroll {
+    overflow: hidden !important;
 }
 
 /* Loading Spinner */

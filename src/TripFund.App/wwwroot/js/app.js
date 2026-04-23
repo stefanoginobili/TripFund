@@ -58,5 +58,47 @@ window.appLogic = {
                 element.scrollIntoView({ behavior: 'smooth', block: block, inline: 'nearest' });
             }
         }, 50);
+    },
+    lockScroll: function () {
+        document.body.classList.add('no-scroll');
+        const main = document.querySelector('main');
+        if (main) main.classList.add('no-scroll');
+    },
+    unlockScroll: function () {
+        document.body.classList.remove('no-scroll');
+        const main = document.querySelector('main');
+        if (main) main.classList.remove('no-scroll');
+    },
+    positionMenu: function (triggerElement, menuElement) {
+        if (!triggerElement || !menuElement) return;
+
+        const triggerRect = triggerElement.getBoundingClientRect();
+        const menuRect = menuElement.getBoundingClientRect();
+        const viewportHeight = window.innerHeight;
+        const viewportWidth = window.innerWidth;
+
+        let top, left;
+
+        // Determine if there is space below
+        const spaceBelow = viewportHeight - triggerRect.bottom;
+        const spaceAbove = triggerRect.top;
+
+        if (spaceBelow < menuRect.height && spaceAbove > menuRect.height) {
+            // Position above
+            top = triggerRect.top - menuRect.height - 4;
+        } else {
+            // Position below
+            top = triggerRect.bottom + 4;
+        }
+
+        // Horizontal positioning (align right by default, but stay in viewport)
+        left = triggerRect.right - menuRect.width;
+        if (left < 0) left = 8;
+        if (left + menuRect.width > viewportWidth) left = viewportWidth - menuRect.width - 8;
+
+        menuElement.style.top = `${top}px`;
+        menuElement.style.left = `${left}px`;
+        menuElement.style.position = 'fixed';
+        menuElement.style.visibility = 'visible';
     }
 };

@@ -24,7 +24,6 @@ namespace TripFund.App.Components.Common
         private decimal newCurrQuota = 0;
         private int newCurrDecimals = 2;
         private bool isAddingCurrency = false;
-        private string? openMenuCurrencyCode = null;
         private string? editingCurrencyCode = null;
 
         private List<IsoCurrencyInfo> filteredCurrencies = new();
@@ -179,12 +178,6 @@ namespace TripFund.App.Components.Common
             }
         }
 
-        private void ToggleCurrencyMenu(string code)
-        {
-            if (openMenuCurrencyCode == code) openMenuCurrencyCode = null;
-            else openMenuCurrencyCode = code;
-        }
-
         private void StartEditCurrency(string code, Currency c)
         {
             isAddingCurrency = false;
@@ -194,7 +187,6 @@ namespace TripFund.App.Components.Common
             newCurrDecimals = c.Decimals;
             newCurrQuota = c.ExpectedQuotaPerMember;
             newCurrQuotaString = newCurrQuota.ToString("F" + newCurrDecimals);
-            openMenuCurrencyCode = null;
         }
 
         private void CancelCurrencyEdit()
@@ -225,7 +217,6 @@ namespace TripFund.App.Components.Common
                 else newDict[key] = Currencies[key];
             }
             Currencies = newDict;
-            openMenuCurrencyCode = null;
             await CurrenciesChanged.InvokeAsync(Currencies);
         }
 
@@ -248,13 +239,11 @@ namespace TripFund.App.Components.Common
             }
 
             Currencies = newDict;
-            openMenuCurrencyCode = null;
             await CurrenciesChanged.InvokeAsync(Currencies);
         }
 
         private async Task ConfirmDeleteCurrency(string code)
         {
-            openMenuCurrencyCode = null;
             bool confirm = await Alerts.ConfirmAsync(
                 "Elimina Cassa",
                 $"Sei sicuro di voler eliminare la cassa in <b>{code}</b>?<br/><br/>Tutte le transazioni in questa valuta potrebbero non essere più visualizzate correttamente.",

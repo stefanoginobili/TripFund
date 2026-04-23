@@ -26,7 +26,6 @@ namespace TripFund.App.Components.Pages
         
         private string selectedCurrency = "";
         private bool isMissing = false;
-        private bool isMenuOpen = false;
         private bool isReadonly = false;
         
         private decimal totalContributed = 0;
@@ -112,11 +111,8 @@ namespace TripFund.App.Components.Pages
             Nav.NavigateTo($"/trip/{tripSlug}/contribution?member={memberSlug}&currency={selectedCurrency}");
         }
 
-        private void ToggleMenu() => isMenuOpen = !isMenuOpen;
-
         private async Task SendSummaryEmail()
         {
-            isMenuOpen = false;
             if (config == null || member == null) return;
 
             var latestContribution = allTransactions

@@ -64,36 +64,37 @@
                         @if (!IsReadonly)
                         {
                             <div class="more-actions-container">
-                                <div class="action-trigger" @onclick="() => ToggleCurrencyMenu(curr.Key)">
-                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                        <circle cx="12" cy="5" r="1"></circle>
-                                        <circle cx="12" cy="12" r="1"></circle>
-                                        <circle cx="12" cy="19" r="1"></circle>
-                                    </svg>
-                                </div>
-                                @if (openMenuCurrencyCode == curr.Key)
-                                {
-                                    var keys = Currencies.Keys.ToList();
-                                    int index = keys.IndexOf(curr.Key);
-                                    bool isFirst = index == 0;
-                                    bool isLast = index == keys.Count - 1;
-
-                                    <div class="popover-overlay" @onclick="() => openMenuCurrencyCode = null"></div>
-                                    <div class="dropdown-menu-vibe" @onclick="() => openMenuCurrencyCode = null">
-                                        <div class="dropdown-item-vibe" @onclick="() => { openMenuCurrencyCode = null; StartEditCurrency(curr.Key, curr.Value); }">
+                                <VibeMenu>
+                                    <Trigger>
+                                        <div class="action-trigger">
+                                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                <circle cx="12" cy="5" r="1"></circle>
+                                                <circle cx="12" cy="12" r="1"></circle>
+                                                <circle cx="12" cy="19" r="1"></circle>
+                                            </svg>
+                                        </div>
+                                    </Trigger>
+                                    <ChildContent>
+                                        @{
+                                            var keys = Currencies.Keys.ToList();
+                                            int index = keys.IndexOf(curr.Key);
+                                            bool isFirst = index == 0;
+                                            bool isLast = index == keys.Count - 1;
+                                        }
+                                        <button class="dropdown-item-vibe" @onclick="() => { StartEditCurrency(curr.Key, curr.Value); }">
                                             Modifica
-                                        </div>
-                                        <div class="dropdown-item-vibe @(isFirst ? "disabled" : "")" @onclick="async () => { if(!isFirst) { openMenuCurrencyCode = null; await MoveCurrencyUp(curr.Key); } }">
+                                        </button>
+                                        <button class="dropdown-item-vibe @(isFirst ? "disabled" : "")" @onclick="async () => { if(!isFirst) { await MoveCurrencyUp(curr.Key); } }">
                                             Sposta su
-                                        </div>
-                                        <div class="dropdown-item-vibe @(isLast ? "disabled" : "")" @onclick="async () => { if(!isLast) { openMenuCurrencyCode = null; await MoveCurrencyDown(curr.Key); } }">
+                                        </button>
+                                        <button class="dropdown-item-vibe @(isLast ? "disabled" : "")" @onclick="async () => { if(!isLast) { await MoveCurrencyDown(curr.Key); } }">
                                             Sposta giù
-                                        </div>
-                                        <div class="dropdown-item-vibe text-danger" @onclick="async () => { openMenuCurrencyCode = null; await ConfirmDeleteCurrency(curr.Key); }">
+                                        </button>
+                                        <button class="dropdown-item-vibe text-danger" @onclick="async () => { await ConfirmDeleteCurrency(curr.Key); }">
                                             Elimina
-                                        </div>
-                                    </div>
-                                }
+                                        </button>
+                                    </ChildContent>
+                                </VibeMenu>
                             </div>
                         }
                     </div>
