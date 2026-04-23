@@ -28,31 +28,56 @@ public partial class ConflictResolverModal
     private Dictionary<string, bool> diffMap = new();
     private Dictionary<(string Property, int VersionIndex), string> evaluationStrings = new();
 
+    private string? _previousConflictId;
+    private string? _previousConflictType;
+    private string? _previousTripSlug;
+    private bool _wasVisible;
+
     protected override async Task OnParametersSetAsync()
     {
         if (IsVisible && Conflict != null)
         {
-            var conflictId = Conflict.Id;
-            var conflictType = Conflict.Type;
+            bool hasConflictChanged = !_wasVisible || 
+                                     _previousConflictId != Conflict.Id || 
+                                     _previousConflictType != Conflict.Type ||
+                                     _previousTripSlug != TripSlug;
 
-            selectedIndex = null;
-            diffMap.Clear();
-            evaluationStrings.Clear();
-
-            var settings = await Storage.GetAppSettingsAsync();
-            currentDeviceId = settings?.DeviceId ?? string.Empty;
-            currentConfig = await Storage.GetTripConfigAsync(TripSlug);
-
-            if (conflictType == "config")
+            if (hasConflictChanged)
             {
-                configVersions = await Storage.GetConflictingConfigVersionsAsync(TripSlug);
-                CalculateConfigDiffs();
+                var conflictId = Conflict.Id;
+                var conflictType = Conflict.Type;
+
+                selectedIndex = null;
+                diffMap.Clear();
+                evaluationStrings.Clear();
+
+                var settings = await Storage.GetAppSettingsAsync();
+                currentDeviceId = settings?.DeviceId ?? string.Empty;
+                currentConfig = await Storage.GetTripConfigAsync(TripSlug);
+
+                if (conflictType == "config")
+                {
+                    configVersions = await Storage.GetConflictingConfigVersionsAsync(TripSlug);
+                    CalculateConfigDiffs();
+                }
+                else
+                {
+                    transactionVersions = await Storage.GetConflictingTransactionVersionsAsync(TripSlug, conflictId);
+                    CalculateTransactionDiffs();
+                }
+
+                _previousConflictId = Conflict.Id;
+                _previousConflictType = Conflict.Type;
+                _previousTripSlug = TripSlug;
+                _wasVisible = true;
             }
-            else
-            {
-                transactionVersions = await Storage.GetConflictingTransactionVersionsAsync(TripSlug, conflictId);
-                CalculateTransactionDiffs();
-            }
+        }
+        else
+        {
+            _wasVisible = false;
+            _previousConflictId = null;
+            _previousConflictType = null;
+            _previousTripSlug = null;
         }
     }
 

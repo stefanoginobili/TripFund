@@ -110,6 +110,45 @@ public class ConflictResolverModalTests : BunitContext
     }
 
     [Fact]
+    public async Task SelectVersion_ShouldBePreserved_WhenReRenderedWithSameParameters()
+    {
+        // Arrange
+        var conflict = new ConflictInfo { Id = "tx1", Label = "Transaction 1", Type = "transaction" };
+        var versions = new List<ConflictVersion<Transaction>>
+        {
+            new ConflictVersion<Transaction> { Author = "Alice", Timestamp = DateTime.UtcNow, Data = new Transaction { Id = "tx1", Amount = 10, Description = "A" } },
+            new ConflictVersion<Transaction> { Author = "Bob", Timestamp = DateTime.UtcNow, Data = new Transaction { Id = "tx1", Amount = 20, Description = "B" } }
+        };
+
+        _storageMock.Setup(s => s.GetConflictingTransactionVersionsAsync(It.IsAny<string>(), "tx1"))
+            .ReturnsAsync(versions);
+        _storageMock.Setup(s => s.GetAppSettingsAsync()).ReturnsAsync(new AppSettings { DeviceId = "dev1" });
+
+        var cut = Render<ConflictResolverModal>(parameters => parameters
+            .Add(p => p.IsVisible, true)
+            .Add(p => p.Conflict, conflict)
+            .Add(p => p.TripSlug, "trip1")
+        );
+
+        // Act - Select a version
+        var button = cut.Find(".btn-select-version-vibe");
+        await cut.InvokeAsync(() => button.Click());
+        
+        // Assert - Selected
+        cut.Find(".version-tile").ClassList.Should().Contain("selected");
+
+        // Act - Re-render with same parameters
+        cut.Render(parameters => parameters
+            .Add(p => p.IsVisible, true)
+            .Add(p => p.Conflict, conflict)
+            .Add(p => p.TripSlug, "trip1")
+        );
+
+        // Assert - Still selected
+        cut.Find(".version-tile").ClassList.Should().Contain("selected");
+    }
+
+    [Fact]
     public async Task SelectVersion_Button_ShouldNeverBeDisabled()
     {
         // Arrange
