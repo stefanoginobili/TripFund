@@ -3,6 +3,7 @@ using Microsoft.JSInterop;
 using TripFund.App.Models;
 using TripFund.App.Services;
 using TripFund.App.Utilities;
+using TripFund.App.Constants;
 
 namespace TripFund.App.Components.Pages
 {
@@ -173,6 +174,12 @@ namespace TripFund.App.Components.Pages
                 return $"{c.Symbol} {amount.ToString(format)}";
             }
             return $"{amount:N2} {currencyCode}";
+        }
+
+        private string GetCurrencyName(string currencyCode)
+        {
+            var iso = IsoCurrencies.All.FirstOrDefault(c => c.Code.Equals(currencyCode, System.StringComparison.OrdinalIgnoreCase));
+            return iso?.Name ?? "";
         }
 
         private string GetDisplayDate(Transaction tx)

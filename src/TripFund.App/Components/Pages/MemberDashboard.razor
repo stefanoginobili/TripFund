@@ -56,7 +56,11 @@
                 <CurrencySelector Currencies="config.Currencies.Keys" SelectedCurrency="@selectedCurrency" OnCurrencySelected="SelectCurrency"/>
             }
             <div class="summary-card">
-                <p class="summary-label">Saldo</p>
+                @{
+                    var currencyName = GetCurrencyName(selectedCurrency);
+                    var label = string.IsNullOrEmpty(currencyName) ? "Saldo" : $"Saldo {currencyName}";
+                }
+                <p class="summary-label">@label</p>
                 <h2 class="summary-total">@FormatCurrency(remainingBalance, selectedCurrency)</h2>
                 <p class="summary-sub">Quota versata: <strong class="fw-bold">@FormatCurrency(totalContributed, selectedCurrency)</strong></p>
                 

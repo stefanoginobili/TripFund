@@ -254,7 +254,7 @@ public class DashboardTests : BunitContext
         var cut = Render<TripDashboard>(p => p.Add(x => x.tripSlug, tripSlug));
 
         // Assert
-        cut.Find(".summary-label").TextContent.Should().Be("Saldo");
+        cut.Find(".summary-label").TextContent.Should().Be("Saldo Euro");
         cut.Find(".progress-bar-fill").ClassName.Should().Contain("warning");
     }
 
