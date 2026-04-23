@@ -140,7 +140,7 @@ public class OneDriveSyncLogicTests : IDisposable
                 using (var archive = new ZipArchive(ms, ZipArchiveMode.Create, true))
                 {
                     var entry = archive.CreateEntry("config_versioned/002_UPD_remote-dev/.metadata");
-                    using (var writer = new StreamWriter(entry.Open())) writer.Write("author=remote-user");
+                    using (var writer = new StreamWriter(entry.Open())) writer.Write("author=remote-user\nversioning.parents=001_NEW_local-device-id");
                     
                     var dataEntry = archive.CreateEntry("config_versioned/002_UPD_remote-dev/.data/trip_config.json");
                     using (var writer = new StreamWriter(dataEntry.Open())) writer.Write("{ \"Name\": \"Remote Trip\" }");

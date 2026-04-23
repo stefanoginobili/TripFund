@@ -18,7 +18,7 @@ public class VersionFolderInfo
     public int Sequence { get; set; }
     public CommitKind Kind { get; set; }
     public string DeviceId { get; set; } = string.Empty;
-    public IReadOnlyList<string>? ResolvedFolders { get; set; }
+    public IReadOnlyList<string> ParentVersions { get; set; } = new List<string>();
 }
 
 public class VersionedFolderConflictException : Exception
@@ -86,14 +86,11 @@ public class VersionedStorageEngine
 
         foreach (var v in versions)
         {
-            if (v.Kind == CommitKind.Res)
+            var leaf = new LocalLeafFolder(Path.Combine(rootPath, v.FolderName));
+            var metadata = leaf.GetMetadata();
+            if (metadata.TryGetValue(AppConstants.Metadata.ParentVersions, out var parents))
             {
-                var leaf = new LocalLeafFolder(Path.Combine(rootPath, v.FolderName));
-                var metadata = leaf.GetMetadata();
-                if (metadata.TryGetValue(AppConstants.Metadata.ResolvedVersions, out var resolved))
-                {
-                    v.ResolvedFolders = resolved.Split(',', StringSplitOptions.RemoveEmptyEntries).ToList();
-                }
+                v.ParentVersions = parents.Split(',', StringSplitOptions.RemoveEmptyEntries).ToList();
             }
         }
 
@@ -159,23 +156,23 @@ public class VersionedStorageEngine
 
     private bool Supersedes(VersionFolderInfo A, VersionFolderInfo B, List<VersionFolderInfo> allVersions)
     {
-        // 1. Device-Local Progression (Highest sequence for same device wins)
-        if (A.DeviceId == B.DeviceId && A.Sequence > B.Sequence)
-        {
-            return true;
-        }
+        // Folder A supersedes B if B is an ancestor of A.
+        return IsAncestor(B.FolderName, A, allVersions);
+    }
 
-        // 2. Global Linear Progression (Sequence N+1 wins over N if N was unique)
-        if (A.Sequence == B.Sequence + 1)
-        {
-            int countAtBSeq = allVersions.Count(v => v.Sequence == B.Sequence);
-            if (countAtBSeq == 1) return true;
-        }
+    private bool IsAncestor(string targetFolderName, VersionFolderInfo current, List<VersionFolderInfo> allVersions)
+    {
+        if (current.ParentVersions == null || current.ParentVersions.Count == 0) return false;
 
-        // 3. Explicit Resolution (RES wins over the exact folders it resolves)
-        if (A.Kind == CommitKind.Res && A.ResolvedFolders != null && A.ResolvedFolders.Contains(B.FolderName))
+        foreach (var parentName in current.ParentVersions)
         {
-            return true;
+            if (parentName == targetFolderName) return true;
+
+            var parentInfo = allVersions.FirstOrDefault(v => v.FolderName == parentName);
+            if (parentInfo != null && IsAncestor(targetFolderName, parentInfo, allVersions))
+            {
+                return true;
+            }
         }
 
         return false;
@@ -230,7 +227,6 @@ public class VersionedStorageEngine
 
     public string? GetBaseVersionFolder(string rootPath, int conflictSequence)
     {
-        // Keep this signature for backward compatibility or simple cases
         var versions = GetVersionFolders(rootPath);
         return versions
             .Where(v => v.Sequence < conflictSequence)
@@ -252,11 +248,7 @@ public class VersionedStorageEngine
     public bool IsInConflict(string rootPath)
     {
         var latest = GetLatestVersionFolders(rootPath);
-        if (latest.Count <= 1) return false;
-
-        // If we have multiple folders with same sequence, it's a conflict
-        // unless they are reconciled by a later 'res' (but GetLatestVersionFolders already handles that)
-        return true;
+        return latest.Count > 1;
     }
 
     public async Task<string> CommitAsync(
@@ -266,7 +258,7 @@ public class VersionedStorageEngine
         Dictionary<string, byte[]> changedFiles,
         List<string>? deletedFiles = null,
         Dictionary<string, string>? metadata = null,
-        IEnumerable<string>? resolvedFolders = null,
+        IEnumerable<string>? parentVersions = null,
         string? contentType = null,
         string? tempRootPath = null)
     {
@@ -289,9 +281,9 @@ public class VersionedStorageEngine
         if (!metaDict.ContainsKey(AppConstants.Metadata.CreatedAt)) metaDict[AppConstants.Metadata.CreatedAt] = DateTime.UtcNow.ToString("yyyy-MM-ddTHH:mm:ss.fffZ");
         if (!string.IsNullOrEmpty(contentType)) metaDict[AppConstants.Metadata.ContentType] = contentType;
 
-        if (kind == CommitKind.Res && resolvedFolders != null)
+        if (parentVersions != null && parentVersions.Any())
         {
-            metaDict[AppConstants.Metadata.ResolvedVersions] = string.Join(",", resolvedFolders);
+            metaDict[AppConstants.Metadata.ParentVersions] = string.Join(",", parentVersions);
         }
 
         await leaf.SaveMetadataAsync(metaDict);
@@ -303,18 +295,25 @@ public class VersionedStorageEngine
             // For 'upd' and 'res', we need to copy previous state
             if (kind == CommitKind.Upd || kind == CommitKind.Res)
             {
-                // We need to find the latest version BEFORE nextSeq
-                var previousVersions = versions.Where(v => v.Sequence < nextSeq).ToList();
-                if (previousVersions.Any())
+                // We prioritize the first provided parent as the source for copying
+                string? sourceFolderName = parentVersions?.FirstOrDefault();
+                
+                if (string.IsNullOrEmpty(sourceFolderName))
                 {
-                    var maxPrevSeq = previousVersions.Max(v => v.Sequence);
-                    var latestOfPrev = previousVersions.Where(v => v.Sequence == maxPrevSeq).ToList();
+                    // Fallback to latest sequence if no parents provided (should not happen in new system)
+                    var previousVersions = versions.Where(v => v.Sequence < nextSeq).ToList();
+                    if (previousVersions.Any())
+                    {
+                        var maxPrevSeq = previousVersions.Max(v => v.Sequence);
+                        var latestOfPrev = previousVersions.Where(v => v.Sequence == maxPrevSeq).ToList();
+                        var resOfPrev = latestOfPrev.Where(v => v.Kind == CommitKind.Res).ToList();
+                        sourceFolderName = resOfPrev.Any() ? resOfPrev.First().FolderName : latestOfPrev.First().FolderName;
+                    }
+                }
 
-                    // Prioritize 'res' if it exists at the previous level
-                    var resOfPrev = latestOfPrev.Where(v => v.Kind == CommitKind.Res).ToList();
-                    var sourceInfo = resOfPrev.Any() ? resOfPrev.First() : latestOfPrev.First();
-
-                    var prevLeaf = new LocalLeafFolder(Path.Combine(rootPath, sourceInfo.FolderName));
+                if (!string.IsNullOrEmpty(sourceFolderName))
+                {
+                    var prevLeaf = new LocalLeafFolder(Path.Combine(rootPath, sourceFolderName));
 
                     if (!(await prevLeaf.IsDataEmptyAsync()))
                     {

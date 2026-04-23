@@ -20,7 +20,7 @@ public static class AppConstants
         public const string DeviceId = "device";
         public const string CreatedAt = "createdAt";
         public const string ContentType = "contentType";
-        public const string ResolvedVersions = "resolvedVersions";
+        public const string ParentVersions = "versioning.parents";
     }
 
     public static class ContentTypes

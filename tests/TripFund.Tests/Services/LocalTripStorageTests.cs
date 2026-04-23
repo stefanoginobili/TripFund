@@ -219,7 +219,7 @@ public class LocalTripStorageTests : IDisposable
         
         var resDir = Path.Combine(detailsDir, "002_RES_mario");
         var metadata = await File.ReadAllTextAsync(Path.Combine(resDir, ".metadata"));
-        metadata.Should().Contain("resolvedVersions=001_NEW_mario,001_NEW_luigi");
+        metadata.Should().Contain("versioning.parents=001_NEW_mario,001_NEW_luigi");
     }
 
     [Fact]

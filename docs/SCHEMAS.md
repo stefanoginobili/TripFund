@@ -195,6 +195,7 @@ Every leaf folder contains a `.metadata` file (plain text, key-value pairs).
 - `device`: Device ID.
 - `createdAt`: `yyyy-MM-ddTHH:mm:ss.fffZ`.
 - `contentType`: Explicit semantic type.
+- `versioning.parents`: Comma-separated list of parent folder names (empty for `001_NEW`).
 
 **Allowed Content Types:**
 - `tripfund/trip-config`: For trip configuration versions.

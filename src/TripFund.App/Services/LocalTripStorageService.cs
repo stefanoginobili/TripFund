@@ -181,12 +181,14 @@ public class LocalTripStorageService
 
         var changedFiles = new Dictionary<string, byte[]> { { AppConstants.Files.TripConfig, bytes } };
         
-        var kind = isResolve ? CommitKind.Res : ( _engine.GetVersionFolders(configPath).Count == 0 ? CommitKind.New : CommitKind.Upd);
+        var latestLeaves = _engine.GetLatestVersionFolders(configPath);
+        var kind = isResolve ? CommitKind.Res : ( latestLeaves.Count == 0 ? CommitKind.New : CommitKind.Upd);
 
         var metadata = await CreateCommitMetadataAsync(author, deviceId);
+        var parentVersions = latestLeaves.Select(v => v.FolderName).ToList();
 
         var tempRoot = Path.Combine(_tripsPath, tripSlug, "temp", "commits", "config");
-        var folderName = await _engine.CommitAsync(configPath, deviceId, kind, changedFiles, metadata: metadata, contentType: AppConstants.ContentTypes.TripConfig, tempRootPath: tempRoot);
+        var folderName = await _engine.CommitAsync(configPath, deviceId, kind, changedFiles, metadata: metadata, parentVersions: parentVersions, contentType: AppConstants.ContentTypes.TripConfig, tempRootPath: tempRoot);
         await RegisterPendingUploadAsync(tripSlug, Path.Combine("config_versioned", folderName));
     }
 
@@ -286,7 +288,8 @@ public class LocalTripStorageService
         var detailsRoot = Path.Combine(transRoot, "details_versioned");
         if (!Directory.Exists(detailsRoot)) Directory.CreateDirectory(detailsRoot);
 
-        CommitKind kind = _engine.GetVersionFolders(detailsRoot).Count == 0 ? CommitKind.New : (isDelete ? CommitKind.Del : CommitKind.Upd);
+        var latestLeaves = _engine.GetLatestVersionFolders(detailsRoot);
+        CommitKind kind = latestLeaves.Count == 0 ? CommitKind.New : (isDelete ? CommitKind.Del : CommitKind.Upd);
 
         var changedFiles = new Dictionary<string, byte[]>();
 
@@ -294,6 +297,7 @@ public class LocalTripStorageService
         var author = settings?.AuthorName ?? "Unknown";
 
         var metadata = await CreateCommitMetadataAsync(author, deviceId);
+        var parentVersions = latestLeaves.Select(v => v.FolderName).ToList();
 
         if (!isDelete)
         {
@@ -346,7 +350,7 @@ public class LocalTripStorageService
         }
 
         var tempRoot = Path.Combine(_tripsPath, tripSlug, "temp", "commits", "transactions", transaction.Id);
-        var folderName = await _engine.CommitAsync(detailsRoot, deviceId, kind, changedFiles, metadata: metadata, contentType: AppConstants.ContentTypes.TransactionDetail, tempRootPath: tempRoot);
+        var folderName = await _engine.CommitAsync(detailsRoot, deviceId, kind, changedFiles, metadata: metadata, parentVersions: parentVersions, contentType: AppConstants.ContentTypes.TransactionDetail, tempRootPath: tempRoot);
         await RegisterPendingUploadAsync(tripSlug, Path.Combine("transactions", transaction.Id, "details_versioned", folderName));
     }
 
@@ -445,12 +449,12 @@ public class LocalTripStorageService
             changedFiles[AppConstants.Files.TripConfig] = System.Text.Encoding.UTF8.GetBytes(json);
         }
 
-        var resolvedFolders = latestVersions.Select(v => v.FolderName).ToList();
+        var parentVersions = latestVersions.Select(v => v.FolderName).ToList();
 
         var metadata = await CreateCommitMetadataAsync(author, deviceId);
 
         var tempRoot = Path.Combine(_tripsPath, tripSlug, "temp", "commits", "config");
-        var folderName = await _engine.CommitAsync(configRoot, deviceId, CommitKind.Res, changedFiles, metadata: metadata, resolvedFolders: resolvedFolders, contentType: AppConstants.ContentTypes.TripConfig, tempRootPath: tempRoot);
+        var folderName = await _engine.CommitAsync(configRoot, deviceId, CommitKind.Res, changedFiles, metadata: metadata, parentVersions: parentVersions, contentType: AppConstants.ContentTypes.TripConfig, tempRootPath: tempRoot);
         await RegisterPendingUploadAsync(tripSlug, Path.Combine("config_versioned", folderName));
     }
 
@@ -458,10 +462,6 @@ public class LocalTripStorageService
     {
         if (resolvedTransaction == null)
         {
-            // We need to know which transactionId we are resolving.
-            // This is a bit tricky if we only have null. 
-            // But ResolveConflictAsync is called from the modal which knows the transactionId from the ConflictInfo.
-            // I will add an overload or change signature to include transactionId.
             throw new ArgumentNullException(nameof(resolvedTransaction), "TransactionId is required for deletion resolution.");
         }
         await ResolveConflictAsync(tripSlug, resolvedTransaction.Id, resolvedTransaction, deviceId);
@@ -528,12 +528,12 @@ public class LocalTripStorageService
             changedFiles[AppConstants.Files.TransactionDetails] = System.Text.Encoding.UTF8.GetBytes(json);
         }
 
-        var resolvedFolders = latestVersions.Select(v => v.FolderName).ToList();
+        var parentVersions = latestVersions.Select(v => v.FolderName).ToList();
 
         var metadata = await CreateCommitMetadataAsync(author, deviceId);
 
         var tempRoot = Path.Combine(_tripsPath, tripSlug, "temp", "commits", "transactions", transactionId);
-        var folderName = await _engine.CommitAsync(detailsRoot, deviceId, CommitKind.Res, changedFiles, metadata: metadata, resolvedFolders: resolvedFolders, contentType: AppConstants.ContentTypes.TransactionDetail, tempRootPath: tempRoot);
+        var folderName = await _engine.CommitAsync(detailsRoot, deviceId, CommitKind.Res, changedFiles, metadata: metadata, parentVersions: parentVersions, contentType: AppConstants.ContentTypes.TransactionDetail, tempRootPath: tempRoot);
         await RegisterPendingUploadAsync(tripSlug, Path.Combine("transactions", transactionId, "details_versioned", folderName));
     }
 
@@ -819,4 +819,3 @@ public class LocalTripStorageService
         catch { return null; }
     }
 }
-

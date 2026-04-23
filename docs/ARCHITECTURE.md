@@ -54,17 +54,19 @@ Versioned folders (like Config or details_versioned) contain sub-folders adherin
 ### 3.3. Commit Kinds & Multi-File Rules
 Commits are **atomic**. A single version bump MUST be able to process a batch of multiple file changes simultaneously.
 
-- **`NEW` (Creation):** Always paired with `001`. Contains the initial dataset in `.data/`.
-- **`UPD` (Update):** Contains a batch of modifications.
+Every commit (except `NEW`) MUST explicitly list its parent leaf(s) in the `versioning.parents` metadata field to maintain the integrity of the DAG.
+
+- **`NEW` (Creation):** Always paired with `001`. Contains the initial dataset in `.data/`. `versioning.parents` is empty.
+- **`UPD` (Update):** Contains a batch of modifications. Points to exactly one parent leaf.
     - **Rule:** When creating an `UPD` folder, the system MUST:
         1. Include all newly created files in `.data/`.
         2. Include all modified files in `.data/`.
-        3. Copy all **untouched** files from the `.data/` folder of the immediate previous version.
+        3. Copy all **untouched** files from the `.data/` folder of the first parent listed.
         4. Explicitly **exclude/drop** any files the user intended to delete.
-- **`DEL` (Soft Deletion):** Deletes the *entire entity*.
+- **`DEL` (Soft Deletion):** Deletes the *entire entity*. Points to exactly one parent leaf.
     - **Rule:** The `.data/` folder MUST be EMPTY. No payload files are copied forward.
-- **`RES` (Resolution):** Closes a conflict state by merging multiple diverging branches. 
-    - **Rule:** The `.metadata` file MUST contain a `resolvedVersions` key listing the folder names of the branches it is merging (comma-separated). It contains the winning state payload in `.data/`.
+- **`RES` (Resolution):** Closes a conflict state by merging multiple diverging branches.
+    - **Rule:** The `.metadata` file MUST contain a `versioning.parents` key listing the folder names of all the leaves it is merging (comma-separated). It contains the winning state payload in `.data/`.
 
 ### 3.4. Standard Commit Operation Algorithm
 When a user modifies data and saves:
@@ -82,14 +84,12 @@ The versioning system operates as a **Directed Acyclic Graph (DAG)** of folders.
 **Divergence Detection (Leaves):**
 A version folder is a "Leaf" if it is NOT **superseded** by any other folder. A conflict is active if there is more than one Leaf.
 A folder **A** supersedes folder **B** if:
-1.  **Device-Local Progression**: Both folders belong to the same `deviceId` and `A.Sequence > B.Sequence`.
-2.  **Global Linear Progression**: Folder `A` has sequence `B.Sequence + 1`, and `B` was the only folder at its sequence level.
-3.  **Explicit Resolution**: Folder `A` is a `RES` kind and its `.metadata` file explicitly lists `B.FolderName` in the `resolvedVersions` key.
+1.  **Explicit Ancestry**: Folder **B** is an ancestor of folder **A**. This means **B** is either a direct parent of **A** (listed in its `versioning.parents` metadata) or an ancestor of one of its parents.
 
 **Resolution Algorithm:**
 1.  **User Selection**: The user chooses a winning state via the UI.
 2.  **Create RES folder**: Calculate `NextSeq = MAX(all_folders.Sequence) + 1` and create a `[NextSeq]_RES_[deviceId]` folder.
-3.  **Explicit Linkage**: Write `resolvedVersions=[list]` in the `.metadata` file.
+3.  **Explicit Linkage**: Write `versioning.parents=[list_of_all_conflicting_leaves]` in the `.metadata` file.
 4.  **Payload**: Copy the winning data payload into the `.data/` folder.
 
 ## 5. Remote Storage Synchronization
