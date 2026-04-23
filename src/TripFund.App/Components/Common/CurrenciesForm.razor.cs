@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using TripFund.App.Models;
 using TripFund.App.Services;
+using TripFund.App.Constants;
 
 namespace TripFund.App.Components.Common
 {
@@ -25,6 +26,9 @@ namespace TripFund.App.Components.Common
         private bool isAddingCurrency = false;
         private string? openMenuCurrencyCode = null;
         private string? editingCurrencyCode = null;
+
+        private List<IsoCurrencyInfo> filteredCurrencies = new();
+        private bool showSuggestions = false;
 
         protected override void OnInitialized()
         {
@@ -68,6 +72,7 @@ namespace TripFund.App.Components.Common
             error = "";
             isAddingCurrency = false;
             editingCurrencyCode = null;
+            showSuggestions = false;
             await CurrenciesChanged.InvokeAsync(Currencies);
         }
 
@@ -77,6 +82,76 @@ namespace TripFund.App.Components.Common
             {
                 newCurrDecimals = System.Math.Clamp(val, 0, 4);
             }
+        }
+
+        private void OnCodeInput(ChangeEventArgs e)
+        {
+            newCurrCode = e.Value?.ToString() ?? "";
+            UpdateSuggestions();
+        }
+
+        private void OnCodeFocus()
+        {
+            UpdateSuggestions();
+        }
+
+        private async Task OnCodeBlur()
+        {
+            // Delay to allow @onmousedown on suggestion items to fire
+            await Task.Delay(200);
+            showSuggestions = false;
+            StateHasChanged();
+        }
+
+        private void UpdateSuggestions()
+        {
+            if (string.IsNullOrWhiteSpace(newCurrCode))
+            {
+                filteredCurrencies.Clear();
+                showSuggestions = false;
+                return;
+            }
+
+            var query = newCurrCode.Trim().ToLowerInvariant();
+            
+            // Match on code (StartsWith, CI) and on the name (Contains, CI)
+            // Matches on currency code must be shown first
+            var codeMatches = IsoCurrencies.All
+                .Where(c => c.Code.ToLowerInvariant().StartsWith(query))
+                .OrderBy(c => c.Code)
+                .ToList();
+
+            var nameMatches = IsoCurrencies.All
+                .Where(c => !c.Code.ToLowerInvariant().StartsWith(query) && c.Name.ToLowerInvariant().Contains(query))
+                .OrderBy(c => c.Name)
+                .ToList();
+
+            filteredCurrencies = codeMatches.Concat(nameMatches).Take(10).ToList();
+            showSuggestions = filteredCurrencies.Any();
+        }
+
+        private void SelectSuggestion(IsoCurrencyInfo info)
+        {
+            newCurrCode = info.Code;
+            newCurrSymbol = info.Symbol;
+            newCurrDecimals = info.Decimals;
+            showSuggestions = false;
+            filteredCurrencies.Clear();
+            StateHasChanged();
+        }
+
+        private MarkupString HighlightMatch(string text, string match)
+        {
+            if (string.IsNullOrWhiteSpace(match)) return (MarkupString)text;
+
+            var index = text.IndexOf(match, System.StringComparison.OrdinalIgnoreCase);
+            if (index == -1) return (MarkupString)text;
+
+            var before = text.Substring(0, index);
+            var matched = text.Substring(index, match.Length);
+            var after = text.Substring(index + match.Length);
+
+            return (MarkupString)$"{before}<b>{matched}</b>{after}";
         }
 
         private void TrimCode()

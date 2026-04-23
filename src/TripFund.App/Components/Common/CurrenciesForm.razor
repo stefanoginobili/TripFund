@@ -18,7 +18,7 @@
                             <span class="new-currency-title">Modifica Cassa</span>
                         </div>
                         
-                        <div class="new-currency-grid">
+                        <div class="new-currency-grid relative-grid">
                             <div class="new-curr-col">
                                 <label>CODICE</label>
                                 <input type="text" value="@newCurrCode" readonly class="readonly-input-form" />
@@ -129,10 +129,10 @@
                         <span class="new-currency-title">Nuova Cassa</span>
                     </div>
                     
-                    <div class="new-currency-grid">
+                    <div class="new-currency-grid relative-grid">
                         <div class="new-curr-col">
                             <label>CODICE</label>
-                            <input type="text" @bind="newCurrCode" @bind:event="oninput" @onblur="TrimCode" placeholder="EUR" />
+                            <input type="text" value="@newCurrCode" @oninput="OnCodeInput" @onfocus="OnCodeFocus" @onblur="OnCodeBlur" placeholder="EUR" autocomplete="off" />
                         </div>
                         <div class="new-curr-col">
                             <label>SIMBOLO</label>
@@ -143,6 +143,20 @@
                             <label>DECIMALI</label>
                             <input type="text" inputmode="numeric" value="@newCurrDecimals" @oninput="OnDecimalsChanged" onfocus="appLogic.selectText(this)" />
                         </div>
+
+                        @if (showSuggestions && filteredCurrencies.Any())
+                        {
+                            <div class="suggestions-dropdown">
+                                @foreach (var curr in filteredCurrencies)
+                                {
+                                    <div class="suggestion-item" @onmousedown="() => SelectSuggestion(curr)">
+                                        <span class="sugg-code">@HighlightMatch(curr.Code, newCurrCode)</span>
+                                        <span class="sugg-divider">-</span>
+                                        <span class="sugg-name">@HighlightMatch(curr.Name, newCurrCode)</span>
+                                    </div>
+                                }
+                            </div>
+                        }
                     </div>
                     
                     <div class="new-currency-footer">
@@ -270,7 +284,7 @@
 
     .new-currency-grid {
         display: grid;
-        grid-template-columns: 1fr 1fr 1fr;
+        grid-template-columns: 2fr 1fr 1fr;
         gap: 1rem;
     }
 
@@ -367,4 +381,63 @@
     .error-text { color: #DC3545; font-size: 0.85rem; font-weight: 600; }
     .me-2 { margin-right: 0.5rem; }
     .mt-2 { margin-top: 0.5rem; }
+
+    .relative-grid {
+        position: relative;
+    }
+
+    .suggestions-dropdown {
+        position: absolute;
+        top: calc(100% - 0.25rem);
+        left: 0;
+        right: 0;
+        background: white;
+        border: 2px solid #E9ECEF;
+        border-radius: 16px;
+        margin-top: 4px;
+        box-shadow: 0 12px 24px rgba(0,0,0,0.12);
+        z-index: 100;
+        max-height: 350px;
+        overflow-y: auto;
+    }
+
+    .suggestion-item {
+        padding: 0.75rem 1rem;
+        cursor: pointer;
+        display: flex;
+        gap: 0.5rem;
+        align-items: center;
+        font-size: 0.9rem;
+        border-bottom: 1px solid #F8F9FA;
+    }
+
+    .suggestion-item:last-child {
+        border-bottom: none;
+    }
+
+    .suggestion-item:hover {
+        background-color: #F1F3F5;
+    }
+
+    .sugg-code {
+        font-weight: 700;
+        color: #1A3C2F;
+        min-width: 40px;
+    }
+
+    .sugg-divider {
+        color: #ADB5BD;
+    }
+
+    .sugg-name {
+        color: #6C757D;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .suggestion-item b {
+        color: #20563C;
+        text-decoration: underline;
+    }
 </style>

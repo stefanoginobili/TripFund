@@ -4,6 +4,7 @@ using System.Globalization;
 using System.Linq;
 using System.Text;
 using TripFund.App.Models;
+using TripFund.App.Constants;
 
 namespace TripFund.App.Utilities;
 
@@ -79,7 +80,10 @@ public static class ReceiptGenerator
             foreach (var total in totalsByCurrency)
             {
                 var currency = trip.Currencies.TryGetValue(total.Currency, out var cur) ? cur : new Currency { Symbol = total.Currency, Decimals = 2 };
-                sb.AppendLine($"• Totale {total.Currency}: {total.Total.ToString("N" + currency.Decimals, _itCulture)}");
+                var isoInfo = IsoCurrencies.All.FirstOrDefault(c => c.Code.Equals(total.Currency, StringComparison.OrdinalIgnoreCase));
+                var currencyNameSuffix = isoInfo != null ? $" ({isoInfo.Name})" : "";
+                
+                sb.AppendLine($"• Totale {total.Currency}{currencyNameSuffix}: {total.Total.ToString("N" + currency.Decimals, _itCulture)}");
             }
         }
 

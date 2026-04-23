@@ -4,6 +4,7 @@ using PdfSharp.Pdf;
 using Microsoft.Maui.Storage;
 using TripFund.App.Models;
 using TripFund.App.Utilities;
+using TripFund.App.Constants;
 
 namespace TripFund.App.Services;
 
@@ -169,6 +170,7 @@ public class PdfReportService
         if (config == null || config.Currencies == null) return;
         
         var currencyCodeFont = new XFont("Sans-Serif", 18, XFontStyleEx.Bold);
+        var currencyNameFont = new XFont("Sans-Serif", 8, XFontStyleEx.Regular);
         var monoFont = new XFont("Monospace", 9, XFontStyleEx.Regular);
         var monoBoldFont = new XFont("Monospace", 9, XFontStyleEx.Bold);
 
@@ -198,6 +200,13 @@ public class PdfReportService
             
             // Currency Code (Top Left)
             gfx.DrawString(currencyCode ?? string.Empty, currencyCodeFont, XBrushes.DarkGray, currentX + 10, yPos + 25);
+
+            // Currency Name (Under Code)
+            var isoInfo = IsoCurrencies.All.FirstOrDefault(c => c.Code.Equals(currencyCode, System.StringComparison.OrdinalIgnoreCase));
+            if (isoInfo != null)
+            {
+                gfx.DrawString(isoInfo.Name, currencyNameFont, XBrushes.Gray, currentX + 10, yPos + 38);
+            }
 
             // Right-aligned values
             string totalStr = FormatAmountOnly(totalExpenses, currencyCode ?? string.Empty, config);
