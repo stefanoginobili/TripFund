@@ -40,7 +40,7 @@ TripFund is built with **.NET MAUI Blazor Hybrid**, allowing us to share web UI 
 Instead of a traditional database, TripFund relies on an **Append-Only File System** architecture. 
 * **Transaction Atomic Versions:** Changes are saved locally as `.json` files inside unique versioned folders (`001_NEW_device-id`, `002_UPD_device-id`).
 * **Conflict Resolution via DAG:** The versioning system operates as a Directed Acyclic Graph (DAG) of folders, allowing the app to detect and resolve divergence through a dedicated UI.
-* **Metadata & Immutability:** Each leaf folder contains a `.metadata` file with author, device, and timestamp information, ensuring auditability.
+* **Metadata & Immutability:** Each leaf folder contains a `.tripfund` file with author, device, and timestamp information, ensuring auditability.
 * **ZIP-Based Sync:** When online, the app bundles local changes into differential ZIP packages and syncs them with Microsoft OneDrive, ensuring atomicity across devices.
 
 Check out the [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) for a deep dive into this unique system.

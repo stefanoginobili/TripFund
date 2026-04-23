@@ -10,8 +10,8 @@ namespace TripFund.App.Models;
 public class LocalLeafFolder : LeafFolder
 {
     private readonly string _path;
-    private const string DataFolderName = AppConstants.Files.DataFolder;
-    private const string MetadataFileName = AppConstants.Files.MetadataFile;
+    private const string ContentFolderName = AppConstants.Files.ContentFolder;
+    private const string TripFundFileName = AppConstants.Files.TripFundFile;
 
     public LocalLeafFolder(string path)
     {
@@ -20,7 +20,7 @@ public class LocalLeafFolder : LeafFolder
 
     public override async Task<Dictionary<string, string>> GetMetadataAsync()
     {
-        var metadataPath = Path.Combine(_path, MetadataFileName);
+        var metadataPath = Path.Combine(_path, TripFundFileName);
         var result = new Dictionary<string, string>();
         if (File.Exists(metadataPath))
         {
@@ -39,7 +39,7 @@ public class LocalLeafFolder : LeafFolder
 
     public override Dictionary<string, string> GetMetadata()
     {
-        var metadataPath = Path.Combine(_path, MetadataFileName);
+        var metadataPath = Path.Combine(_path, TripFundFileName);
         var result = new Dictionary<string, string>();
         if (File.Exists(metadataPath))
         {
@@ -59,7 +59,7 @@ public class LocalLeafFolder : LeafFolder
     public override async Task SaveMetadataAsync(Dictionary<string, string> metadata)
     {
         if (!Directory.Exists(_path)) Directory.CreateDirectory(_path);
-        var metadataPath = Path.Combine(_path, MetadataFileName);
+        var metadataPath = Path.Combine(_path, TripFundFileName);
         var lines = metadata.Select(kv => $"{kv.Key}={kv.Value}");
         await File.WriteAllLinesAsync(metadataPath, lines);
     }
@@ -67,14 +67,14 @@ public class LocalLeafFolder : LeafFolder
     public override void SaveMetadata(Dictionary<string, string> metadata)
     {
         if (!Directory.Exists(_path)) Directory.CreateDirectory(_path);
-        var metadataPath = Path.Combine(_path, MetadataFileName);
+        var metadataPath = Path.Combine(_path, TripFundFileName);
         var lines = metadata.Select(kv => $"{kv.Key}={kv.Value}");
         File.WriteAllLines(metadataPath, lines);
     }
 
     public override Task<bool> IsDataEmptyAsync()
     {
-        var dataPath = Path.Combine(_path, DataFolderName);
+        var dataPath = Path.Combine(_path, ContentFolderName);
         if (!Directory.Exists(dataPath)) return Task.FromResult(true);
         return Task.FromResult(!Directory.EnumerateFileSystemEntries(dataPath).Any());
     }
@@ -87,7 +87,7 @@ public class LocalLeafFolder : LeafFolder
 
     public override void EnsureDataDirectory()
     {
-        var dataPath = Path.Combine(_path, DataFolderName);
+        var dataPath = Path.Combine(_path, ContentFolderName);
         if (!Directory.Exists(dataPath))
         {
             Directory.CreateDirectory(dataPath);
@@ -96,7 +96,7 @@ public class LocalLeafFolder : LeafFolder
 
     public override Task<List<string>> ListDataFilesAsync()
     {
-        var dataPath = Path.Combine(_path, DataFolderName);
+        var dataPath = Path.Combine(_path, ContentFolderName);
         if (!Directory.Exists(dataPath)) return Task.FromResult(new List<string>());
         var files = Directory.GetFiles(dataPath).Select(Path.GetFileName).Cast<string>().ToList();
         return Task.FromResult(files);
@@ -104,20 +104,20 @@ public class LocalLeafFolder : LeafFolder
 
     public override Task<byte[]> ReadDataFileAsync(string fileName)
     {
-        var filePath = Path.Combine(_path, DataFolderName, fileName);
+        var filePath = Path.Combine(_path, ContentFolderName, fileName);
         return File.ReadAllBytesAsync(filePath);
     }
 
     public override Task WriteDataFileAsync(string fileName, byte[] content)
     {
         EnsureDataDirectory();
-        var filePath = Path.Combine(_path, DataFolderName, fileName);
+        var filePath = Path.Combine(_path, ContentFolderName, fileName);
         return File.WriteAllBytesAsync(filePath, content);
     }
 
     public override Task DeleteDataFileAsync(string fileName)
     {
-        var filePath = Path.Combine(_path, DataFolderName, fileName);
+        var filePath = Path.Combine(_path, ContentFolderName, fileName);
         if (File.Exists(filePath))
         {
             File.Delete(filePath);

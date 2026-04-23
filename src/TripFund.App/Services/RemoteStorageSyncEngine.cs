@@ -1,6 +1,7 @@
 using System.Net.Http.Headers;
 using System.IO.Compression;
 using TripFund.App.Models;
+using TripFund.App.Constants;
 
 namespace TripFund.App.Services;
 
@@ -196,17 +197,17 @@ public class RemoteStorageSyncEngine
                                 continue;
                             }
 
-                            // Add .metadata
-                            var metaPath = Path.Combine(fullPath, ".metadata");
-                            if (File.Exists(metaPath)) archive.CreateEntryFromFile(metaPath, $"{normalizedPendingPath}/.metadata");
+                            // Add metadata (.tripfund)
+                            var metaPath = Path.Combine(fullPath, AppConstants.Files.TripFundFile);
+                            if (File.Exists(metaPath)) archive.CreateEntryFromFile(metaPath, $"{normalizedPendingPath}/{AppConstants.Files.TripFundFile}");
 
-                            // Add .data content
-                            var dataDir = Path.Combine(fullPath, ".data");
+                            // Add content (.content)
+                            var dataDir = Path.Combine(fullPath, AppConstants.Files.ContentFolder);
                             if (Directory.Exists(dataDir))
                             {
                                 foreach (var file in Directory.GetFiles(dataDir))
                                 {
-                                    archive.CreateEntryFromFile(file, $"{normalizedPendingPath}/.data/{Path.GetFileName(file)}");
+                                    archive.CreateEntryFromFile(file, $"{normalizedPendingPath}/{AppConstants.Files.ContentFolder}/{Path.GetFileName(file)}");
                                 }
                             }
                             
@@ -252,11 +253,11 @@ public class RemoteStorageSyncEngine
     private async Task MoveExpandedFoldersAsync(string sourceRoot, string targetRoot)
     {
         // Recursively find leaf folders in expanded/ and move them to final destination.
-        // Leaf folders are identified by containing a .metadata file (as per ARCHITECTURE.md).
+        // Leaf folders are identified by containing a .tripfund file (as per ARCHITECTURE.md).
         var directories = Directory.GetDirectories(sourceRoot, "*", SearchOption.AllDirectories);
         foreach (var dir in directories)
         {
-            if (File.Exists(Path.Combine(dir, ".metadata")))
+            if (File.Exists(Path.Combine(dir, AppConstants.Files.TripFundFile)))
             {
                 var relativePath = Path.GetRelativePath(sourceRoot, dir);
                 var finalPath = Path.Combine(targetRoot, relativePath);

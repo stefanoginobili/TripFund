@@ -65,7 +65,7 @@ public class OneDriveRemoteStorageService : IRemoteStorageService, IRemoteFileSy
 
         await EnsureAuthenticatedAsync(parameters);
         
-        var tripFile = await GetChildItemAsync(folderId, ".tripfund", parameters);
+        var tripFile = await GetChildItemAsync(folderId, AppConstants.Files.TripFundFile, parameters);
         if (tripFile == null) return null;
 
         var content = await DownloadFileContentAsync(tripFile.Id, parameters);
@@ -84,7 +84,7 @@ public class OneDriveRemoteStorageService : IRemoteStorageService, IRemoteFileSy
             var val = parts[1].Trim();
 
             if (key == AppConstants.Metadata.ContentType) metadata.IsValid = (val == AppConstants.ContentTypes.Trip);
-            else if (key == "tripSlug") metadata.TripSlug = val;
+            else if (key == AppConstants.Metadata.TripSlug) metadata.TripSlug = val;
             else if (key == AppConstants.Metadata.Author) metadata.Author = val;
             else if (key == AppConstants.Metadata.CreatedAt) 
             {
@@ -108,12 +108,12 @@ public class OneDriveRemoteStorageService : IRemoteStorageService, IRemoteFileSy
 
         var sb = new System.Text.StringBuilder();
         sb.AppendLine($"{AppConstants.Metadata.ContentType}={AppConstants.ContentTypes.Trip}");
-        sb.AppendLine($"tripSlug={tripSlug}");
+        sb.AppendLine($"{AppConstants.Metadata.TripSlug}={tripSlug}");
         sb.AppendLine($"{AppConstants.Metadata.Author}={author}");
         sb.AppendLine($"{AppConstants.Metadata.CreatedAt}={DateTime.UtcNow:yyyy-MM-ddTHH:mm:ss.fffZ}");
 
         var content = System.Text.Encoding.UTF8.GetBytes(sb.ToString());
-        await UploadFileAsync(folderId, ".tripfund", content, parameters);
+        await UploadFileAsync(folderId, AppConstants.Files.TripFundFile, content, parameters);
     }
 
     public async Task<bool> IsRemoteLocationEmptyAsync(string provider, Dictionary<string, string> parameters)

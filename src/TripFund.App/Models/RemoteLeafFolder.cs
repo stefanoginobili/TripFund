@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using TripFund.App.Services;
+using TripFund.App.Constants;
 
 namespace TripFund.App.Models;
 
@@ -13,8 +14,8 @@ public class RemoteLeafFolder : LeafFolder
     private readonly string _folderId;
     private readonly Dictionary<string, string> _parameters;
     
-    private const string DataFolderName = ".data";
-    private const string MetadataFileName = ".metadata";
+    private const string ContentFolderName = AppConstants.Files.ContentFolder;
+    private const string TripFundFileName = AppConstants.Files.TripFundFile;
 
     public RemoteLeafFolder(IRemoteFileSystem fileSystem, string folderId, Dictionary<string, string> parameters)
     {
@@ -26,7 +27,7 @@ public class RemoteLeafFolder : LeafFolder
     public override async Task<Dictionary<string, string>> GetMetadataAsync()
     {
         var result = new Dictionary<string, string>();
-        var metadataItem = await _fileSystem.GetChildItemAsync(_folderId, MetadataFileName, _parameters);
+        var metadataItem = await _fileSystem.GetChildItemAsync(_folderId, TripFundFileName, _parameters);
         if (metadataItem != null)
         {
             var content = await _fileSystem.DownloadFileContentAsync(metadataItem.Id, _parameters);
@@ -49,19 +50,19 @@ public class RemoteLeafFolder : LeafFolder
 
     public override async Task SaveMetadataAsync(Dictionary<string, string> metadata)
     {
-        var existing = await _fileSystem.GetChildItemAsync(_folderId, MetadataFileName, _parameters);
+        var existing = await _fileSystem.GetChildItemAsync(_folderId, TripFundFileName, _parameters);
         if (existing != null)
         {
             await _fileSystem.DeleteFileAsync(existing.Id, _parameters);
         }
         var text = string.Join("\n", metadata.Select(kv => $"{kv.Key}={kv.Value}"));
         var content = Encoding.UTF8.GetBytes(text);
-        await _fileSystem.UploadFileAsync(_folderId, MetadataFileName, content, _parameters);
+        await _fileSystem.UploadFileAsync(_folderId, TripFundFileName, content, _parameters);
     }
 
     public override async Task<bool> IsDataEmptyAsync()
     {
-        var dataFolder = await _fileSystem.GetChildItemAsync(_folderId, DataFolderName, _parameters);
+        var dataFolder = await _fileSystem.GetChildItemAsync(_folderId, ContentFolderName, _parameters);
         if (dataFolder == null || !dataFolder.IsFolder) return true;
         var children = await _fileSystem.ListChildrenAsync(dataFolder.Id, _parameters);
         return !children.Any();
@@ -69,16 +70,16 @@ public class RemoteLeafFolder : LeafFolder
 
     public override async Task EnsureDataDirectoryAsync()
     {
-        var dataFolder = await _fileSystem.GetChildItemAsync(_folderId, DataFolderName, _parameters);
+        var dataFolder = await _fileSystem.GetChildItemAsync(_folderId, ContentFolderName, _parameters);
         if (dataFolder == null)
         {
-            await _fileSystem.CreateFolderAsync(_folderId, DataFolderName, _parameters);
+            await _fileSystem.CreateFolderAsync(_folderId, ContentFolderName, _parameters);
         }
     }
 
     public override async Task<List<string>> ListDataFilesAsync()
     {
-        var dataFolder = await _fileSystem.GetChildItemAsync(_folderId, DataFolderName, _parameters);
+        var dataFolder = await _fileSystem.GetChildItemAsync(_folderId, ContentFolderName, _parameters);
         if (dataFolder == null || !dataFolder.IsFolder) return new List<string>();
         var children = await _fileSystem.ListChildrenAsync(dataFolder.Id, _parameters);
         return children.Where(c => !c.IsFolder).Select(c => c.Name).ToList();
@@ -86,7 +87,7 @@ public class RemoteLeafFolder : LeafFolder
 
     public override async Task<byte[]> ReadDataFileAsync(string fileName)
     {
-        var dataFolder = await _fileSystem.GetChildItemAsync(_folderId, DataFolderName, _parameters);
+        var dataFolder = await _fileSystem.GetChildItemAsync(_folderId, ContentFolderName, _parameters);
         if (dataFolder == null) throw new FileNotFoundException("Data folder not found.");
         var file = await _fileSystem.GetChildItemAsync(dataFolder.Id, fileName, _parameters);
         if (file == null) throw new FileNotFoundException($"File {fileName} not found in data folder.");
@@ -95,10 +96,10 @@ public class RemoteLeafFolder : LeafFolder
 
     public override async Task WriteDataFileAsync(string fileName, byte[] content)
     {
-        var dataFolder = await _fileSystem.GetChildItemAsync(_folderId, DataFolderName, _parameters);
+        var dataFolder = await _fileSystem.GetChildItemAsync(_folderId, ContentFolderName, _parameters);
         if (dataFolder == null)
         {
-            dataFolder = await _fileSystem.CreateFolderAsync(_folderId, DataFolderName, _parameters);
+            dataFolder = await _fileSystem.CreateFolderAsync(_folderId, ContentFolderName, _parameters);
         }
         if (dataFolder == null) throw new InvalidOperationException("Failed to create/get data folder.");
 
@@ -112,7 +113,7 @@ public class RemoteLeafFolder : LeafFolder
 
     public override async Task DeleteDataFileAsync(string fileName)
     {
-        var dataFolder = await _fileSystem.GetChildItemAsync(_folderId, DataFolderName, _parameters);
+        var dataFolder = await _fileSystem.GetChildItemAsync(_folderId, ContentFolderName, _parameters);
         if (dataFolder != null)
         {
             var file = await _fileSystem.GetChildItemAsync(dataFolder.Id, fileName, _parameters);

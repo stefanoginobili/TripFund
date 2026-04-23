@@ -269,7 +269,7 @@ public class LocalTripStorageService
         if (attachment == null) return null;
 
         var leafPath = Path.Combine(_tripsPath, tripSlug, "transactions", transactionId, "attachments", attachment.Name);
-        var path = Path.Combine(leafPath, ".data", attachment.OriginalName);
+        var path = Path.Combine(leafPath, AppConstants.Files.ContentFolder, attachment.OriginalName);
         return File.Exists(path) ? path : null;
     }
 

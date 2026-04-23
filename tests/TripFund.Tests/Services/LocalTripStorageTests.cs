@@ -43,8 +43,8 @@ public class LocalTripStorageTests : IDisposable
         var configDir = Path.Combine(_tempPath, "trips", slug, "config_versioned");
         var versionDir = Path.Combine(configDir, "001_NEW_mario");
         Directory.Exists(versionDir).Should().BeTrue();
-        File.Exists(Path.Combine(versionDir, ".metadata")).Should().BeTrue();
-        File.Exists(Path.Combine(versionDir, ".data", "trip_config.json")).Should().BeTrue();
+        File.Exists(Path.Combine(versionDir, ".tripfund")).Should().BeTrue();
+        File.Exists(Path.Combine(versionDir, ".content", "trip_config.json")).Should().BeTrue();
     }
 
     [Fact]
@@ -65,7 +65,7 @@ public class LocalTripStorageTests : IDisposable
         var detailsDir = Path.Combine(_tempPath, "trips", tripSlug, "transactions", "trans-1", "details_versioned");
         var versionDir = Path.Combine(detailsDir, "001_NEW_mario");
         Directory.Exists(versionDir).Should().BeTrue();
-        File.Exists(Path.Combine(versionDir, ".data", "transaction_details.json")).Should().BeTrue();
+        File.Exists(Path.Combine(versionDir, ".content", "transaction_details.json")).Should().BeTrue();
     }
 
     [Fact]
@@ -90,7 +90,7 @@ public class LocalTripStorageTests : IDisposable
         Directory.GetDirectories(detailsDir).Should().Contain(d => Path.GetFileName(d) == "002_UPD_mario");
         
         var v2Dir = Path.Combine(detailsDir, "002_UPD_mario");
-        File.Exists(Path.Combine(v2Dir, ".data", "transaction_details.json")).Should().BeTrue();
+        File.Exists(Path.Combine(v2Dir, ".content", "transaction_details.json")).Should().BeTrue();
     }
 
     [Fact]
@@ -133,7 +133,7 @@ public class LocalTripStorageTests : IDisposable
         // Assert
         var detailsDir = Path.Combine(_tempPath, "trips", tripSlug, "transactions", "trans-1", "details_versioned");
         var delVersionDir = Path.Combine(detailsDir, "002_DEL_mario-123");
-        var metadataFile = Path.Combine(delVersionDir, ".metadata");
+        var metadataFile = Path.Combine(delVersionDir, ".tripfund");
         
         File.Exists(metadataFile).Should().BeTrue();
         var content = await File.ReadAllTextAsync(metadataFile);
@@ -164,15 +164,15 @@ public class LocalTripStorageTests : IDisposable
         Directory.CreateDirectory(v1);
         Directory.CreateDirectory(v2);
         
-        await File.WriteAllTextAsync(Path.Combine(v1, ".metadata"), "author=mario\ndevice=m\ncreatedAt=2023-10-01T12:00:00.000Z");
-        Directory.CreateDirectory(Path.Combine(v1, ".data"));
+        await File.WriteAllTextAsync(Path.Combine(v1, ".tripfund"), "author=mario\ndevice=m\ncreatedAt=2023-10-01T12:00:00.000Z");
+        Directory.CreateDirectory(Path.Combine(v1, ".content"));
         var t1 = new Transaction { Id = transId, Description = "Mario's" };
-        await File.WriteAllTextAsync(Path.Combine(v1, ".data", "transaction_details.json"), System.Text.Json.JsonSerializer.Serialize(t1));
+        await File.WriteAllTextAsync(Path.Combine(v1, ".content", "transaction_details.json"), System.Text.Json.JsonSerializer.Serialize(t1));
 
-        await File.WriteAllTextAsync(Path.Combine(v2, ".metadata"), "author=luigi\ndevice=l\ncreatedAt=2023-10-01T12:00:00.000Z");
-        Directory.CreateDirectory(Path.Combine(v2, ".data"));
+        await File.WriteAllTextAsync(Path.Combine(v2, ".tripfund"), "author=luigi\ndevice=l\ncreatedAt=2023-10-01T12:00:00.000Z");
+        Directory.CreateDirectory(Path.Combine(v2, ".content"));
         var t2 = new Transaction { Id = transId, Description = "Luigi's" };
-        await File.WriteAllTextAsync(Path.Combine(v2, ".data", "transaction_details.json"), System.Text.Json.JsonSerializer.Serialize(t2));
+        await File.WriteAllTextAsync(Path.Combine(v2, ".content", "transaction_details.json"), System.Text.Json.JsonSerializer.Serialize(t2));
 
         // Act
         var transactions = await _service.GetTransactionsAsync(tripSlug);
@@ -199,10 +199,10 @@ public class LocalTripStorageTests : IDisposable
         var v2 = Path.Combine(detailsDir, "001_NEW_luigi");
         Directory.CreateDirectory(v1);
         Directory.CreateDirectory(v2);
-        Directory.CreateDirectory(Path.Combine(v1, ".data"));
-        Directory.CreateDirectory(Path.Combine(v2, ".data"));
-        await File.WriteAllTextAsync(Path.Combine(v1, ".metadata"), "author=m\ndevice=m\ncreatedAt=2023-10-01T12:00:00.000Z");
-        await File.WriteAllTextAsync(Path.Combine(v2, ".metadata"), "author=l\ndevice=l\ncreatedAt=2023-10-01T12:00:00.000Z");
+        Directory.CreateDirectory(Path.Combine(v1, ".content"));
+        Directory.CreateDirectory(Path.Combine(v2, ".content"));
+        await File.WriteAllTextAsync(Path.Combine(v1, ".tripfund"), "author=m\ndevice=m\ncreatedAt=2023-10-01T12:00:00.000Z");
+        await File.WriteAllTextAsync(Path.Combine(v2, ".tripfund"), "author=l\ndevice=l\ncreatedAt=2023-10-01T12:00:00.000Z");
 
         var resolvedTrans = new Transaction { Id = transId, Description = "Resolved" };
 
@@ -218,7 +218,7 @@ public class LocalTripStorageTests : IDisposable
         loaded!.Description.Should().Be("Resolved");
         
         var resDir = Path.Combine(detailsDir, "002_RES_mario");
-        var metadata = await File.ReadAllTextAsync(Path.Combine(resDir, ".metadata"));
+        var metadata = await File.ReadAllTextAsync(Path.Combine(resDir, ".tripfund"));
         metadata.Should().Contain("versioning.parents=001_NEW_mario,001_NEW_luigi");
     }
 
@@ -242,10 +242,10 @@ public class LocalTripStorageTests : IDisposable
         var v2l = Path.Combine(detailsDir, "002_UPD_luigi");
         Directory.CreateDirectory(v2m);
         Directory.CreateDirectory(v2l);
-        Directory.CreateDirectory(Path.Combine(v2m, ".data"));
-        Directory.CreateDirectory(Path.Combine(v2l, ".data"));
-        await File.WriteAllTextAsync(Path.Combine(v2m, ".metadata"), "author=m\ndevice=m\ncreatedAt=2023-10-01T12:00:00.000Z");
-        await File.WriteAllTextAsync(Path.Combine(v2l, ".metadata"), "author=l\ndevice=l\ncreatedAt=2023-10-01T12:00:00.000Z");
+        Directory.CreateDirectory(Path.Combine(v2m, ".content"));
+        Directory.CreateDirectory(Path.Combine(v2l, ".content"));
+        await File.WriteAllTextAsync(Path.Combine(v2m, ".tripfund"), "author=m\ndevice=m\ncreatedAt=2023-10-01T12:00:00.000Z");
+        await File.WriteAllTextAsync(Path.Combine(v2l, ".tripfund"), "author=l\ndevice=l\ncreatedAt=2023-10-01T12:00:00.000Z");
 
         var resolvedTrans = new Transaction { Id = transId, Description = "Resolved" };
 
@@ -284,7 +284,7 @@ public class LocalTripStorageTests : IDisposable
         var v2Dir = Path.Combine(detailsDir, "002_UPD_device1");
         Directory.Exists(v2Dir).Should().BeTrue();
         
-        File.Exists(Path.Combine(v2Dir, ".data", "transaction_details.json")).Should().BeTrue();
+        File.Exists(Path.Combine(v2Dir, ".content", "transaction_details.json")).Should().BeTrue();
         File.Exists(Path.Combine(v2Dir, ".synched")).Should().BeFalse(".synched should NOT be copied");
         File.Exists(Path.Combine(v2Dir, ".uploading")).Should().BeFalse(".uploading should NOT be copied");
     }

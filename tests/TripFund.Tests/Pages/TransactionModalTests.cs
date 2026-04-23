@@ -197,7 +197,7 @@ public class TransactionModalTests : BunitContext
         previewWrappers.Should().HaveCount(2);
 
         // Display timestamp (localized to UTC as per transaction.Timezone)
-        cut.FindAll(".attachment-name")[0].TextContent.Should().Be("10/04/2026 10:30");
+        cut.WaitForAssertion(() => cut.FindAll(".attachment-name")[0].TextContent.Should().Be("10/04/2026 10:30"));
         cut.FindAll(".attachment-name")[1].TextContent.Should().Be("10/04/2026 10:35");
         
         // Full name should still be in the HTML as alt text for images
@@ -205,7 +205,8 @@ public class TransactionModalTests : BunitContext
         img.GetAttribute("alt").Should().Be("receipt1.jpg");
         
         // Check for PDF extension in placeholder
-        var pdfWrapper = previewWrappers.First(w => w.QuerySelector(".attachment-name")!.TextContent == "10/04/2026 10:35");
+        var updatedWrappers = cut.FindAll(".attachment-preview-wrapper");
+        var pdfWrapper = updatedWrappers.First(w => w.QuerySelector(".attachment-name")!.TextContent == "10/04/2026 10:35");
         pdfWrapper.QuerySelector(".file-ext")!.TextContent.Should().Be("PDF");
     }
 

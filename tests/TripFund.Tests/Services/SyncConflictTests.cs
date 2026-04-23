@@ -29,10 +29,10 @@ public class SyncConflictTests : IDisposable
     private async Task CreateFolderWithMeta(string path, string author, string device, string? parents = null)
     {
         Directory.CreateDirectory(path);
-        Directory.CreateDirectory(Path.Combine(path, ".data"));
+        Directory.CreateDirectory(Path.Combine(path, ".content"));
         var meta = $"author={author}\ndevice={device}\ntimestamp=2023-10-01T12:00:00Z";
-        if (parents != null) meta += $"\n{AppConstants.Metadata.ParentVersions}={parents}";
-        await File.WriteAllTextAsync(Path.Combine(path, ".metadata"), meta);
+        if (parents != null) meta += $"\n{AppConstants.Metadata.VersioningParents}={parents}";
+        await File.WriteAllTextAsync(Path.Combine(path, ".tripfund"), meta);
     }
 
     [Fact]

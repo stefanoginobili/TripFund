@@ -55,17 +55,17 @@ public class AttachmentCopyTests : IDisposable
         // Verify Details V1
         var v1Path = Path.Combine(transRoot, "details_versioned", "001_NEW_device1");
         Directory.Exists(v1Path).Should().BeTrue("Details V1 folder should exist");
-        File.Exists(Path.Combine(v1Path, ".data", "transaction_details.json")).Should().BeTrue();
+        File.Exists(Path.Combine(v1Path, ".content", "transaction_details.json")).Should().BeTrue();
 
-        // Verify Attachments - Now in .data subfolder
-        var att1Path = Path.Combine(transRoot, "attachments", "ATT_001", ".data", "original_1.jpg");
-        var att2Path = Path.Combine(transRoot, "attachments", "ATT_002", ".data", "original_2.png");
-        File.Exists(att1Path).Should().BeTrue("Attachment 1 should exist in .data subfolder of its leaf");
-        File.Exists(att2Path).Should().BeTrue("Attachment 2 should exist in .data subfolder of its leaf");
+        // Verify Attachments - Now in .content subfolder
+        var att1Path = Path.Combine(transRoot, "attachments", "ATT_001", ".content", "original_1.jpg");
+        var att2Path = Path.Combine(transRoot, "attachments", "ATT_002", ".content", "original_2.png");
+        File.Exists(att1Path).Should().BeTrue("Attachment 1 should exist in .content subfolder of its leaf");
+        File.Exists(att2Path).Should().BeTrue("Attachment 2 should exist in .content subfolder of its leaf");
 
         // Verify Metadata for attachments
-        File.Exists(Path.Combine(transRoot, "attachments", "ATT_001", ".metadata")).Should().BeTrue();
-        File.Exists(Path.Combine(transRoot, "attachments", "ATT_002", ".metadata")).Should().BeTrue();
+        File.Exists(Path.Combine(transRoot, "attachments", "ATT_001", ".tripfund")).Should().BeTrue();
+        File.Exists(Path.Combine(transRoot, "attachments", "ATT_002", ".tripfund")).Should().BeTrue();
 
         // Act 2: Update transaction (add new attachment)
         var t2 = new Transaction 
@@ -93,7 +93,7 @@ public class AttachmentCopyTests : IDisposable
         // Assert: Attachments are not duplicated but all exist in unversioned folder
         File.Exists(att1Path).Should().BeTrue();
         File.Exists(att2Path).Should().BeTrue();
-        var att3Path = Path.Combine(transRoot, "attachments", "ATT_003", ".data", "original_3.pdf");
+        var att3Path = Path.Combine(transRoot, "attachments", "ATT_003", ".content", "original_3.pdf");
         File.Exists(att3Path).Should().BeTrue();
     }
 
@@ -137,8 +137,8 @@ public class AttachmentCopyTests : IDisposable
 
         // Assert
         var transRoot = Path.Combine(_tempPath, "trips", tripSlug, "transactions", transactionId);
-        var attKeepPath = Path.Combine(transRoot, "attachments", "ATT_KEEP", ".data", "keep.jpg");
-        var attDeletePath = Path.Combine(transRoot, "attachments", "ATT_DELETE", ".data", "delete.png");
+        var attKeepPath = Path.Combine(transRoot, "attachments", "ATT_KEEP", ".content", "keep.jpg");
+        var attDeletePath = Path.Combine(transRoot, "attachments", "ATT_DELETE", ".content", "delete.png");
         
         File.Exists(attKeepPath).Should().BeTrue("Physical file for kept attachment should exist");
         File.Exists(attDeletePath).Should().BeTrue("Physical file for removed attachment should ALSO exist (soft delete/history preservation)");

@@ -36,8 +36,8 @@ The application utilizes an append-only, soft-deletion storage engine. Data is s
 
 ### 3.1. Leaf Folder Structure
 Every Leaf folder (whether a version folder or an attachment folder) MUST strictly follow this structure:
-- **`.data/`**: A subdirectory containing all user payload files (e.g., `transaction_details.json`, `trip_config.json`, or the actual attachment file).
-- **`.metadata`**: A text file containing key-value pairs (one per line). Default keys added upon creation:
+- **`.content/`**: A subdirectory containing all user payload files (e.g., `transaction_details.json`, `trip_config.json`, or the actual attachment file).
+- **`.tripfund`**: A text file containing key-value pairs (one per line). Default keys added upon creation:
     - `author`: The name of the user who created the leaf.
     - `device`: The `deviceId` that initiated the commit.
     - `createdAt`: The creation time in `yyyy-MM-ddTHH:mm:ss.fffZ` format.
@@ -56,26 +56,26 @@ Commits are **atomic**. A single version bump MUST be able to process a batch of
 
 Every commit (except `NEW`) MUST explicitly list its parent leaf(s) in the `versioning.parents` metadata field to maintain the integrity of the DAG.
 
-- **`NEW` (Creation):** Always paired with `001`. Contains the initial dataset in `.data/`. `versioning.parents` is empty.
+- **`NEW` (Creation):** Always paired with `001`. Contains the initial dataset in `.content/`. `versioning.parents` is empty.
 - **`UPD` (Update):** Contains a batch of modifications. Points to exactly one parent leaf.
     - **Rule:** When creating an `UPD` folder, the system MUST:
-        1. Include all newly created files in `.data/`.
-        2. Include all modified files in `.data/`.
-        3. Copy all **untouched** files from the `.data/` folder of the first parent listed.
+        1. Include all newly created files in `.content/`.
+        2. Include all modified files in `.content/`.
+        3. Copy all **untouched** files from the `.content/` folder of the first parent listed.
         4. Explicitly **exclude/drop** any files the user intended to delete.
 - **`DEL` (Soft Deletion):** Deletes the *entire entity*. Points to exactly one parent leaf.
-    - **Rule:** The `.data/` folder MUST be EMPTY. No payload files are copied forward.
+    - **Rule:** The `.content/` folder MUST be EMPTY. No payload files are copied forward.
 - **`RES` (Resolution):** Closes a conflict state by merging multiple diverging branches.
-    - **Rule:** The `.metadata` file MUST contain a `versioning.parents` key listing the folder names of all the leaves it is merging (comma-separated). It contains the winning state payload in `.data/`.
+    - **Rule:** The `.tripfund` file MUST contain a `versioning.parents` key listing the folder names of all the leaves it is merging (comma-separated). It contains the winning state payload in `.content/`.
 
 ### 3.4. Standard Commit Operation Algorithm
 When a user modifies data and saves:
 1. Scan the versioned folder for all sub-folders to find the latest state.
 2. Calculate the next sequence number: `NextSeq = MAX([nnn]) + 1`.
 3. Create a temporary work directory (e.g., `temp/commits/`).
-4. Build the new leaf folder and its `.data/` subdirectory inside the temporary directory.
-5. Populate `.data/` resolving the changes against the previous state.
-6. Write the `.metadata` file.
+4. Build the new leaf folder and its `.content/` subdirectory inside the temporary directory.
+5. Populate `.content/` resolving the changes against the previous state.
+6. Write the `.tripfund` file.
 7. Once all files are written, atomically `Move` the completed folder to its final destination.
 
 ### 3.5. Conflict Detection & Resolution (DAG)
@@ -89,15 +89,15 @@ A folder **A** supersedes folder **B** if:
 **Resolution Algorithm:**
 1.  **User Selection**: The user chooses a winning state via the UI.
 2.  **Create RES folder**: Calculate `NextSeq = MAX(all_folders.Sequence) + 1` and create a `[NextSeq]_RES_[deviceId]` folder.
-3.  **Explicit Linkage**: Write `versioning.parents=[list_of_all_conflicting_leaves]` in the `.metadata` file.
-4.  **Payload**: Copy the winning data payload into the `.data/` folder.
+3.  **Explicit Linkage**: Write `versioning.parents=[list_of_all_conflicting_leaves]` in the `.tripfund` file.
+4.  **Payload**: Copy the winning data payload into the `.content/` folder.
 
 ## 5. Remote Storage Synchronization
 The synchronization process groups local changes into differential ZIP packages to minimize network overhead and ensure consistency.
 
 ### 5.1. Remote Layout
 The remote storage is organized per-trip:
-- **`.tripfund`**: A text file in the root for quick discovery and validation. Contains `contentType=tripfund/trip`, `tripSlug`, `author`, and `createdAt`.
+- **`.tripfund`**: A text file in the root for quick discovery and validation. Contains `contentType=tripfund/trip`, `trip.slug`, `author`, and `createdAt`.
 - `/devices/[DeviceId]/`: A folder dedicated to the specific device for permission checks and discovery.
 - `/packages/`: Contains ZIP packages named `pack_[Timestamp]_[DeviceId].zip`.
 
@@ -120,7 +120,7 @@ A local-only file in the trip's `sync/` subfolder tracks sync progress:
     - Scans for local conflicts. If any are detected, the **Upload phase is aborted** until the user resolves them.
 4. **Upload Phase**:
     - Gathers all leaf folders from the `pending` list.
-    - Packs them into a single ZIP (only `.data/` and `.metadata` included).
+    - Packs them into a single ZIP (only `.content/` and `.tripfund` included).
     - Package name uses the **lowest** timestamp from the pending list: `pack_[LowestTimestamp]_[DeviceId].zip`.
     - **Atomic Upload**: To ensure remote atomicity and avoid partial files:
         - Small files (<= 2MB) use a single **Simple Upload** (PUT).
@@ -148,7 +148,7 @@ Global JSON files (`app_settings.json`, `known_trips.json`, and `sync/sync_state
 4. If a `JsonException` occurs during reading (indicating corruption), the system gracefully recovers by returning a default/empty state to prevent a startup loop.
 
 ### 6.2. Leaf Folder Integrity (Atomic Move)
-The versioning and sync systems ensure the integrity of "Leaf" folders through atomicity. Leaf folders are always constructed in a temporary location and moved to their final destination only after all files (`.data/` and `.metadata`) have been successfully committed to disk. This prevents partial folders from being read or synchronized.
+The versioning and sync systems ensure the integrity of "Leaf" folders through atomicity. Leaf folders are always constructed in a temporary location and moved to their final destination only after all files (`.content/` and `.tripfund`) have been successfully committed to disk. This prevents partial folders from being read or synchronized.
 
 ### 6.3. Initial Import Protection
 When "Joining" or "Creating" a trip, the application performs multiple steps (registry entry, directory creation, initial sync). To handle failures during this multi-step process:

@@ -184,11 +184,11 @@ createdAt=2026-03-24T12:00:00.000Z
 ```
 
 * Note 1: `contentType` MUST be exactly `tripfund/trip`.
-* Note 2: `tripSlug` is the original slug of the trip (used as the base for the local folder name).
+* Note 2: `trip.slug` is the original slug of the trip (used as the base for the local folder name).
 * Note 3: `author` and `createdAt` are used to display a confirmation message to the user when adding an existing trip.
 
-## 7. Leaf Folder Metadata (`.metadata`)
-Every leaf folder contains a `.metadata` file (plain text, key-value pairs).
+## 7. Leaf Folder Metadata (`.tripfund`)
+Every leaf folder contains a `.tripfund` file (plain text, key-value pairs).
 
 **Mandatory Keys:**
 - `author`: Physical user name.

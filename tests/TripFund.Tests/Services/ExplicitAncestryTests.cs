@@ -163,7 +163,7 @@ public class ExplicitAncestryTests
         string name = $"{seq:D3}_{kind.ToString().ToUpperInvariant()}_{deviceId}";
         string path = Path.Combine(root, name);
         Directory.CreateDirectory(path);
-        Directory.CreateDirectory(Path.Combine(path, ".data"));
+        Directory.CreateDirectory(Path.Combine(path, ".content"));
         
         var meta = new Dictionary<string, string>
         {
@@ -174,10 +174,10 @@ public class ExplicitAncestryTests
         
         if (parents.Any())
         {
-            meta[AppConstants.Metadata.ParentVersions] = string.Join(",", parents);
+            meta[AppConstants.Metadata.VersioningParents] = string.Join(",", parents);
         }
 
         var lines = meta.Select(kv => $"{kv.Key}={kv.Value}");
-        await File.WriteAllLinesAsync(Path.Combine(path, ".metadata"), lines);
+        await File.WriteAllLinesAsync(Path.Combine(path, ".tripfund"), lines);
     }
 }

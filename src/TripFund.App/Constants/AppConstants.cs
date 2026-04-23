@@ -10,8 +10,8 @@ public static class AppConstants
         public const string TripConfig = "trip_config.json";
         public const string TransactionDetails = "transaction_details.json";
         public const string InitialImportMarker = ".initial_import";
-        public const string DataFolder = ".data";
-        public const string MetadataFile = ".metadata";
+        public const string ContentFolder = ".content";
+        public const string TripFundFile = ".tripfund";
     }
 
     public static class Metadata
@@ -20,7 +20,8 @@ public static class AppConstants
         public const string DeviceId = "device";
         public const string CreatedAt = "createdAt";
         public const string ContentType = "contentType";
-        public const string ParentVersions = "versioning.parents";
+        public const string VersioningParents = "versioning.parents";
+        public const string TripSlug = "trip.slug";
     }
 
     public static class ContentTypes

@@ -68,15 +68,6 @@ public class VersionedStorageEngine
 {
     private static readonly Regex VersionRegex = new(@"^(?<nnn>\d{3})_(?<kind>NEW|UPD|RES|DEL|new|upd|res|del)_(?<deviceId>[a-z0-9\-]+)$", RegexOptions.Compiled);
 
-    public static readonly IReadOnlyList<Regex> IgnoredSystemFiles = new List<Regex>
-    {
-        new(@"^\.synched$", RegexOptions.Compiled | RegexOptions.IgnoreCase),
-        new(@"^\.uploading$", RegexOptions.Compiled | RegexOptions.IgnoreCase),
-        new(@"^\.downloading$", RegexOptions.Compiled | RegexOptions.IgnoreCase),
-        new(@"^\.metadata$", RegexOptions.Compiled | RegexOptions.IgnoreCase),
-        new(@"^\.data$", RegexOptions.Compiled | RegexOptions.IgnoreCase)
-    };
-
     public List<VersionFolderInfo> GetVersionFolders(string rootPath)
     {
         if (!Directory.Exists(rootPath)) return new List<VersionFolderInfo>();
@@ -88,7 +79,7 @@ public class VersionedStorageEngine
         {
             var leaf = new LocalLeafFolder(Path.Combine(rootPath, v.FolderName));
             var metadata = leaf.GetMetadata();
-            if (metadata.TryGetValue(AppConstants.Metadata.ParentVersions, out var parents))
+            if (metadata.TryGetValue(AppConstants.Metadata.VersioningParents, out var parents))
             {
                 v.ParentVersions = parents.Split(',', StringSplitOptions.RemoveEmptyEntries).ToList();
             }
@@ -283,7 +274,7 @@ public class VersionedStorageEngine
 
         if (parentVersions != null && parentVersions.Any())
         {
-            metaDict[AppConstants.Metadata.ParentVersions] = string.Join(",", parentVersions);
+            metaDict[AppConstants.Metadata.VersioningParents] = string.Join(",", parentVersions);
         }
 
         await leaf.SaveMetadataAsync(metaDict);

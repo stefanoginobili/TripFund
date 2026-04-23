@@ -4,6 +4,7 @@ using System.IO.Compression;
 using Moq;
 using TripFund.App.Models;
 using TripFund.App.Services;
+using AppConstants = TripFund.App.Constants.AppConstants;
 using WireMock.Matchers;
 using WireMock.RequestBuilders;
 using WireMock.ResponseBuilders;
@@ -63,7 +64,7 @@ public class OneDriveSyncLogicTests : IDisposable
         // 2. Mock DownloadFileContentAsync(tripfund_id)
         var sb = new System.Text.StringBuilder();
         sb.AppendLine("contentType=tripfund/trip");
-        sb.AppendLine("tripSlug=test-trip");
+        sb.AppendLine($"{AppConstants.Metadata.TripSlug}=test-trip");
         sb.AppendLine("author=Mario Rossi");
         sb.AppendLine("createdAt=2024-01-01T12:00:00.000Z");
         
@@ -139,10 +140,10 @@ public class OneDriveSyncLogicTests : IDisposable
             {
                 using (var archive = new ZipArchive(ms, ZipArchiveMode.Create, true))
                 {
-                    var entry = archive.CreateEntry("config_versioned/002_UPD_remote-dev/.metadata");
+                    var entry = archive.CreateEntry("config_versioned/002_UPD_remote-dev/.tripfund");
                     using (var writer = new StreamWriter(entry.Open())) writer.Write("author=remote-user\nversioning.parents=001_NEW_local-device-id");
                     
-                    var dataEntry = archive.CreateEntry("config_versioned/002_UPD_remote-dev/.data/trip_config.json");
+                    var dataEntry = archive.CreateEntry("config_versioned/002_UPD_remote-dev/.content/trip_config.json");
                     using (var writer = new StreamWriter(dataEntry.Open())) writer.Write("{ \"Name\": \"Remote Trip\" }");
                 }
                 zipBytes = ms.ToArray();
@@ -167,8 +168,8 @@ public class OneDriveSyncLogicTests : IDisposable
             // Assert
             // Verify Download worked
             var remoteLeaf = Path.Combine(localTripPath, "config_versioned", "002_UPD_remote-dev");
-            Assert.True(File.Exists(Path.Combine(remoteLeaf, ".metadata")));
-            Assert.True(File.Exists(Path.Combine(remoteLeaf, ".data", "trip_config.json")));
+            Assert.True(File.Exists(Path.Combine(remoteLeaf, ".tripfund")));
+            Assert.True(File.Exists(Path.Combine(remoteLeaf, ".content", "trip_config.json")));
 
             // Verify SyncState updated
             var syncState = await _localStorage.GetSyncStateAsync(tripSlug);
@@ -226,7 +227,7 @@ public class OneDriveSyncLogicTests : IDisposable
         // Phase 3: Prepare LARGE content (> 2MB)
         await _localStorage.SaveTripConfigAsync(tripSlug, new TripConfig { Name = "Large Trip" }, deviceId);
         var pendingLeaf = Path.Combine(localTripPath, "config_versioned", $"001_NEW_{deviceId}");
-        var largeFile = Path.Combine(pendingLeaf, ".data", "large.bin");
+        var largeFile = Path.Combine(pendingLeaf, ".content", "large.bin");
         Directory.CreateDirectory(Path.GetDirectoryName(largeFile)!);
         byte[] largeData = new byte[3 * 1024 * 1024]; // 3 MB
         new Random().NextBytes(largeData);
