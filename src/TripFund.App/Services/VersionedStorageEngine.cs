@@ -1,5 +1,6 @@
 using System.Text.RegularExpressions;
 using TripFund.App.Models;
+using TripFund.App.Constants;
 
 namespace TripFund.App.Services;
 
@@ -89,7 +90,7 @@ public class VersionedStorageEngine
             {
                 var leaf = new LocalLeafFolder(Path.Combine(rootPath, v.FolderName));
                 var metadata = leaf.GetMetadata();
-                if (metadata.TryGetValue("resolved_versions", out var resolved))
+                if (metadata.TryGetValue(AppConstants.Metadata.ResolvedVersions, out var resolved))
                 {
                     v.ResolvedFolders = resolved.Split(',', StringSplitOptions.RemoveEmptyEntries).ToList();
                 }
@@ -283,14 +284,14 @@ public class VersionedStorageEngine
         var leaf = new LocalLeafFolder(workDirPath);
         var metaDict = metadata != null ? new Dictionary<string, string>(metadata) : new Dictionary<string, string>();
 
-        if (!metaDict.ContainsKey("author")) metaDict["author"] = "unknown";
-        if (!metaDict.ContainsKey("device")) metaDict["device"] = deviceId;
-        if (!metaDict.ContainsKey("createdAt")) metaDict["createdAt"] = DateTime.UtcNow.ToString("yyyy-MM-ddTHH:mm:ss.fffZ");
-        if (!string.IsNullOrEmpty(contentType)) metaDict["contentType"] = contentType;
+        if (!metaDict.ContainsKey(AppConstants.Metadata.Author)) metaDict[AppConstants.Metadata.Author] = "unknown";
+        if (!metaDict.ContainsKey(AppConstants.Metadata.DeviceId)) metaDict[AppConstants.Metadata.DeviceId] = deviceId;
+        if (!metaDict.ContainsKey(AppConstants.Metadata.CreatedAt)) metaDict[AppConstants.Metadata.CreatedAt] = DateTime.UtcNow.ToString("yyyy-MM-ddTHH:mm:ss.fffZ");
+        if (!string.IsNullOrEmpty(contentType)) metaDict[AppConstants.Metadata.ContentType] = contentType;
 
         if (kind == CommitKind.Res && resolvedFolders != null)
         {
-            metaDict["resolved_versions"] = string.Join(",", resolvedFolders);
+            metaDict[AppConstants.Metadata.ResolvedVersions] = string.Join(",", resolvedFolders);
         }
 
         await leaf.SaveMetadataAsync(metaDict);

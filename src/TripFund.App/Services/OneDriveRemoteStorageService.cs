@@ -4,6 +4,7 @@ using System.Net.Http.Json;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using TripFund.App.Models;
+using TripFund.App.Constants;
 
 namespace TripFund.App.Services;
 
@@ -35,7 +36,7 @@ public class OneDriveRemoteStorageService : IRemoteStorageService, IRemoteFileSy
         LocalTripStorageService localStorage,
         IMicrosoftAuthConfiguration config,
         RemoteStorageSyncEngine syncEngine,
-        string graphBaseUrl = "https://graph.microsoft.com/v1.0")
+        string graphBaseUrl = AppConstants.MicrosoftApi.GraphBaseUrl)
     {
         _httpClient = httpClientFactory.CreateClient(nameof(OneDriveRemoteStorageService));
         _authenticator = authenticator;
@@ -82,10 +83,10 @@ public class OneDriveRemoteStorageService : IRemoteStorageService, IRemoteFileSy
             var key = parts[0].Trim();
             var val = parts[1].Trim();
 
-            if (key == "contentType") metadata.IsValid = (val == "tripfund/trip");
+            if (key == AppConstants.Metadata.ContentType) metadata.IsValid = (val == AppConstants.ContentTypes.Trip);
             else if (key == "tripSlug") metadata.TripSlug = val;
-            else if (key == "author") metadata.Author = val;
-            else if (key == "createdAt") 
+            else if (key == AppConstants.Metadata.Author) metadata.Author = val;
+            else if (key == AppConstants.Metadata.CreatedAt) 
             {
                 if (DateTime.TryParse(val, out var dt)) metadata.CreatedAt = dt;
             }
@@ -94,7 +95,7 @@ public class OneDriveRemoteStorageService : IRemoteStorageService, IRemoteFileSy
         return metadata.IsValid ? metadata : null;
     }
 
-    public async Task InitializeRemoteLocationAsync(string tripSlug, string provider, Dictionary<string, string> parameters)
+    public virtual async Task InitializeRemoteLocationAsync(string tripSlug, string provider, Dictionary<string, string> parameters)
     {
         if (provider != "onedrive") return;
 
@@ -106,10 +107,10 @@ public class OneDriveRemoteStorageService : IRemoteStorageService, IRemoteFileSy
         var author = settings?.AuthorName ?? "Unknown";
 
         var sb = new System.Text.StringBuilder();
-        sb.AppendLine("contentType=tripfund/trip");
+        sb.AppendLine($"{AppConstants.Metadata.ContentType}={AppConstants.ContentTypes.Trip}");
         sb.AppendLine($"tripSlug={tripSlug}");
-        sb.AppendLine($"author={author}");
-        sb.AppendLine($"createdAt={DateTime.UtcNow:yyyy-MM-ddTHH:mm:ss.fffZ}");
+        sb.AppendLine($"{AppConstants.Metadata.Author}={author}");
+        sb.AppendLine($"{AppConstants.Metadata.CreatedAt}={DateTime.UtcNow:yyyy-MM-ddTHH:mm:ss.fffZ}");
 
         var content = System.Text.Encoding.UTF8.GetBytes(sb.ToString());
         await UploadFileAsync(folderId, ".tripfund", content, parameters);
@@ -553,9 +554,9 @@ public class OneDriveRemoteStorageService : IRemoteStorageService, IRemoteFileSy
 
     private async Task AuthenticateAsync(Dictionary<string, string> parameters)
     {
-        var scope = "Files.ReadWrite offline_access";
+        var scope = AppConstants.MicrosoftApi.Scopes;
         var redirectUri = $"msal{_config.MicrosoftClientId}://auth";
-        var authUrl = $"https://login.microsoftonline.com/{_config.MicrosoftTenantId}/oauth2/v2.0/authorize?client_id={_config.MicrosoftClientId}&response_type=code&redirect_uri={Uri.EscapeDataString(redirectUri)}&scope={Uri.EscapeDataString(scope)}";
+        var authUrl = $"{string.Format(AppConstants.MicrosoftApi.AuthUrlTemplate, _config.MicrosoftTenantId)}?client_id={_config.MicrosoftClientId}&response_type=code&redirect_uri={Uri.EscapeDataString(redirectUri)}&scope={Uri.EscapeDataString(scope)}";
 
         var authResult = await _authenticator.AuthenticateAsync(new WebAuthenticatorOptions
         {
@@ -571,14 +572,14 @@ public class OneDriveRemoteStorageService : IRemoteStorageService, IRemoteFileSy
 
     private async Task ExchangeCodeForTokenAsync(string code, string redirectUri, Dictionary<string, string> parameters)
     {
-        var tokenUrl = $"https://login.microsoftonline.com/{_config.MicrosoftTenantId}/oauth2/v2.0/token";
+        var tokenUrl = string.Format(AppConstants.MicrosoftApi.TokenUrlTemplate, _config.MicrosoftTenantId);
         var body = new Dictionary<string, string>
         {
             ["client_id"] = _config.MicrosoftClientId,
             ["grant_type"] = "authorization_code",
             ["code"] = code,
             ["redirect_uri"] = redirectUri,
-            ["scope"] = "Files.ReadWrite offline_access"
+            ["scope"] = AppConstants.MicrosoftApi.Scopes
         };
 
         var response = await _httpClient.PostAsync(tokenUrl, new FormUrlEncodedContent(body));
@@ -598,13 +599,13 @@ public class OneDriveRemoteStorageService : IRemoteStorageService, IRemoteFileSy
 
     private async Task RefreshTokenAsync(Dictionary<string, string> parameters)
     {
-        var tokenUrl = $"https://login.microsoftonline.com/{_config.MicrosoftTenantId}/oauth2/v2.0/token";
+        var tokenUrl = string.Format(AppConstants.MicrosoftApi.TokenUrlTemplate, _config.MicrosoftTenantId);
         var body = new Dictionary<string, string>
         {
             ["client_id"] = _config.MicrosoftClientId,
             ["grant_type"] = "refresh_token",
             ["refresh_token"] = parameters["refreshToken"],
-            ["scope"] = "Files.ReadWrite offline_access"
+            ["scope"] = AppConstants.MicrosoftApi.Scopes
         };
 
         var response = await _httpClient.PostAsync(tokenUrl, new FormUrlEncodedContent(body));

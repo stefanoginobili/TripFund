@@ -197,7 +197,7 @@
                     <p class="text-danger fw-bold" style="text-align: center;">@errorMessage</p>
                 }
 
-                <button class="btn-primary-vibe mt-2 mb-4" @onclick="HandleSubmit" disabled="@(isSubmitting || isLocating || !HasChanges())">
+                <button class="btn-vibe btn-primary-vibe mt-2 mb-4" @onclick="HandleSubmit" disabled="@(isSubmitting || isLocating || !HasChanges())">
                     @(isSubmitting ? "Salvataggio..." : "Salva")
                 </button>
             </div>

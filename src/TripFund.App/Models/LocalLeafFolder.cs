@@ -3,14 +3,15 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
+using TripFund.App.Constants;
 
 namespace TripFund.App.Models;
 
 public class LocalLeafFolder : LeafFolder
 {
     private readonly string _path;
-    private const string DataFolderName = ".data";
-    private const string MetadataFileName = ".metadata";
+    private const string DataFolderName = AppConstants.Files.DataFolder;
+    private const string MetadataFileName = AppConstants.Files.MetadataFile;
 
     public LocalLeafFolder(string path)
     {

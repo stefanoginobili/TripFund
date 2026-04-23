@@ -185,7 +185,7 @@
                 </div>
 
                 <div class="confirm-action-container">
-                    <button class="btn-primary-vibe w-100" @onclick="Confirm" disabled="@(!selectedIndex.HasValue || isSaving)">
+                    <button class="btn-vibe btn-primary-vibe w-100" @onclick="Confirm" disabled="@(!selectedIndex.HasValue || isSaving)">
                         @if (isSaving)
                         {
                             <span>Salvataggio...</span>
@@ -321,20 +321,5 @@
 
     .confirm-action-container {
         padding-top: 1rem;
-    }
-
-    .btn-primary-vibe {
-        background-color: #20563C;
-        color: white;
-        border: none;
-        padding: 1rem;
-        border-radius: 12px;
-        font-weight: 700;
-        cursor: pointer;
-    }
-
-    .btn-primary-vibe:disabled {
-        background-color: #ADB5BD;
-        cursor: not-allowed;
     }
 </style>

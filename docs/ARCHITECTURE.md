@@ -64,7 +64,7 @@ Commits are **atomic**. A single version bump MUST be able to process a batch of
 - **`DEL` (Soft Deletion):** Deletes the *entire entity*.
     - **Rule:** The `.data/` folder MUST be EMPTY. No payload files are copied forward.
 - **`RES` (Resolution):** Closes a conflict state by merging multiple diverging branches. 
-    - **Rule:** The `.metadata` file MUST contain a `resolved_versions` key listing the folder names of the branches it is merging (comma-separated). It contains the winning state payload in `.data/`.
+    - **Rule:** The `.metadata` file MUST contain a `resolvedVersions` key listing the folder names of the branches it is merging (comma-separated). It contains the winning state payload in `.data/`.
 
 ### 3.4. Standard Commit Operation Algorithm
 When a user modifies data and saves:
@@ -84,12 +84,12 @@ A version folder is a "Leaf" if it is NOT **superseded** by any other folder. A 
 A folder **A** supersedes folder **B** if:
 1.  **Device-Local Progression**: Both folders belong to the same `deviceId` and `A.Sequence > B.Sequence`.
 2.  **Global Linear Progression**: Folder `A` has sequence `B.Sequence + 1`, and `B` was the only folder at its sequence level.
-3.  **Explicit Resolution**: Folder `A` is a `RES` kind and its `.metadata` file explicitly lists `B.FolderName` in the `resolved_versions` key.
+3.  **Explicit Resolution**: Folder `A` is a `RES` kind and its `.metadata` file explicitly lists `B.FolderName` in the `resolvedVersions` key.
 
 **Resolution Algorithm:**
 1.  **User Selection**: The user chooses a winning state via the UI.
 2.  **Create RES folder**: Calculate `NextSeq = MAX(all_folders.Sequence) + 1` and create a `[NextSeq]_RES_[deviceId]` folder.
-3.  **Explicit Linkage**: Write `resolved_versions=[list]` in the `.metadata` file.
+3.  **Explicit Linkage**: Write `resolvedVersions=[list]` in the `.metadata` file.
 4.  **Payload**: Copy the winning data payload into the `.data/` folder.
 
 ## 5. Remote Storage Synchronization

@@ -92,10 +92,8 @@ html, body, #app {
 }
 
 /* Buttons */
-.btn-primary-vibe {
+.btn-vibe {
     width: 100%;
-    background-color: #20563C;
-    color: #FFFFFF;
     border: none;
     border-radius: 16px;
     padding: 1.1rem;
@@ -104,35 +102,30 @@ html, body, #app {
     display: flex;
     align-items: center;
     justify-content: center;
-    box-shadow: 0 8px 24px rgba(32, 86, 60, 0.2);
     transition: all 0.2s ease;
+}
+
+.btn-vibe:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.btn-primary-vibe {
+    background-color: #20563C;
+    color: #FFFFFF;
+    box-shadow: 0 8px 24px rgba(32, 86, 60, 0.2);
 }
 
 .btn-primary-vibe:active:not(:disabled) {
     box-shadow: 0 4px 12px rgba(32, 86, 60, 0.2);
 }
 
-.btn-primary-vibe:disabled {
-    opacity: 0.6;
-    cursor: not-allowed;
-}
-
 .btn-secondary-vibe {
-    width: 100%;
     background-color: #E9F2EE;
     color: #20563C;
-    border: none;
-    border-radius: 16px;
-    padding: 1.1rem;
-    font-weight: 700;
-    font-size: 1.1rem;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: all 0.2s ease;
 }
 
-.btn-secondary-vibe:active {
+.btn-secondary-vibe:active:not(:disabled) {
     background-color: #D6EDE2;
 }
 

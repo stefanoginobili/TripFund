@@ -175,8 +175,8 @@ public class SyncConflictTests : IDisposable
         var resDir = Path.Combine(root, "003_RES_luigi");
         Directory.CreateDirectory(resDir);
         
-        // Metadata containing resolved_versions
-        await File.WriteAllTextAsync(Path.Combine(resDir, ".metadata"), "resolved_versions=002_UPD_mario,002_UPD_carlo");
+        // Metadata containing resolvedVersions
+        await File.WriteAllTextAsync(Path.Combine(resDir, ".metadata"), "resolvedVersions=002_UPD_mario,002_UPD_carlo");
 
         // Carlo creates a new commit at sequence 3, sitting alongside the RES
         Directory.CreateDirectory(Path.Combine(root, "003_UPD_carlo"));
