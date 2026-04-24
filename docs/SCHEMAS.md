@@ -105,7 +105,8 @@ This file is stored in the root of the app's local storage. It acts purely as a 
       "remoteStorage": {
         "provider": "onedrive",
         "parameters": {
-          "folderId": "abcdef1234567890"
+          "folderId": "abcdef1234567890",
+          "driveId": "b!1234567890abcdef"
         },
         "readonly": false
       }

@@ -102,3 +102,9 @@ window.appLogic = {
         menuElement.style.visibility = 'visible';
     }
 };
+
+window.selectElementText = (element) => {
+    if (element) {
+        element.select();
+    }
+};

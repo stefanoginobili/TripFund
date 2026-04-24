@@ -38,3 +38,27 @@ Update the `IMicrosoftAuthConfiguration` implementation in `src/TripFund.App/Ser
 *   **ClientId**: The "Application (client) ID" from the Overview page.
 *   **TenantId**: `common` (since we support personal accounts).
 *   **Scopes**: `["User.Read", "Files.ReadWrite", "offline_access"]`.
+
+## OneDrive Shared Link Resolution
+
+To allow users to join trips without explicit file invitations, TripFund implements a robust resolution strategy for "Anyone with the link" URLs.
+
+### 1. Multi-Trial Resolution Strategy
+Microsoft Graph's `shares` API is sensitive to URL formats and query parameters. The app automatically attempts the following variations in order:
+1.  **Original URL**: Encodes the exact string pasted by the user.
+2.  **Stripped URL**: Removes tracking/event parameters (e.g., `?e=...`) while preserving redemption tokens.
+3.  **Expanded URL**: Follows redirects (e.g., from `1drv.ms`) to find the canonical OneDrive/SharePoint URL before encoding.
+
+### 2. Anonymous vs. Authenticated Access
+- **Anonymous Attempt**: For Personal OneDrive, providing an `Authorization` header on a public link can sometimes trigger an `accessDenied` error if the user isn't the owner. The app always tries anonymous resolution first.
+- **Authenticated Redemption**: For SharePoint Online (SPO) and migrated Personal accounts, the app retries with the user's token and the `Prefer: redeemSharingLink` header. This programmatically "redeems" the link for the user, granting them durable access.
+
+### 3. Unified Lifecycle
+Once a shared link is successfully resolved to a `driveId` and `folderId`, the trip is treated **identically** to one added via the manual folder picker. The app uses standard `/drives/{driveId}/items/{itemId}` pathing for all operations.
+
+### 4. Dynamic Write-Permission Detection
+Trips added via shared links default to a "Read-Write" state. The `RemoteStorageSyncEngine` then performs a **Self-Healing Evaluation**:
+1.  It attempts to ensure the remote structure (`/devices`, `/packages`) and register the local device.
+2.  It performs a write test by uploading a small `.last-seen` file.
+3.  If any write operation fails (e.g., the link only has "View" permissions), the engine **automatically downgrades** the local trip registry to `Read-Only` and continues in download-only mode.
+4.  If permissions are later upgraded on the link, the next sync run will automatically detect the change and "upgrade" the local trip back to `Read-Write`.

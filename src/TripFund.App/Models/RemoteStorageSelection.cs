@@ -6,4 +6,5 @@ public class RemoteStorageSelection
 {
     public string Provider { get; set; } = "";
     public Dictionary<string, string> Parameters { get; set; } = new();
+    public bool IsReadonly { get; set; }
 }

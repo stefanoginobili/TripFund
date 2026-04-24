@@ -20,6 +20,7 @@ public class OneDriveRemoteStorageService : IRemoteStorageService, IRemoteFileSy
     }
 
     private readonly HttpClient _httpClient;
+    private readonly IHttpClientFactory _httpClientFactory;
     private readonly IWebAuthenticator _authenticator;
     private readonly LocalTripStorageService _localStorage;
     private readonly IMicrosoftAuthConfiguration _config;
@@ -38,6 +39,7 @@ public class OneDriveRemoteStorageService : IRemoteStorageService, IRemoteFileSy
         RemoteStorageSyncEngine syncEngine,
         string graphBaseUrl = AppConstants.MicrosoftApi.GraphBaseUrl)
     {
+        _httpClientFactory = httpClientFactory;
         _httpClient = httpClientFactory.CreateClient(nameof(OneDriveRemoteStorageService));
         _authenticator = authenticator;
         _localStorage = localStorage;
@@ -277,6 +279,7 @@ public class OneDriveRemoteStorageService : IRemoteStorageService, IRemoteFileSy
 
         using var request = new HttpRequestMessage(HttpMethod.Get, url);
         request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", parameters["accessToken"]);
+        request.Headers.Add("User-Agent", "TripFund/1.0");
 
         var response = await _httpClient.SendAsync(request);
         if (!response.IsSuccessStatusCode)
@@ -313,6 +316,7 @@ public class OneDriveRemoteStorageService : IRemoteStorageService, IRemoteFileSy
 
         using var request = new HttpRequestMessage(HttpMethod.Get, url);
         request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", parameters["accessToken"]);
+        request.Headers.Add("User-Agent", "TripFund/1.0");
 
         var response = await _httpClient.SendAsync(request);
         if (!response.IsSuccessStatusCode)
@@ -345,6 +349,7 @@ public class OneDriveRemoteStorageService : IRemoteStorageService, IRemoteFileSy
 
         using var request = new HttpRequestMessage(HttpMethod.Get, url);
         request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", parameters["accessToken"]);
+        request.Headers.Add("User-Agent", "TripFund/1.0");
 
         var response = await _httpClient.SendAsync(request);
         if (!response.IsSuccessStatusCode)
@@ -376,6 +381,7 @@ public class OneDriveRemoteStorageService : IRemoteStorageService, IRemoteFileSy
         
         using var request = new HttpRequestMessage(HttpMethod.Post, url);
         request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", parameters["accessToken"]);
+        request.Headers.Add("User-Agent", "TripFund/1.0");
         request.Content = JsonContent.Create(body);
 
         var response = await _httpClient.SendAsync(request);
@@ -414,6 +420,7 @@ public class OneDriveRemoteStorageService : IRemoteStorageService, IRemoteFileSy
 
             using var request = new HttpRequestMessage(HttpMethod.Put, url);
             request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", parameters["accessToken"]);
+            request.Headers.Add("User-Agent", "TripFund/1.0");
             
             var byteArrayContent = new ByteArrayContent(content);
             var contentType = name.EndsWith(".zip") || name.EndsWith(".zip.part") 
@@ -445,6 +452,7 @@ public class OneDriveRemoteStorageService : IRemoteStorageService, IRemoteFileSy
                 : $"{_graphBaseUrl}/drives/{driveId}/items/{parentId}:/{encodedName}:/createUploadSession";
 
             Logger?.LogApiCall("POST", createSessionUrl, $"Creating upload session for file '{name}' in parent folder {parentName}");
+
 
             var sessionBody = new
             {
@@ -511,6 +519,159 @@ public class OneDriveRemoteStorageService : IRemoteStorageService, IRemoteFileSy
 
             return finalItem;
         }
+    }
+
+    public async Task<(string FolderId, string DriveId, string Name)?> ResolveSharedLinkAsync(string sharedLinkUrl, string accessToken)
+    {
+        return await Task.Run<(string FolderId, string DriveId, string Name)?>(async () =>
+        {
+            if (string.IsNullOrWhiteSpace(sharedLinkUrl)) return null;
+            var trimmedUrl = sharedLinkUrl.Trim();
+
+            // 1. Try resolving the link as provided by the user (best for 1drv.ms and standard sharing links)
+            var result = await ExecuteResolutionAttemptAsync(trimmedUrl, accessToken);
+            if (result != null) return result;
+
+            // 2. Fallback: If it's a shortened link and the first attempt failed, try expanding it
+            if (trimmedUrl.Contains(AppConstants.MicrosoftApi.Domains.OneDriveShort))
+            {
+                Logger?.LogInfo($"Initial resolution failed for {trimmedUrl}. Attempting expansion...");
+                var expandedUrl = await TryExpandLinkAsync(trimmedUrl);
+                if (!string.IsNullOrEmpty(expandedUrl) && expandedUrl != trimmedUrl)
+                {
+                    return await ExecuteResolutionAttemptAsync(expandedUrl, accessToken);
+                }
+            }
+
+            return null;
+        });
+    }
+
+    private async Task<(string FolderId, string DriveId, string Name)?> ExecuteResolutionAttemptAsync(string urlToResolve, string accessToken)
+    {
+        // Variation 1: As provided (Full URL, includes redeem/authkey if present)
+        var result = await TryAllAuthModesAsync(urlToResolve, accessToken);
+        if (result != null) return result;
+
+        // Variation 2: Without query parameters 
+        // (Only try this if the URL DOES NOT look like a redemption URL)
+        if (urlToResolve.Contains("?") && !urlToResolve.Contains("redeem=") && !urlToResolve.Contains("authkey="))
+        {
+            var noParams = urlToResolve.Split('?')[0];
+            Logger?.LogInfo($"Retrying without query parameters: {noParams}");
+            result = await TryAllAuthModesAsync(noParams, accessToken);
+            if (result != null) return result;
+        }
+
+        // Variation 3: Expansion fallback
+        if (urlToResolve.Contains(AppConstants.MicrosoftApi.Domains.OneDriveShort))
+        {
+            Logger?.LogInfo($"Shortened link resolution failed. Expanding...");
+            var expanded = await TryExpandLinkAsync(urlToResolve);
+            if (!string.IsNullOrEmpty(expanded) && expanded != urlToResolve)
+            {
+                // Try expanded (with all parameters, vital for SPO/migrated links)
+                result = await TryAllAuthModesAsync(expanded, accessToken);
+                if (result != null) return result;
+            }
+        }
+
+        return null;
+    }
+
+    private async Task<(string FolderId, string DriveId, string Name)?> TryAllAuthModesAsync(string url, string accessToken)
+    {
+        // Encode the URL
+        var bytes = System.Text.Encoding.UTF8.GetBytes(url);
+        var base64 = Convert.ToBase64String(bytes);
+        var sharingToken = AppConstants.MicrosoftApi.SharingTokenPrefix + base64
+            .Replace('+', '-')
+            .Replace('/', '_')
+            .TrimEnd('=');
+
+        var graphUrl = $"{_graphBaseUrl}/shares/{sharingToken}/driveItem";
+
+        // Attempt 1: Anonymous
+        Logger?.LogApiCall("GET", graphUrl, $"Resolution trial (Anonymous): {url}");
+        var item = await FetchDriveItemInternalAsync(graphUrl, null);
+        if (item != null) return MapToResult(item);
+
+        // Attempt 2: Authenticated with Redemption Preference
+        // Migrated SPO links often require explicit redemption via the 'Prefer' header
+        Logger?.LogApiCall("GET", graphUrl, $"Resolution trial (Authenticated + Redeem): {url}");
+        item = await FetchDriveItemInternalAsync(graphUrl, accessToken, redeem: true);
+        if (item != null) return MapToResult(item);
+
+        return null;
+    }
+
+    private async Task<OneDriveItemInternal?> FetchDriveItemInternalAsync(string url, string? token, bool redeem = false)
+    {
+        try
+        {
+            using var request = new HttpRequestMessage(HttpMethod.Get, url);
+            request.Headers.Add("User-Agent", "TripFund/1.0");
+            
+            if (redeem)
+            {
+                // This header is crucial for migrated OneDrive accounts and SharePoint links
+                request.Headers.Add("Prefer", "redeemSharingLink");
+            }
+
+            if (!string.IsNullOrEmpty(token))
+            {
+                request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
+            }
+
+            var response = await _httpClient.SendAsync(request);
+            if (response.IsSuccessStatusCode)
+            {
+                return await response.Content.ReadFromJsonAsync<OneDriveItemInternal>();
+            }
+            
+            var error = await response.Content.ReadAsStringAsync();
+            Logger?.LogInfo($"Trial failed ({(int)response.StatusCode}). Info: {error.Substring(0, Math.Min(100, error.Length))}...");
+        }
+        catch (Exception ex)
+        {
+            Logger?.LogWarning($"Request failed: {ex.Message}");
+        }
+        return null;
+    }
+
+    private (string FolderId, string DriveId, string Name)? MapToResult(OneDriveItemInternal item)
+    {
+        var folderId = item.Id;
+        var driveId = item.ParentReference?.DriveId ?? item.RemoteItem?.DriveId;
+
+        if (!string.IsNullOrEmpty(folderId) && !string.IsNullOrEmpty(driveId))
+        {
+            _idToNameCache[folderId] = item.Name;
+            return (folderId, driveId, item.Name);
+        }
+        return null;
+    }
+
+    private async Task<string?> TryExpandLinkAsync(string shortenedUrl)
+    {
+        try
+        {
+            using var redirectClient = _httpClientFactory.CreateClient(nameof(OneDriveRemoteStorageService));
+            using var response = await redirectClient.GetAsync(shortenedUrl, HttpCompletionOption.ResponseHeadersRead);
+
+            var expandedUri = response.RequestMessage?.RequestUri?.ToString();
+            if (!string.IsNullOrEmpty(expandedUri) && 
+                (expandedUri.Contains(AppConstants.MicrosoftApi.Domains.OneDriveLive) || 
+                 expandedUri.Contains(AppConstants.MicrosoftApi.Domains.SharePoint)))
+            {
+                return expandedUri;
+            }
+        }
+        catch (Exception ex)
+        {
+            Logger?.LogWarning($"Link expansion failed: {ex.Message}");
+        }
+        return null;
     }
 
     #endregion
@@ -648,12 +809,20 @@ public class OneDriveRemoteStorageService : IRemoteStorageService, IRemoteFileSy
         [JsonPropertyName("name")] public string Name { get; set; } = string.Empty;
         [JsonPropertyName("folder")] public object? Folder { get; set; }
         [JsonPropertyName("remoteItem")] public RemoteItemInternal? RemoteItem { get; set; }
+        [JsonPropertyName("parentReference")] public ParentReferenceInternal? ParentReference { get; set; }
         [JsonPropertyName("@microsoft.graph.downloadUrl")] public string? DownloadUrl { get; set; }
     }
 
     private class RemoteItemInternal
     {
+        [JsonPropertyName("id")] public string Id { get; set; } = string.Empty;
+        [JsonPropertyName("driveId")] public string DriveId { get; set; } = string.Empty;
         [JsonPropertyName("folder")] public object? Folder { get; set; }
+    }
+
+    private class ParentReferenceInternal
+    {
+        [JsonPropertyName("driveId")] public string DriveId { get; set; } = string.Empty;
     }
 
     private class UploadSessionResponseInternal

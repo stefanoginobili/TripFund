@@ -506,6 +506,7 @@ h1:focus {
     
     /* Layout containment */
     contain: content;
+    padding-bottom: 2rem;
 }
 
 /* Z-Index Layers */

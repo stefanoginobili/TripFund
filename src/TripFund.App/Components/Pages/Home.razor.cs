@@ -171,14 +171,13 @@ namespace TripFund.App.Components.Pages
                 registry.Trips[slug] = new TripRegistryEntry 
                 { 
                     CreatedAt = DateTime.UtcNow,
-                    RemoteStorage = new RemoteStorageConfig 
-                    { 
-                        Provider = selection.Provider, 
+                    RemoteStorage = new RemoteStorageConfig
+                    {
+                        Provider = selection.Provider,
                         RemoteUniqueId = remoteId,
                         Parameters = selection.Parameters,
-                        Readonly = false
-                    } 
-                };
+                        Readonly = selection.IsReadonly
+                    }                };
                 await Storage.SaveTripRegistryAsync(registry);
 
                 await Storage.InitializeInitialImportAsync(slug);

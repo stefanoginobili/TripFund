@@ -69,10 +69,47 @@
                                 }
                                 else
                                 {
-                                    <button class="btn-picker-vibe" @onclick="OpenPicker">
-                                        <img src="images/onedrive.svg" width="20" height="20" alt="" class="me-2" />
-                                        <span>Sfoglia Cartelle</span>
-                                    </button>
+                                    <div class="d-flex flex-column gap-2">
+                                        <button class="btn-picker-vibe" @onclick="OpenPicker">
+                                            <img src="images/onedrive.svg" width="20" height="20" alt="" class="me-2" />
+                                            <span>Sfoglia Cartelle</span>
+                                        </button>
+                                        
+                                        <div class="text-center my-2 small text-muted">- oppure -</div>
+                                        
+                                        @if (isPastingLink)
+                                        {
+                                            <div class="link-inline-row">
+                                                <div class="flex-1">
+                                                    <input @ref="sharedLinkInput" type="text" class="form-control-vibe" @bind="sharedLinkUrl" @bind:event="oninput" @onfocus="SelectAllText" placeholder="Incolla link OneDrive..." />
+                                                </div>
+                                                <button class="btn-vibe btn-primary-vibe btn-vibe-sm" @onclick="OnConfirmLink" disabled="@(!IsValidUrl(sharedLinkUrl) || isResolvingLink)">
+                                                    @if (isResolvingLink)
+                                                    {
+                                                        <span class="spinner-border spinner-border-sm" role="status"></span>
+                                                    }
+                                                    else
+                                                    {
+                                                        <span>Verifica</span>
+                                                    }
+                                                </button>
+                                            </div>
+                                            @if (!string.IsNullOrEmpty(linkResolveError))
+                                            {
+                                                <div class="text-danger small mt-1">@linkResolveError</div>
+                                            }
+                                        }
+                                        else
+                                        {
+                                            <button class="btn-picker-vibe btn-outline-picker-vibe" @onclick="() => isPastingLink = true">
+                                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="me-2">
+                                                    <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path>
+                                                    <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path>
+                                                </svg>
+                                                <span>Incolla Link</span>
+                                            </button>
+                                        }
+                                    </div>
                                 }
                             }
                             else
@@ -83,10 +120,6 @@
                                     <button class="btn-link-vibe ms-auto" @onclick="OpenPicker">Cambia</button>
                                 </div>
                             }
-                        </div>
-
-                        <div class="mt-4">
-                            <button class="btn-vibe btn-primary-vibe w-100" @onclick="Complete" disabled="@(string.IsNullOrWhiteSpace(folderId))">Conferma</button>
                         </div>
                     </div>
                 }
@@ -122,6 +155,12 @@
     .btn-picker-vibe:hover:not(:disabled) {
         border-color: #20563C;
         background-color: #F8FBF9;
+    }
+
+    .btn-outline-picker-vibe {
+        border-style: solid;
+        border-width: 1px;
+        background-color: transparent;
     }
 
     .btn-picker-vibe:disabled {
@@ -272,4 +311,42 @@
     .gap-2 { gap: 0.5rem; }
     .flex-1 { flex: 1; }
     .flex-2 { flex: 2; }
+
+    .link-inline-row {
+        display: flex;
+        gap: 0.5rem;
+        align-items: center;
+        background-color: #F8FBF9;
+        padding: 0.4rem;
+        border-radius: 12px;
+        border: 1px solid #E9F2EE;
+    }
+
+    .btn-vibe-sm {
+        padding: 0.5rem 0.5rem;
+        font-size: 0.8rem;
+        height: 38px;
+        flex: 0 0 20%;
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .btn-outline-vibe {
+        background-color: transparent;
+        border: 2px solid #20563C;
+        color: #20563C;
+    }
+
+    .btn-outline-vibe:hover:not(:disabled) {
+        background-color: #F8FBF9;
+    }
+
+    .link-input-section {
+        background-color: #F8FBF9;
+        padding: 1rem;
+        border-radius: 12px;
+        border: 1px solid #E9F2EE;
+    }
 </style>

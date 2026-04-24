@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Components;
 using Microsoft.JSInterop;
 using TripFund.App.Models;
 using TripFund.App.Services;
+using TripFund.App.Constants;
 
 namespace TripFund.App.Components.Common
 {
@@ -12,6 +13,7 @@ namespace TripFund.App.Components.Common
         [Inject] private IRemoteStorageService RemoteStorageService { get; set; } = default!;
         [Inject] private IAlertService AlertService { get; set; } = default!;
         [Inject] private OneDriveRemoteStorageService OneDriveService { get; set; } = default!;
+        [Inject] private IJSRuntime JS { get; set; } = default!;
 
         [Parameter] public bool IsVisible { get; set; }
         [Parameter] public bool IsJoining { get; set; }
@@ -36,6 +38,10 @@ namespace TripFund.App.Components.Common
             folderName = "";
             driveId = null;
             isPickerLoading = false;
+            isPastingLink = false;
+            sharedLinkUrl = "";
+            linkResolveError = null;
+            isResolvingLink = false;
             isOneDrivePickerVisible = false;
             oneDriveToken = "";
             oneDriveRefreshToken = null;
@@ -47,6 +53,24 @@ namespace TripFund.App.Components.Common
         private string? driveId;
         private bool isPickerLoading = false;
 
+        private bool isPastingLink = false;
+        private string sharedLinkUrl = "";
+        private bool isResolvingLink = false;
+        private string? linkResolveError;
+        private ElementReference sharedLinkInput;
+
+        private async Task SelectAllText()
+        {
+            await JS.InvokeVoidAsync("selectElementText", sharedLinkInput);
+        }
+
+        private bool IsValidUrl(string url)
+        {
+            if (string.IsNullOrWhiteSpace(url)) return false;
+            return Uri.TryCreate(url, UriKind.Absolute, out var uriResult)
+                   && (uriResult.Scheme == Uri.UriSchemeHttp || uriResult.Scheme == Uri.UriSchemeHttps);
+        }
+
         private bool isOneDrivePickerVisible = false;
         private string oneDriveToken = "";
         private string? oneDriveRefreshToken;
@@ -56,6 +80,58 @@ namespace TripFund.App.Components.Common
             if (selectedProvider == "onedrive") return "Microsoft OneDrive";
             if (selectedProvider == "local") return "Memoria Locale";
             return "Seleziona Archivio";
+        }
+
+        private async Task OnConfirmLink()
+        {
+            try
+            {
+                linkResolveError = null;
+                isResolvingLink = true;
+                StateHasChanged();
+
+                if (string.IsNullOrWhiteSpace(sharedLinkUrl))
+                {
+                    linkResolveError = "Inserisci un link valido.";
+                    return;
+                }
+
+                // 1. Authenticate first (Graph API requires a token even for shared links)
+                var authResult = await OneDriveService.AuthenticateUserAsync();
+                if (authResult == null || !authResult.TryGetValue("accessToken", out var token))
+                {
+                    linkResolveError = "Autenticazione Microsoft fallita.";
+                    return;
+                }
+
+                oneDriveToken = token;
+                authResult.TryGetValue("refreshToken", out oneDriveRefreshToken);
+
+                // 2. Resolve the link
+                var resolved = await OneDriveService.ResolveSharedLinkAsync(sharedLinkUrl, token);
+                if (resolved == null)
+                {
+                    linkResolveError = "Impossibile risolvere il link. Assicurati che sia un link di condivisione OneDrive valido.";
+                    return;
+                }
+
+                folderId = resolved.Value.FolderId;
+                folderName = resolved.Value.Name;
+                driveId = resolved.Value.DriveId;
+                
+                // Finalize the selection automatically after successful resolution
+                await Complete();
+            }
+            catch (Exception ex)
+            {
+                linkResolveError = "Si è verificato un errore durante la verifica del link.";
+                Console.WriteLine($"Error resolving link: {ex}");
+            }
+            finally
+            {
+                isResolvingLink = false;
+                StateHasChanged();
+            }
         }
 
         private async Task OpenPicker()
@@ -90,12 +166,15 @@ namespace TripFund.App.Components.Common
             }
         }
 
-        private void OnOneDriveFolderSelected((string Id, string Name, string? DriveId) result)
+        private async Task OnOneDriveFolderSelected((string Id, string Name, string? DriveId) result)
         {
             folderId = result.Id;
             folderName = result.Name;
             driveId = result.DriveId;
             StateHasChanged();
+            
+            // Automatically complete the selection to remove the extra "Conferma" click
+            await Complete();
         }
 
         private void CancelLoading()
@@ -145,7 +224,8 @@ namespace TripFund.App.Components.Common
             var selection = new RemoteStorageSelection
             {
                 Provider = selectedProvider ?? "",
-                Parameters = parameters
+                Parameters = parameters,
+                IsReadonly = false
             };
 
             await OnSelectionCompleted.InvokeAsync(selection);

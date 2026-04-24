@@ -46,26 +46,78 @@ public class RemoteStorageSyncEngine
 
             // 1. Evaluation Phase
             logger.LogInfo("Phase 1: EVALUATION");
-            var devicesFolder = await GetOrCreateFolderAsync(folderId, "devices", entry.RemoteStorage.Parameters, fileSystem);
-            var packagesFolder = await GetOrCreateFolderAsync(folderId, "packages", entry.RemoteStorage.Parameters, fileSystem);
+            
+            RemoteItem? devicesFolder = null;
+            RemoteItem? packagesFolder = null;
 
-            if (devicesFolder == null || packagesFolder == null)
+            // Try to ensure remote structure exists.
+            try
             {
-                throw new Exception("Failed to initialize remote folder structure.");
+                devicesFolder = await GetOrCreateFolderAsync(folderId, "devices", entry.RemoteStorage.Parameters, fileSystem);
+                packagesFolder = await GetOrCreateFolderAsync(folderId, "packages", entry.RemoteStorage.Parameters, fileSystem);
+            }
+            catch (Exception ex)
+            {
+                logger.LogWarning($"Could not ensure remote structure (might be READ-ONLY): {ex.Message}");
+                // Fallback: peek if they already exist
+                var rootChildren = await fileSystem.ListChildrenAsync(folderId, entry.RemoteStorage.Parameters);
+                devicesFolder = rootChildren.FirstOrDefault(c => c.Name == "devices" && c.IsFolder);
+                packagesFolder = rootChildren.FirstOrDefault(c => c.Name == "packages" && c.IsFolder);
             }
 
-            var deviceRoot = await GetOrCreateFolderAsync(devicesFolder.Id, deviceId, entry.RemoteStorage.Parameters, fileSystem);
-            if (deviceRoot == null)
+            if (packagesFolder == null)
             {
-                throw new Exception($"Failed to create device folder for {deviceId}");
+                if (entry.RemoteStorage.Readonly)
+                {
+                    logger.LogInfo("Remote 'packages' folder not found. Nothing to download yet.");
+                }
+                else
+                {
+                    throw new Exception("Remote 'packages' folder not found. Has the trip been initialized by the owner?");
+                }
             }
 
-            var canWrite = await CheckWritePermissionAsync(deviceRoot.Id, entry.RemoteStorage.Parameters, fileSystem);
-            if (entry.RemoteStorage.Readonly != !canWrite)
+            // Attempt to register this device and verify permissions
+            if (devicesFolder != null)
             {
-                entry.RemoteStorage.Readonly = !canWrite;
+                try
+                {
+                    var deviceRoot = await GetOrCreateFolderAsync(devicesFolder.Id, deviceId, entry.RemoteStorage.Parameters, fileSystem);
+                    if (deviceRoot != null)
+                    {
+                        var canWrite = await CheckWritePermissionAsync(deviceRoot.Id, entry.RemoteStorage.Parameters, fileSystem);
+                        
+                        // Sync the local status with the detected status
+                        if (entry.RemoteStorage.Readonly == canWrite) 
+                        {
+                            entry.RemoteStorage.Readonly = !canWrite;
+                            await _localStorage.SaveTripRegistryAsync(registry);
+                        }
+                    }
+                    else if (!entry.RemoteStorage.Readonly)
+                    {
+                        logger.LogInfo("Could not create device folder. Setting to READ-ONLY.");
+                        entry.RemoteStorage.Readonly = true;
+                        await _localStorage.SaveTripRegistryAsync(registry);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    if (!entry.RemoteStorage.Readonly)
+                    {
+                        logger.LogWarning($"Error during device initialization: {ex.Message}. Setting to READ-ONLY.");
+                        entry.RemoteStorage.Readonly = true;
+                        await _localStorage.SaveTripRegistryAsync(registry);
+                    }
+                }
+            }
+            else if (!entry.RemoteStorage.Readonly)
+            {
+                logger.LogInfo("Remote 'devices' folder missing and could not be created. Setting to READ-ONLY.");
+                entry.RemoteStorage.Readonly = true;
                 await _localStorage.SaveTripRegistryAsync(registry);
             }
+            
             logger.LogInfo($"Remote storage is {(entry.RemoteStorage.Readonly ? "READ-ONLY" : "READ-WRITE")}");
 
             var syncState = await _localStorage.GetSyncStateAsync(tripSlug);
@@ -73,99 +125,94 @@ public class RemoteStorageSyncEngine
 
             // 2. Download Phase
             logger.LogInfo("Phase 2: DOWNLOAD");
-            var remotePackages = await fileSystem.ListChildrenAsync(packagesFolder.Id, entry.RemoteStorage.Parameters);
             
-            // Filter and sort:
-            // - Starts with pack_
-            // - Ends with .zip
-            // - Does NOT contain local DeviceId
-            // - Not already in appliedPackages
-            var toDownload = remotePackages
-                .Where(p => p.Name.StartsWith("pack_", StringComparison.OrdinalIgnoreCase))
-                .Where(p => p.Name.EndsWith(".zip", StringComparison.OrdinalIgnoreCase))
-                .Where(p => !p.Name.Contains($"_{deviceId}.zip", StringComparison.OrdinalIgnoreCase))
-                .Where(p => !syncState.Sync.Remote.AppliedPackages.Contains(p.Name))
-                .OrderBy(p => p.Name)
-                .ToList();
-
-            if (toDownload.Count > 0)
+            if (packagesFolder != null)
             {
-                logger.LogInfo($"Found {toDownload.Count} new packages to apply.");
-                var tempPath = Path.Combine(localTripPath, "temp", "packages");
-                var downloadPath = Path.Combine(tempPath, "downloaded");
-                var expandedPath = Path.Combine(tempPath, "expanded");
+                var remotePackages = await fileSystem.ListChildrenAsync(packagesFolder.Id, entry.RemoteStorage.Parameters);
                 
-                if (Directory.Exists(tempPath)) Directory.Delete(tempPath, true);
-                Directory.CreateDirectory(downloadPath);
-                Directory.CreateDirectory(expandedPath);
+                var toDownload = remotePackages
+                    .Where(p => p.Name.StartsWith("pack_", StringComparison.OrdinalIgnoreCase))
+                    .Where(p => p.Name.EndsWith(".zip", StringComparison.OrdinalIgnoreCase))
+                    .Where(p => !p.Name.Contains($"_{deviceId}.zip", StringComparison.OrdinalIgnoreCase))
+                    .Where(p => !syncState.Sync.Remote.AppliedPackages.Contains(p.Name))
+                    .OrderBy(p => p.Name)
+                    .ToList();
 
-                foreach (var package in toDownload)
+                if (toDownload.Count > 0)
                 {
-                    logger.LogInfo($"Downloading package {package.Name}...");
-                    var zipBytes = await fileSystem.DownloadFileContentAsync(package.Id, entry.RemoteStorage.Parameters);
-                    if (zipBytes == null) throw new Exception($"Failed to download package {package.Name}");
+                    logger.LogInfo($"Found {toDownload.Count} new packages to apply.");
+                    var tempPath = Path.Combine(localTripPath, "temp", "packages");
+                    var downloadPath = Path.Combine(tempPath, "downloaded");
+                    var expandedPath = Path.Combine(tempPath, "expanded");
+                    
+                    if (Directory.Exists(tempPath)) Directory.Delete(tempPath, true);
+                    Directory.CreateDirectory(downloadPath);
+                    Directory.CreateDirectory(expandedPath);
 
-                    var zipFile = Path.Combine(downloadPath, package.Name);
-                    await File.WriteAllBytesAsync(zipFile, zipBytes);
-
-                    // Extract into expanded folder
-                    try
+                    foreach (var package in toDownload)
                     {
-                        using (var archive = ZipFile.OpenRead(zipFile))
+                        logger.LogInfo($"Downloading package {package.Name}...");
+                        var zipBytes = await fileSystem.DownloadFileContentAsync(package.Id, entry.RemoteStorage.Parameters);
+                        if (zipBytes == null) throw new Exception($"Failed to download package {package.Name}");
+
+                        var zipFile = Path.Combine(downloadPath, package.Name);
+                        await File.WriteAllBytesAsync(zipFile, zipBytes);
+
+                        try
                         {
-                            foreach (var zipEntry in archive.Entries)
+                            using (var archive = ZipFile.OpenRead(zipFile))
                             {
-                                if (string.IsNullOrEmpty(zipEntry.Name)) continue; // Directory entry
+                                foreach (var zipEntry in archive.Entries)
+                                {
+                                    if (string.IsNullOrEmpty(zipEntry.Name)) continue;
 
-                                var entryPath = zipEntry.FullName.Replace('\\', '/');
-                                var targetFile = Path.Combine(expandedPath, entryPath);
-                                var targetDir = Path.GetDirectoryName(targetFile);
-                                if (!string.IsNullOrEmpty(targetDir) && !Directory.Exists(targetDir)) Directory.CreateDirectory(targetDir);
+                                    var entryPath = zipEntry.FullName.Replace('\\', '/');
+                                    var targetFile = Path.Combine(expandedPath, entryPath);
+                                    var targetDir = Path.GetDirectoryName(targetFile);
+                                    if (!string.IsNullOrEmpty(targetDir) && !Directory.Exists(targetDir)) Directory.CreateDirectory(targetDir);
 
-                                zipEntry.ExtractToFile(targetFile, true);
+                                    zipEntry.ExtractToFile(targetFile, true);
+                                }
                             }
                         }
-                        // Package is kept in 'downloaded' until the end of the phase for clarity, 
-                        // or deleted here if memory/storage is an issue. Keeping it simple as per request.
+                        catch (Exception ex)
+                        {
+                            logger.LogError($"Failed to extract package {package.Name}", ex);
+                            throw;
+                        }
                     }
-                    catch (Exception ex)
+
+                    logger.LogInfo("Applying extracted updates to local storage...");
+                    await MoveExpandedFoldersAsync(expandedPath, localTripPath);
+
+                    foreach (var package in toDownload)
                     {
-                        logger.LogError($"Failed to extract package {package.Name}", ex);
-                        throw;
+                        syncState.Sync.Remote.AppliedPackages.Add(package.Name);
                     }
+                    await _localStorage.SaveSyncStateAsync(tripSlug, syncState);
+                    Directory.Delete(tempPath, true);
                 }
-
-                // Move expanded folders to final destination
-                logger.LogInfo("Applying extracted updates to local storage...");
-                await MoveExpandedFoldersAsync(expandedPath, localTripPath);
-
-                // Update sync state
-                foreach (var package in toDownload)
+                else
                 {
-                    syncState.Sync.Remote.AppliedPackages.Add(package.Name);
+                    logger.LogInfo("No new remote packages found.");
                 }
-                await _localStorage.SaveSyncStateAsync(tripSlug, syncState);
-                
-                // Cleanup expanded path
-                Directory.Delete(tempPath, true);
             }
             else
             {
-                logger.LogInfo("No new remote packages found.");
+                logger.LogInfo("Skipping download phase: packages folder is not available.");
             }
 
-            // 3. Conflict Check (Blocks Upload)
-            logger.LogInfo("Checking for local conflicts...");
-            var conflicts = await GetLocalConflictsAsync(localTripPath);
-            if (conflicts.Count > 0)
-            {
-                logger.LogInfo($"Conflict detected ({conflicts.Count}). Sync upload aborted. Resolution required.");
-                throw new SyncConflictException(conflicts);
-            }
-
-            // 4. Upload Phase
+            // 3. Conflict Check & Upload Phase
             if (!entry.RemoteStorage.Readonly)
             {
+                logger.LogInfo("Checking for local conflicts...");
+                var conflicts = await GetLocalConflictsAsync(localTripPath);
+                if (conflicts.Count > 0)
+                {
+                    logger.LogInfo($"Conflict detected ({conflicts.Count}). Sync upload aborted. Resolution required.");
+                    throw new SyncConflictException(conflicts);
+                }
+
                 if (syncState.Sync.Local.Pending.Count > 0)
                 {
                     logger.LogInfo($"Phase 3: UPLOAD ({syncState.Sync.Local.Pending.Count} pending folders)");
@@ -197,11 +244,9 @@ public class RemoteStorageSyncEngine
                                 continue;
                             }
 
-                            // Add metadata (.tripfund)
                             var metaPath = Path.Combine(fullPath, AppConstants.Files.TripFundFile);
                             if (File.Exists(metaPath)) archive.CreateEntryFromFile(metaPath, $"{normalizedPendingPath}/{AppConstants.Files.TripFundFile}");
 
-                            // Add content (.content)
                             var dataDir = Path.Combine(fullPath, AppConstants.Files.ContentFolder);
                             if (Directory.Exists(dataDir))
                             {
@@ -219,10 +264,11 @@ public class RemoteStorageSyncEngine
                     {
                         var zipContent = await File.ReadAllBytesAsync(tempZipPath);
                         
+                        if (packagesFolder == null) throw new Exception("Packages folder missing during upload.");
+
                         var uploaded = await fileSystem.UploadFileAsync(packagesFolder.Id, packageName, zipContent, entry.RemoteStorage.Parameters);
                         if (uploaded == null) throw new Exception("Failed to upload ZIP package.");
 
-                        // Success: cleanup local state
                         syncState.Sync.Local.Pending.RemoveAll(u => uploadedPaths.Contains(u.Path));
                         await _localStorage.SaveSyncStateAsync(tripSlug, syncState);
                         File.Delete(tempZipPath);
@@ -252,8 +298,6 @@ public class RemoteStorageSyncEngine
 
     private async Task MoveExpandedFoldersAsync(string sourceRoot, string targetRoot)
     {
-        // Recursively find leaf folders in expanded/ and move them to final destination.
-        // Leaf folders are identified by containing a .tripfund file (as per ARCHITECTURE.md).
         var directories = Directory.GetDirectories(sourceRoot, "*", SearchOption.AllDirectories);
         foreach (var dir in directories)
         {
@@ -283,8 +327,6 @@ public class RemoteStorageSyncEngine
         if (fileSystem.Logger == null) return;
 
         var logContent = fileSystem.Logger.GetLogContent();
-
-        // The requirement is trips/[TripSlug]/sync/logs/{yyyyMMddTHHmmssZ}.log
         var logsDir = Path.Combine(_localStorage.TripsPath, tripSlug, "sync", "logs");
         if (!Directory.Exists(logsDir))
         {
@@ -295,7 +337,6 @@ public class RemoteStorageSyncEngine
         var logFile = Path.Combine(logsDir, $"{timestamp}.log");
         await File.WriteAllTextAsync(logFile, logContent);
 
-        // Rotate logs: keep only the last 20
         var logFiles = Directory.GetFiles(logsDir, "*.log")
             .OrderByDescending(f => f)
             .ToList();
@@ -304,14 +345,7 @@ public class RemoteStorageSyncEngine
         {
             foreach (var file in logFiles.Skip(20))
             {
-                try
-                {
-                    File.Delete(file);
-                }
-                catch
-                {
-                    // Ignore deletion errors for logs
-                }
+                try { File.Delete(file); } catch { }
             }
         }
     }
@@ -342,7 +376,6 @@ public class RemoteStorageSyncEngine
 
     private (string Timestamp, string DeviceId) ParsePackageName(string name)
     {
-        // pack_20260413T143255890Z_{DeviceId1}.zip
         var parts = name.Replace(".zip", "").Split('_');
         if (parts.Length < 3) return ("unknown", "unknown");
         return (parts[1], parts[2]);
@@ -351,7 +384,6 @@ public class RemoteStorageSyncEngine
     private async Task<List<VersionedFolderConflictException>> GetLocalConflictsAsync(string localTripPath)
     {
         var conflicts = new List<VersionedFolderConflictException>();
-
         var configPath = Path.Combine(localTripPath, "config_versioned");
         if (Directory.Exists(configPath))
         {
@@ -363,22 +395,20 @@ public class RemoteStorageSyncEngine
                 conflicts.Add(new TripConfigConflictException(diverging, baseVer));
             }
         }
-
         var transDir = Path.Combine(localTripPath, "transactions");
         if (Directory.Exists(transDir))
         {
             foreach (var t in Directory.GetDirectories(transDir))
             {
-                var detailsRoot = Path.Combine(t, "details_versioned");
-                if (Directory.Exists(detailsRoot))
+                var detailsPath = Path.Combine(t, "details_versioned");
+                if (Directory.Exists(detailsPath))
                 {
-                    var latest = _engine.GetLatestVersionFolders(detailsRoot);
+                    var latest = _engine.GetLatestVersionFolders(detailsPath);
                     if (latest.Count > 1)
                     {
                         var diverging = latest.Select(v => v.FolderName).ToList();
-                        var baseVer = _engine.GetBaseVersionFolder(detailsRoot, latest[0].Sequence);
-                        var transactionId = Path.GetFileName(t);
-                        conflicts.Add(new TransactionConflictException(transactionId, diverging, baseVer));
+                        var baseVer = _engine.GetBaseVersionFolder(detailsPath, latest[0].Sequence);
+                        conflicts.Add(new TransactionConflictException(Path.GetFileName(t), diverging, baseVer));
                     }
                 }
             }

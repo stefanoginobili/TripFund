@@ -22,6 +22,7 @@ public static class AppConstants
         public const string ContentType = "contentType";
         public const string VersioningParents = "versioning.parents";
         public const string TripSlug = "trip.slug";
+        public const string SharedLink = "sharedLink";
     }
 
     public static class ContentTypes
@@ -38,5 +39,13 @@ public static class AppConstants
         public const string AuthUrlTemplate = "https://login.microsoftonline.com/{0}/oauth2/v2.0/authorize";
         public const string TokenUrlTemplate = "https://login.microsoftonline.com/{0}/oauth2/v2.0/token";
         public const string Scopes = "Files.ReadWrite offline_access";
+        public const string SharingTokenPrefix = "u!";
+
+        public static class Domains
+        {
+            public const string OneDriveShort = "1drv.ms";
+            public const string OneDriveLive = "onedrive.live.com";
+            public const string SharePoint = "sharepoint.com";
+        }
     }
 }

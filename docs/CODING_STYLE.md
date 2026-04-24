@@ -20,3 +20,7 @@
 - **Mocking External Services:** All external HTTP calls must be mocked. Specifically, use **WireMock.Net** to mock the Microsoft OneDrive API responses (e.g., simulating 200 OK for uploads, or 403 Forbidden to test permission handling).
 - **UI Integration Tests:** UI integration testing (e.g., using `bUnit` for the Blazor components) is highly encouraged to ensure the interface correctly reflects the underlying state (e.g., verifying that the Dashboard balances update after saving a new transaction).
 - **Test-Driven Delivery:** Whenever you deliver a feature, you must also deliver the corresponding narrow integration tests that prove the high-level functionality works as expected.
+
+## Constants & Configuration
+- **AppConstants:** Centralize all system-wide strings (file names, metadata keys, content types, API URLs, and parameter keys) in `TripFund.App.Constants.AppConstants`. Always check this class before hardcoding magic strings.
+- **Service Parameters:** When a service requires parameters stored in `known_trips.json`, always use the constants defined in `AppConstants.Metadata` to access the keys in the parameters dictionary.
