@@ -41,6 +41,20 @@ This file is stored inside the specific version folder of the trip's `config_ver
       "email": "luigi@example.com",
       "avatar": "👤"
     }
+  },
+  "categories": {
+    "expenses": {
+      "transport": {
+        "name": "Trasporti",
+        "icon": "🚌",
+        "color": "#ABCDEF"
+      },
+      "meal": {
+        "name": "Pasti",
+        "icon": "🍝",
+        "color": "#ABCDEF"
+      }
+    }
   }
 }
 ```
@@ -60,6 +74,7 @@ This file is stored inside the specific version folder of the trip's `transactio
   "createdAt": "2026-03-25T14:30:00.000Z",
   "updatedAt": "2026-03-26T11:20:00.000Z",
   "currency": "ARS",
+  "category": "meal",
   "amount": 15000.50,
   "description": "Cena a Buenos Aires",
   "author": "Mario Rossi",

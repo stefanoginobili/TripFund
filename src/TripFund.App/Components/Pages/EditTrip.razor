@@ -52,6 +52,9 @@
             <!-- CURRENCIES SECTION -->
             <CurrenciesForm @bind-Currencies="config.Currencies" IsReadonly="@isReadonly" />
 
+            <!-- CATEGORIES SECTION -->
+            <CategoriesForm @bind-Categories="config.Categories.Expenses" IsReadonly="@isReadonly" />
+
             <!-- PARTICIPANTS SECTION -->
             <section class="info-section">
                 <div class="section-header-row">
@@ -138,7 +141,6 @@
                                 <div class="member-avatar-display">@member.Value.Avatar</div>
                                 <div class="member-details">
                                     <span class="member-name-text">@member.Value.Name</span>
-                                    <span class="member-slug-text">@member.Key</span>
                                 </div>
                                 @if (!isReadonly)
                                 {
@@ -334,12 +336,6 @@
         font-weight: 800;
         color: #1A3C2F;
         font-size: 1.1rem;
-    }
-
-    .member-slug-text {
-        font-size: 0.8rem;
-        color: #8E9AAF;
-        font-weight: 600;
     }
 
     .member-edit-container {

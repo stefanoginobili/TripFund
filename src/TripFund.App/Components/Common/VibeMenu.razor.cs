@@ -7,6 +7,7 @@ public partial class VibeMenu : ComponentBase, IAsyncDisposable
 {
     [Parameter] public RenderFragment Trigger { get; set; } = default!;
     [Parameter] public RenderFragment ChildContent { get; set; } = default!;
+    [Parameter] public string Class { get; set; } = string.Empty;
 
     private ElementReference _triggerRef;
     private ElementReference _menuRef;

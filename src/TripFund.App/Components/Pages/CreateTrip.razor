@@ -23,6 +23,8 @@
 
         <CurrenciesForm @bind-Currencies="currencies" OpenNewCurrencyOnOpen="true" />
 
+        <CategoriesForm @bind-Categories="categories" />
+
         @if (!string.IsNullOrEmpty(error))
         {
             <div class="text-danger fw-bold text-center mt-3">@error</div>

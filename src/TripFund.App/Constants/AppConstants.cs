@@ -48,4 +48,22 @@ public static class AppConstants
             public const string SharePoint = "sharepoint.com";
         }
     }
+
+    public static class Categories
+    {
+        public const string DefaultSlug = "altro";
+        public const string DefaultName = "Altro";
+        public const string DefaultIcon = "💸";
+        public const string DefaultColor = "#EEEEEE"; // Light Pastel Gray
+        public const string UnknownIcon = "﹖";
+
+        public static readonly Dictionary<string, (string Name, string Icon, string Color)> DefaultTripCategories = new()
+        {
+            { "pernottamenti", ("Pernottamenti", "🛏️", "#A8D8EA") }, // Pastel Blue
+            { "pasti", ("Pasti", "🍝", "#FF8B94") }, // Pastel Red/Pink
+            { "trasporti", ("Trasporti", "🚐", "#DBE2EF") }, // Pastel Gray/Blue
+            { "escursioni", ("Escursioni", "🎟️", "#DCEDC1") }, // Pastel Green
+            { "mance", ("Mance", "🪙", "#FFFFD2") }  // Pastel Yellow
+        };
+    }
 }

@@ -134,7 +134,7 @@
                         else
                         {
                             var payerSlug = t.Split.Keys.FirstOrDefault() ?? "unknown";
-                            secondLineText = $"Quota versata da {(config.Members.TryGetValue(payerSlug, out var member) ? member.Name : payerSlug)}";
+                            secondLineText = $"Quota versata da {(config?.Members.TryGetValue(payerSlug, out var member) == true ? member.Name : payerSlug)}";
                         }
 
                         <div class="transaction-row" @onclick="() => OpenTransactionModal(t)">
@@ -150,6 +150,35 @@
                             </div>
                             <div class="transaction-info">
                                 <div class="transaction-desc">@(string.IsNullOrWhiteSpace(t.Description) ? (t.Type == "expense" ? "Spesa" : "Versamento") : t.Description)</div>
+                                @if (t.Type == "expense")
+                                {
+                                    var categorySlug = t.Category;
+                                    var icon = AppConstants.Categories.DefaultIcon;
+                                    var name = AppConstants.Categories.DefaultName;
+                                    var color = AppConstants.Categories.DefaultColor;
+
+                                    if (!string.IsNullOrEmpty(categorySlug) && categorySlug != AppConstants.Categories.DefaultSlug)
+                                    {
+                                        if (config?.Categories.Expenses.TryGetValue(categorySlug, out var cat) == true)
+                                        {
+                                            icon = cat.Icon;
+                                            name = cat.Name;
+                                            color = cat.Color;
+                                        }
+                                        else
+                                        {
+                                            icon = AppConstants.Categories.UnknownIcon;
+                                            name = categorySlug;
+                                            color = "#FFFFFF";
+                                        }
+
+                                    }
+
+                                    <div class="category-pill-mini" style="background-color: @color">
+                                        <span class="pill-icon-mini">@icon</span>
+                                        <span class="pill-name-mini">@name</span>
+                                    </div>
+                                }
                                 <div class="transaction-meta">@secondLineText</div>
                                 <div class="transaction-meta">@GetDisplayDate(t)</div>
                             </div>
@@ -312,6 +341,21 @@
         color: #1A3C2F;
         margin-bottom: 0.2rem;
     }
+
+    .category-pill-mini {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.3rem;
+        padding: 0.15rem 0.4rem;
+        border-radius: 12px;
+        color: black;
+        font-weight: 700;
+        font-size: 0.65rem;
+        margin-top: 0.1rem;
+        margin-bottom: 0.3rem;
+    }
+
+    .pill-icon-mini { font-size: 0.75rem; }
 
     .transaction-meta {
         font-size: 0.8rem;

@@ -3,6 +3,7 @@ using Microsoft.JSInterop;
 using TripFund.App.Models;
 using TripFund.App.Services;
 using TripFund.App.Utilities;
+using TripFund.App.Constants;
 
 namespace TripFund.App.Components.Pages
 {
@@ -27,9 +28,20 @@ namespace TripFund.App.Components.Pages
         private string error = "";
 
         private Dictionary<string, Currency> currencies = new();
+        private Dictionary<string, ExpenseCategory> categories = new();
 
         protected override void OnInitialized()
         {
+            foreach (var def in AppConstants.Categories.DefaultTripCategories)
+            {
+                categories[def.Key] = new ExpenseCategory
+                {
+                    Name = def.Value.Name,
+                    Icon = def.Value.Icon,
+                    Color = def.Value.Color
+                };
+            }
+
             var uri = Nav.ToAbsoluteUri(Nav.Uri);
             var query = Microsoft.AspNetCore.WebUtilities.QueryHelpers.ParseQuery(uri.Query);
 
@@ -94,7 +106,8 @@ namespace TripFund.App.Components.Pages
                 StartDate = startDate,
                 EndDate = endDate,
                 CreatedAt = DateTime.UtcNow,
-                Currencies = currencies
+                Currencies = currencies,
+                Categories = new TripCategories { Expenses = categories }
             };
 
             var settings = await Storage.GetAppSettingsAsync();

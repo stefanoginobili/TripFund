@@ -25,6 +25,9 @@ public class Transaction
     [JsonPropertyName("currency")]
     public string Currency { get; set; } = string.Empty;
 
+    [JsonPropertyName("category")]
+    public string? Category { get; set; }
+
     [JsonPropertyName("amount")]
     public decimal Amount { get; set; }
 

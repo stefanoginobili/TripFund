@@ -36,14 +36,46 @@
                     <p class="transaction-meta author-line">Registrato da @Transaction.Author</p>
                 </div>
 
+                @if (Transaction.Type == "expense")
+                {
+                    <div class="info-section">
+                        @{
+                            var categorySlug = Transaction.Category;
+                            var icon = AppConstants.Categories.DefaultIcon;
+                            var name = AppConstants.Categories.DefaultName;
+                            var color = AppConstants.Categories.DefaultColor;
+
+                            if (!string.IsNullOrEmpty(categorySlug) && categorySlug != AppConstants.Categories.DefaultSlug)
+                            {
+                                if (Config?.Categories.Expenses.TryGetValue(categorySlug, out var cat) == true)
+                                {
+                                    icon = cat.Icon;
+                                    name = cat.Name;
+                                    color = cat.Color;
+                                }
+                                else
+                                {
+                                    icon = AppConstants.Categories.UnknownIcon;
+                                    name = categorySlug;
+                                    color = "#FFFFFF";
+                                }
+                            }
+                        }
+                        <div class="category-badge" style="background-color: @color">
+                            <span class="badge-icon">@icon</span>
+                            <span class="badge-name">@name</span>
+                        </div>
+                    </div>
+                }
+
                 <div class="info-section">
                     <h3 class="section-header-vibe">Partecipanti</h3>
                     <div class="split-list">
                         @foreach (var split in Transaction.Split)
                         {
-                            var isMissing = !Config.Members.ContainsKey(split.Key);
-                            var memberName = !isMissing ? Config.Members[split.Key].Name : split.Key;
-                            var memberAvatar = !isMissing ? Config.Members[split.Key].Avatar : "❓";
+                            var isMissing = Config == null || !Config.Members.ContainsKey(split.Key);
+                            var memberName = !isMissing && Config != null ? Config.Members[split.Key].Name : split.Key;
+                            var memberAvatar = !isMissing && Config != null ? Config.Members[split.Key].Avatar : "❓";
 
                             <div class="split-row @(isMissing ? "missing-member" : "")">
                                 <div class="member-avatar">@memberAvatar</div>
@@ -183,6 +215,25 @@
 
     .author-line {
         margin-top: 0.5rem !important;
+    }
+
+    .category-badge {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+        padding: 0.4rem 0.8rem;
+        border-radius: 20px;
+        color: black;
+        font-weight: 700;
+        font-size: 0.9rem;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        margin: 0 auto 1.5rem auto;
+        width: fit-content;
+    }
+
+    .badge-icon {
+        font-size: 1.1rem;
     }
 
     .split-list {

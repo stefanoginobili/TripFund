@@ -70,7 +70,7 @@ namespace TripFund.App.Components.Pages
             {
                 if (selection != null)
                 {
-                    loadingMessage = "Verifica posizione remota...";
+                    loadingMessage = "Verifica cartella remota...";
                     loadingSubMessage = "Stiamo controllando che la cartella sia vuota.";
                     isSearchingRemote = true;
                     StateHasChanged();
@@ -81,7 +81,7 @@ namespace TripFund.App.Components.Pages
                         {
                             isSearchingRemote = false;
                             StateHasChanged();
-                            await Alert.ShowAlertAsync("Errore", "La posizione remota deve esistere ed essere vuota.", type: AlertType.Error);
+                            await Alert.ShowAlertAsync("Errore", "La cartella remota deve esistere ed essere vuota.", type: AlertType.Error);
                             return;
                         }
                     }

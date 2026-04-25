@@ -3,6 +3,7 @@ using Microsoft.JSInterop;
 using TripFund.App.Models;
 using TripFund.App.Services;
 using TripFund.App.Utilities;
+using TripFund.App.Constants;
 
 namespace TripFund.App.Components.Pages
 {
@@ -27,6 +28,8 @@ namespace TripFund.App.Components.Pages
         private string description = "";
         private DateTime transactionDate = DateTime.Now;
         private string timezoneId = TimeZoneInfo.Local.Id;
+        private string? selectedCategorySlug;
+        private bool isCategoryDropdownOpen = false;
         private List<MemberSplitInfo> memberSplits = new();
         private List<AttachmentInfo> attachments = new();
         private LocationInfo? locationInfo;
@@ -61,6 +64,7 @@ namespace TripFund.App.Components.Pages
                         var tx = editingInfo.Transaction;
                         originalTxJson = System.Text.Json.JsonSerializer.Serialize(tx);
                         selectedCurrency = tx.Currency;
+                        selectedCategorySlug = tx.Category == AppConstants.Categories.DefaultSlug ? null : tx.Category;
                         totalAmount = tx.Amount;
                         description = tx.Description;
                         timezoneId = string.IsNullOrEmpty(tx.Timezone) ? TimeZoneInfo.Local.Id : tx.Timezone;
@@ -244,6 +248,7 @@ namespace TripFund.App.Components.Pages
                 Date = finalDate,
                 Timezone = timezoneId,
                 Currency = selectedCurrency,
+                Category = selectedCategorySlug,
                 Amount = totalAmount,
                 Description = description,
                 Author = authorName,
@@ -343,6 +348,22 @@ namespace TripFund.App.Components.Pages
             {
                 locationInfo.Name = locationInfo.Name?.Trim() ?? "";
             }
+        }
+
+        private void OnDescriptionInput(ChangeEventArgs e)
+        {
+            description = e.Value?.ToString() ?? "";
+        }
+
+        private void ToggleCategoryDropdown()
+        {
+            isCategoryDropdownOpen = !isCategoryDropdownOpen;
+        }
+
+        private void SelectCategory(string? slug)
+        {
+            selectedCategorySlug = (slug == AppConstants.Categories.DefaultSlug) ? null : slug;
+            isCategoryDropdownOpen = false;
         }
 
         private void ToggleMember(MemberSplitInfo member)
@@ -644,6 +665,7 @@ namespace TripFund.App.Components.Pages
                 Date = finalDate,
                 Timezone = timezoneId,
                 Currency = selectedCurrency,
+                Category = selectedCategorySlug,
                 Amount = totalAmount,
                 Description = description,
                 Author = authorName,
