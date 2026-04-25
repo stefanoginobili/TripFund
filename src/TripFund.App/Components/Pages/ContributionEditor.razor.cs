@@ -35,7 +35,6 @@ namespace TripFund.App.Components.Pages
         private string deviceId = "";
         private string authorName = "";
         private bool isSubmitting = false;
-        private bool isMemberSelectorOpen = false;
         private bool shouldScroll = false;
 
         protected override async Task OnInitializedAsync()
@@ -161,18 +160,14 @@ namespace TripFund.App.Components.Pages
             };
         }
 
-        private void ToggleMemberSelector()
+        private void OpenMemberSelector()
         {
-            isMemberSelectorOpen = !isMemberSelectorOpen;
-            if (isMemberSelectorOpen)
-            {
-                shouldScroll = true;
-            }
+            shouldScroll = true;
         }
 
         protected override async Task OnAfterRenderAsync(bool firstRender)
         {
-            if (shouldScroll && isMemberSelectorOpen)
+            if (shouldScroll)
             {
                 shouldScroll = false;
                 await JSRuntime.InvokeVoidAsync("appLogic.scrollIntoView", "#selected-member-item", "center");
@@ -182,7 +177,6 @@ namespace TripFund.App.Components.Pages
         private void SelectMember(string slug)
         {
             selectedMemberSlug = slug;
-            isMemberSelectorOpen = false;
             if (editingTransaction == null) SetDefaultAmount();
         }
 

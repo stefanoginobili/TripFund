@@ -28,6 +28,7 @@ namespace TripFund.App.Components.Pages
         private bool showEmojiPicker = false;
         private bool isAddingMember = false;
         private string? editingMemberSlug = null;
+        private bool shouldScrollMember = false;
         private string[] emojis = new[] { 
             // People & Faces
             "👤", "👨", "👩", "🧔", "👴", "👵", "👶", "👧", "👦", "👱", "👮", "👷", 
@@ -206,8 +207,25 @@ namespace TripFund.App.Components.Pages
             newMemberName = m.Name;
             newMemberEmail = m.Email ?? "";
             newMemberAvatar = m.Avatar;
+            shouldScrollMember = true;
             await Task.Yield();
             StateHasChanged();
+        }
+
+        protected override async Task OnAfterRenderAsync(bool firstRender)
+        {
+            if (shouldScrollMember)
+            {
+                shouldScrollMember = false;
+                if (isAddingMember)
+                {
+                    await JSRuntime.InvokeVoidAsync("appLogic.scrollIntoView", "#new-member-form", "center");
+                }
+                else if (editingMemberSlug != null)
+                {
+                    await JSRuntime.InvokeVoidAsync("appLogic.scrollIntoView", "#edit-member-form", "center");
+                }
+            }
         }
 
         private void CancelMemberEdit()

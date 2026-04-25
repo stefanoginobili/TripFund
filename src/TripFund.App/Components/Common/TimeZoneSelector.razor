@@ -46,8 +46,8 @@
                     @foreach (var tz in _timeZones)
                     {
                         var isSelected = Value == tz.Id;
-                        <div id="@(isSelected ? "selected-tz-item" : null)" 
-                             class="dropdown-tz-item @(isSelected ? "selected" : "")" 
+                        <button type="button" id="@(isSelected ? "selected-tz-item" : null)" 
+                             class="dropdown-item-vibe @(isSelected ? "selected" : "")" 
                              @onclick="() => SelectTimeZone(tz.Id)">
                             <div class="tz-selector-info">
                                 <div class="tz-selector-name">@tz.Id</div>
@@ -61,7 +61,7 @@
                                     </svg>
                                 </div>
                             }
-                        </div>
+                        </button>
                     }
                 </div>
             </div>
@@ -71,18 +71,17 @@
 
 <style>
     .custom-tz-selector {
-        background-color: #F8FBF9;
-        border-radius: 16px;
-        padding: 0.75rem 1rem;
-        border: 1px solid #E9ECEF;
+        background-color: #FFFFFF;
+        border-radius: 12px;
+        padding: 0.8rem 1rem;
+        border: 1px solid #E0E0E0;
         cursor: pointer;
-        min-height: 64px;
+        min-height: 56px;
         display: flex;
         align-items: center;
         justify-content: space-between;
         transition: all 0.2s;
         width: 100%;
-        position: relative;
     }
 
     .selected-tz-placeholder {
@@ -145,7 +144,6 @@
     .tz-selector-dropdown-content {
         display: flex;
         flex-direction: column;
-        width: calc(100vw - 2.5rem);
     }
 
     .tz-items-list {
@@ -159,24 +157,6 @@
         color: #6C757D;
         font-size: 0.9rem;
         font-style: italic;
-    }
-
-    .dropdown-tz-item {
-        display: flex;
-        align-items: center;
-        gap: 0.75rem;
-        padding: 0.6rem 0.75rem;
-        border-radius: 12px;
-        transition: background-color 0.2s;
-        min-height: 52px;
-    }
-
-    .dropdown-tz-item:hover {
-        background-color: #F8FBF9;
-    }
-
-    .dropdown-tz-item.selected {
-        background-color: #D6EDE2;
     }
 
     .check-icon {

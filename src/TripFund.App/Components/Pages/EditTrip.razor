@@ -64,8 +64,9 @@
                     {
                         @if (editingMemberSlug == member.Key)
                         {
-                            <div class="member-edit-container">
+                            <div id="edit-member-form" class="member-edit-container">
                                 <div class="new-member-form">
+
                                     <div class="new-member-header">
                                         <span class="user-plus-icon">
                                             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -102,19 +103,19 @@
                                         </div>
                                         <div class="name-col">
                                             <label>NOME</label>
-                                            <input type="text" @bind="newMemberName" @onblur="TrimMemberName" placeholder="Esempio: Andrea" />
+                                            <input type="text" class="form-control-vibe" @bind="newMemberName" @onblur="TrimMemberName" placeholder="Esempio: Andrea" />
                                         </div>
                                     </div>
 
                                     <div class="member-form-full-row">
                                         <label>EMAIL</label>
-                                        <input type="email" @bind="newMemberEmail" @onblur="TrimMemberEmail" placeholder="andrea@esempio.com" />
+                                        <input type="email" class="form-control-vibe" @bind="newMemberEmail" @onblur="TrimMemberEmail" placeholder="andrea@esempio.com" />
                                     </div>
 
                                     <div class="member-form-footer">
                                         <div class="slug-col">
                                             <label>SLUG</label>
-                                            <input type="text" value="@newMemberSlug" readonly class="readonly-input-form" />
+                                            <input type="text" value="@newMemberSlug" readonly class="form-control-vibe readonly-input" />
                                         </div>
                                         <div class="action-buttons">
                                             <button class="confirm-btn" @onclick="AddMember">
@@ -183,11 +184,11 @@
 
                 @if (!isReadonly)
                 {
-                    <div class="add-member-dashed @(isAddingMember ? "expanded" : "")" @onclick="() => { if(!isAddingMember) { CancelMemberEdit(); isAddingMember = true; } }">
+                    <div class="add-item-dashed @(isAddingMember ? "expanded" : "")" @onclick="() => { if(!isAddingMember) { CancelMemberEdit(); isAddingMember = true; shouldScrollMember = true; } }">
                         @if (!isAddingMember)
                         {
                             <div class="dashed-btn-content">
-                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="me-2">
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                     <line x1="12" y1="5" x2="12" y2="19"></line>
                                     <line x1="5" y1="12" x2="19" y2="12"></line>
                                 </svg>
@@ -196,7 +197,7 @@
                         }
                         else
                         {
-                            <div class="new-member-form" @onclick:stopPropagation>
+                            <div id="new-member-form" class="new-member-form" @onclick:stopPropagation>
                                 <div class="new-member-header">
                                     <span class="user-plus-icon">
                                         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -233,19 +234,19 @@
                                     </div>
                                     <div class="name-col">
                                         <label>NOME</label>
-                                        <input type="text" @bind="newMemberName" @oninput="OnNewMemberNameInput" @onblur="TrimMemberName" placeholder="Esempio: Andrea" />
+                                        <input type="text" class="form-control-vibe" @bind="newMemberName" @oninput="OnNewMemberNameInput" @onblur="TrimMemberName" placeholder="Esempio: Andrea" />
                                     </div>
                                 </div>
 
                                 <div class="member-form-full-row">
                                     <label>EMAIL</label>
-                                    <input type="email" @bind="newMemberEmail" @onblur="TrimMemberEmail" placeholder="andrea@esempio.com" />
+                                    <input type="email" class="form-control-vibe" @bind="newMemberEmail" @onblur="TrimMemberEmail" placeholder="andrea@esempio.com" />
                                 </div>
 
                                 <div class="member-form-footer">
                                     <div class="slug-col">
                                         <label>SLUG</label>
-                                        <input type="text" @bind="newMemberSlug" placeholder="andrea-7890" />
+                                        <input type="text" class="form-control-vibe" @bind="newMemberSlug" placeholder="andrea-7890" />
                                     </div>
                                     <div class="action-buttons">
                                         <button class="confirm-btn" @onclick="AddMember">
@@ -407,17 +408,6 @@
         gap: 0.5rem;
     }
 
-    .new-member-form input {
-        background-color: #F1F3F5;
-        border: none;
-        border-radius: 12px;
-        padding: 0.8rem 1rem;
-        font-size: 1rem;
-        font-weight: 600;
-        color: #1A3C2F;
-        width: 100%;
-    }
-
     .member-form-footer {
         display: flex;
         align-items: flex-end;
@@ -427,31 +417,13 @@
     .slug-col {
         flex: 1;
         display: flex;
-        flex-direction: column;
-        gap: 0.5rem;
-    }
+        .member-actions {
+            display: flex;
+            gap: 0.5rem;
+        }
 
-    .add-member-dashed {
-        border: 2px dashed #D1D9E0;
-        border-radius: 32px;
-        padding: 1rem;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        cursor: pointer;
-        transition: all 0.3s ease;
-    }
+        .emoji-picker-container { width: 100%; max-width: calc(100vw - 4rem); }
 
-    .add-member-dashed.expanded {
-        border-style: dashed;
-        border-color: #D1D9E0;
-        background-color: #FFFFFF;
-        cursor: default;
-        padding: 0;
-    }
-
-    .emoji-picker-container {
-        display: flex;
         flex-direction: column;
         width: 100%;
         max-width: calc(100vw - 3rem);
@@ -532,6 +504,4 @@
         cursor: default;
         pointer-events: none;
     }
-
-    .dashed-btn-content { display: flex; align-items: center; justify-content: center; }
 </style>

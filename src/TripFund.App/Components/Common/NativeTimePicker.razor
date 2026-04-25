@@ -3,27 +3,53 @@
     {
         <label class="form-label-vibe">@Label</label>
     }
-    <div class="native-picker-box" @onclick="HandleClick">
+    <div class="native-picker-box @(IsReadonly ? "readonly-picker" : "")" @onclick="HandleClick">
         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="picker-icon">
             <circle cx="12" cy="12" r="10"></circle>
             <polyline points="12 6 12 12 16 14"></polyline>
         </svg>
         <span class="picker-value">@Value.ToString("HH:mm")</span>
-        <input type="time" class="hidden-native-input" value="@Value.ToString("HH:mm", System.Globalization.CultureInfo.InvariantCulture)" @onchange="OnInputChanged" readonly="@isAndroid" />
+        @if (!IsReadonly)
+        {
+            <input type="time" class="hidden-native-input" value="@Value.ToString("HH:mm", System.Globalization.CultureInfo.InvariantCulture)" @onchange="OnInputChanged" readonly="@isAndroid" />
+        }
     </div>
 </div>
 
 <style>
     .native-picker-box {
-        background-color: #F1F3F5;
-        border-radius: 16px;
-        padding: 0.85rem 1rem;
+        background-color: #FFFFFF;
+        border: 1px solid #E0E0E0;
+        border-radius: 12px;
+        padding: 0.8rem 1rem;
         display: flex;
         align-items: center;
         gap: 0.75rem;
         position: relative;
         cursor: pointer;
         min-height: 56px;
+        transition: all 0.2s ease;
+    }
+
+    .native-picker-box:not(.readonly-picker):active {
+        border-color: #20563C;
+        box-shadow: 0 0 0 3px rgba(32, 86, 60, 0.1);
+    }
+
+    .native-picker-box.readonly-picker {
+        background-color: #F1F3F5;
+        border-color: #E9ECEF;
+        cursor: default;
+        pointer-events: none;
+    }
+
+    .native-picker-box.readonly-picker .picker-value {
+        color: #ADB5BD;
+        font-style: italic;
+    }
+
+    .native-picker-box.readonly-picker .picker-icon {
+        color: #ADB5BD;
     }
 
     .picker-icon {
@@ -31,8 +57,8 @@
     }
 
     .picker-value {
-        font-size: 1.1rem;
-        font-weight: 700;
+        font-size: 1rem;
+        font-weight: 600;
         color: #1A3C2F;
     }
 

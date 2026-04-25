@@ -72,7 +72,18 @@ window.appLogic = {
     positionMenu: function (triggerElement, menuElement) {
         if (!triggerElement || !menuElement) return;
 
+        const container = triggerElement.closest('.vibe-menu-container');
+        const isFullWidth = container && container.classList.contains('w-100');
+
         const triggerRect = triggerElement.getBoundingClientRect();
+        
+        // If full width, force menu to match trigger width
+        if (isFullWidth) {
+            menuElement.style.width = `${triggerRect.width}px`;
+            menuElement.style.minWidth = 'unset';
+        }
+
+        // Measure menu AFTER setting width as it might affect height
         const menuRect = menuElement.getBoundingClientRect();
         const viewportHeight = window.innerHeight;
         const viewportWidth = window.innerWidth;
@@ -91,10 +102,14 @@ window.appLogic = {
             top = triggerRect.bottom + 4;
         }
 
-        // Horizontal positioning (align right by default, but stay in viewport)
-        left = triggerRect.right - menuRect.width;
-        if (left < 0) left = 8;
-        if (left + menuRect.width > viewportWidth) left = viewportWidth - menuRect.width - 8;
+        if (isFullWidth) {
+            left = triggerRect.left;
+        } else {
+            // Horizontal positioning (align right by default, but stay in viewport)
+            left = triggerRect.right - menuRect.width;
+            if (left < 0) left = 8;
+            if (left + menuRect.width > viewportWidth) left = viewportWidth - menuRect.width - 8;
+        }
 
         menuElement.style.top = `${top}px`;
         menuElement.style.left = `${left}px`;

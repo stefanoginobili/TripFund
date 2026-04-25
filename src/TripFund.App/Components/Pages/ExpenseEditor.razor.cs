@@ -29,7 +29,6 @@ namespace TripFund.App.Components.Pages
         private DateTime transactionDate = DateTime.Now;
         private string timezoneId = TimeZoneInfo.Local.Id;
         private string? selectedCategorySlug;
-        private bool isCategoryDropdownOpen = false;
         private List<MemberSplitInfo> memberSplits = new();
         private List<AttachmentInfo> attachments = new();
         private LocationInfo? locationInfo;
@@ -355,15 +354,9 @@ namespace TripFund.App.Components.Pages
             description = e.Value?.ToString() ?? "";
         }
 
-        private void ToggleCategoryDropdown()
-        {
-            isCategoryDropdownOpen = !isCategoryDropdownOpen;
-        }
-
         private void SelectCategory(string? slug)
         {
             selectedCategorySlug = (slug == AppConstants.Categories.DefaultSlug) ? null : slug;
-            isCategoryDropdownOpen = false;
         }
 
         private void ToggleMember(MemberSplitInfo member)

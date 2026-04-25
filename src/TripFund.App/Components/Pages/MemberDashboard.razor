@@ -105,6 +105,7 @@
                             </div>
                             <div class="transaction-info">
                                 <div class="transaction-desc">@(string.IsNullOrWhiteSpace(t.OriginalTx.Description) ? (t.OriginalTx.Type == "expense" ? "Spesa" : "Versamento") : t.OriginalTx.Description)</div>
+                                <div class="transaction-meta">@GetDisplayDate(t.OriginalTx)</div>
                                 @if (t.OriginalTx.Type == "expense")
                                 {
                                     var categorySlug = t.OriginalTx.Category;
@@ -133,7 +134,6 @@
                                         <span class="pill-name-mini">@name</span>
                                     </div>
                                 }
-                                <div class="transaction-meta">@GetDisplayDate(t.OriginalTx)</div>
                             </div>
                             <div class="transaction-amount @(t.OriginalTx.Type == "expense" ? "text-danger" : "text-success")">
                                 @FormatCurrency(t.UserAmount, t.OriginalTx.Currency)

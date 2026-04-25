@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Components;
+using Microsoft.JSInterop;
 using TripFund.App.Models;
 using TripFund.App.Utilities;
 
@@ -10,8 +11,11 @@ public partial class CategoriesForm
     [Parameter] public EventCallback<Dictionary<string, ExpenseCategory>> CategoriesChanged { get; set; }
     [Parameter] public bool IsReadonly { get; set; }
 
+    [Inject] private IJSRuntime JSRuntime { get; set; } = default!;
+
     private bool isAdding = false;
     private string? editingSlug = null;
+    private bool _shouldScroll = false;
     private string newCategoryName = "";
     private string newCategorySlug = "";
     private string newCategoryIcon = "🚌";
@@ -45,6 +49,14 @@ public partial class CategoriesForm
     private void SelectEmoji(string emoji) => newCategoryIcon = emoji;
     private void SelectColor(string color) => newCategoryColor = color;
 
+    private void StartAdd()
+    {
+        editingSlug = null;
+        ResetForm();
+        isAdding = true;
+        _shouldScroll = true;
+    }
+
     private async Task StartEdit(string slug, ExpenseCategory category)
     {
         editingSlug = slug;
@@ -52,6 +64,23 @@ public partial class CategoriesForm
         newCategoryIcon = category.Icon;
         newCategoryColor = category.Color;
         isAdding = false;
+        _shouldScroll = true;
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (_shouldScroll)
+        {
+            _shouldScroll = false;
+            if (isAdding)
+            {
+                await JSRuntime.InvokeVoidAsync("appLogic.scrollIntoView", "#new-category-form", "center");
+            }
+            else if (editingSlug != null)
+            {
+                await JSRuntime.InvokeVoidAsync("appLogic.scrollIntoView", "#edit-category-form", "center");
+            }
+        }
     }
 
     private void CancelEdit()

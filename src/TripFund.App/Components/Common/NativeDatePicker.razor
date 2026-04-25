@@ -20,25 +20,33 @@
 
 <style>
     .native-picker-box {
-        background-color: #F1F3F5;
-        border-radius: 16px;
-        padding: 0.85rem 1rem;
+        background-color: #FFFFFF;
+        border: 1px solid #E0E0E0;
+        border-radius: 12px;
+        padding: 0.8rem 1rem;
         display: flex;
         align-items: center;
         gap: 0.75rem;
         position: relative;
         cursor: pointer;
         min-height: 56px;
+        transition: all 0.2s ease;
+    }
+
+    .native-picker-box:not(.readonly-picker):active {
+        border-color: #20563C;
+        box-shadow: 0 0 0 3px rgba(32, 86, 60, 0.1);
     }
 
     .native-picker-box.readonly-picker {
-        background-color: #E9ECEF;
+        background-color: #F1F3F5;
+        border-color: #E9ECEF;
         cursor: default;
         pointer-events: none;
     }
 
     .native-picker-box.readonly-picker .picker-value {
-        color: #6C757D;
+        color: #ADB5BD;
         font-style: italic;
     }
 
@@ -51,8 +59,8 @@
     }
 
     .picker-value {
-        font-size: 1.1rem;
-        font-weight: 700;
+        font-size: 1rem;
+        font-weight: 600;
         color: #1A3C2F;
     }
 

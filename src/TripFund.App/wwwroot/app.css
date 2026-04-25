@@ -1,10 +1,15 @@
 html, body, #app {
+    box-sizing: border-box;
     font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
     background-color: #F8FBF9;
     margin: 0;
     padding: 0;
     height: 100%;
     overflow: hidden;
+}
+
+*, *:before, *:after {
+    box-sizing: inherit;
 }
 
 /* Page Layout */
@@ -144,10 +149,46 @@ html, body, #app {
     font-weight: 600;
 }
 
-.btn-dashed-vibe:active {
+.btn-dashed-vibe:active:not(.expanded) {
     background-color: #F8FBF9;
     border-color: #20563C;
     color: #20563C;
+}
+
+.add-item-dashed {
+    border: 2px dashed #D1D9E0;
+    border-radius: 32px;
+    padding: 1rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    background-color: transparent;
+    width: 100%;
+}
+
+.add-item-dashed:active:not(.expanded) {
+    background-color: #F8FBF9;
+    border-color: #20563C;
+}
+
+.add-item-dashed.expanded {
+    background-color: #FFFFFF;
+    cursor: default;
+    padding: 0;
+    border-style: dashed;
+    border-color: #D1D9E0;
+}
+
+.dashed-btn-content {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #6C757D;
+    font-weight: 600;
+    font-size: 0.95rem;
+}
+
+.dashed-btn-content svg {
+    margin-right: 0.5rem;
 }
 
 /* Sections */
@@ -239,7 +280,8 @@ html, body, #app {
 }
 
 .amount-tile .amount-input:focus {
-    border-color: rgba(0, 0, 0, 0.3);
+    border-color: #20563C;
+    box-shadow: 0 0 0 3px rgba(32, 86, 60, 0.1);
 }
 
 .amount-tile-expense .amount-input { color: #DC3545; }
@@ -293,13 +335,23 @@ html, body, #app {
     border: 1px solid #E0E0E0;
     background-color: #FFFFFF;
     font-size: 1rem;
+    font-weight: 600;
+    color: #1A3C2F;
     outline: none;
-    transition: border-color 0.2s;
+    transition: all 0.2s ease;
     width: 100%;
 }
 
 .form-control-vibe:focus {
     border-color: #20563C;
+    box-shadow: 0 0 0 3px rgba(32, 86, 60, 0.1);
+}
+
+.form-control-vibe.readonly-input {
+    background-color: #F1F3F5;
+    color: #ADB5BD;
+    cursor: not-allowed;
+    border-color: #E9ECEF;
 }
 
 .card-vibe {
@@ -342,6 +394,10 @@ html, body, #app {
 
 .dropdown-item-vibe:hover:not(:disabled) {
     background-color: #F8FBF9;
+}
+
+.dropdown-item-vibe.selected {
+    background-color: #D6EDE2;
 }
 
 /* Utils */

@@ -5,7 +5,7 @@
         {
             @if (editingCurrencyCode == curr.Key)
             {
-                <div class="currency-edit-container">
+                <div id="edit-currency-form" class="currency-edit-container">
                     <div class="new-currency-form">
                         <div class="new-currency-header">
                             <span class="wallet-icon">
@@ -21,22 +21,22 @@
                         <div class="new-currency-grid relative-grid">
                             <div class="new-curr-col">
                                 <label>CODICE</label>
-                                <input type="text" value="@newCurrCode" readonly class="readonly-input-form" />
+                                <input type="text" value="@newCurrCode" readonly class="form-control-vibe readonly-input" />
                             </div>
                             <div class="new-curr-col">
                                 <label>SIMBOLO</label>
-                                <input type="text" @bind="newCurrSymbol" @bind:event="oninput" @onblur="TrimSymbol" placeholder="€" />
+                                <input type="text" class="form-control-vibe" @bind="newCurrSymbol" @bind:event="oninput" @onblur="TrimSymbol" placeholder="€" />
                             </div>
                             <div class="new-curr-col">
                                 <label>DECIMALI</label>
-                                <input type="text" inputmode="numeric" value="@newCurrDecimals" @oninput="OnDecimalsChanged" onfocus="appLogic.selectText(this)" />
+                                <input type="text" class="form-control-vibe" inputmode="numeric" value="@newCurrDecimals" @oninput="OnDecimalsChanged" onfocus="appLogic.selectText(this)" />
                             </div>
                         </div>
                         
                         <div class="new-currency-footer">
                             <div class="new-curr-col quota-col">
                                 <label>QUOTA</label>
-                                <input type="text" inputmode="decimal" value="@newCurrQuotaString" @oninput="OnQuotaChanged" onfocus="appLogic.selectText(this)" placeholder="1000" />
+                                <input type="text" class="form-control-vibe" inputmode="decimal" value="@newCurrQuotaString" @oninput="OnQuotaChanged" onfocus="appLogic.selectText(this)" placeholder="1000" />
                             </div>
                             <div class="action-buttons">
                                 <button class="confirm-btn" @onmousedown="AddOrUpdateCurrency" @onclick="AddOrUpdateCurrency">
@@ -105,11 +105,11 @@
 
     @if (!IsReadonly)
     {
-        <div class="add-currency-dashed @(isAddingCurrency ? "expanded" : "")" @onclick="() => { if(!isAddingCurrency) { CancelCurrencyEdit(); isAddingCurrency = true; } }">
+        <div class="add-item-dashed @(isAddingCurrency ? "expanded" : "")" @onclick="() => { if(!isAddingCurrency) StartAddCurrency(); }">
             @if (!isAddingCurrency)
             {
                 <div class="dashed-btn-content">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="me-2">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <line x1="12" y1="5" x2="12" y2="19"></line>
                         <line x1="5" y1="12" x2="19" y2="12"></line>
                     </svg>
@@ -118,7 +118,7 @@
             }
             else
             {
-                <div class="new-currency-form" @onclick:stopPropagation>
+                <div id="new-currency-form" class="new-currency-form" @onclick:stopPropagation>
                     <div class="new-currency-header">
                         <span class="wallet-icon">
                             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -133,16 +133,16 @@
                     <div class="new-currency-grid relative-grid">
                         <div class="new-curr-col">
                             <label>CODICE</label>
-                            <input type="text" value="@newCurrCode" @oninput="OnCodeInput" @onfocus="OnCodeFocus" @onblur="OnCodeBlur" placeholder="EUR" autocomplete="off" />
+                            <input type="text" class="form-control-vibe" value="@newCurrCode" @oninput="OnCodeInput" @onfocus="OnCodeFocus" @onblur="OnCodeBlur" placeholder="EUR" autocomplete="off" />
                         </div>
                         <div class="new-curr-col">
                             <label>SIMBOLO</label>
-                            <input type="text" @bind="newCurrSymbol" @bind:event="oninput" @onblur="TrimSymbol" placeholder="€" />
+                            <input type="text" class="form-control-vibe" @bind="newCurrSymbol" @bind:event="oninput" @onblur="TrimSymbol" placeholder="€" />
                         </div>
 
                         <div class="new-curr-col">
                             <label>DECIMALI</label>
-                            <input type="text" inputmode="numeric" value="@newCurrDecimals" @oninput="OnDecimalsChanged" onfocus="appLogic.selectText(this)" />
+                            <input type="text" class="form-control-vibe" inputmode="numeric" value="@newCurrDecimals" @oninput="OnDecimalsChanged" onfocus="appLogic.selectText(this)" />
                         </div>
 
                         @if (showSuggestions && filteredCurrencies.Any())
@@ -163,7 +163,7 @@
                     <div class="new-currency-footer">
                         <div class="new-curr-col quota-col">
                             <label>QUOTA</label>
-                            <input type="text" inputmode="decimal" value="@newCurrQuotaString" @oninput="OnQuotaChanged" onfocus="appLogic.selectText(this)" placeholder="1000" />
+                            <input type="text" class="form-control-vibe" inputmode="decimal" value="@newCurrQuotaString" @oninput="OnQuotaChanged" onfocus="appLogic.selectText(this)" placeholder="1000" />
                         </div>
                         <div class="action-buttons">
                             <button class="confirm-btn" @onmousedown="AddOrUpdateCurrency" @onclick="AddOrUpdateCurrency">
@@ -302,17 +302,6 @@
         letter-spacing: 0.05em;
     }
 
-    .new-curr-col input {
-        background-color: #F1F3F5;
-        border: none;
-        border-radius: 12px;
-        padding: 0.8rem 1rem;
-        font-size: 1rem;
-        font-weight: 600;
-        color: #1A3C2F;
-        width: 100%;
-    }
-
     .readonly-input-form {
         background-color: #E9ECEF !important;
         color: #6C757D !important;
@@ -352,32 +341,6 @@
     .confirm-btn:active { background-color: #D6EDE2; }
     .cancel-btn:active { background-color: #E9ECEF; }
 
-    .add-currency-dashed {
-        border: 2px dashed #D1D9E0;
-        border-radius: 32px;
-        padding: 1rem;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        cursor: pointer;
-        transition: all 0.3s ease;
-    }
-
-    .add-currency-dashed.expanded {
-        border-style: dashed;
-        border-color: #D1D9E0;
-        background-color: #FFFFFF;
-        cursor: default;
-        padding: 0;
-    }
-
-    .dashed-btn-content {
-        display: flex;
-        align-items: center;
-        color: #6C757D;
-        font-weight: 600;
-    }
-
     .error-container { text-align: center; }
     .error-text { color: #DC3545; font-size: 0.85rem; font-weight: 600; }
     .me-2 { margin-right: 0.5rem; }
@@ -393,13 +356,14 @@
         left: 0;
         right: 0;
         background: white;
-        border: 2px solid #E9ECEF;
-        border-radius: 16px;
+        border: 1px solid #F0F0F0;
+        border-radius: 12px;
         margin-top: 4px;
-        box-shadow: 0 12px 24px rgba(0,0,0,0.12);
+        box-shadow: 0 8px 24px rgba(0,0,0,0.12);
         z-index: 100;
         max-height: 350px;
         overflow-y: auto;
+        padding: 0.5rem;
     }
 
     .suggestion-item {
@@ -409,15 +373,12 @@
         gap: 0.5rem;
         align-items: center;
         font-size: 0.9rem;
-        border-bottom: 1px solid #F8F9FA;
-    }
-
-    .suggestion-item:last-child {
-        border-bottom: none;
+        border-radius: 8px;
+        transition: background-color 0.2s;
     }
 
     .suggestion-item:hover {
-        background-color: #F1F3F5;
+        background-color: #F8FBF9;
     }
 
     .sugg-code {

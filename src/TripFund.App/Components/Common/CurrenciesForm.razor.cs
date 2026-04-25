@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Components;
+using Microsoft.JSInterop;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -17,6 +18,8 @@ namespace TripFund.App.Components.Common
         [Parameter] public bool OpenNewCurrencyOnOpen { get; set; } = false;
         [Parameter] public bool IsReadonly { get; set; } = false;
 
+        [Inject] private IJSRuntime JSRuntime { get; set; } = default!;
+
         private string error = "";
         private string newCurrCode = "";
         private string newCurrSymbol = "";
@@ -25,6 +28,7 @@ namespace TripFund.App.Components.Common
         private int newCurrDecimals = 2;
         private bool isAddingCurrency = false;
         private string? editingCurrencyCode = null;
+        private bool _shouldScroll = false;
 
         private List<IsoCurrencyInfo> filteredCurrencies = new();
         private bool showSuggestions = false;
@@ -178,6 +182,14 @@ namespace TripFund.App.Components.Common
             }
         }
 
+        private void StartAddCurrency()
+        {
+            editingCurrencyCode = null;
+            CancelCurrencyEdit();
+            isAddingCurrency = true;
+            _shouldScroll = true;
+        }
+
         private void StartEditCurrency(string code, Currency c)
         {
             isAddingCurrency = false;
@@ -187,6 +199,23 @@ namespace TripFund.App.Components.Common
             newCurrDecimals = c.Decimals;
             newCurrQuota = c.ExpectedQuotaPerMember;
             newCurrQuotaString = newCurrQuota.ToString("F" + newCurrDecimals);
+            _shouldScroll = true;
+        }
+
+        protected override async Task OnAfterRenderAsync(bool firstRender)
+        {
+            if (_shouldScroll)
+            {
+                _shouldScroll = false;
+                if (isAddingCurrency)
+                {
+                    await JSRuntime.InvokeVoidAsync("appLogic.scrollIntoView", "#new-currency-form", "center");
+                }
+                else if (editingCurrencyCode != null)
+                {
+                    await JSRuntime.InvokeVoidAsync("appLogic.scrollIntoView", "#edit-currency-form", "center");
+                }
+            }
         }
 
         private void CancelCurrencyEdit()
