@@ -19,27 +19,26 @@ public partial class CategoriesForm
     private string newCategoryName = "";
     private string newCategorySlug = "";
     private string newCategoryIcon = "🚌";
-    private string newCategoryColor = "#F8B195";
+    private string newCategoryColor = "#FF0000";
     private string error = "";
 
     private readonly string[] expenseEmojis = {
-        "🏨", "🏘️", "🏠", "⛺", "🏕️", "🍝", "🍕", "🍔", "🍣", "🥗", 
-        "🥖", "🥞", "🍖", "🥦", "🍎", "🍩", "🍫", "🍿", "🍬", "☕", 
-        "🍹", "🍺", "🍷", "🥤", "🍦", "🚌", "🚂", "✈️", "🚗", "🚕", 
-        "🚲", "🛵", "⛽", "🎫", "🗺️", "🏛️", "🎡", "🎭", "🎬", "🏟️", 
-        "🛍️", "🎁", "👕", "👗", "👞", "🧢", "💍", "💄", "💼", "🎒", 
+        "🏨", "🏘️", "🏠", "⛺", "🏕️", "🍝", "🍕", "🍔", "🍣", "🥗",
+        "🥖", "🥞", "🍖", "🥦", "🍎", "🍩", "🍫", "🍿", "🍬", "☕",
+        "🍹", "🍺", "🍷", "🥤", "🍦", "🚌", "🚂", "✈️", "🚗", "🚕",
+        "🚲", "🛵", "⛽", "🎫", "🗺️", "🏛️", "🎡", "🎭", "🎬", "🏟️",
+        "🛍️", "🎁", "👕", "👗", "👞", "🧢", "💍", "💄", "💼", "🎒",
         "📷", "📱", "💻", "🔋", "🔌", "💸", "💰", "💳", "🏥", "💊"
     };
 
     private readonly string[] palette = {
-        "#A8D8EA", "#AA96DA", "#FCBAD3", "#FFFFD2", "#DBE2EF", "#DCEDC1",
-        "#FFD3B6", "#FFAAA5", "#FF8B94", "#D6EDE2", "#F9F7F7", "#EEEEEE",
-        "#B2E2F2", "#C5E3F6", "#D1D1F7", "#E2D1F9", "#F9D1F3", "#F9D1D1",
-        "#F9E6D1", "#F9F3D1", "#E6F9D1", "#D1F9D1", "#D1F9E6", "#D1F9F3",
-        "#E0F2F1", "#F1F8E9", "#FFFDE7", "#FFF3E0", "#FBE9E7", "#EFEBE9",
-        "#FAFAFA", "#ECEFF1", "#CFD8DC", "#B0BEC5", "#90A4AE", "#78909C"
+        "#FF0000", "#FF4500", "#FF8C00", "#FFA500", "#FFD700", "#FFFF00",
+        "#9ACD32", "#32CD32", "#00FF00", "#00FA9A", "#00FFFF", "#00BFFF",
+        "#0000FF", "#00008B", "#8A2BE2", "#4B0082", "#800080", "#FF00FF",
+        "#FF1493", "#DC143C", "#A52A2A", "#800000", "#808000", "#008000",
+        "#008080", "#000080", "#B22222", "#D2691E", "#FF6347", "#FF69B4",
+        "#DA70D6", "#9932CC", "#4169E1", "#1E90FF", "#20B2AA", "#2E8B57"
     };
-
     private void OnNameInput(ChangeEventArgs e)
     {
         newCategoryName = e.Value?.ToString() ?? "";

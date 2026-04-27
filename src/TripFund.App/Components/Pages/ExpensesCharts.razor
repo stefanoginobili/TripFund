@@ -1,0 +1,147 @@
+@page "/trip/{tripSlug}/charts"
+@using System.Globalization
+
+<div class="app-page">
+    <header class="app-header">
+        <button class="icon-btn" @onclick='() => Nav.NavigateTo($"/trip/{tripSlug}")'>
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="19" y1="12" x2="5" y2="12"></line>
+                <polyline points="12 19 5 12 12 5"></polyline>
+            </svg>
+        </button>
+        <h1 class="header-title">@config?.Name</h1>
+        <div class="header-actions">
+            @* Empty for now *@
+        </div>
+    </header>
+
+    <div class="content">
+        @if (config == null)
+        {
+            <LoadingSpinner />
+        }
+        else if (!currencyCharts.Any())
+        {
+            <div class="empty-state">
+                <p>Nessuna spesa registrata per questo viaggio.</p>
+            </div>
+        }
+        else
+        {
+            @foreach (var chart in currencyCharts)
+            {
+                <section class="info-section chart-section">
+                    <div class="chart-tile">
+                        <h3 class="section-header-vibe">Spese Cassa @chart.CurrencyCode</h3>
+                        
+                        <div class="pie-chart-container">
+                            <svg viewBox="0 0 100 100" class="pie-chart">
+                                @if (chart.Slices.Count == 1 && chart.Slices[0].Percentage >= 0.999)
+                                {
+                                    <circle cx="50" cy="50" r="45" fill="@chart.Slices[0].Color" />
+                                }
+                                else
+                                {
+                                    @foreach (var slice in chart.Slices)
+                                    {
+                                        <path d="@slice.SvgPath" fill="@slice.Color">
+                                            <title>@slice.Label: @FormatCurrency(slice.Amount, chart.CurrencyCode)</title>
+                                        </path>
+                                    }
+                                }
+                            </svg>
+                        </div>
+
+                        <div class="legend-container">
+                            @foreach (var slice in chart.Slices)
+                            {
+                                <div class="legend-item">
+                                    <div class="color-swatch" style="background-color: @slice.Color"></div>
+                                    <span class="category-icon">@slice.Icon</span>
+                                    <span class="category-name">@slice.Label</span>
+                                    <span class="category-amount">@FormatCurrency(slice.Amount, chart.CurrencyCode)</span>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                </section>
+            }
+        }
+    </div>
+</div>
+
+<style>
+    .content {
+        gap: 1rem !important;
+    }
+
+    .chart-section {
+        margin-bottom: 0;
+    }
+
+    .chart-tile {
+        background-color: #FFFFFF;
+        padding: 1.5rem;
+        border-radius: 20px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+        border: 1px solid #F0F0F0;
+    }
+
+    .pie-chart-container {
+        width: 100%;
+        max-width: 300px;
+        margin: 1.5rem auto;
+        display: flex;
+        justify-content: center;
+    }
+
+    .pie-chart {
+        width: 100%;
+        height: auto;
+        transform: rotate(-90deg); /* Start from top */
+    }
+
+    .legend-container {
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+        margin-top: 1rem;
+    }
+
+    .legend-item {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        font-size: 0.9rem;
+    }
+
+    .color-swatch {
+        width: 16px;
+        height: 16px;
+        border-radius: 4px;
+        flex-shrink: 0;
+    }
+
+    .category-icon {
+        font-size: 1.1rem;
+        width: 24px;
+        text-align: center;
+    }
+
+    .category-name {
+        flex: 1;
+        font-weight: 500;
+        color: #1A3C2F;
+    }
+
+    .category-amount {
+        font-weight: 700;
+        color: #1A3C2F;
+    }
+
+    .empty-state {
+        text-align: center;
+        padding: 3rem 1rem;
+        color: #6C757D;
+    }
+</style>

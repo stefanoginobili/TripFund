@@ -54,16 +54,16 @@ public static class AppConstants
         public const string DefaultSlug = "altro";
         public const string DefaultName = "Altro";
         public const string DefaultIcon = "💸";
-        public const string DefaultColor = "#EEEEEE"; // Light Pastel Gray
+        public const string DefaultColor = "#808080"; // Standard Gray
         public const string UnknownIcon = "﹖";
 
         public static readonly Dictionary<string, (string Name, string Icon, string Color)> DefaultTripCategories = new()
         {
-            { "pernottamenti", ("Pernottamenti", "🛏️", "#A8D8EA") }, // Pastel Blue
-            { "pasti", ("Pasti", "🍝", "#FFD8B1") }, // Light Orange
-            { "trasporti", ("Trasporti", "🚐", "#DBE2EF") }, // Pastel Gray/Blue
-            { "escursioni", ("Escursioni", "🎟️", "#DCEDC1") }, // Pastel Green
-            { "mance", ("Mance", "🪙", "#FFFFD2") }  // Pastel Yellow
+            { "pernottamenti", ("Pernottamenti", "🛏️", "#0000FF") }, // Standard Blue
+            { "pasti", ("Pasti", "🍝", "#FFA500") }, // Standard Orange
+            { "trasporti", ("Trasporti", "🚐", "#800080") }, // Standard Purple
+            { "escursioni", ("Escursioni", "🎟️", "#008000") }, // Standard Green
+            { "mance", ("Mance", "🪙", "#FFD700") }  // Standard Yellow
         };
     }
 }

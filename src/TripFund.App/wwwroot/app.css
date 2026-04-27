@@ -288,6 +288,12 @@ html, body, #app {
 .amount-tile-contribution .amount-input { color: #20563C; }
 
 /* Transaction Icons */
+.category-theme-translucent {
+    /* Background transparency: 75% transparent = 25% opaque */
+    background-color: color-mix(in srgb, var(--cat-color) 25%, transparent) !important;
+    border: 1px solid var(--cat-color) !important;
+}
+
 .transaction-icon {
     border-radius: 12px;
     display: flex;
@@ -398,7 +404,7 @@ input[readonly]::placeholder {
     color: #1A3C2F;
     display: flex;
     align-items: center;
-    gap: 1.25rem;
+    gap: 0.5rem;
     border-radius: 8px;
     width: 100%;
     white-space: nowrap;

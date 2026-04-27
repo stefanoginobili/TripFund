@@ -76,7 +76,7 @@
                                     var displayColor = currentCat?.Color ?? AppConstants.Categories.DefaultColor;
                                 }
                                 <div class="category-selection-display">
-                                    <div class="category-icon-circle" style="background-color: @displayColor">
+                                    <div class="category-icon-circle category-theme-translucent" style="--cat-color: @displayColor">
                                         @displayIcon
                                     </div>
                                     <span class="category-display-name">@displayName</span>
@@ -90,10 +90,10 @@
                         </Trigger>
                         <ChildContent>
                             <div class="category-dropdown-content">
-                                <button type="button" class="dropdown-item-vibe @(string.IsNullOrEmpty(selectedCategorySlug) || selectedCategorySlug == AppConstants.Categories.DefaultSlug ? "selected" : "")" 
+                                <button type="button" class="dropdown-item-vibe @(string.IsNullOrEmpty(selectedCategorySlug) || selectedCategorySlug == AppConstants.Categories.DefaultSlug ? "selected" : "")"
                                      @onclick='() => SelectCategory(AppConstants.Categories.DefaultSlug)'>
                                     <div class="category-item-content">
-                                        <div class="category-icon-circle small" style="background-color: @AppConstants.Categories.DefaultColor">
+                                        <div class="category-icon-circle small category-theme-translucent" style="--cat-color: @AppConstants.Categories.DefaultColor">
                                             @AppConstants.Categories.DefaultIcon
                                         </div>
                                         <span class="category-item-name">@AppConstants.Categories.DefaultName</span>
@@ -102,18 +102,17 @@
                                 {
                                     @foreach (var cat in config.Categories.Expenses)
                                     {
-                                        <button type="button" class="dropdown-item-vibe @(selectedCategorySlug == cat.Key ? "selected" : "")" 
+                                        <button type="button" class="dropdown-item-vibe @(selectedCategorySlug == cat.Key ? "selected" : "")"
                                              @onclick="() => SelectCategory(cat.Key)">
                                             <div class="category-item-content">
-                                                <div class="category-icon-circle small" style="background-color: @cat.Value.Color">
+                                                <div class="category-icon-circle small category-theme-translucent" style="--cat-color: @cat.Value.Color">
                                                     @cat.Value.Icon
                                                 </div>
                                                 <span class="category-item-name">@cat.Value.Name</span>
                                             </div>
                                         </button>
                                     }
-                                }
-                            </div>
+                                }                            </div>
                         </ChildContent>
                     </VibeMenu>
                 </div>

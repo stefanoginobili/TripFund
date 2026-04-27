@@ -38,6 +38,13 @@
                         </svg>
                         Report Spese
                     </button>
+                    <button class="dropdown-item-vibe" @onclick='() => Nav.NavigateTo($"/trip/{tripSlug}/charts")'>
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="me-2">
+                            <path d="M21.21 15.89A10 10 0 1 1 8 2.83"></path>
+                            <path d="M22 12A10 10 0 0 0 12 2v10z"></path>
+                        </svg>
+                        Grafici Spese
+                    </button>
                 </ChildContent>
             </VibeMenu>
         </div>
@@ -176,7 +183,7 @@
 
                                     }
 
-                                    <div class="category-pill-mini" style="background-color: @color">
+                                    <div class="category-pill-mini category-theme-translucent" style="--cat-color: @color">
                                         <span class="pill-icon-mini">@icon</span>
                                         <span class="pill-name-mini">@name</span>
                                     </div>
