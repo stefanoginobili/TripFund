@@ -20,7 +20,7 @@
         {
             <LoadingSpinner />
         }
-        else if (!currencyCharts.Any())
+        else if (!tripExpenses.Any())
         {
             <div class="empty-state">
                 <p>Nessuna spesa registrata per questo viaggio.</p>
@@ -28,11 +28,96 @@
         }
         else
         {
+            @if (config.Currencies.Count > 1)
+            {
+                <section class="info-section chart-section">
+                    <div class="chart-tile global-tile">
+                        <h3 class="section-header-vibe">Spese globali (in EUR)</h3>
+
+                        @if (areRatesMissing)
+                        {
+                            <div class="missing-rates-container">
+                                <p class="missing-rates-text">Tassi di conversione non disponibili per le seguenti date:</p>
+                                <div class="missing-rates-list">
+                                    @foreach (var missing in missingRatesList)
+                                    {
+                                        <div class="missing-rate-item">@missing</div>
+                                    }
+                                </div>
+                                <button class="btn-vibe btn-primary-vibe" @onclick="HandleDownloadRates" disabled="@isDownloadingRates">
+                                    @if (isDownloadingRates)
+                                    {
+                                        <span>Scaricamento...</span>
+                                    }
+                                    else
+                                    {
+                                        <span>Scarica tassi di conversione mancanti</span>
+                                    }
+                                </button>
+                            </div>
+                        }
+                        else if (globalChart != null)
+                        {
+                            <div class="pie-chart-container">
+                                <svg viewBox="0 0 100 100" class="pie-chart">
+                                    @if (globalChart.Slices.Count == 1 && globalChart.Slices[0].Percentage >= 0.999)
+                                    {
+                                        <circle cx="50" cy="50" r="45" fill="@globalChart.Slices[0].Color" />
+                                    }
+                                    else
+                                    {
+                                        @foreach (var slice in globalChart.Slices)
+                                        {
+                                            <path d="@slice.SvgPath" fill="@slice.Color">
+                                                <title>@slice.Label: @FormatCurrency(slice.Amount, globalChart.CurrencyCode)</title>
+                                            </path>
+                                        }
+                                    }
+                                </svg>
+                            </div>
+
+                            <div class="legend-container">
+                                @foreach (var slice in globalChart.Slices)
+                                {
+                                    <div class="legend-item">
+                                        <div class="color-swatch" style="background-color: @slice.Color"></div>
+                                        <span class="category-icon">@slice.Icon</span>
+                                        <span class="category-name">@slice.Label</span>
+                                        <span class="category-amount">@FormatCurrency(slice.Amount, globalChart.CurrencyCode) (@(Math.Round(slice.Percentage * 100))%)</span>
+                                    </div>
+                                }
+                            </div>
+
+                            @if (someCurrenciesSkipped)
+                            {
+                                <div class="chart-warning">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <circle cx="12" cy="12" r="10"></circle>
+                                        <line x1="12" y1="8" x2="12" y2="12"></line>
+                                        <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                                    </svg>
+                                    <span>Alcune valute non sono supportate dalla BCE e sono state escluse dal totale globale.</span>
+                                </div>
+                            }
+
+                            <div class="chart-info-note">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <circle cx="12" cy="12" r="10"></circle>
+                                    <line x1="12" y1="16" x2="12" y2="12"></line>
+                                    <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                                </svg>
+                                <span>Il totale globale è puramente indicativo e non include eventuali tasse o commissioni di cambio.</span>
+                            </div>
+                        }
+                    </div>
+                </section>
+            }
+
             @foreach (var chart in currencyCharts)
             {
                 <section class="info-section chart-section">
                     <div class="chart-tile">
-                        <h3 class="section-header-vibe">Spese Cassa @chart.CurrencyCode</h3>
+                        <h3 class="section-header-vibe currency-chart-header">@chart.DisplayTitle</h3>
                         
                         <div class="pie-chart-container">
                             <svg viewBox="0 0 100 100" class="pie-chart">
@@ -59,7 +144,7 @@
                                     <div class="color-swatch" style="background-color: @slice.Color"></div>
                                     <span class="category-icon">@slice.Icon</span>
                                     <span class="category-name">@slice.Label</span>
-                                    <span class="category-amount">@FormatCurrency(slice.Amount, chart.CurrencyCode)</span>
+                                    <span class="category-amount">@FormatCurrency(slice.Amount, chart.CurrencyCode) (@(Math.Round(slice.Percentage * 100))%)</span>
                                 </div>
                             }
                         </div>
@@ -85,6 +170,56 @@
         border-radius: 20px;
         box-shadow: 0 4px 12px rgba(0,0,0,0.05);
         border: 1px solid #F0F0F0;
+    }
+
+    .currency-chart-header {
+        white-space: pre-line;
+    }
+
+    .global-tile {
+        border: 2px solid #E8F5E9;
+    }
+
+    .missing-rates-container {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 2rem 1rem;
+        text-align: center;
+        gap: 1.5rem;
+    }
+
+    .missing-rates-container .btn-vibe {
+        width: auto;
+        min-width: 200px;
+        padding: 0.8rem 1.5rem;
+        font-size: 1rem;
+    }
+
+    .missing-rates-text {
+        color: #666;
+        font-size: 0.9rem;
+        margin-bottom: 0.5rem;
+    }
+
+    .missing-rates-list {
+        display: flex;
+        flex-direction: column;
+        gap: 0.25rem;
+        margin-bottom: 1.5rem;
+        width: 100%;
+        max-height: 200px;
+        overflow-y: auto;
+    }
+
+    .missing-rate-item {
+        font-size: 0.85rem;
+        color: #DC3545;
+        font-weight: 600;
+        background-color: #FFF5F5;
+        padding: 0.4rem 0.75rem;
+        border-radius: 8px;
     }
 
     .pie-chart-container {
@@ -137,6 +272,41 @@
     .category-amount {
         font-weight: 700;
         color: #1A3C2F;
+        white-space: nowrap;
+    }
+
+    .chart-warning {
+        display: flex;
+        align-items: flex-start;
+        gap: 0.5rem;
+        margin-top: 1.5rem;
+        padding: 0.75rem;
+        background-color: #FFF8E1;
+        border-radius: 12px;
+        color: #856404;
+        font-size: 0.8rem;
+        line-height: 1.2;
+    }
+
+    .chart-warning svg {
+        flex-shrink: 0;
+        margin-top: 1px;
+    }
+
+    .chart-info-note {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        margin-top: 1rem;
+        padding-top: 1rem;
+        border-top: 1px solid #F0F0F0;
+        color: #6C757D;
+        font-size: 0.75rem;
+        font-style: italic;
+    }
+
+    .chart-info-note svg {
+        flex-shrink: 0;
     }
 
     .empty-state {

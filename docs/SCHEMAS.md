@@ -217,3 +217,25 @@ Every leaf folder contains a `.tripfund` file (plain text, key-value pairs).
 - `tripfund/trip-config`: For trip configuration versions.
 - `tripfund/transaction-detail`: For transaction detail versions.
 - `tripfund/transaction-attachment`: For transaction attachments.
+
+## 8. Exchange Rates Cache (`rates_YYYY_MM.json`)
+This file is stored inside the trip's `cache` folder (`[AppData]/trips/[TripSlug]/cache/rates_YYYY_MM.json`). It is local-only and partitions exchange rates from the ECB (base EUR) by month to keep file sizes manageable.
+
+```json
+{
+  "rates": {
+    "2026-03-24": {
+      "ARS": 1200.50,
+      "USD": 1.08
+    },
+    "2026-03-25": {
+      "ARS": 1205.10,
+      "USD": 1.07
+    }
+  }
+}
+```
+
+* Note 1: Each key in the `rates` dictionary is a date in `yyyy-MM-dd` format.
+* Note 2: The value for each date is another dictionary where keys are ISO currency codes and values are the exchange rate (1 EUR = X Foreign Currency).
+* Note 3: If a rate for a specific date is missing (e.g., weekends or holidays), the application logic will fallback to the last available rate or download missing data from the ECB.

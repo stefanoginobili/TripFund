@@ -269,7 +269,7 @@ html, body, #app {
     border: 1px solid rgba(0, 0, 0, 0.15);
     border-radius: 12px;
     background: none;
-    font-size: 3.75rem;
+    font-size: 3rem;
     font-weight: 700;
     width: 100%;
     max-width: 300px;
