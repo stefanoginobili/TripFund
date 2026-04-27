@@ -11,6 +11,7 @@ Before executing any task or writing a single line of code, you **MUST STRICTLY*
 4.  **`docs/SCHEMAS.md`**: Use the provided JSON structures exactly.
 5.  **`docs/UX_FLOW.md`**: **CRITICAL.** Strictly follow the UI layouts, behaviors, and user flows defined here. Do not invent new UI paradigms.
 6.  **`docs/INTEGRATIONS.md`**: Configuration steps for external services (Azure/OneDrive, etc.).
+7.  **`docs/UI_COMPONENTS.md`**: Strictly apply the common UI component behaviors and styling rules for all form elements, dropdowns, menus, and interaction states.
 
 ## Workflow
 The project is divided into sequential tasks. I will provide you with the content of the files located in the `tasks/` folder one at a time. Every time you receive a new task, you must:
