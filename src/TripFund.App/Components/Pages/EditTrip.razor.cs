@@ -103,7 +103,16 @@ namespace TripFund.App.Components.Pages
                     Name = v.Value.Name?.Trim() ?? "", 
                     Email = v.Value.Email?.Trim() ?? "", 
                     Avatar = v.Value.Avatar 
-                })
+                }),
+                Categories = new TripCategories
+                {
+                    Expenses = config.Categories.Expenses.ToDictionary(k => k.Key, v => new ExpenseCategory
+                    {
+                        Name = v.Value.Name?.Trim() ?? "",
+                        Icon = v.Value.Icon,
+                        Color = v.Value.Color
+                    })
+                }
             };
 
             var currentJson = System.Text.Json.JsonSerializer.Serialize(currentConfig);
@@ -131,7 +140,16 @@ namespace TripFund.App.Components.Pages
                     Name = v.Value.Name?.Trim() ?? "", 
                     Email = v.Value.Email?.Trim() ?? "", 
                     Avatar = v.Value.Avatar 
-                })
+                }),
+                Categories = new TripCategories
+                {
+                    Expenses = original.Categories.Expenses.ToDictionary(k => k.Key, v => new ExpenseCategory
+                    {
+                        Name = v.Value.Name?.Trim() ?? "",
+                        Icon = v.Value.Icon,
+                        Color = v.Value.Color
+                    })
+                }
             };
             var normalizedOriginalJson = System.Text.Json.JsonSerializer.Serialize(normalizedOriginal);
 
@@ -313,6 +331,11 @@ namespace TripFund.App.Components.Pages
                 member.Name = member.Name?.Trim() ?? "";
                 member.Email = member.Email?.Trim();
                 if (string.IsNullOrWhiteSpace(member.Email)) member.Email = null;
+            }
+
+            foreach (var cat in config.Categories.Expenses.Values)
+            {
+                cat.Name = cat.Name?.Trim() ?? "";
             }
 
             if (string.IsNullOrWhiteSpace(config.Name)) { error = "Il nome è obbligatorio."; return; }

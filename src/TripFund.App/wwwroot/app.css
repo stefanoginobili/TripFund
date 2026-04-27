@@ -398,6 +398,7 @@ input[readonly]::placeholder {
     color: #1A3C2F;
     display: flex;
     align-items: center;
+    gap: 1.25rem;
     border-radius: 8px;
     width: 100%;
     white-space: nowrap;

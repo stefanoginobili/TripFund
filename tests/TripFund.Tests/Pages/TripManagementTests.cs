@@ -36,6 +36,7 @@ public class TripManagementTests : BunitContext
         JSInterop.SetupVoid("appLogic.lockScroll");
         JSInterop.SetupVoid("appLogic.unlockScroll");
         JSInterop.SetupVoid("appLogic.positionMenu", _ => true);
+        JSInterop.SetupVoid("appLogic.scrollIntoView", _ => true);
     }
 
     [Fact]
@@ -53,11 +54,11 @@ public class TripManagementTests : BunitContext
 
         // Act
         // Find the Name input in GeneralInfoForm
-        cut.Find("input[placeholder='es. Patagonia 2026']").Input("New Trip");
+        cut.Find(".form-group-vibe:nth-of-type(1) input.form-control-vibe").Input("New Trip");
         
         // Add a currency (expanded by default now)
-        cut.Find("input[placeholder='EUR']").Input("USD");
-        cut.Find("input[placeholder='1000']").Input("500");
+        cut.Find(".new-currency-grid .new-curr-col:nth-child(1) input").Input("USD");
+        cut.Find(".new-currency-footer .quota-col input").Input("500");
         await cut.Find(".confirm-btn").ClickAsync();
         
         // Slug generated from Name "New Trip" would be "new-trip"
@@ -92,7 +93,7 @@ public class TripManagementTests : BunitContext
         var cut = Render<CreateTrip>();
 
         // Act
-        var nameInput = cut.Find("input[placeholder='es. Patagonia 2026']");
+        var nameInput = cut.Find(".form-group-vibe:nth-of-type(1) input.form-control-vibe");
         nameInput.Input("My New Trip");
 
         // Assert
@@ -120,7 +121,7 @@ public class TripManagementTests : BunitContext
         var cut = Render<EditTrip>(parameters => parameters.Add(p => p.tripSlug, tripSlug));
 
         // Act
-        var nameInput = cut.Find("input[placeholder='es. Patagonia 2026']");
+        var nameInput = cut.Find(".form-group-vibe:nth-of-type(1) input.form-control-vibe");
         nameInput.Input("Updated Name");
 
         await cut.Find(".btn-primary-vibe").ClickAsync();
@@ -148,7 +149,7 @@ public class TripManagementTests : BunitContext
 
         // Act
         // Expand the "Aggiungi Partecipante" section
-        await cut.Find(".add-member-dashed").ClickAsync();
+        await cut.FindAll(".add-item-dashed").First(e => e.TextContent.Contains("Partecipante")).ClickAsync();
 
         // Open emoji picker
         await cut.Find(".avatar-input-box").ClickAsync();
@@ -158,7 +159,7 @@ public class TripManagementTests : BunitContext
         await emojiButtons[1].ClickAsync();
 
         // Fill name
-        cut.Find("input[placeholder='Esempio: Andrea']").Input("Luigi");
+        cut.Find(".name-col input").Input("Luigi");
         
         // Click add (confirm-btn inside the expanded form)
         await cut.Find(".confirm-btn").ClickAsync();
@@ -192,7 +193,7 @@ public class TripManagementTests : BunitContext
 
         // Act
         // Expand the "Aggiungi Partecipante" section
-        await cut.Find(".add-member-dashed").ClickAsync();
+        await cut.FindAll(".add-item-dashed").First(e => e.TextContent.Contains("Partecipante")).ClickAsync();
 
         // Open emoji picker
         await cut.Find(".avatar-input-box").ClickAsync();
@@ -237,7 +238,7 @@ public class TripManagementTests : BunitContext
         cut.Find(".new-member-title").TextContent.Should().Contain("Modifica Partecipante");
         
         // Act 2: Click "Aggiungi Partecipante"
-        await cut.Find(".add-member-dashed").ClickAsync();
+        await cut.FindAll(".add-item-dashed").First(e => e.TextContent.Contains("Partecipante")).ClickAsync();
 
         // Assert: Mario edit form is closed, New Member form is open
         cut.FindAll(".member-edit-container").Should().BeEmpty();

@@ -202,7 +202,7 @@ public class CurrencySelectorVisibilityTests : BunitContext
         cut.Find(".custom-member-selector").Click();
         
         // Select Mario
-        var marioItem = cut.FindAll(".dropdown-member-item").First();
+        var marioItem = cut.FindAll(".dropdown-item-vibe").First();
         marioItem.Click();
 
         // Submit

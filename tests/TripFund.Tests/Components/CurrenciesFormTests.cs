@@ -39,7 +39,7 @@ namespace TripFund.Tests.Components
             // (It's default if Currencies is empty)
 
             // Act
-            var input = cut.Find("input[placeholder='EUR']");
+            var input = cut.Find(".new-currency-grid .new-curr-col:nth-child(1) input");
             input.Input("EU");
 
             // Assert
@@ -60,7 +60,7 @@ namespace TripFund.Tests.Components
             );
 
             // Act
-            var input = cut.Find("input[placeholder='EUR']");
+            var input = cut.Find(".new-currency-grid .new-curr-col:nth-child(1) input");
             input.Input("US"); // Should match USD first
 
             // Assert
@@ -77,7 +77,7 @@ namespace TripFund.Tests.Components
             );
 
             // Act
-            var input = cut.Find("input[placeholder='EUR']");
+            var input = cut.Find(".new-currency-grid .new-curr-col:nth-child(1) input");
             input.Input("Dollar");
 
             // Assert
@@ -94,7 +94,7 @@ namespace TripFund.Tests.Components
                 .Add(p => p.Currencies, new Dictionary<string, Currency>())
             );
 
-            var input = cut.Find("input[placeholder='EUR']");
+            var input = cut.Find(".new-currency-grid .new-curr-col:nth-child(1) input");
             input.Input("EUR");
 
             // Act
@@ -102,8 +102,8 @@ namespace TripFund.Tests.Components
             suggestion.MouseDown(); // We use onmousedown
 
             // Assert
-            cut.Find("input[placeholder='EUR']").GetAttribute("value").Should().Be("EUR");
-            cut.Find("input[placeholder='€']").GetAttribute("value").Should().Be("€");
+            cut.Find(".new-currency-grid .new-curr-col:nth-child(1) input").GetAttribute("value").Should().Be("EUR");
+            cut.Find(".new-currency-grid .new-curr-col:nth-child(2) input").GetAttribute("value").Should().Be("€");
             
             // Find decimals input - it doesn't have a placeholder but it's the 3rd input in the grid
             var allInputs = cut.FindAll(".new-currency-grid input");
@@ -121,7 +121,7 @@ namespace TripFund.Tests.Components
                 .Add(p => p.Currencies, new Dictionary<string, Currency>())
             );
 
-            var input = cut.Find("input[placeholder='EUR']");
+            var input = cut.Find(".new-currency-grid .new-curr-col:nth-child(1) input");
             input.Input("EU");
             cut.FindAll(".suggestions-dropdown").Should().NotBeEmpty();
 

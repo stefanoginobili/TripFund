@@ -103,13 +103,13 @@
                                         </div>
                                         <div class="name-col">
                                             <label>NOME</label>
-                                            <input type="text" class="form-control-vibe" @bind="newMemberName" @onblur="TrimMemberName" placeholder="Esempio: Andrea" />
+                                            <input type="text" class="form-control-vibe" @bind="newMemberName" @onblur="TrimMemberName" />
                                         </div>
                                     </div>
 
                                     <div class="member-form-full-row">
                                         <label>EMAIL</label>
-                                        <input type="email" class="form-control-vibe" @bind="newMemberEmail" @onblur="TrimMemberEmail" placeholder="andrea@esempio.com" />
+                                        <input type="email" class="form-control-vibe" @bind="newMemberEmail" @onblur="TrimMemberEmail" />
                                     </div>
 
                                     <div class="member-form-footer">
@@ -234,19 +234,19 @@
                                     </div>
                                     <div class="name-col">
                                         <label>NOME</label>
-                                        <input type="text" class="form-control-vibe" @bind="newMemberName" @oninput="OnNewMemberNameInput" @onblur="TrimMemberName" placeholder="Esempio: Andrea" />
+                                        <input type="text" class="form-control-vibe" @bind="newMemberName" @oninput="OnNewMemberNameInput" @onblur="TrimMemberName" />
                                     </div>
                                 </div>
 
                                 <div class="member-form-full-row">
                                     <label>EMAIL</label>
-                                    <input type="email" class="form-control-vibe" @bind="newMemberEmail" @onblur="TrimMemberEmail" placeholder="andrea@esempio.com" />
+                                    <input type="email" class="form-control-vibe" @bind="newMemberEmail" @onblur="TrimMemberEmail" />
                                 </div>
 
                                 <div class="member-form-footer">
                                     <div class="slug-col">
                                         <label>SLUG</label>
-                                        <input type="text" class="form-control-vibe" @bind="newMemberSlug" placeholder="andrea-7890" />
+                                        <input type="text" class="form-control-vibe" @bind="newMemberSlug" />
                                     </div>
                                     <div class="action-buttons">
                                         <button class="confirm-btn" @onclick="AddMember">

@@ -223,7 +223,6 @@ public class TransactionFormTests : BunitContext
         // Assert UI Attributes
         var amountInput = cut.Find(".amount-input");
         amountInput.GetAttribute("inputmode").Should().Be("numeric");
-        amountInput.GetAttribute("placeholder").Should().Be("0");
 
         // Act - Set amount to 1000
         // 1000 / 3 = 333.333... -> with 0 decimals: 333
@@ -271,7 +270,7 @@ public class TransactionFormTests : BunitContext
 
         // Act
         cut.Find(".amount-input").Change("100");
-        cut.Find("input[placeholder='es. Cena a Buenos Aires']").Change("Test Expense");
+        cut.Find(".form-group-vibe input.form-control-vibe").Change("Test Expense");
 
         // Set Mario to Manual (Luigi stays Auto)
         var marioRow = cut.FindAll(".member-split-row").First(r => r.InnerHtml.Contains("Mario"));
@@ -321,7 +320,7 @@ public class TransactionFormTests : BunitContext
         
         // Use custom selector
         cut.Find(".custom-member-selector").Click();
-        var marioItem = cut.FindAll(".dropdown-member-item").First(i => i.InnerHtml.Contains("Mario"));
+        var marioItem = cut.FindAll(".dropdown-item-vibe").First(i => i.InnerHtml.Contains("Mario"));
         marioItem.Click();
 
         // Submit
@@ -362,7 +361,7 @@ public class TransactionFormTests : BunitContext
         
         // Select member
         cut.Find(".custom-member-selector").Click();
-        var marioItem = cut.FindAll(".dropdown-member-item").First(i => i.InnerHtml.Contains("Mario"));
+        var marioItem = cut.FindAll(".dropdown-item-vibe").First(i => i.InnerHtml.Contains("Mario"));
         marioItem.Click();
 
         // Submit
@@ -399,11 +398,11 @@ public class TransactionFormTests : BunitContext
 
         // Act
         cut.Find(".amount-input").Change("100");
-        cut.Find("input[placeholder='es. Versamento iniziale']").Change("Ricarica fondo comune");
+        cut.Find(".form-group-vibe input.form-control-vibe").Change("Ricarica fondo comune");
         
         // Select member
         cut.Find(".custom-member-selector").Click();
-        var marioItem = cut.FindAll(".dropdown-member-item").First(i => i.InnerHtml.Contains("Mario"));
+        var marioItem = cut.FindAll(".dropdown-item-vibe").First(i => i.InnerHtml.Contains("Mario"));
         marioItem.Click();
 
         // Submit
@@ -580,7 +579,7 @@ public class TransactionFormTests : BunitContext
 
         // Act
         cut.Find(".amount-input").Change("10");
-        cut.Find("input[placeholder='es. Cena a Buenos Aires']").Change("Test Attachments");
+        cut.Find(".form-group-vibe input.form-control-vibe").Change("Test Attachments");
         await cut.Find(".btn-primary-vibe").ClickAsync();
 
         // Assert
@@ -616,7 +615,7 @@ public class TransactionFormTests : BunitContext
 
         // Act
         cut.Find(".amount-input").Change("10");
-        cut.Find("input[placeholder='es. Cena a Buenos Aires']").Change("Test DateTime");
+        cut.Find(".form-group-vibe input.form-control-vibe").Change("Test DateTime");
 
         // Change Date to 2026-05-20
         var datePicker = cut.Find("input[type='date']");
@@ -661,7 +660,7 @@ public class TransactionFormTests : BunitContext
 
         // Act
         cut.Find(".amount-input").Change("10");
-        cut.Find("input[placeholder='es. Cena a Buenos Aires']").Change("Test Timezone");
+        cut.Find(".form-group-vibe input.form-control-vibe").Change("Test Timezone");
 
         // Set Date and Time
         cut.Find("input[type='date']").Change("2024-05-10");
@@ -670,7 +669,7 @@ public class TransactionFormTests : BunitContext
         // Set Timezone to UTC (safe across platforms) using custom selector
         var tzId = "UTC";
         cut.Find(".custom-tz-selector").Click();
-        var utcItem = cut.FindAll(".dropdown-tz-item").First(i => i.QuerySelector(".tz-selector-name")!.TextContent == tzId);
+        var utcItem = cut.FindAll(".dropdown-item-vibe").First(i => i.QuerySelector(".tz-selector-name")!.TextContent == tzId);
         utcItem.Click();
 
         // Submit
@@ -711,7 +710,7 @@ public class TransactionFormTests : BunitContext
 
         // Act
         cut.Find(".amount-input").Change("10");
-        cut.Find("input[placeholder='es. Cena a Buenos Aires']").Change("Test Description");
+        cut.Find(".form-group-vibe input.form-control-vibe").Change("Test Description");
         
         // Find a timezone with a different offset than local to trigger potential crash
         var localTz = TimeZoneInfo.Local;
@@ -721,7 +720,7 @@ public class TransactionFormTests : BunitContext
 
         var tzId = differentTz.Id;
         cut.Find(".custom-tz-selector").Click();
-        var tzItem = cut.FindAll(".dropdown-tz-item").First(i => i.QuerySelector(".tz-selector-name")!.TextContent == tzId);
+        var tzItem = cut.FindAll(".dropdown-item-vibe").First(i => i.QuerySelector(".tz-selector-name")!.TextContent == tzId);
         tzItem.Click();
         // Submit - This is where it used to crash
         await cut.Find(".btn-primary-vibe").ClickAsync();

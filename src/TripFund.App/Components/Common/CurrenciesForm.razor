@@ -25,7 +25,7 @@
                             </div>
                             <div class="new-curr-col">
                                 <label>SIMBOLO</label>
-                                <input type="text" class="form-control-vibe" @bind="newCurrSymbol" @bind:event="oninput" @onblur="TrimSymbol" placeholder="€" />
+                                <input type="text" class="form-control-vibe" @bind="newCurrSymbol" @bind:event="oninput" @onblur="TrimSymbol" />
                             </div>
                             <div class="new-curr-col">
                                 <label>DECIMALI</label>
@@ -36,7 +36,7 @@
                         <div class="new-currency-footer">
                             <div class="new-curr-col quota-col">
                                 <label>QUOTA</label>
-                                <input type="text" class="form-control-vibe" inputmode="decimal" value="@newCurrQuotaString" @oninput="OnQuotaChanged" onfocus="appLogic.selectText(this)" placeholder="1000" />
+                                <input type="text" class="form-control-vibe" inputmode="decimal" value="@newCurrQuotaString" @oninput="OnQuotaChanged" onfocus="appLogic.selectText(this)" />
                             </div>
                             <div class="action-buttons">
                                 <button class="confirm-btn" @onmousedown="AddOrUpdateCurrency" @onclick="AddOrUpdateCurrency">
@@ -133,11 +133,11 @@
                     <div class="new-currency-grid relative-grid">
                         <div class="new-curr-col">
                             <label>CODICE</label>
-                            <input type="text" class="form-control-vibe" value="@newCurrCode" @oninput="OnCodeInput" @onfocus="OnCodeFocus" @onblur="OnCodeBlur" placeholder="EUR" autocomplete="off" />
+                            <input type="text" class="form-control-vibe" value="@newCurrCode" @oninput="OnCodeInput" @onfocus="OnCodeFocus" @onblur="OnCodeBlur" autocomplete="off" />
                         </div>
                         <div class="new-curr-col">
                             <label>SIMBOLO</label>
-                            <input type="text" class="form-control-vibe" @bind="newCurrSymbol" @bind:event="oninput" @onblur="TrimSymbol" placeholder="€" />
+                            <input type="text" class="form-control-vibe" @bind="newCurrSymbol" @bind:event="oninput" @onblur="TrimSymbol" />
                         </div>
 
                         <div class="new-curr-col">
@@ -163,7 +163,7 @@
                     <div class="new-currency-footer">
                         <div class="new-curr-col quota-col">
                             <label>QUOTA</label>
-                            <input type="text" class="form-control-vibe" inputmode="decimal" value="@newCurrQuotaString" @oninput="OnQuotaChanged" onfocus="appLogic.selectText(this)" placeholder="1000" />
+                            <input type="text" class="form-control-vibe" inputmode="decimal" value="@newCurrQuotaString" @oninput="OnQuotaChanged" onfocus="appLogic.selectText(this)" />
                         </div>
                         <div class="action-buttons">
                             <button class="confirm-btn" @onmousedown="AddOrUpdateCurrency" @onclick="AddOrUpdateCurrency">

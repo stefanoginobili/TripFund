@@ -60,7 +60,7 @@ public static class AppConstants
         public static readonly Dictionary<string, (string Name, string Icon, string Color)> DefaultTripCategories = new()
         {
             { "pernottamenti", ("Pernottamenti", "🛏️", "#A8D8EA") }, // Pastel Blue
-            { "pasti", ("Pasti", "🍝", "#FF8B94") }, // Pastel Red/Pink
+            { "pasti", ("Pasti", "🍝", "#FFD8B1") }, // Light Orange
             { "trasporti", ("Trasporti", "🚐", "#DBE2EF") }, // Pastel Gray/Blue
             { "escursioni", ("Escursioni", "🎟️", "#DCEDC1") }, // Pastel Green
             { "mance", ("Mance", "🪙", "#FFFFD2") }  // Pastel Yellow

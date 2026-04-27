@@ -83,7 +83,7 @@ public class EmailReceiptTests : BunitContext
         
         // Select member
         cut.Find(".custom-member-selector").Click();
-        var marioItem = cut.FindAll(".dropdown-member-item").First(i => i.InnerHtml.Contains("Mario"));
+        var marioItem = cut.FindAll(".dropdown-item-vibe").First(i => i.InnerHtml.Contains("Mario"));
         marioItem.Click();
 
         // Submit
@@ -130,7 +130,7 @@ public class EmailReceiptTests : BunitContext
         
         // Select member
         cut.Find(".custom-member-selector").Click();
-        var marioItem = cut.FindAll(".dropdown-member-item").First(i => i.InnerHtml.Contains("Mario"));
+        var marioItem = cut.FindAll(".dropdown-item-vibe").First(i => i.InnerHtml.Contains("Mario"));
         marioItem.Click();
 
         // Submit
@@ -181,7 +181,7 @@ public class EmailReceiptTests : BunitContext
         
         // Select member
         cut.Find(".custom-member-selector").Click();
-        var marioItem = cut.FindAll(".dropdown-member-item").First(i => i.InnerHtml.Contains("Mario"));
+        var marioItem = cut.FindAll(".dropdown-item-vibe").First(i => i.InnerHtml.Contains("Mario"));
         marioItem.Click();
 
         // Submit

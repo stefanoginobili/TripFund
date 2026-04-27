@@ -30,6 +30,7 @@ This document outlines the standard rules and behaviors for UI components across
 - Background must be white, with foreground text in black (or the thematic dark green `#1A3C2F`).
 - Items are permitted to have icons.
 - **Interaction:**
+  - The trigger must maintain the same height regardless of whether an item is selected or a placeholder is shown.
   - Clicking the trigger opens the item list. It must appear above or below the trigger depending on available viewport space.
   - If a value is already selected when opened, the list must automatically scroll to ensure the selected item is visible in the middle.
   - The currently selected item must be highlighted with a pastel green background matching the app theme (no extra checkmark glyphs required).

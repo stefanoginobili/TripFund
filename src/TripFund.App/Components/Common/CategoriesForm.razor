@@ -78,7 +78,7 @@
                                 </div>
                                 <div class="name-col">
                                     <label>NOME</label>
-                                    <input type="text" class="form-control-vibe" @bind="newCategoryName" placeholder="Esempio: Trasporti" />
+                                    <input type="text" class="form-control-vibe" @bind="newCategoryName" />
                                 </div>
                             </div>
 
@@ -232,14 +232,14 @@
                         </div>
                         <div class="name-col">
                             <label>NOME</label>
-                            <input type="text" class="form-control-vibe" @bind="newCategoryName" @oninput="OnNameInput" placeholder="Esempio: Trasporti" />
+                            <input type="text" class="form-control-vibe" @bind="newCategoryName" @oninput="OnNameInput" />
                         </div>
                     </div>
 
                     <div class="category-form-footer">
                         <div class="slug-col">
                             <label>SLUG</label>
-                            <input type="text" class="form-control-vibe" @bind="newCategorySlug" placeholder="trasporti" />
+                            <input type="text" class="form-control-vibe" @bind="newCategorySlug" />
                         </div>
                         <div class="action-buttons">
                             <button class="confirm-btn" @onclick="SaveCategory">

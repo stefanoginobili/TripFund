@@ -53,14 +53,6 @@
                                 <div class="tz-selector-name">@tz.Id</div>
                                 <div class="tz-selector-offset">@GetFormattedDisplayName(tz)</div>
                             </div>
-                            @if (isSelected)
-                            {
-                                <div class="check-icon">
-                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#20563C" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                        <polyline points="20 6 9 17 4 12"></polyline>
-                                    </svg>
-                                </div>
-                            }
                         </button>
                     }
                 </div>
@@ -76,7 +68,7 @@
         padding: 0.8rem 1rem;
         border: 1px solid #E0E0E0;
         cursor: pointer;
-        min-height: 56px;
+        height: 58px;
         display: flex;
         align-items: center;
         justify-content: space-between;
@@ -157,10 +149,5 @@
         color: #6C757D;
         font-size: 0.9rem;
         font-style: italic;
-    }
-
-    .check-icon {
-        margin-left: auto;
-        flex-shrink: 0;
     }
 </style>
