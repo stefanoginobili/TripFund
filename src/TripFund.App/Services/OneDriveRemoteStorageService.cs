@@ -48,15 +48,23 @@ public class OneDriveRemoteStorageService : IRemoteStorageService, IRemoteFileSy
         _graphBaseUrl = graphBaseUrl.TrimEnd('/');
     }
 
-    public async Task<Dictionary<string, string>?> AuthenticateUserAsync()
+    public virtual async Task<Dictionary<string, string>?> AuthenticateUserAsync(CancellationToken cancellationToken = default)
     {
-        var parameters = new Dictionary<string, string>();
-        await AuthenticateAsync(parameters);
-        if (parameters.ContainsKey("accessToken"))
+        await _authSemaphore.WaitAsync(cancellationToken);
+        try
         {
-            return parameters;
+            var parameters = new Dictionary<string, string>();
+            await AuthenticateAsync(parameters, cancellationToken);
+            if (parameters.ContainsKey("accessToken"))
+            {
+                return parameters;
+            }
+            return null;
         }
-        return null;
+        finally
+        {
+            _authSemaphore.Release();
+        }
     }
 
     public async Task<RemoteTripMetadata?> GetRemoteTripMetadataAsync(string provider, Dictionary<string, string> parameters)
@@ -678,7 +686,7 @@ public class OneDriveRemoteStorageService : IRemoteStorageService, IRemoteFileSy
 
     #region Authentication
 
-    private async Task EnsureAuthenticatedAsync(Dictionary<string, string> parameters)
+    private async Task EnsureAuthenticatedAsync(Dictionary<string, string> parameters, CancellationToken cancellationToken = default)
     {
         if (parameters.TryGetValue("accessToken", out var accessToken) && 
             parameters.TryGetValue("accessTokenExpiry", out var expiryStr) && 
@@ -688,7 +696,7 @@ public class OneDriveRemoteStorageService : IRemoteStorageService, IRemoteFileSy
             return;
         }
 
-        await _authSemaphore.WaitAsync();
+        await _authSemaphore.WaitAsync(cancellationToken);
         try
         {
             if (parameters.TryGetValue("accessToken", out accessToken) && 
@@ -701,11 +709,11 @@ public class OneDriveRemoteStorageService : IRemoteStorageService, IRemoteFileSy
 
             if (parameters.TryGetValue("refreshToken", out var refreshToken) && !string.IsNullOrEmpty(refreshToken))
             {
-                await RefreshTokenAsync(parameters);
+                await RefreshTokenAsync(parameters, cancellationToken);
                 return;
             }
 
-            await AuthenticateAsync(parameters);
+            await AuthenticateAsync(parameters, cancellationToken);
         }
         finally
         {
@@ -713,7 +721,7 @@ public class OneDriveRemoteStorageService : IRemoteStorageService, IRemoteFileSy
         }
     }
 
-    private async Task AuthenticateAsync(Dictionary<string, string> parameters)
+    private async Task AuthenticateAsync(Dictionary<string, string> parameters, CancellationToken cancellationToken = default)
     {
         var scope = AppConstants.MicrosoftApi.Scopes;
         var redirectUri = $"msal{_config.MicrosoftClientId}://auth";
@@ -723,15 +731,15 @@ public class OneDriveRemoteStorageService : IRemoteStorageService, IRemoteFileSy
         {
             Url = new Uri(authUrl),
             CallbackUrl = new Uri(redirectUri)
-        });
+        }, cancellationToken);
 
         if (authResult?.Properties.TryGetValue("code", out var code) == true)
         {
-            await ExchangeCodeForTokenAsync(code, redirectUri, parameters);
+            await ExchangeCodeForTokenAsync(code, redirectUri, parameters, cancellationToken);
         }
     }
 
-    private async Task ExchangeCodeForTokenAsync(string code, string redirectUri, Dictionary<string, string> parameters)
+    private async Task ExchangeCodeForTokenAsync(string code, string redirectUri, Dictionary<string, string> parameters, CancellationToken cancellationToken = default)
     {
         var tokenUrl = string.Format(AppConstants.MicrosoftApi.TokenUrlTemplate, _config.MicrosoftTenantId);
         var body = new Dictionary<string, string>
@@ -743,10 +751,10 @@ public class OneDriveRemoteStorageService : IRemoteStorageService, IRemoteFileSy
             ["scope"] = AppConstants.MicrosoftApi.Scopes
         };
 
-        var response = await _httpClient.PostAsync(tokenUrl, new FormUrlEncodedContent(body));
+        var response = await _httpClient.PostAsync(tokenUrl, new FormUrlEncodedContent(body), cancellationToken);
         response.EnsureSuccessStatusCode();
 
-        var tokenResponse = await response.Content.ReadFromJsonAsync<TokenResponse>();
+        var tokenResponse = await response.Content.ReadFromJsonAsync<TokenResponse>(cancellationToken: cancellationToken);
         if (tokenResponse != null)
         {
             parameters["accessToken"] = tokenResponse.AccessToken;
@@ -758,7 +766,7 @@ public class OneDriveRemoteStorageService : IRemoteStorageService, IRemoteFileSy
         }
     }
 
-    private async Task RefreshTokenAsync(Dictionary<string, string> parameters)
+    private async Task RefreshTokenAsync(Dictionary<string, string> parameters, CancellationToken cancellationToken = default)
     {
         var tokenUrl = string.Format(AppConstants.MicrosoftApi.TokenUrlTemplate, _config.MicrosoftTenantId);
         var body = new Dictionary<string, string>
@@ -769,10 +777,10 @@ public class OneDriveRemoteStorageService : IRemoteStorageService, IRemoteFileSy
             ["scope"] = AppConstants.MicrosoftApi.Scopes
         };
 
-        var response = await _httpClient.PostAsync(tokenUrl, new FormUrlEncodedContent(body));
+        var response = await _httpClient.PostAsync(tokenUrl, new FormUrlEncodedContent(body), cancellationToken);
         if (response.IsSuccessStatusCode)
         {
-            var tokenResponse = await response.Content.ReadFromJsonAsync<TokenResponse>();
+            var tokenResponse = await response.Content.ReadFromJsonAsync<TokenResponse>(cancellationToken: cancellationToken);
             if (tokenResponse != null)
             {
                 parameters["accessToken"] = tokenResponse.AccessToken;
@@ -786,7 +794,7 @@ public class OneDriveRemoteStorageService : IRemoteStorageService, IRemoteFileSy
         }
 
         // If refresh fails, re-authenticate
-        await AuthenticateAsync(parameters);
+        await AuthenticateAsync(parameters, cancellationToken);
     }
 
     private class TokenResponse

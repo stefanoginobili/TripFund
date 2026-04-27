@@ -342,9 +342,15 @@ html, body, #app {
     width: 100%;
 }
 
-.form-control-vibe:focus {
+.form-control-vibe:focus:not(.readonly-input) {
     border-color: #20563C;
     box-shadow: 0 0 0 3px rgba(32, 86, 60, 0.1);
+}
+
+.form-control-vibe.readonly-input:focus {
+    border-color: #E9ECEF;
+    box-shadow: none;
+    outline: none;
 }
 
 .form-control-vibe.readonly-input {

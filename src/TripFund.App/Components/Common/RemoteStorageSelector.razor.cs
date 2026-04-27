@@ -7,7 +7,7 @@ using TripFund.App.Constants;
 
 namespace TripFund.App.Components.Common
 {
-    public partial class RemoteStorageSelector
+    public partial class RemoteStorageSelector : IDisposable
     {
         [Inject] private IMicrosoftAuthConfiguration MicrosoftConfig { get; set; } = default!;
         [Inject] private IRemoteStorageService RemoteStorageService { get; set; } = default!;
@@ -21,6 +21,13 @@ namespace TripFund.App.Components.Common
         [Parameter] public EventCallback<RemoteStorageSelection?> OnSelectionCompleted { get; set; }
 
         private bool _wasVisible;
+        private CancellationTokenSource? _cts;
+
+        public void Dispose()
+        {
+            _cts?.Cancel();
+            _cts?.Dispose();
+        }
 
         protected override void OnParametersSet()
         {
@@ -33,6 +40,10 @@ namespace TripFund.App.Components.Common
 
         private void ResetState()
         {
+            _cts?.Cancel();
+            _cts?.Dispose();
+            _cts = null;
+
             selectedProvider = null;
             folderId = "";
             folderName = "";
@@ -88,6 +99,12 @@ namespace TripFund.App.Components.Common
             {
                 linkResolveError = null;
                 isResolvingLink = true;
+                
+                _cts?.Cancel();
+                _cts?.Dispose();
+                _cts = new CancellationTokenSource();
+                var token = _cts.Token;
+
                 StateHasChanged();
 
                 if (string.IsNullOrWhiteSpace(sharedLinkUrl))
@@ -97,18 +114,22 @@ namespace TripFund.App.Components.Common
                 }
 
                 // 1. Authenticate first (Graph API requires a token even for shared links)
-                var authResult = await OneDriveService.AuthenticateUserAsync();
-                if (authResult == null || !authResult.TryGetValue("accessToken", out var token))
+                var authResult = await OneDriveService.AuthenticateUserAsync(token);
+                
+                // If we were cancelled while waiting for the browser, stop here
+                if (token.IsCancellationRequested) return;
+
+                if (authResult == null || !authResult.TryGetValue("accessToken", out var accessToken))
                 {
                     linkResolveError = "Autenticazione Microsoft fallita.";
                     return;
                 }
 
-                oneDriveToken = token;
+                oneDriveToken = accessToken;
                 authResult.TryGetValue("refreshToken", out oneDriveRefreshToken);
 
                 // 2. Resolve the link
-                var resolved = await OneDriveService.ResolveSharedLinkAsync(sharedLinkUrl, token);
+                var resolved = await OneDriveService.ResolveSharedLinkAsync(sharedLinkUrl, accessToken);
                 if (resolved == null)
                 {
                     linkResolveError = "Impossibile risolvere il link. Assicurati che sia un link di condivisione OneDrive valido.";
@@ -121,6 +142,10 @@ namespace TripFund.App.Components.Common
                 
                 // Finalize the selection automatically after successful resolution
                 await Complete();
+            }
+            catch (OperationCanceledException)
+            {
+                linkResolveError = null; // Simply stop resolving without error
             }
             catch (Exception ex)
             {
@@ -136,27 +161,44 @@ namespace TripFund.App.Components.Common
 
         private async Task OpenPicker()
         {
+            if (isPickerLoading) return;
+
             try
             {
                 isPickerLoading = true;
+                
+                _cts?.Cancel();
+                _cts?.Dispose();
+                _cts = new CancellationTokenSource();
+                var token = _cts.Token;
+
                 StateHasChanged();
 
                 if (selectedProvider == "onedrive")
                 {
-                    var authResult = await OneDriveService.AuthenticateUserAsync();
-                    if (authResult == null || !authResult.TryGetValue("accessToken", out var token))
+                    var authResult = await OneDriveService.AuthenticateUserAsync(token);
+                    
+                    // If we were cancelled while waiting for the browser, stop here
+                    if (token.IsCancellationRequested) return;
+
+                    if (authResult == null || !authResult.TryGetValue("accessToken", out var accessToken))
                     {
                         await AlertService.ShowAlertAsync("Errore", "Impossibile autenticare l'account Microsoft.", type: AlertType.Error);
                         return;
                     }
 
-                    oneDriveToken = token;
+                    oneDriveToken = accessToken;
                     authResult.TryGetValue("refreshToken", out oneDriveRefreshToken);
                     isOneDrivePickerVisible = true;
                 }
             }
-            catch (Exception)
+            catch (OperationCanceledException)
             {
+                // User cancelled the flow, no need to show an error
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error opening OneDrive picker: {ex}");
                 await AlertService.ShowAlertAsync("Errore", "Si è verificato un errore durante l'apertura del selettore.", type: AlertType.Error);
             }
             finally
@@ -179,6 +221,7 @@ namespace TripFund.App.Components.Common
 
         private void CancelLoading()
         {
+            _cts?.Cancel();
             isPickerLoading = false;
         }
 

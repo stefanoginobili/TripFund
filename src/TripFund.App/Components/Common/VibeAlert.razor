@@ -11,7 +11,7 @@
     var typeClass = alertService.Type.ToString().ToLower();
     var primaryBtnClass = alertService.Type == AlertType.Information ? "btn-vibe btn-primary-vibe" : $"btn-vibe btn-{typeClass}-vibe";
 
-    <div class="alert-backdrop-vibe" @onclick="() => alertService.Close(false)">
+    <div class="alert-backdrop-vibe" @onclick="() => { if(!alertService.IsConfirm) alertService.Close(false); }">
         <div class="alert-modal-vibe @typeClass" @onclick:stopPropagation="true">
             <h2 class="alert-title-vibe">@alertService.Title</h2>
             <p class="alert-message-vibe" style="text-align: @alertService.MessageAlignment">@((MarkupString)alertService.Message)</p>
