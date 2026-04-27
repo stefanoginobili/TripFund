@@ -25,6 +25,7 @@ namespace TripFund.App.Components.Pages
         protected override async Task OnInitializedAsync()
         {
             await Storage.CleanupIncompleteImportsAsync();
+            await Storage.CleanupBrokenTripsAsync();
             await Storage.CleanupTempFoldersAsync();
             await LoadTrips();
         }

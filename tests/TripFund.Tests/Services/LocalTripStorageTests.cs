@@ -314,6 +314,53 @@ public class LocalTripStorageTests : IDisposable
     }
 
     [Fact]
+    public async Task CleanupBrokenTrips_ShouldRemoveTripsWithoutConfig()
+    {
+        // Arrange
+        var slug1 = "good-trip";
+        var slug2 = "broken-trip";
+        
+        var registry = await _service.GetTripRegistryAsync();
+        registry.Trips[slug1] = new TripRegistryEntry { CreatedAt = DateTime.UtcNow };
+        registry.Trips[slug2] = new TripRegistryEntry { CreatedAt = DateTime.UtcNow };
+        await _service.SaveTripRegistryAsync(registry);
+
+        // Setup good trip
+        var config = new TripConfig { Name = "Good Trip", StartDate = DateTime.Today, EndDate = DateTime.Today.AddDays(1) };
+        await _service.SaveTripConfigAsync(slug1, config, "device-1");
+
+        // Setup broken trip: directory exists but no config
+        var brokenDir = Path.Combine(_tempPath, "trips", slug2);
+        Directory.CreateDirectory(brokenDir);
+
+        // Act
+        await _service.CleanupBrokenTripsAsync();
+
+        // Assert
+        var updatedRegistry = await _service.GetTripRegistryAsync();
+        updatedRegistry.Trips.Should().ContainKey(slug1);
+        updatedRegistry.Trips.Should().NotContainKey(slug2);
+        Directory.Exists(brokenDir).Should().BeFalse("Broken trip folder should be deleted");
+    }
+
+    [Fact]
+    public async Task CleanupBrokenTrips_ShouldRemoveTripsWithoutDirectory()
+    {
+        // Arrange
+        var slug = "missing-folder-trip";
+        var registry = await _service.GetTripRegistryAsync();
+        registry.Trips[slug] = new TripRegistryEntry { CreatedAt = DateTime.UtcNow };
+        await _service.SaveTripRegistryAsync(registry);
+
+        // Act
+        await _service.CleanupBrokenTripsAsync();
+
+        // Assert
+        var updatedRegistry = await _service.GetTripRegistryAsync();
+        updatedRegistry.Trips.Should().NotContainKey(slug);
+    }
+
+    [Fact]
     public async Task CleanupTempFolders_ShouldRemoveTempDirectories()
     {
         // Arrange

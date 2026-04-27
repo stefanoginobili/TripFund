@@ -8,6 +8,7 @@ This document outlines the standard rules and behaviors for UI components across
 - Both background and foreground must be grayed out.
 - For `text` or `number` inputs, the inner text **must remain selectable**.
 - When focused, no styling changes (borders, colors, etc.) should be applied.
+- If the input is empty, no placeholder must be shown.
 
 ### Writable State
 - Background must be white.

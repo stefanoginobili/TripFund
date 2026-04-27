@@ -360,6 +360,12 @@ html, body, #app {
     border-color: #E9ECEF;
 }
 
+.form-control-vibe.readonly-input::placeholder,
+input[readonly]::placeholder {
+    color: transparent !important;
+    opacity: 0 !important;
+}
+
 .card-vibe {
     background-color: #FFFFFF;
     border-radius: 28px;

@@ -584,6 +584,26 @@ public class LocalTripStorageService
         }
     }
 
+    public virtual async Task CleanupBrokenTripsAsync()
+    {
+        var registry = await GetTripRegistryAsync();
+        var toDelete = new List<string>();
+
+        foreach (var entry in registry.Trips)
+        {
+            var config = await GetTripConfigAsync(entry.Key);
+            if (config == null)
+            {
+                toDelete.Add(entry.Key);
+            }
+        }
+
+        foreach (var slug in toDelete)
+        {
+            await DeleteTripAsync(slug);
+        }
+    }
+
     public virtual Task CleanupTempFoldersAsync()
     {
         if (!Directory.Exists(_tripsPath)) return Task.CompletedTask;
