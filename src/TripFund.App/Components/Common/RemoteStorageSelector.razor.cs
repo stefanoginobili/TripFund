@@ -75,6 +75,11 @@ namespace TripFund.App.Components.Common
             await JS.InvokeVoidAsync("selectElementText", sharedLinkInput);
         }
 
+        private void TrimSharedLink()
+        {
+            sharedLinkUrl = sharedLinkUrl?.Trim() ?? string.Empty;
+        }
+
         private bool IsValidUrl(string url)
         {
             if (string.IsNullOrWhiteSpace(url)) return false;
@@ -97,6 +102,7 @@ namespace TripFund.App.Components.Common
         {
             try
             {
+                sharedLinkUrl = sharedLinkUrl?.Trim() ?? string.Empty;
                 linkResolveError = null;
                 isResolvingLink = true;
                 

@@ -180,28 +180,40 @@ namespace TripFund.App.Components.Pages
             newMemberEmail = newMemberEmail?.Trim() ?? "";
         }
 
+        private void TrimMemberSlug()
+        {
+            newMemberSlug = newMemberSlug?.Trim() ?? "";
+        }
+
         private void AddMember()
         {
             if (config == null) return;
             var trimmedName = newMemberName.Trim();
             var trimmedEmail = newMemberEmail.Trim();
+            var trimmedSlug = newMemberSlug.Trim();
             
             if (string.IsNullOrWhiteSpace(trimmedName)) { error = "Il nome è obbligatorio."; return; }
-            if (string.IsNullOrWhiteSpace(newMemberSlug)) { error = "Lo slug è obbligatorio."; return; }
+            if (string.IsNullOrWhiteSpace(trimmedSlug)) { error = "Lo slug è obbligatorio."; return; }
             
             // If not editing, check for duplicates
-            if (editingMemberSlug == null && config.Members.ContainsKey(newMemberSlug))
+            if (editingMemberSlug == null && config.Members.ContainsKey(trimmedSlug))
             {
                 error = "Partecipante già presente.";
                 return;
             }
 
-            config.Members[newMemberSlug] = new User
+            config.Members[trimmedSlug] = new User
             {
                 Name = trimmedName,
                 Email = string.IsNullOrWhiteSpace(trimmedEmail) ? null : trimmedEmail,
                 Avatar = string.IsNullOrWhiteSpace(newMemberAvatar) ? "👤" : newMemberAvatar
             };
+
+            // If we were editing and changed the slug, remove the old one
+            if (editingMemberSlug != null && editingMemberSlug != trimmedSlug)
+            {
+                config.Members.Remove(editingMemberSlug);
+            }
 
             newMemberName = "";
             newMemberSlug = "";

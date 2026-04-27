@@ -246,7 +246,7 @@
                                 <div class="member-form-footer">
                                     <div class="slug-col">
                                         <label>SLUG</label>
-                                        <input type="text" class="form-control-vibe" @bind="newMemberSlug" />
+                                        <input type="text" class="form-control-vibe" @bind="newMemberSlug" @onblur="TrimMemberSlug" />
                                     </div>
                                     <div class="action-buttons">
                                         <button class="confirm-btn" @onclick="AddMember">

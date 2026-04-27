@@ -27,8 +27,14 @@ namespace TripFund.App.Components.Pages
             }
         }
 
+        private void TrimAuthorName()
+        {
+            authorName = authorName?.Trim() ?? string.Empty;
+        }
+
         private async Task SaveSettings()
         {
+            authorName = authorName?.Trim() ?? string.Empty;
             if (string.IsNullOrWhiteSpace(authorName)) return;
 
             // If for some reason it's missing (should not happen after onboarding),

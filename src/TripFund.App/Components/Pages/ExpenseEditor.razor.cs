@@ -328,7 +328,7 @@ namespace TripFund.App.Components.Pages
 
         private void OnAmountChanged(ChangeEventArgs e)
         {
-            var input = e.Value?.ToString()?.Replace(".", ",");
+            var input = e.Value?.ToString()?.Trim().Replace(".", ",");
             if (decimal.TryParse(input, out decimal val))
             {
                 totalAmount = Math.Round(val, GetDecimals());
@@ -374,7 +374,7 @@ namespace TripFund.App.Components.Pages
 
         private void OnManualAmountChanged(MemberSplitInfo member, ChangeEventArgs e)
         {
-            var input = e.Value?.ToString()?.Replace(".", ",");
+            var input = e.Value?.ToString()?.Trim().Replace(".", ",");
             if (decimal.TryParse(input, out decimal val))
             {
                 member.ManualAmount = val;

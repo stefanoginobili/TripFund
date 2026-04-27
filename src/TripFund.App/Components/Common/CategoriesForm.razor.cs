@@ -98,8 +98,21 @@ public partial class CategoriesForm
         error = "";
     }
 
+    private void TrimName()
+    {
+        newCategoryName = newCategoryName?.Trim() ?? "";
+    }
+
+    private void TrimSlug()
+    {
+        newCategorySlug = newCategorySlug?.Trim() ?? "";
+    }
+
     private async Task SaveCategory()
     {
+        newCategoryName = newCategoryName.Trim();
+        newCategorySlug = newCategorySlug.Trim();
+
         if (string.IsNullOrWhiteSpace(newCategoryName)) { error = "Il nome è obbligatorio."; return; }
         
         string slugToUse = editingSlug ?? newCategorySlug;
@@ -113,7 +126,7 @@ public partial class CategoriesForm
 
         var newCat = new ExpenseCategory
         {
-            Name = newCategoryName.Trim(),
+            Name = newCategoryName,
             Icon = newCategoryIcon,
             Color = newCategoryColor
         };

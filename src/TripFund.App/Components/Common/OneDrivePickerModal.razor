@@ -63,7 +63,7 @@
                 {
                     <div class="create-folder-form-vibe">
                         <label class="form-label-vibe">NOME CARTELLA</label>
-                        <input type="text" class="form-control-vibe" @bind="newFolderName" @bind:event="oninput" autofocus />
+                        <input type="text" class="form-control-vibe" @bind="newFolderName" @bind:event="oninput" @onblur="TrimFolderName" autofocus />
                         <div class="form-actions-vibe">
                             <button class="btn-cancel-vibe" @onclick="ToggleCreateFolder" disabled="@isFolderCreating">Annulla</button>
                             <button class="btn-confirm-vibe" @onclick="CreateFolder" disabled="@(isFolderCreating || string.IsNullOrWhiteSpace(newFolderName))">
@@ -189,8 +189,14 @@
         errorMessage = null;
     }
 
+    private void TrimFolderName()
+    {
+        newFolderName = newFolderName?.Trim() ?? string.Empty;
+    }
+
     private async Task CreateFolder()
     {
+        newFolderName = newFolderName.Trim();
         if (string.IsNullOrWhiteSpace(newFolderName)) return;
 
         isFolderCreating = true;

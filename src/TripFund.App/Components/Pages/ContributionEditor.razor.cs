@@ -237,7 +237,7 @@ namespace TripFund.App.Components.Pages
         private void OnAmountChanged(ChangeEventArgs e)
         {
             isAmountDirty = true;
-            var input = e.Value?.ToString()?.Replace(".", ",");
+            var input = e.Value?.ToString()?.Trim().Replace(".", ",");
             if (decimal.TryParse(input, out decimal val))
             {
                 amount = Math.Round(val, GetDecimals());

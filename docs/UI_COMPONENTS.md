@@ -19,7 +19,7 @@ This document outlines the standard rules and behaviors for UI components across
   - The view must scroll or adjust to ensure the input is visible within the viewport.
 - **Data Types:**
   - `number`: The inner value must be center-aligned (unless an explicit exception is made), and focusing the input must automatically select all text.
-  - `text`: The inner value must be left-aligned (unless an explicit exception is made).
+  - `text`: The inner value must be left-aligned (unless an explicit exception is made). **All user-provided text must be trimmed (whitespace removed from both ends) when focus is lost and before being persisted.**
 
 ## 2. DropDown Lists
 ### Readonly State

@@ -81,7 +81,7 @@
                                         {
                                             <div class="link-inline-row">
                                                 <div class="flex-1">
-                                                    <input @ref="sharedLinkInput" type="text" class="form-control-vibe" @bind="sharedLinkUrl" @bind:event="oninput" @onfocus="SelectAllText" />
+                                                    <input @ref="sharedLinkInput" type="text" class="form-control-vibe" @bind="sharedLinkUrl" @bind:event="oninput" @onfocus="SelectAllText" @onblur="TrimSharedLink" />
                                                 </div>
                                                 <button class="btn-vibe btn-primary-vibe btn-vibe-sm" @onclick="OnConfirmLink" disabled="@(!IsValidUrl(sharedLinkUrl) || isResolvingLink)">
                                                     @if (isResolvingLink)
