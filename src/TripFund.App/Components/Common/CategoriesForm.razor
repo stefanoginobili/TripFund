@@ -27,7 +27,6 @@
 
                             <div class="category-form-row">
                                 <div class="icon-col">
-                                    <label>ICONA E COLORE</label>
                                     <div class="form-row-compact">
                                         <VibeMenu>
                                             <Trigger>
@@ -51,7 +50,8 @@
                                         
                                         <VibeMenu>
                                             <Trigger>
-                                                <div class="color-picker-trigger" style="background-color: @newCategoryColor">
+                                                <div class="color-picker-trigger">
+                                                    <div class="color-wheel"></div>
                                                 </div>
                                             </Trigger>
                                             <ChildContent>
@@ -181,7 +181,6 @@
 
                     <div class="category-form-row">
                         <div class="icon-col">
-                            <label>ICONA E COLORE</label>
                             <div class="form-row-compact">
                                 <VibeMenu>
                                     <Trigger>
@@ -205,7 +204,8 @@
                                 
                                 <VibeMenu>
                                     <Trigger>
-                                        <div class="color-picker-trigger" style="background-color: @newCategoryColor">
+                                        <div class="color-picker-trigger">
+                                            <div class="color-wheel"></div>
                                         </div>
                                     </Trigger>
                                     <ChildContent>
@@ -386,7 +386,7 @@
         gap: 0.5rem;
     }
 
-    .icon-input-box, .color-picker-trigger {
+    .icon-input-box {
         width: 48px;
         height: 48px;
         border-radius: 12px;
@@ -399,7 +399,34 @@
     }
 
     .color-picker-trigger {
-        border: 2px solid rgba(0,0,0,0.05);
+        width: 48px;
+        height: 48px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        background-color: #FFFFFF;
+        border: 1px solid #E0E0E0;
+    }
+
+    .color-wheel {
+        width: 28px;
+        height: 28px;
+        border-radius: 50%;
+        background: conic-gradient(#FF0000, #FFFF00, #00FF00, #00FFFF, #0000FF, #FF00FF, #FF0000);
+        position: relative;
+    }
+
+    .color-wheel::after {
+        content: '';
+        position: absolute;
+        top: 25%;
+        left: 25%;
+        width: 50%;
+        height: 50%;
+        background-color: #FFFFFF;
+        border-radius: 50%;
     }
 
     .name-col { flex: 1; display: flex; flex-direction: column; gap: 0.4rem; }

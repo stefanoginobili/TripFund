@@ -8,11 +8,10 @@
                 <div id="edit-currency-form" class="currency-edit-container">
                     <div class="new-currency-form">
                         <div class="new-currency-header">
-                            <span class="wallet-icon">
+                            <span class="header-icon">
                                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                    <path d="M20 12V8H6a2 2 0 0 1-2-2c0-1.1.9-2 2-2h12v4"></path>
-                                    <path d="M4 6v12c0 1.1.9 2 2 2h14v-4"></path>
-                                    <path d="M18 12a2 2 0 0 0-2 2c0 1.1.9 2 2 2h4v-4h-4z"></path>
+                                    <path d="M12 20h9"></path>
+                                    <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
                                 </svg>
                             </span>
                             <span class="new-currency-title">Modifica Cassa</span>
@@ -120,11 +119,10 @@
             {
                 <div id="new-currency-form" class="new-currency-form" @onclick:stopPropagation>
                     <div class="new-currency-header">
-                        <span class="wallet-icon">
+                        <span class="header-icon">
                             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                <path d="M20 12V8H6a2 2 0 0 1-2-2c0-1.1.9-2 2-2h12v4"></path>
-                                <path d="M4 6v12c0 1.1.9 2 2 2h14v-4"></path>
-                                <path d="M18 12a2 2 0 0 0-2 2c0 1.1.9 2 2 2h4v-4h-4z"></path>
+                                <line x1="12" y1="5" x2="12" y2="19"></line>
+                                <line x1="5" y1="12" x2="19" y2="12"></line>
                             </svg>
                         </span>
                         <span class="new-currency-title">Nuova Cassa</span>
@@ -273,7 +271,7 @@
         color: #1A3C2F;
     }
 
-    .wallet-icon {
+    .header-icon {
         display: flex;
         color: #20563C;
     }
