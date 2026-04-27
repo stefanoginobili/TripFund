@@ -50,7 +50,7 @@ This document outlines the standard rules and behaviors for UI components across
 - **Toggles/Switches:** Active (ON) state must be highlighted in the primary theme color (green). Inactive (OFF) state should be a neutral gray.
 
 ## 5. Error & Loading States
-- **Validation Errors:** Invalid inputs must be highlighted with a red border. A clear, concise error message (in Italian) must be displayed immediately below the input.
+- **Validation Errors:** Invalid inputs must be highlighted with a red border. A clear, concise error message (in Italian) must be displayed immediately below the input. **Error containers must take no space in the layout when no error message is shown.**
 - **Loading States:** Actions that require processing (e.g., submitting a form) must disable the trigger button and display a loading spinner. The spinner can be placed inside the button alongside or replacing the text.
 
 ## 6. Modals & Dialogs
