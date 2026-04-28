@@ -13,7 +13,7 @@
         <span class="picker-value">@GetFormattedDate()</span>
         @if (!IsReadonly)
         {
-            <input type="date" class="hidden-native-input" value="@Value.ToString("yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture)" @onchange="OnInputChanged" readonly="@isAndroid" />
+            <input type="date" class="hidden-native-input" value="@Value.ToString("yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture)" @onchange="OnInputChanged" readonly="@isAndroid" min="@(MinDate?.ToString("yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture))" />
         }
     </div>
 </div>

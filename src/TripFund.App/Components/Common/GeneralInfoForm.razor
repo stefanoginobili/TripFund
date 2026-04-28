@@ -21,7 +21,7 @@
 
         <div class="row-group">
             <NativeDatePicker Label="Data Inizio" Value="StartDate" ValueChanged="OnStartDateChanged" Class="flex-1" IsReadonly="@IsReadonly" />
-            <NativeDatePicker Label="Data Fine" Value="EndDate" ValueChanged="OnEndDateChanged" Class="flex-1" IsReadonly="@IsReadonly" />
+            <NativeDatePicker Label="Data Fine" Value="EndDate" ValueChanged="OnEndDateChanged" MinDate="StartDate" Class="flex-1" IsReadonly="@IsReadonly" />
         </div>
 
         @if (!string.IsNullOrEmpty(dateError))

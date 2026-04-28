@@ -23,8 +23,8 @@ namespace TripFund.App.Components.Pages
         private string tripSlug = "";
         private string description = "";
         private string remoteUniqueId = "";
-        private DateTime startDate = DateTime.Today;
-        private DateTime endDate = DateTime.Today.AddDays(7);
+        private DateTime startDate;
+        private DateTime endDate;
         private string error = "";
 
         private Dictionary<string, Currency> currencies = new();
@@ -32,6 +32,11 @@ namespace TripFund.App.Components.Pages
 
         protected override void OnInitialized()
         {
+            var today = DateTime.Today;
+            var targetMonth = today.AddMonths(2);
+            startDate = new DateTime(targetMonth.Year, targetMonth.Month, 1, 0, 0, 0, DateTimeKind.Unspecified);
+            endDate = startDate.AddDays(15);
+
             foreach (var def in AppConstants.Categories.DefaultTripCategories)
             {
                 categories[def.Key] = new ExpenseCategory

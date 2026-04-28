@@ -10,7 +10,7 @@ namespace TripFund.App.Platforms.Android
 {
     public class NativeDatePickerService : INativeDatePickerService
     {
-        public Task<DateTime?> ShowDatePickerAsync(DateTime initialDate)
+        public Task<DateTime?> ShowDatePickerAsync(DateTime initialDate, DateTime? minDate = null)
         {
             var tcs = new TaskCompletionSource<DateTime?>();
             var context = Platform.CurrentActivity;
@@ -25,6 +25,11 @@ namespace TripFund.App.Platforms.Android
             {
                 if (!tcs.Task.IsCompleted) tcs.TrySetResult(new DateTime(e.Year, e.Month + 1, e.DayOfMonth));
             }, initialDate.Year, initialDate.Month - 1, initialDate.Day);
+
+            if (minDate.HasValue)
+            {
+                dialog.DatePicker.MinDate = new DateTimeOffset(minDate.Value).ToUnixTimeMilliseconds();
+            }
 
             dialog.SetCancelable(true);
             dialog.SetCanceledOnTouchOutside(true);

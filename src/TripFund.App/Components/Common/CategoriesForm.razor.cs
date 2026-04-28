@@ -18,7 +18,7 @@ public partial class CategoriesForm
     private bool _shouldScroll = false;
     private string newCategoryName = "";
     private string newCategorySlug = "";
-    private string newCategoryIcon = "🚌";
+    private string newCategoryIcon = "👛";
     private string newCategoryColor = "#FF0000";
     private string error = "";
 
@@ -92,8 +92,8 @@ public partial class CategoriesForm
     {
         newCategoryName = "";
         newCategorySlug = "";
-        newCategoryIcon = "🚌";
-        newCategoryColor = "#F8B195";
+        newCategoryIcon = expenseEmojis.FirstOrDefault() ?? "👛";
+        newCategoryColor = palette.FirstOrDefault() ?? "#FF0000";
         error = "";
     }
 

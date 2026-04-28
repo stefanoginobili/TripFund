@@ -7,7 +7,7 @@ namespace TripFund.App.Services
 #if !ANDROID
     public class NativeDatePickerService : INativeDatePickerService
     {
-        public Task<DateTime?> ShowDatePickerAsync(DateTime initialDate)
+        public Task<DateTime?> ShowDatePickerAsync(DateTime initialDate, DateTime? minDate = null)
         {
             // For non-Android platforms, we could implement native pickers or just return null
             // For now, return the initial date as we can't easily trigger a native picker from here without platform specific code

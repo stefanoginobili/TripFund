@@ -11,6 +11,7 @@ namespace TripFund.App.Components.Common
         [Parameter] public string? Label { get; set; }
         [Parameter] public string? Class { get; set; }
         [Parameter] public bool IsReadonly { get; set; } = false;
+        [Parameter] public DateTime? MinDate { get; set; }
 
         [Inject] private INativeDatePickerService DatePickerService { get; set; } = default!;
 
@@ -28,10 +29,10 @@ namespace TripFund.App.Components.Common
         {
             if (isAndroid)
             {
-                var result = await DatePickerService.ShowDatePickerAsync(Value);
+                var result = await DatePickerService.ShowDatePickerAsync(Value, MinDate);
                 if (result.HasValue)
                 {
-                    var newValue = new DateTime(result.Value.Year, result.Value.Month, result.Value.Day, Value.Hour, Value.Minute, Value.Second);
+                    var newValue = new DateTime(result.Value.Year, result.Value.Month, result.Value.Day, Value.Hour, Value.Minute, Value.Second, DateTimeKind.Unspecified);
                     await ValueChanged.InvokeAsync(newValue);
                 }
             }
@@ -41,7 +42,7 @@ namespace TripFund.App.Components.Common
         {
             if (!isAndroid && DateTime.TryParseExact(e.Value?.ToString(), "yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture, System.Globalization.DateTimeStyles.None, out var date))
             {
-                var newValue = new DateTime(date.Year, date.Month, date.Day, Value.Hour, Value.Minute, Value.Second);
+                var newValue = new DateTime(date.Year, date.Month, date.Day, Value.Hour, Value.Minute, Value.Second, DateTimeKind.Unspecified);
                 await ValueChanged.InvokeAsync(newValue);
             }
         }

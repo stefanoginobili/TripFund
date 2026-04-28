@@ -14,9 +14,11 @@ public class TripConfig
     public string Description { get; set; } = string.Empty;
 
     [JsonPropertyName("startDate")]
+    [JsonConverter(typeof(TripFund.App.Utilities.DateOnlyJsonConverter))]
     public DateTime StartDate { get; set; }
 
     [JsonPropertyName("endDate")]
+    [JsonConverter(typeof(TripFund.App.Utilities.DateOnlyJsonConverter))]
     public DateTime EndDate { get; set; }
 
     [JsonPropertyName("createdAt")]

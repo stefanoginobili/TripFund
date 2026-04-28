@@ -30,16 +30,47 @@ namespace TripFund.App.Components.Common
         private string FullSlug => SlugUtility.GenerateSlug(Slug + (string.IsNullOrEmpty(Suffix) ? "" : "_" + Suffix));
 
         private string dateError = "";
+        private TimeSpan _currentDuration;
+
+        protected override void OnParametersSet()
+        {
+            // Normalize incoming dates to Unspecified to prevent timezone shifts during arithmetic or display
+            if (StartDate.Kind != DateTimeKind.Unspecified) StartDate = DateTime.SpecifyKind(StartDate, DateTimeKind.Unspecified);
+            if (EndDate.Kind != DateTimeKind.Unspecified) EndDate = DateTime.SpecifyKind(EndDate, DateTimeKind.Unspecified);
+            
+            // Capture the duration whenever parameters are updated from the parent
+            _currentDuration = EndDate - StartDate;
+        }
 
         private async Task OnStartDateChanged(DateTime val)
         {
+            val = DateTime.SpecifyKind(val, DateTimeKind.Unspecified);
+            
+            // Calculate new end date based on the baseline duration captured before the change
+            var newEndDate = val.Add(_currentDuration);
+            
             StartDate = val;
+            EndDate = newEndDate;
+            
             await StartDateChanged.InvokeAsync(val);
+            await EndDateChanged.InvokeAsync(newEndDate);
+            StateHasChanged();
         }
 
         private async Task OnEndDateChanged(DateTime val)
         {
+            val = DateTime.SpecifyKind(val, DateTimeKind.Unspecified);
+            if (val < StartDate)
+            {
+                dateError = "La data di fine deve essere successiva a quella di inizio.";
+                return;
+            }
+            dateError = "";
             EndDate = val;
+            
+            // Update the baseline duration as the user is manually changing it
+            _currentDuration = EndDate - StartDate;
+            
             await EndDateChanged.InvokeAsync(val);
         }
 
