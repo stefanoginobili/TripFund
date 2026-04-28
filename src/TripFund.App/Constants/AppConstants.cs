@@ -54,19 +54,19 @@ public static class AppConstants
 
     public static class Categories
     {
-        public const string DefaultSlug = "altro";
-        public const string DefaultName = "Altro";
+        public const string DefaultName = "Spesa Generica";
         public const string DefaultIcon = "💰";
         public const string DefaultColor = "#DC3545"; // Expense theme red
         public const string UnknownIcon = "﹖";
 
         public static readonly Dictionary<string, (string Name, string Icon, string Color)> DefaultTripCategories = new()
         {
-            { "pernottamenti", ("Pernottamenti", "🛏️", "#0000FF") }, // Standard Blue
-            { "pasti", ("Pasti", "🍝", "#FFA500") }, // Standard Orange
-            { "trasporti", ("Trasporti", "🚐", "#800080") }, // Standard Purple
-            { "escursioni", ("Escursioni", "🎟️", "#008000") }, // Standard Green
-            { "mance", ("Mance", "🪙", "#FFD700") }  // Standard Yellow
+            { "alloggi", ("Alloggi", "⛺", "#4169E1") }, // RoyalBlue: Represents rest, stability, and the night sky.
+            { "pasti", ("Pasti", "🍕", "#FF4500") }, // OrangeRed: A warm, high-energy color that stimulates appetite.
+            { "trasporti", ("Trasporti", "🚌", "#8A2BE2") }, // BlueViolet: Distinct and modern, often used for logistics and movement.
+            { "escursioni", ("Escursioni", "📸", "#32CD32") }, // LimeGreen: Vibrant and energetic, perfect for outdoor activities.
+            { "cambusa", ("Cambusa", "🛒", "#20B2AA") }, // LightSeaGreen: A practical, utility-focused green for grocery shopping.
+            { "mance", ("Mance", "🪙", "#FFD700") } // Gold: The universal color for coins, value, and gratitude.
         };
     }
 }

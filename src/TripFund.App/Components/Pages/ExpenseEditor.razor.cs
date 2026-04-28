@@ -64,7 +64,7 @@ namespace TripFund.App.Components.Pages
                         var tx = editingInfo.Transaction;
                         originalTxJson = System.Text.Json.JsonSerializer.Serialize(tx);
                         selectedCurrency = tx.Currency;
-                        selectedCategorySlug = tx.Category == AppConstants.Categories.DefaultSlug ? null : tx.Category;
+                        selectedCategorySlug = tx.Category;
                         totalAmount = tx.Amount;
                         description = tx.Description;
                         timezoneId = string.IsNullOrEmpty(tx.Timezone) ? TimeZoneInfo.Local.Id : tx.Timezone;
@@ -372,7 +372,7 @@ namespace TripFund.App.Components.Pages
 
         private void SelectCategory(string? slug)
         {
-            selectedCategorySlug = (slug == AppConstants.Categories.DefaultSlug) ? null : slug;
+            selectedCategorySlug = slug;
         }
 
         private void ToggleMember(MemberSplitInfo member)

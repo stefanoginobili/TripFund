@@ -46,7 +46,7 @@
                             var name = AppConstants.Categories.DefaultName;
                             var color = AppConstants.Categories.DefaultColor;
 
-                            if (!string.IsNullOrEmpty(categorySlug) && categorySlug != AppConstants.Categories.DefaultSlug)
+                            if (!string.IsNullOrEmpty(categorySlug))
                             {
                                 if (Config?.Categories.Expenses.TryGetValue(categorySlug, out var cat) == true)
                                 {

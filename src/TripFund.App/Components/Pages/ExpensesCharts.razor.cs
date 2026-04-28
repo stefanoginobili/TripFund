@@ -132,7 +132,7 @@ namespace TripFund.App.Components.Pages
                     Percentage = percentage
                 };
 
-                if (string.IsNullOrEmpty(slug) || slug == AppConstants.Categories.DefaultSlug)
+                if (string.IsNullOrEmpty(slug))
                 {
                     slice.Label = AppConstants.Categories.DefaultName;
                     slice.Icon = AppConstants.Categories.DefaultIcon;

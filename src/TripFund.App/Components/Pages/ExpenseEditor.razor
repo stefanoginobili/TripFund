@@ -91,12 +91,11 @@
                         <ChildContent>
                             <div class="category-dropdown-content">
                                 @{
-                                    var isDefaultSelected = string.IsNullOrEmpty(selectedCategorySlug) || selectedCategorySlug == AppConstants.Categories.DefaultSlug;
+                                   var isDefaultSelected = string.IsNullOrEmpty(selectedCategorySlug);
                                 }
                                 <button type="button" id='@(isDefaultSelected ? "selected-category-item" : null)'
                                      class="dropdown-item-vibe @(isDefaultSelected ? "selected" : "")"
-                                     @onclick='() => SelectCategory(AppConstants.Categories.DefaultSlug)'>
-                                    <div class="category-item-content">
+                                     @onclick='() => SelectCategory(null)'>                                    <div class="category-item-content">
                                         <div class="category-icon-circle small category-theme-translucent" style="--cat-color: @AppConstants.Categories.DefaultColor">
                                             @AppConstants.Categories.DefaultIcon
                                         </div>

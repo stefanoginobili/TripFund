@@ -153,7 +153,7 @@
                                     var color = AppConstants.Categories.DefaultColor;
                                     var isExpense = t.Type == "expense";
 
-                                    if (isExpense && !string.IsNullOrEmpty(categorySlug) && categorySlug != AppConstants.Categories.DefaultSlug)
+                                    if (isExpense && !string.IsNullOrEmpty(categorySlug))
                                     {
                                         if (config?.Categories.Expenses.TryGetValue(categorySlug, out var cat) == true)
                                         {
