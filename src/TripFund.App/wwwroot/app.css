@@ -289,8 +289,8 @@ html, body, #app {
 
 /* Transaction Icons */
 .category-theme-translucent {
-    /* Background transparency: 75% transparent = 25% opaque */
-    background-color: color-mix(in srgb, var(--cat-color) 25%, transparent) !important;
+    /* Background transparency: 85% transparent = 15% opaque */
+    background-color: color-mix(in srgb, var(--cat-color) 15%, transparent) !important;
     border: 1px solid var(--cat-color) !important;
 }
 
