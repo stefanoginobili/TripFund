@@ -838,18 +838,6 @@ public class LocalTripStorageService
         catch { return null; }
     }
 
-    private async Task<TripConfig?> GetTripConfigFromFolderAsync(string configPath, string folderName)
-    {
-        var leaf = new LocalLeafFolder(Path.Combine(configPath, AppConstants.Folders.Versions, folderName));
-        try
-        {
-            if (await leaf.IsDataEmptyAsync()) return null;
-            var bytes = await leaf.ReadDataFileAsync(AppConstants.Files.TripConfig);
-            return JsonSerializer.Deserialize<TripConfig>(System.Text.Encoding.UTF8.GetString(bytes), _jsonOptions);
-        }
-        catch { return null; }
-    }
-
     private async Task<TripConfig?> GetLocalBranchTripConfigAsync(string tripSlug, string deviceId)
     {
         var configPath = Path.Combine(_tripsPath, tripSlug, AppConstants.Folders.Config);

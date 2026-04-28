@@ -339,13 +339,6 @@ public class RemoteStorageSyncEngine
         await Task.CompletedTask;
     }
 
-    private bool HasPendingUploads(string tripSlug)
-    {
-        var task = _localStorage.GetSyncStateAsync(tripSlug);
-        task.Wait();
-        return task.Result.Sync.Local.Pending.Count > 0;
-    }
-
     private async Task SaveSyncLogLocallyAsync(string tripSlug, IRemoteFileSystem fileSystem)
     {
         if (fileSystem.Logger == null) return;
@@ -396,13 +389,6 @@ public class RemoteStorageSyncEngine
         {
             return false;
         }
-    }
-
-    private (string Timestamp, string DeviceId) ParsePackageName(string name)
-    {
-        var parts = name.Replace(".zip", "").Split('_');
-        if (parts.Length < 3) return ("unknown", "unknown");
-        return (parts[1], parts[2]);
     }
 
     private async Task<List<VersionedFolderConflictException>> GetLocalConflictsAsync(string localTripPath)
