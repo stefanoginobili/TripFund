@@ -161,7 +161,10 @@ public class ExplicitAncestryTests
     private async Task CreateVersionFolder(string root, int seq, CommitKind kind, string deviceId, IEnumerable<string> parents)
     {
         string name = $"{seq:D3}_{kind.ToString().ToUpperInvariant()}_{deviceId}";
-        string path = Path.Combine(root, name);
+        string versionsPath = Path.Combine(root, AppConstants.Files.VersionsFolder);
+        if (!Directory.Exists(versionsPath)) Directory.CreateDirectory(versionsPath);
+        
+        string path = Path.Combine(versionsPath, name);
         Directory.CreateDirectory(path);
         Directory.CreateDirectory(Path.Combine(path, ".content"));
         

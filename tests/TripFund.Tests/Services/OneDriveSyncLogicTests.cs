@@ -140,10 +140,10 @@ public class OneDriveSyncLogicTests : IDisposable
             {
                 using (var archive = new ZipArchive(ms, ZipArchiveMode.Create, true))
                 {
-                    var entry = archive.CreateEntry("config_versioned/002_UPD_remote-dev/.tripfund");
+                    var entry = archive.CreateEntry("config_versioned/.versions/002_UPD_remote-dev/.tripfund");
                     using (var writer = new StreamWriter(entry.Open())) writer.Write("author=remote-user\nversioning.parents=001_NEW_local-device-id");
                     
-                    var dataEntry = archive.CreateEntry("config_versioned/002_UPD_remote-dev/.content/trip_config.json");
+                    var dataEntry = archive.CreateEntry("config_versioned/.versions/002_UPD_remote-dev/.content/trip_config.json");
                     using (var writer = new StreamWriter(dataEntry.Open())) writer.Write("{ \"Name\": \"Remote Trip\" }");
                 }
                 zipBytes = ms.ToArray();
@@ -167,7 +167,7 @@ public class OneDriveSyncLogicTests : IDisposable
 
             // Assert
             // Verify Download worked
-            var remoteLeaf = Path.Combine(localTripPath, "config_versioned", "002_UPD_remote-dev");
+            var remoteLeaf = Path.Combine(localTripPath, "config_versioned", ".versions", "002_UPD_remote-dev");
             Assert.True(File.Exists(Path.Combine(remoteLeaf, ".tripfund")));
             Assert.True(File.Exists(Path.Combine(remoteLeaf, ".content", "trip_config.json")));
 
@@ -226,7 +226,7 @@ public class OneDriveSyncLogicTests : IDisposable
 
         // Phase 3: Prepare LARGE content (> 2MB)
         await _localStorage.SaveTripConfigAsync(tripSlug, new TripConfig { Name = "Large Trip" }, deviceId);
-        var pendingLeaf = Path.Combine(localTripPath, "config_versioned", $"001_NEW_{deviceId}");
+        var pendingLeaf = Path.Combine(localTripPath, "config_versioned", ".versions", $"001_NEW_{deviceId}");
         var largeFile = Path.Combine(pendingLeaf, ".content", "large.bin");
         Directory.CreateDirectory(Path.GetDirectoryName(largeFile)!);
         byte[] largeData = new byte[3 * 1024 * 1024]; // 3 MB

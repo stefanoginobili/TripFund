@@ -110,7 +110,7 @@ public class ExpensesChartsTests : BunitContext
 
         // Assert
         cut.Find(".missing-rates-container").Should().NotBeNull();
-        cut.Find(".missing-rates-container button").TextContent.Should().Contain("Aggiorna tassi di conversione");
+        cut.Find(".missing-rates-container button").TextContent.Should().Contain("Scarica tassi di conversione mancanti");
     }
 
     [Fact]

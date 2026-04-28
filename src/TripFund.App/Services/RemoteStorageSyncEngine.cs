@@ -183,7 +183,14 @@ public class RemoteStorageSyncEngine
                     }
 
                     logger.LogInfo("Applying extracted updates to local storage...");
-                    await MoveExpandedFoldersAsync(expandedPath, localTripPath);
+                    var impactedRoots = new HashSet<string>();
+                    await MoveExpandedFoldersAsync(expandedPath, localTripPath, impactedRoots);
+
+                    if (impactedRoots.Count > 0)
+                    {
+                        logger.LogInfo($"Recalculating heads for {impactedRoots.Count} impacted versioned folders...");
+                        await _localStorage.UpdateVersionHeadsAfterSyncAsync(tripSlug, impactedRoots);
+                    }
 
                     foreach (var package in toDownload)
                     {
@@ -296,7 +303,7 @@ public class RemoteStorageSyncEngine
         }
     }
 
-    private async Task MoveExpandedFoldersAsync(string sourceRoot, string targetRoot)
+    private async Task MoveExpandedFoldersAsync(string sourceRoot, string targetRoot, HashSet<string>? impactedRoots = null)
     {
         var directories = Directory.GetDirectories(sourceRoot, "*", SearchOption.AllDirectories);
         foreach (var dir in directories)
@@ -305,6 +312,20 @@ public class RemoteStorageSyncEngine
             {
                 var relativePath = Path.GetRelativePath(sourceRoot, dir);
                 var finalPath = Path.Combine(targetRoot, relativePath);
+                
+                if (impactedRoots != null)
+                {
+                    // If the path contains ".versions", the versioned storage root is its parent
+                    var normalizedPath = relativePath.Replace('\\', '/');
+                    var parts = normalizedPath.Split('/');
+                    int versionsIdx = Array.IndexOf(parts, AppConstants.Files.VersionsFolder);
+                    if (versionsIdx > 0)
+                    {
+                        var rootRelative = string.Join(Path.DirectorySeparatorChar, parts.Take(versionsIdx));
+                        impactedRoots.Add(Path.Combine(targetRoot, rootRelative));
+                    }
+                }
+
                 var finalDir = Path.GetDirectoryName(finalPath);
                 if (!string.IsNullOrEmpty(finalDir) && !Directory.Exists(finalDir)) Directory.CreateDirectory(finalDir);
 

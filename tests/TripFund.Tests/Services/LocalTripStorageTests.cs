@@ -41,10 +41,38 @@ public class LocalTripStorageTests : IDisposable
         loaded.UpdatedAt.Should().BeCloseTo(DateTime.UtcNow, TimeSpan.FromSeconds(5));
 
         var configDir = Path.Combine(_tempPath, "trips", slug, "config_versioned");
-        var versionDir = Path.Combine(configDir, "001_NEW_mario");
+        var versionDir = Path.Combine(configDir, ".versions", "001_NEW_mario");
         Directory.Exists(versionDir).Should().BeTrue();
-        File.Exists(Path.Combine(versionDir, ".tripfund")).Should().BeTrue();
+        File.Exists(Path.Combine(configDir, ".tripfund")).Should().BeTrue("Pointer file should exist at root");
+        File.Exists(Path.Combine(versionDir, ".tripfund")).Should().BeTrue("Metadata file should exist in version dir");
         File.Exists(Path.Combine(versionDir, ".content", "trip_config.json")).Should().BeTrue();
+    }
+
+    [Fact]
+    public async Task TripConfig_HeadOptimization_ShouldWork()
+    {
+        // Arrange
+        var slug = "test-trip";
+        var config = new TripConfig { Name = "Optimized Trip" };
+        await _service.SaveTripConfigAsync(slug, config, "mario");
+        
+        var configPath = Path.Combine(_tempPath, "trips", slug, "config_versioned");
+        var pointerFile = Path.Combine(configPath, ".tripfund");
+        File.Exists(pointerFile).Should().BeTrue();
+
+        // Act & Assert 1: Read should use the head
+        var loaded = await _service.GetTripConfigAsync(slug);
+        loaded!.Name.Should().Be("Optimized Trip");
+
+        // Act 2: Manually corrupt the head to point to a non-existing folder
+        await File.WriteAllTextAsync(pointerFile, "contentType=tripfund/versioned-storage\nversioning.head=999_NON_EXISTING");
+        
+        // Assert: Read should fallback to DAG evaluation and REPAIR the head
+        var loaded2 = await _service.GetTripConfigAsync(slug);
+        loaded2!.Name.Should().Be("Optimized Trip");
+        
+        var repairedHead = await File.ReadAllTextAsync(pointerFile);
+        repairedHead.Should().Contain("versioning.head=001_NEW_mario");
     }
 
     [Fact]
@@ -63,7 +91,7 @@ public class LocalTripStorageTests : IDisposable
         transactions[0].Description.Should().Be("Lunch");
 
         var detailsDir = Path.Combine(_tempPath, "trips", tripSlug, "transactions", "trans-1", "details_versioned");
-        var versionDir = Path.Combine(detailsDir, "001_NEW_mario");
+        var versionDir = Path.Combine(detailsDir, ".versions", "001_NEW_mario");
         Directory.Exists(versionDir).Should().BeTrue();
         File.Exists(Path.Combine(versionDir, ".content", "transaction_details.json")).Should().BeTrue();
     }
@@ -86,10 +114,11 @@ public class LocalTripStorageTests : IDisposable
         transactions[0].Description.Should().Be("Lunch V2");
         
         var detailsDir = Path.Combine(_tempPath, "trips", tripSlug, "transactions", "trans-1", "details_versioned");
-        Directory.GetDirectories(detailsDir).Should().HaveCount(2);
-        Directory.GetDirectories(detailsDir).Should().Contain(d => Path.GetFileName(d) == "002_UPD_mario");
+        var versionsDir = Path.Combine(detailsDir, ".versions");
+        Directory.GetDirectories(versionsDir).Should().HaveCount(2);
+        Directory.GetDirectories(versionsDir).Should().Contain(d => Path.GetFileName(d) == "002_UPD_mario");
         
-        var v2Dir = Path.Combine(detailsDir, "002_UPD_mario");
+        var v2Dir = Path.Combine(versionsDir, "002_UPD_mario");
         File.Exists(Path.Combine(v2Dir, ".content", "transaction_details.json")).Should().BeTrue();
     }
 
@@ -109,10 +138,11 @@ public class LocalTripStorageTests : IDisposable
         transactions.Should().BeEmpty();
 
         var detailsDir = Path.Combine(_tempPath, "trips", tripSlug, "transactions", "trans-1", "details_versioned");
-        Directory.GetDirectories(detailsDir).Should().HaveCount(2);
-        Directory.GetDirectories(detailsDir).Should().Contain(d => Path.GetFileName(d) == "002_DEL_mario");
+        var versionsDir = Path.Combine(detailsDir, ".versions");
+        Directory.GetDirectories(versionsDir).Should().HaveCount(2);
+        Directory.GetDirectories(versionsDir).Should().Contain(d => Path.GetFileName(d) == "002_DEL_mario");
         
-        var delDir = Path.Combine(detailsDir, "002_DEL_mario");
+        var delDir = Path.Combine(versionsDir, "002_DEL_mario");
         var leaf = new LocalLeafFolder(delDir);
         (await leaf.IsDataEmptyAsync()).Should().BeTrue();
     }
@@ -132,7 +162,7 @@ public class LocalTripStorageTests : IDisposable
 
         // Assert
         var detailsDir = Path.Combine(_tempPath, "trips", tripSlug, "transactions", "trans-1", "details_versioned");
-        var delVersionDir = Path.Combine(detailsDir, "002_DEL_mario-123");
+        var delVersionDir = Path.Combine(detailsDir, ".versions", "002_DEL_mario-123");
         var metadataFile = Path.Combine(delVersionDir, ".tripfund");
         
         File.Exists(metadataFile).Should().BeTrue();
@@ -156,11 +186,12 @@ public class LocalTripStorageTests : IDisposable
         var tripSlug = "test-trip";
         var transId = "trans-1";
         var detailsDir = Path.Combine(_tempPath, "trips", tripSlug, "transactions", transId, "details_versioned");
-        Directory.CreateDirectory(detailsDir);
+        var versionsDir = Path.Combine(detailsDir, ".versions");
+        Directory.CreateDirectory(versionsDir);
         
         // Manual setup to create conflict (same sequence number for different users)
-        var v1 = Path.Combine(detailsDir, "001_NEW_mario");
-        var v2 = Path.Combine(detailsDir, "001_NEW_luigi");
+        var v1 = Path.Combine(versionsDir, "001_NEW_mario");
+        var v2 = Path.Combine(versionsDir, "001_NEW_luigi");
         Directory.CreateDirectory(v1);
         Directory.CreateDirectory(v2);
         
@@ -177,10 +208,7 @@ public class LocalTripStorageTests : IDisposable
         // Act
         var transactions = await _service.GetTransactionsAsync(tripSlug);
 
-        // Assert - Should not throw, should pick one (alphabetical by folder name: luigi comes first in alphabetical order of folders "001_NEW_luigi")
-        // Wait, GetLatestVersionFolders returns leaves ordered by Sequence, then it might depend on the list order.
-        // Actually, Directory.GetDirectories might return them in any order, but VersionedStorageEngine returns them sorted by Sequence.
-        // If they have same sequence, order depends on Directory.GetDirectories or Linq.
+        // Assert - Should not throw, should pick one
         transactions.Should().HaveCount(1);
         transactions[0].Id.Should().Be(transId);
     }
@@ -192,11 +220,12 @@ public class LocalTripStorageTests : IDisposable
         var tripSlug = "test-trip";
         var transId = "trans-1";
         var detailsDir = Path.Combine(_tempPath, "trips", tripSlug, "transactions", transId, "details_versioned");
-        Directory.CreateDirectory(detailsDir);
+        var versionsDir = Path.Combine(detailsDir, ".versions");
+        Directory.CreateDirectory(versionsDir);
         
         // Setup conflict: 001_NEW_mario, 001_NEW_luigi
-        var v1 = Path.Combine(detailsDir, "001_NEW_mario");
-        var v2 = Path.Combine(detailsDir, "001_NEW_luigi");
+        var v1 = Path.Combine(versionsDir, "001_NEW_mario");
+        var v2 = Path.Combine(versionsDir, "001_NEW_luigi");
         Directory.CreateDirectory(v1);
         Directory.CreateDirectory(v2);
         Directory.CreateDirectory(Path.Combine(v1, ".content"));
@@ -211,13 +240,13 @@ public class LocalTripStorageTests : IDisposable
 
         // Assert
         // New resolved version should be 002_RES_mario
-        Directory.GetDirectories(detailsDir).Should().HaveCount(3);
-        Directory.GetDirectories(detailsDir).Should().Contain(d => Path.GetFileName(d) == "002_RES_mario");
+        Directory.GetDirectories(versionsDir).Should().HaveCount(3);
+        Directory.GetDirectories(versionsDir).Should().Contain(d => Path.GetFileName(d) == "002_RES_mario");
 
         var loaded = await _service.GetLatestTransactionVersionAsync(tripSlug, transId);
         loaded!.Description.Should().Be("Resolved");
         
-        var resDir = Path.Combine(detailsDir, "002_RES_mario");
+        var resDir = Path.Combine(versionsDir, "002_RES_mario");
         var metadata = await File.ReadAllTextAsync(Path.Combine(resDir, ".tripfund"));
         metadata.Should().Contain("versioning.parents=001_NEW_mario,001_NEW_luigi");
     }
@@ -236,10 +265,11 @@ public class LocalTripStorageTests : IDisposable
         var originalCreatedAt = firstVersion!.CreatedAt;
         
         var detailsDir = Path.Combine(_tempPath, "trips", tripSlug, "transactions", transId, "details_versioned");
-        
+        var versionsDir = Path.Combine(detailsDir, ".versions");
+
         // Setup conflict: 002_UPD_mario, 002_UPD_luigi
-        var v2m = Path.Combine(detailsDir, "002_UPD_mario");
-        var v2l = Path.Combine(detailsDir, "002_UPD_luigi");
+        var v2m = Path.Combine(versionsDir, "002_UPD_mario");
+        var v2l = Path.Combine(versionsDir, "002_UPD_luigi");
         Directory.CreateDirectory(v2m);
         Directory.CreateDirectory(v2l);
         Directory.CreateDirectory(Path.Combine(v2m, ".content"));
@@ -270,7 +300,7 @@ public class LocalTripStorageTests : IDisposable
         await _service.SaveTransactionAsync(tripSlug, t1, deviceId);
         
         var detailsDir = Path.Combine(_tempPath, "trips", tripSlug, "transactions", "trans-1", "details_versioned");
-        var v1Dir = Path.Combine(detailsDir, "001_NEW_device1");
+        var v1Dir = Path.Combine(detailsDir, ".versions", "001_NEW_device1");
         
         // Simulate successful sync
         File.WriteAllText(Path.Combine(v1Dir, ".synched"), "");
@@ -281,7 +311,7 @@ public class LocalTripStorageTests : IDisposable
         await _service.SaveTransactionAsync(tripSlug, t2, deviceId);
 
         // Assert
-        var v2Dir = Path.Combine(detailsDir, "002_UPD_device1");
+        var v2Dir = Path.Combine(detailsDir, ".versions", "002_UPD_device1");
         Directory.Exists(v2Dir).Should().BeTrue();
         
         File.Exists(Path.Combine(v2Dir, ".content", "transaction_details.json")).Should().BeTrue();

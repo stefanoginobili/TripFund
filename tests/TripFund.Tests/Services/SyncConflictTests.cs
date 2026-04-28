@@ -28,6 +28,24 @@ public class SyncConflictTests : IDisposable
 
     private async Task CreateFolderWithMeta(string path, string author, string device, string? parents = null)
     {
+        var versionsPath = Path.Combine(path, AppConstants.Files.VersionsFolder);
+        if (!Directory.Exists(versionsPath)) Directory.CreateDirectory(versionsPath);
+        
+        // This is a helper for creating a version folder, but 'path' in the tests 
+        // sometimes refers to the root of the versioned storage, and sometimes it's been
+        // used to construct a specific version folder path in old tests.
+        // Let's adjust the logic to handle both or just fix the callers.
+        // Actually, looking at the calls: Path.Combine(configPath, "001_NEW_mario")
+        // The old tests passed the FULL path of the version folder.
+        // I should change it to pass the rootPath and the folderName.
+    }
+
+    private async Task CreateVersionInRoot(string rootPath, string folderName, string author, string device, string? parents = null)
+    {
+        var versionsPath = Path.Combine(rootPath, AppConstants.Files.VersionsFolder);
+        if (!Directory.Exists(versionsPath)) Directory.CreateDirectory(versionsPath);
+        
+        var path = Path.Combine(versionsPath, folderName);
         Directory.CreateDirectory(path);
         Directory.CreateDirectory(Path.Combine(path, ".content"));
         var meta = $"author={author}\ndevice={device}\ntimestamp=2023-10-01T12:00:00Z";
@@ -46,8 +64,8 @@ public class SyncConflictTests : IDisposable
         // 1. Create a config conflict (two NEW roots)
         var configPath = Path.Combine(localTripPath, "config_versioned");
         Directory.CreateDirectory(configPath);
-        await CreateFolderWithMeta(Path.Combine(configPath, "001_NEW_mario"), "m", "m");
-        await CreateFolderWithMeta(Path.Combine(configPath, "001_NEW_luigi"), "l", "l");
+        await CreateVersionInRoot(configPath, "001_NEW_mario", "m", "m");
+        await CreateVersionInRoot(configPath, "001_NEW_luigi", "l", "l");
 
         // 2. Create a transaction conflict
         var transId = "tx-123";
@@ -55,11 +73,11 @@ public class SyncConflictTests : IDisposable
         Directory.CreateDirectory(transDetailsDir);
         
         // Base version 001
-        await CreateFolderWithMeta(Path.Combine(transDetailsDir, "001_NEW_mario"), "m", "m");
+        await CreateVersionInRoot(transDetailsDir, "001_NEW_mario", "m", "m");
 
         // Conflict at 002 (both point to 001)
-        await CreateFolderWithMeta(Path.Combine(transDetailsDir, "002_UPD_mario"), "m", "m", "001_NEW_mario");
-        await CreateFolderWithMeta(Path.Combine(transDetailsDir, "002_UPD_luigi"), "l", "l", "001_NEW_mario");
+        await CreateVersionInRoot(transDetailsDir, "002_UPD_mario", "m", "m", "001_NEW_mario");
+        await CreateVersionInRoot(transDetailsDir, "002_UPD_luigi", "l", "l", "001_NEW_mario");
 
         // Registry setup
         var registry = new LocalTripRegistry();
@@ -116,16 +134,16 @@ public class SyncConflictTests : IDisposable
         var root = Path.Combine(_tempPath, "divergence-test");
         Directory.CreateDirectory(root);
         
-        await CreateFolderWithMeta(Path.Combine(root, "001_NEW_mario"), "m", "m");
-        await CreateFolderWithMeta(Path.Combine(root, "002_UPD_mario"), "m", "m", "001_NEW_mario");
+        await CreateVersionInRoot(root, "001_NEW_mario", "m", "m");
+        await CreateVersionInRoot(root, "002_UPD_mario", "m", "m", "001_NEW_mario");
         
-        await CreateFolderWithMeta(Path.Combine(root, "003_UPD_mario"), "m", "m", "002_UPD_mario");
-        await CreateFolderWithMeta(Path.Combine(root, "004_UPD_mario"), "m", "m", "003_UPD_mario");
-        await CreateFolderWithMeta(Path.Combine(root, "005_UPD_mario"), "m", "m", "004_UPD_mario");
+        await CreateVersionInRoot(root, "003_UPD_mario", "m", "m", "002_UPD_mario");
+        await CreateVersionInRoot(root, "004_UPD_mario", "m", "m", "003_UPD_mario");
+        await CreateVersionInRoot(root, "005_UPD_mario", "m", "m", "004_UPD_mario");
         
         // Carlo diverged from 002
-        await CreateFolderWithMeta(Path.Combine(root, "003_UPD_carlo"), "c", "c", "002_UPD_mario");
-        await CreateFolderWithMeta(Path.Combine(root, "004_UPD_carlo"), "c", "c", "003_UPD_carlo");
+        await CreateVersionInRoot(root, "003_UPD_carlo", "c", "c", "002_UPD_mario");
+        await CreateVersionInRoot(root, "004_UPD_carlo", "c", "c", "003_UPD_carlo");
 
         // Act
         var versions = engine.GetVersionFolders(root);
@@ -147,15 +165,15 @@ public class SyncConflictTests : IDisposable
         var root = Path.Combine(_tempPath, "res-invalidation-test");
         Directory.CreateDirectory(root);
 
-        await CreateFolderWithMeta(Path.Combine(root, "001_NEW_mario"), "m", "m");
-        await CreateFolderWithMeta(Path.Combine(root, "002_UPD_mario"), "m", "m", "001_NEW_mario");
-        await CreateFolderWithMeta(Path.Combine(root, "002_UPD_carlo"), "c", "c", "001_NEW_mario");
+        await CreateVersionInRoot(root, "001_NEW_mario", "m", "m");
+        await CreateVersionInRoot(root, "002_UPD_mario", "m", "m", "001_NEW_mario");
+        await CreateVersionInRoot(root, "002_UPD_carlo", "c", "c", "001_NEW_mario");
 
         // RES resolves both
-        await CreateFolderWithMeta(Path.Combine(root, "003_RES_luigi"), "l", "l", "002_UPD_mario,002_UPD_carlo");
+        await CreateVersionInRoot(root, "003_RES_luigi", "l", "l", "002_UPD_mario,002_UPD_carlo");
 
         // Carlo creates a new commit at sequence 3, but pointing only to 002_carlo (diverging from the resolution)
-        await CreateFolderWithMeta(Path.Combine(root, "003_UPD_carlo"), "c", "c", "002_UPD_carlo");
+        await CreateVersionInRoot(root, "003_UPD_carlo", "c", "c", "002_UPD_carlo");
 
         // Act
         var versions = engine.GetVersionFolders(root);

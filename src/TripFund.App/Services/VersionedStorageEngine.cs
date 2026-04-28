@@ -70,14 +70,15 @@ public class VersionedStorageEngine
 
     public List<VersionFolderInfo> GetVersionFolders(string rootPath)
     {
-        if (!Directory.Exists(rootPath)) return new List<VersionFolderInfo>();
+        string versionsPath = Path.Combine(rootPath, AppConstants.Files.VersionsFolder);
+        if (!Directory.Exists(versionsPath)) return new List<VersionFolderInfo>();
 
-        var folderNames = Directory.GetDirectories(rootPath).Select(Path.GetFileName).Where(n => n != null).Cast<string>();
+        var folderNames = Directory.GetDirectories(versionsPath).Select(Path.GetFileName).Where(n => n != null).Cast<string>();
         var versions = GetVersionFolders(folderNames);
 
         foreach (var v in versions)
         {
-            var leaf = new LocalLeafFolder(Path.Combine(rootPath, v.FolderName));
+            var leaf = new LocalLeafFolder(Path.Combine(versionsPath, v.FolderName));
             var metadata = leaf.GetMetadata();
             if (metadata.TryGetValue(AppConstants.Metadata.VersioningParents, out var parents))
             {
@@ -110,6 +111,38 @@ public class VersionedStorageEngine
             Kind = Enum.Parse<CommitKind>(match.Groups["kind"].Value, true),
             DeviceId = match.Groups["deviceId"].Value
         };
+    }
+
+    public string? ResolveHeadPath(string rootPath)
+    {
+        var pointerFile = Path.Combine(rootPath, AppConstants.Files.TripFundFile);
+        if (!File.Exists(pointerFile)) return null;
+
+        var content = File.ReadAllLines(pointerFile)
+            .Select(l => l.Split('=', 2))
+            .Where(p => p.Length == 2)
+            .ToDictionary(p => p[0].Trim(), p => p[1].Trim());
+
+        if (content.TryGetValue(AppConstants.Metadata.VersioningHead, out var head) && !string.IsNullOrEmpty(head))
+        {
+            var headPath = Path.Combine(rootPath, AppConstants.Files.VersionsFolder, head);
+            return Directory.Exists(headPath) ? headPath : null;
+        }
+
+        return null;
+    }
+
+    public async Task UpdateHeadAsync(string rootPath, string? targetFolderName)
+    {
+        var pointerFile = Path.Combine(rootPath, AppConstants.Files.TripFundFile);
+        var meta = new Dictionary<string, string>
+        {
+            [AppConstants.Metadata.ContentType] = AppConstants.ContentTypes.VersionedStorage,
+            [AppConstants.Metadata.VersioningHead] = targetFolderName ?? string.Empty
+        };
+
+        var lines = meta.Select(kvp => $"{kvp.Key}={kvp.Value}");
+        await File.WriteAllLinesAsync(pointerFile, lines);
     }
 
     public List<VersionFolderInfo> GetLatestVersionFolders(string rootPath)
@@ -169,37 +202,6 @@ public class VersionedStorageEngine
         return false;
     }
 
-    public string? GetLatestVersionFolder(string rootPath)
-    {
-        var versions = GetVersionFolders(rootPath);
-        var latest = GetLatestVersionFolders(versions);
-
-        if (latest.Count == 0) return null;
-        if (latest.Count > 1)
-        {
-            var diverging = latest.Select(v => v.FolderName).ToList();
-            var baseVer = GetBaseVersionFolder(rootPath, latest);
-            throw new VersionedFolderConflictException($"Conflict detected between versions: {string.Join(", ", diverging)}", diverging, baseVer);
-        }
-
-        return latest[0].FolderName;
-    }
-
-    public string? GetLatestVersionFolder(IEnumerable<string> folderNames)
-    {
-        var versions = GetVersionFolders(folderNames);
-        var latest = GetLatestVersionFolders(versions);
-
-        if (latest.Count == 0) return null;
-        if (latest.Count > 1)
-        {
-            var diverging = latest.Select(v => v.FolderName).ToList();
-            throw new VersionedFolderConflictException($"Conflict detected between versions: {string.Join(", ", diverging)}", diverging, null);
-        }
-
-        return latest[0].FolderName;
-    }
-
     public string? GetBaseVersionFolder(string rootPath, List<VersionFolderInfo> leaves)
     {
         if (leaves.Count <= 1) return null;
@@ -226,22 +228,6 @@ public class VersionedStorageEngine
             .FirstOrDefault();
     }
 
-    public List<string> GetDivergingVersionFolders(IEnumerable<string> folderNames)
-    {
-        var versions = GetVersionFolders(folderNames);
-        var latest = GetLatestVersionFolders(versions);
-        
-        if (latest.Count <= 1) return new List<string>();
-        
-        return latest.Select(v => v.FolderName).ToList();
-    }
-
-    public bool IsInConflict(string rootPath)
-    {
-        var latest = GetLatestVersionFolders(rootPath);
-        return latest.Count > 1;
-    }
-
     public async Task<string> CommitAsync(
         string rootPath,
         string deviceId,
@@ -256,10 +242,14 @@ public class VersionedStorageEngine
         var versions = GetVersionFolders(rootPath);
         int nextSeq = (versions.Count == 0) ? 1 : versions.Max(v => v.Sequence) + 1;
         string folderName = $"{nextSeq:D3}_{kind.ToString().ToUpperInvariant()}_{deviceId}";
+        string versionsRoot = Path.Combine(rootPath, AppConstants.Files.VersionsFolder);
 
         string workDirPath = string.IsNullOrEmpty(tempRootPath)
-            ? Path.Combine(rootPath, folderName)
+            ? Path.Combine(versionsRoot, folderName)
             : Path.Combine(tempRootPath, folderName);
+
+        if (!Directory.Exists(Path.GetDirectoryName(workDirPath))) 
+            Directory.CreateDirectory(Path.GetDirectoryName(workDirPath)!);
 
         if (Directory.Exists(workDirPath)) Directory.Delete(workDirPath, true);
         Directory.CreateDirectory(workDirPath);
@@ -304,7 +294,7 @@ public class VersionedStorageEngine
 
                 if (!string.IsNullOrEmpty(sourceFolderName))
                 {
-                    var prevLeaf = new LocalLeafFolder(Path.Combine(rootPath, sourceFolderName));
+                    var prevLeaf = new LocalLeafFolder(Path.Combine(versionsRoot, sourceFolderName));
 
                     if (!(await prevLeaf.IsDataEmptyAsync()))
                     {
@@ -329,10 +319,13 @@ public class VersionedStorageEngine
 
         if (!string.IsNullOrEmpty(tempRootPath))
         {
-            string finalPath = Path.Combine(rootPath, folderName);
+            string finalPath = Path.Combine(versionsRoot, folderName);
+            if (!Directory.Exists(versionsRoot)) Directory.CreateDirectory(versionsRoot);
             if (Directory.Exists(finalPath)) Directory.Delete(finalPath, true);
             Directory.Move(workDirPath, finalPath);
         }
+
+        await UpdateHeadAsync(rootPath, folderName);
 
         return folderName;
     }

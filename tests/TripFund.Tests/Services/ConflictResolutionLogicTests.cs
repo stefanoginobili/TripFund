@@ -31,16 +31,17 @@ public class ConflictResolutionLogicTests
         var config2 = new TripConfig { Name = "Version 2" };
 
         var configPath = Path.Combine(_testRoot, "trips", tripSlug, "config_versioned");
-        Directory.CreateDirectory(configPath);
+        var versionsPath = Path.Combine(configPath, ".versions");
+        Directory.CreateDirectory(versionsPath);
 
         // Version 1 (001_NEW_device1)
-        var folder1 = Path.Combine(configPath, "001_NEW_device1");
+        var folder1 = Path.Combine(versionsPath, "001_NEW_device1");
         Directory.CreateDirectory(Path.Combine(folder1, ".content"));
         await File.WriteAllTextAsync(Path.Combine(folder1, ".content", "trip_config.json"), JsonSerializer.Serialize(config1));
         await File.WriteAllLinesAsync(Path.Combine(folder1, ".tripfund"), new[] { "author=User1", "device=device1", "timestamp=2026-04-20T10:00:00Z" });
         
         // Version 2 (001_NEW_device2) - Conflict at same sequence
-        var folder2 = Path.Combine(configPath, "001_NEW_device2");
+        var folder2 = Path.Combine(versionsPath, "001_NEW_device2");
         Directory.CreateDirectory(Path.Combine(folder2, ".content"));
         await File.WriteAllTextAsync(Path.Combine(folder2, ".content", "trip_config.json"), JsonSerializer.Serialize(config2));
         await File.WriteAllLinesAsync(Path.Combine(folder2, ".tripfund"), new[] { "author=User2", "device=device2", "timestamp=2026-04-20T10:00:00Z" });
@@ -60,16 +61,17 @@ public class ConflictResolutionLogicTests
         string resolverDevice = "resolver";
         
         var configPath = Path.Combine(_testRoot, "trips", tripSlug, "config_versioned");
-        Directory.CreateDirectory(configPath);
+        var versionsPath = Path.Combine(configPath, ".versions");
+        Directory.CreateDirectory(versionsPath);
 
         // 001_NEW_device1
-        var folder1 = Path.Combine(configPath, "001_NEW_device1");
+        var folder1 = Path.Combine(versionsPath, "001_NEW_device1");
         Directory.CreateDirectory(Path.Combine(folder1, ".content"));
         await File.WriteAllTextAsync(Path.Combine(folder1, ".content", "trip_config.json"), JsonSerializer.Serialize(new TripConfig { Name = "V1" }));
         await File.WriteAllLinesAsync(Path.Combine(folder1, ".tripfund"), new[] { "author=User1", "device=device1", "timestamp=2026-04-20T10:00:00Z" });
 
         // 001_NEW_device2
-        var folder2 = Path.Combine(configPath, "001_NEW_device2");
+        var folder2 = Path.Combine(versionsPath, "001_NEW_device2");
         Directory.CreateDirectory(Path.Combine(folder2, ".content"));
         await File.WriteAllTextAsync(Path.Combine(folder2, ".content", "trip_config.json"), JsonSerializer.Serialize(new TripConfig { Name = "V2" }));
         await File.WriteAllLinesAsync(Path.Combine(folder2, ".tripfund"), new[] { "author=User2", "device=device2", "timestamp=2026-04-20T10:00:00Z" });
@@ -80,7 +82,7 @@ public class ConflictResolutionLogicTests
         await _storage.ResolveConfigConflictAsync(tripSlug, winner, resolverDevice);
 
         // Assert
-        var folders = Directory.GetDirectories(configPath).Select(Path.GetFileName).Where(f => f != null).Cast<string>().ToList();
+        var folders = Directory.GetDirectories(versionsPath).Select(Path.GetFileName).Where(f => f != null).Cast<string>().ToList();
         Assert.Contains(folders, f => f.Contains("_RES_"));
         
         var finalConfig = await _storage.GetTripConfigAsync(tripSlug);
@@ -95,16 +97,17 @@ public class ConflictResolutionLogicTests
         string txId = "20260420T100000Z-abcd";
         
         var detailsPath = Path.Combine(_testRoot, "trips", tripSlug, "transactions", txId, "details_versioned");
-        Directory.CreateDirectory(detailsPath);
+        var versionsPath = Path.Combine(detailsPath, ".versions");
+        Directory.CreateDirectory(versionsPath);
 
         // 001_NEW_device1
-        var folder1 = Path.Combine(detailsPath, "001_NEW_device1");
+        var folder1 = Path.Combine(versionsPath, "001_NEW_device1");
         Directory.CreateDirectory(Path.Combine(folder1, ".content"));
         await File.WriteAllTextAsync(Path.Combine(folder1, ".content", "transaction_details.json"), JsonSerializer.Serialize(new Transaction { Id = txId, Amount = 10 }));
         await File.WriteAllLinesAsync(Path.Combine(folder1, ".tripfund"), new[] { "author=User1", "device=device1", "timestamp=2026-04-20T10:00:00Z" });
 
         // 001_NEW_device2
-        var folder2 = Path.Combine(detailsPath, "001_NEW_device2");
+        var folder2 = Path.Combine(versionsPath, "001_NEW_device2");
         Directory.CreateDirectory(Path.Combine(folder2, ".content"));
         await File.WriteAllTextAsync(Path.Combine(folder2, ".content", "transaction_details.json"), JsonSerializer.Serialize(new Transaction { Id = txId, Amount = 20 }));
         await File.WriteAllLinesAsync(Path.Combine(folder2, ".tripfund"), new[] { "author=User2", "device=device2", "timestamp=2026-04-20T10:00:00Z" });
@@ -125,16 +128,17 @@ public class ConflictResolutionLogicTests
         string resolverDevice = "resolver";
         
         var detailsPath = Path.Combine(_testRoot, "trips", tripSlug, "transactions", txId, "details_versioned");
-        Directory.CreateDirectory(detailsPath);
+        var versionsPath = Path.Combine(detailsPath, ".versions");
+        Directory.CreateDirectory(versionsPath);
 
         // 001_NEW_device1
-        var folder1 = Path.Combine(detailsPath, "001_NEW_device1");
+        var folder1 = Path.Combine(versionsPath, "001_NEW_device1");
         Directory.CreateDirectory(Path.Combine(folder1, ".content"));
         await File.WriteAllTextAsync(Path.Combine(folder1, ".content", "transaction_details.json"), JsonSerializer.Serialize(new Transaction { Id = txId, Amount = 10 }));
         await File.WriteAllLinesAsync(Path.Combine(folder1, ".tripfund"), new[] { "author=User1", "device=device1", "timestamp=2026-04-20T10:00:00Z" });
 
         // 001_NEW_device2 (Deletion)
-        var folder2 = Path.Combine(detailsPath, "001_NEW_device2");
+        var folder2 = Path.Combine(versionsPath, "001_NEW_device2");
         Directory.CreateDirectory(folder2); // No .content folder for DEL
         await File.WriteAllLinesAsync(Path.Combine(folder2, ".tripfund"), new[] { "author=User2", "device=device2", "timestamp=2026-04-20T10:00:00Z" });
 
@@ -142,9 +146,9 @@ public class ConflictResolutionLogicTests
         await _storage.ResolveConflictAsync(tripSlug, txId, null, resolverDevice);
 
         // Assert
-        var folders = Directory.GetDirectories(detailsPath).Select(Path.GetFileName).Where(f => f != null).Cast<string>().ToList();
+        var folders = Directory.GetDirectories(versionsPath).Select(Path.GetFileName).Where(f => f != null).Cast<string>().ToList();
         var resFolder = folders.First(f => f.Contains("_RES_"));
-        var leaf = new LocalLeafFolder(Path.Combine(detailsPath, resFolder));
+        var leaf = new LocalLeafFolder(Path.Combine(versionsPath, resFolder));
         
         Assert.True(await leaf.IsDataEmptyAsync());
         
