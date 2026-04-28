@@ -81,7 +81,6 @@
                                 {
                                     <div class="legend-item">
                                         <div class="color-swatch" style="background-color: @slice.Color"></div>
-                                        <span class="category-icon">@slice.Icon</span>
                                         <span class="category-name">@slice.Label</span>
                                         <span class="category-amount">@FormatCurrency(slice.Amount, globalChart.CurrencyCode) (@(Math.Round(slice.Percentage * 100))%)</span>
                                     </div>
@@ -142,7 +141,6 @@
                             {
                                 <div class="legend-item">
                                     <div class="color-swatch" style="background-color: @slice.Color"></div>
-                                    <span class="category-icon">@slice.Icon</span>
                                     <span class="category-name">@slice.Label</span>
                                     <span class="category-amount">@FormatCurrency(slice.Amount, chart.CurrencyCode) (@(Math.Round(slice.Percentage * 100))%)</span>
                                 </div>

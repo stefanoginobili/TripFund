@@ -18,14 +18,15 @@
 
             <div class="modal-body-vibe">
                 <div class="transaction-summary-card">
-                    <div class="transaction-icon round @(Transaction.Type == "expense" ? "expense-icon" : "contrib-icon")">
+                    <div class="transaction-icon @(Transaction.Type == "expense" ? "expense-icon" : "contrib-icon")" 
+                         style="width: 40px; height: 40px; border-radius: 12px; display: flex; align-items: center; justify-content: center; margin-bottom: 0.75rem;">
                         @if (Transaction.Type == "expense")
                         {
-                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 18 13.5 8.5 8.5 13.5 1 6"></polyline><polyline points="17 18 23 18 23 12"></polyline></svg>
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 18 13.5 8.5 8.5 13.5 1 6"></polyline><polyline points="17 18 23 18 23 12"></polyline></svg>
                         }
                         else
                         {
-                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline><polyline points="17 6 23 6 23 12"></polyline></svg>
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline><polyline points="17 6 23 6 23 12"></polyline></svg>
                         }
                     </div>
                     <h2 class="amount-title @(Transaction.Type == "expense" ? "text-danger" : "text-success")">
@@ -223,13 +224,14 @@
         justify-content: center;
         gap: 0.5rem;
         padding: 0.4rem 0.8rem;
-        border-radius: 20px;
+        border-radius: 12px;
         color: black;
         font-weight: 700;
         font-size: 0.9rem;
         box-shadow: 0 2px 4px rgba(0,0,0,0.1);
         margin: 0 auto 1.5rem auto;
         width: fit-content;
+        border: 2px solid var(--cat-color);
     }
 
     .badge-icon {
