@@ -130,10 +130,12 @@ public class RemoteStorageSyncEngine
             {
                 var remotePackages = await fileSystem.ListChildrenAsync(packagesFolder.Id, entry.RemoteStorage.Parameters);
                 
+                var isInitialImport = File.Exists(Path.Combine(localTripPath, AppConstants.Files.InitialImportMarker));
+
                 var toDownload = remotePackages
                     .Where(p => p.Name.StartsWith("pack_", StringComparison.OrdinalIgnoreCase))
                     .Where(p => p.Name.EndsWith(".zip", StringComparison.OrdinalIgnoreCase))
-                    .Where(p => !p.Name.Contains($"_{deviceId}.zip", StringComparison.OrdinalIgnoreCase))
+                    .Where(p => isInitialImport || !p.Name.Contains($"_{deviceId}.zip", StringComparison.OrdinalIgnoreCase))
                     .Where(p => !syncState.Sync.Remote.AppliedPackages.Contains(p.Name))
                     .OrderBy(p => p.Name)
                     .ToList();

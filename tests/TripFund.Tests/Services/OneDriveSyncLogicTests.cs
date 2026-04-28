@@ -253,6 +253,73 @@ public class OneDriveSyncLogicTests : IDisposable
         Assert.NotEmpty(chunkRequests);
     }
 
+    [Fact]
+    public async Task SynchronizeAsync_ShouldDownloadOwnPackages_DuringInitialImport()
+    {
+        // Arrange
+        var tripSlug = "rejoin-trip";
+        var localTripPath = Path.Combine(_tempPath, "trips", tripSlug);
+        
+        var deviceId = "same-device-id";
+        await _localStorage.SaveAppSettingsAsync(new AppSettings { DeviceId = deviceId });
+
+        // Simulate initial import marker
+        await _localStorage.InitializeInitialImportAsync(tripSlug);
+
+        var registry = new LocalTripRegistry();
+        registry.Trips[tripSlug] = new TripRegistryEntry 
+        { 
+            RemoteStorage = new RemoteStorageConfig 
+            { 
+                Provider = "onedrive", 
+                Parameters = new Dictionary<string, string> 
+                { 
+                    { "folderId", "root_id" },
+                    { "accessToken", "fake_token" },
+                    { "accessTokenExpiry", DateTime.Now.AddHours(1).ToString("O") }
+                } 
+            } 
+        };
+        await _localStorage.SaveTripRegistryAsync(registry);
+
+        // 1. EVALUATION PHASE mocks
+        _server.Given(Request.Create().WithPath("/me/drive/items/root_id/children").UsingGet())
+            .RespondWith(Response.Create().WithStatusCode(200).WithBody("{ \"value\": [ { \"id\": \"devices_id\", \"name\": \"devices\", \"folder\": {} }, { \"id\": \"packages_id\", \"name\": \"packages\", \"folder\": {} } ] }"));
+        _server.Given(Request.Create().WithPath("/me/drive/items/devices_id/children").UsingGet())
+            .RespondWith(Response.Create().WithStatusCode(200).WithBody($"{{ \"value\": [ {{ \"id\": \"device_root_id\", \"name\": \"{deviceId}\", \"folder\": {{}} }} ] }}"));
+        _server.Given(Request.Create().WithPath("/me/drive/items/device_root_id:/.last-seen:/content").UsingPut())
+            .RespondWith(Response.Create().WithStatusCode(201).WithBody("{ \"id\": \"check_id\" }"));
+
+        // 2. DOWNLOAD PHASE mocks - Package contains OUR deviceId
+        var ownPkgName = $"pack_20240101T000000Z_{deviceId}.zip";
+        _server.Given(Request.Create().WithPath("/me/drive/items/packages_id/children").UsingGet())
+            .RespondWith(Response.Create().WithStatusCode(200).WithBody($"{{ \"value\": [ {{ \"id\": \"pkg_id\", \"name\": \"{ownPkgName}\", \"file\": {{}} }} ] }}"));
+
+        byte[] zipBytes;
+        using (var ms = new MemoryStream())
+        {
+            using (var archive = new ZipArchive(ms, ZipArchiveMode.Create, true))
+            {
+                var entry = archive.CreateEntry($"config_versioned/.versions/001_NEW_{deviceId}/.tripfund");
+                using (var writer = new StreamWriter(entry.Open())) writer.Write($"author=Mario\ndevice={deviceId}");
+                
+                var dataEntry = archive.CreateEntry($"config_versioned/.versions/001_NEW_{deviceId}/.content/trip_config.json");
+                using (var writer = new StreamWriter(dataEntry.Open())) writer.Write("{ \"Name\": \"Rejoined Trip\" }");
+            }
+            zipBytes = ms.ToArray();
+        }
+
+        _server.Given(Request.Create().WithPath("/me/drive/items/pkg_id/content").UsingGet())
+            .RespondWith(Response.Create().WithStatusCode(200).WithBody(zipBytes));
+
+        // Act
+        await _service.SynchronizeAsync(tripSlug);
+
+        // Assert
+        var leafPath = Path.Combine(localTripPath, "config_versioned", ".versions", $"001_NEW_{deviceId}");
+        Assert.True(File.Exists(Path.Combine(leafPath, ".tripfund")), "Package should have been downloaded and extracted despite matching deviceId because it's an initial import");
+    }
+
     public void Dispose()
     {
         _server.Stop();

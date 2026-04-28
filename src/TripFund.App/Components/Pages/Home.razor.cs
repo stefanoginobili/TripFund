@@ -158,7 +158,7 @@ namespace TripFund.App.Components.Pages
                 if (!confirmed) return;
 
                 string remoteId = RemoteStorage.GetRemoteUniqueId(selection.Provider, selection.Parameters) ?? "";
-                string slug = SlugUtility.GenerateSlug(metadata.TripSlug + "_" + remoteId);
+                string slug = SlugUtility.GenerateSlug(metadata.TripSlug);
 
                 // Safety check: fail if local folder already exists
                 var tripDir = Path.Combine(Storage.TripsPath, slug);

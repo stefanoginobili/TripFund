@@ -143,8 +143,8 @@ public class HomeTests : BunitContext
             if (task != null) await task;
         });
 
-        // Expected slug: existing-trip_remote-123
-        var expectedSlug = "existing-trip_remote-123";
+        // Expected slug: existing-trip (as provided by metadata)
+        var expectedSlug = "existing-trip";
         _remoteStorageMock.Verify(s => s.SynchronizeAsync(expectedSlug), Times.Once);
         _storageMock.Verify(s => s.SaveTripRegistryAsync(It.Is<LocalTripRegistry>(r => 
             r.Trips.ContainsKey(expectedSlug) &&
@@ -209,7 +209,7 @@ public class HomeTests : BunitContext
         });
 
         // Assert
-        var expectedSlug = "fail-trip_remote-fail";
+        var expectedSlug = "fail-trip";
         _storageMock.Verify(s => s.DeleteTripAsync(expectedSlug), Times.Once);
         _alertMock.Verify(a => a.ShowAlertAsync("Errore", "Sincronizzazione fallita. Assicurati di avere una connessione attiva.", "OK", AlertType.Error), Times.Once);
     }
