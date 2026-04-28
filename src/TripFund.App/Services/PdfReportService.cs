@@ -79,7 +79,7 @@ public class PdfReportService
         }
 
         var slug = SlugUtility.GenerateSlug(config?.Name ?? "trip");
-        var tempPath = Path.Combine(_cacheDir, $"spese_{slug}.pdf");
+        var tempPath = Path.Combine(_cacheDir, string.Format(AppConstants.Files.ExpenseReportTemplate, slug));
         document.Save(tempPath);
         return tempPath;
     }

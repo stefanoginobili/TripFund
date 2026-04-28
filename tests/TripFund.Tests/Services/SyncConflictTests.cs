@@ -28,7 +28,7 @@ public class SyncConflictTests : IDisposable
 
     private async Task CreateFolderWithMeta(string path, string author, string device, string? parents = null)
     {
-        var versionsPath = Path.Combine(path, AppConstants.Folders.VersionsFolder);
+        var versionsPath = Path.Combine(path, AppConstants.Folders.Versions);
         if (!Directory.Exists(versionsPath)) Directory.CreateDirectory(versionsPath);
         
         // This is a helper for creating a version folder, but 'path' in the tests 
@@ -42,7 +42,7 @@ public class SyncConflictTests : IDisposable
 
     private async Task CreateVersionInRoot(string rootPath, string folderName, string author, string device, string? parents = null)
     {
-        var versionsPath = Path.Combine(rootPath, AppConstants.Folders.VersionsFolder);
+        var versionsPath = Path.Combine(rootPath, AppConstants.Folders.Versions);
         if (!Directory.Exists(versionsPath)) Directory.CreateDirectory(versionsPath);
         
         var path = Path.Combine(versionsPath, folderName);

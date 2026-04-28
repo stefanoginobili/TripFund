@@ -4,8 +4,24 @@ public static class AppConstants
 {
     public static class Folders
     {
-        public const string ContentFolder = ".content";
-        public const string VersionsFolder = ".versions";
+        public const string Content = ".content";
+        public const string Versions = ".versions";
+        public const string Trips = "trips";
+        public const string ConfigVersioned = "config_versioned";
+        public const string Transactions = "transactions";
+        public const string DetailsVersioned = "details_versioned";
+        public const string Attachments = "attachments";
+        public const string Temp = "temp";
+        public const string Commits = "commits";
+        public const string Config = "config";
+        public const string Sync = "sync";
+        public const string Logs = "logs";
+        public const string Cache = "cache";
+        public const string Packages = "packages";
+        public const string Devices = "devices";
+        public const string Outbox = "outbox";
+        public const string Inbox = "inbox";
+        public const string Expanded = "expanded";
     }
     
     public static class Files
@@ -17,6 +33,14 @@ public static class AppConstants
         public const string TransactionDetails = "transaction_details.json";
         public const string InitialImportMarker = ".initial_import";
         public const string TripFundFile = ".tripfund";
+        public const string LastSeen = ".last-seen";
+        
+        // Formatted filenames
+        public const string ExchangeRatesTemplate = "rates_{0:yyyy_MM}.json";
+        public const string RemotePackageTemplate = "pack_{0:yyyyMMddTHHmmssfffZ}_{1}.zip";
+        public const string SyncLogTemplate = "sync_{0:yyyyMMddTHHmmssZ}.log";
+        public const string SyncLogRotationFilePattern = "sync_*.log";
+        public const string ExpenseReportTemplate = "spese_{0}.pdf";
     }
 
     public static class Metadata

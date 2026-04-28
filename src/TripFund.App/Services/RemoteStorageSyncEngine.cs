@@ -53,27 +53,27 @@ public class RemoteStorageSyncEngine
             // Try to ensure remote structure exists.
             try
             {
-                devicesFolder = await GetOrCreateFolderAsync(folderId, "devices", entry.RemoteStorage.Parameters, fileSystem);
-                packagesFolder = await GetOrCreateFolderAsync(folderId, "packages", entry.RemoteStorage.Parameters, fileSystem);
+                devicesFolder = await GetOrCreateFolderAsync(folderId, AppConstants.Folders.Devices, entry.RemoteStorage.Parameters, fileSystem);
+                packagesFolder = await GetOrCreateFolderAsync(folderId, AppConstants.Folders.Packages, entry.RemoteStorage.Parameters, fileSystem);
             }
             catch (Exception ex)
             {
                 logger.LogWarning($"Could not ensure remote structure (might be READ-ONLY): {ex.Message}");
                 // Fallback: peek if they already exist
                 var rootChildren = await fileSystem.ListChildrenAsync(folderId, entry.RemoteStorage.Parameters);
-                devicesFolder = rootChildren.FirstOrDefault(c => c.Name == "devices" && c.IsFolder);
-                packagesFolder = rootChildren.FirstOrDefault(c => c.Name == "packages" && c.IsFolder);
+                devicesFolder = rootChildren.FirstOrDefault(c => c.Name == AppConstants.Folders.Devices && c.IsFolder);
+                packagesFolder = rootChildren.FirstOrDefault(c => c.Name == AppConstants.Folders.Packages && c.IsFolder);
             }
 
             if (packagesFolder == null)
             {
                 if (entry.RemoteStorage.Readonly)
                 {
-                    logger.LogInfo("Remote 'packages' folder not found. Nothing to download yet.");
+                    logger.LogInfo($"Remote '{AppConstants.Folders.Packages}' folder not found. Nothing to download yet.");
                 }
                 else
                 {
-                    throw new Exception("Remote 'packages' folder not found. Has the trip been initialized by the owner?");
+                    throw new Exception($"Remote '{AppConstants.Folders.Packages}' folder not found. Has the trip been initialized by the owner?");
                 }
             }
 
@@ -143,9 +143,9 @@ public class RemoteStorageSyncEngine
                 if (toDownload.Count > 0)
                 {
                     logger.LogInfo($"Found {toDownload.Count} new packages to apply.");
-                    var tempPath = Path.Combine(localTripPath, "temp", "packages");
-                    var downloadPath = Path.Combine(tempPath, "downloaded");
-                    var expandedPath = Path.Combine(tempPath, "expanded");
+                    var tempPath = Path.Combine(localTripPath, AppConstants.Folders.Temp, AppConstants.Folders.Packages);
+                    var downloadPath = Path.Combine(tempPath, AppConstants.Folders.Inbox);
+                    var expandedPath = Path.Combine(tempPath, AppConstants.Folders.Expanded);
                     
                     if (Directory.Exists(tempPath)) Directory.Delete(tempPath, true);
                     Directory.CreateDirectory(downloadPath);
@@ -227,13 +227,14 @@ public class RemoteStorageSyncEngine
                     logger.LogInfo($"Phase 3: UPLOAD ({syncState.Sync.Local.Pending.Count} pending folders)");
                     
                     var rawTimestamp = syncState.Sync.Local.Pending.Min(u => u.CreatedAt);
-                    var timestamp = rawTimestamp;
+                    DateTime timestampDt = DateTime.UtcNow;
                     if (DateTime.TryParse(rawTimestamp, System.Globalization.CultureInfo.InvariantCulture, System.Globalization.DateTimeStyles.RoundtripKind, out var dt))
                     {
-                        timestamp = dt.ToString("yyyyMMddTHHmmssfffZ", System.Globalization.CultureInfo.InvariantCulture);
+                        timestampDt = dt;
                     }
-                    var packageName = $"pack_{timestamp}_{deviceId}.zip";
-                    var tempZipPath = Path.Combine(localTripPath, "temp", $"{packageName}.tmp");
+                    
+                    var packageName = string.Format(AppConstants.Files.RemotePackageTemplate, timestampDt, deviceId);
+                    var tempZipPath = Path.Combine(localTripPath, AppConstants.Folders.Temp, AppConstants.Folders.Packages, AppConstants.Folders.Outbox, packageName);
                     var tempDir = Path.GetDirectoryName(tempZipPath);
                     if (!string.IsNullOrEmpty(tempDir) && !Directory.Exists(tempDir)) Directory.CreateDirectory(tempDir);
                     if (File.Exists(tempZipPath)) File.Delete(tempZipPath);
@@ -256,12 +257,12 @@ public class RemoteStorageSyncEngine
                             var metaPath = Path.Combine(fullPath, AppConstants.Files.TripFundFile);
                             if (File.Exists(metaPath)) archive.CreateEntryFromFile(metaPath, $"{normalizedPendingPath}/{AppConstants.Files.TripFundFile}");
 
-                            var dataDir = Path.Combine(fullPath, AppConstants.Folders.ContentFolder);
+                            var dataDir = Path.Combine(fullPath, AppConstants.Folders.Content);
                             if (Directory.Exists(dataDir))
                             {
                                 foreach (var file in Directory.GetFiles(dataDir))
                                 {
-                                    archive.CreateEntryFromFile(file, $"{normalizedPendingPath}/{AppConstants.Folders.ContentFolder}/{Path.GetFileName(file)}");
+                                    archive.CreateEntryFromFile(file, $"{normalizedPendingPath}/{AppConstants.Folders.Content}/{Path.GetFileName(file)}");
                                 }
                             }
                             
@@ -320,7 +321,7 @@ public class RemoteStorageSyncEngine
                     // If the path contains ".versions", the versioned storage root is its parent
                     var normalizedPath = relativePath.Replace('\\', '/');
                     var parts = normalizedPath.Split('/');
-                    int versionsIdx = Array.IndexOf(parts, AppConstants.Folders.VersionsFolder);
+                    int versionsIdx = Array.IndexOf(parts, AppConstants.Folders.Versions);
                     if (versionsIdx > 0)
                     {
                         var rootRelative = string.Join(Path.DirectorySeparatorChar, parts.Take(versionsIdx));
@@ -350,17 +351,17 @@ public class RemoteStorageSyncEngine
         if (fileSystem.Logger == null) return;
 
         var logContent = fileSystem.Logger.GetLogContent();
-        var logsDir = Path.Combine(_localStorage.TripsPath, tripSlug, "sync", "logs");
+        var logsDir = Path.Combine(_localStorage.TripsPath, tripSlug, AppConstants.Folders.Sync, AppConstants.Folders.Logs);
         if (!Directory.Exists(logsDir))
         {
             Directory.CreateDirectory(logsDir);
         }
 
-        var timestamp = DateTime.UtcNow.ToString("yyyyMMddTHHmmssZ");
-        var logFile = Path.Combine(logsDir, $"{timestamp}.log");
+        var timestampDt = DateTime.UtcNow;
+        var logFile = Path.Combine(logsDir, string.Format(AppConstants.Files.SyncLogTemplate, timestampDt));
         await File.WriteAllTextAsync(logFile, logContent);
 
-        var logFiles = Directory.GetFiles(logsDir, "*.log")
+        var logFiles = Directory.GetFiles(logsDir, AppConstants.Files.SyncLogRotationFilePattern)
             .OrderByDescending(f => f)
             .ToList();
 
@@ -386,7 +387,7 @@ public class RemoteStorageSyncEngine
     {
         try
         {
-            var fileName = ".last-seen";
+            var fileName = AppConstants.Files.LastSeen;
             var content = System.Text.Encoding.UTF8.GetBytes(DateTime.UtcNow.ToString("yyyy-MM-ddTHH:mm:ss.fffZ"));
             var uploaded = await fileSystem.UploadFileAsync(folderId, fileName, content, parameters);
             return uploaded != null;
@@ -407,7 +408,7 @@ public class RemoteStorageSyncEngine
     private async Task<List<VersionedFolderConflictException>> GetLocalConflictsAsync(string localTripPath)
     {
         var conflicts = new List<VersionedFolderConflictException>();
-        var configPath = Path.Combine(localTripPath, "config_versioned");
+        var configPath = Path.Combine(localTripPath, AppConstants.Folders.ConfigVersioned);
         if (Directory.Exists(configPath))
         {
             var latest = _engine.GetLatestVersionFolders(configPath);
@@ -418,12 +419,12 @@ public class RemoteStorageSyncEngine
                 conflicts.Add(new TripConfigConflictException(diverging, baseVer));
             }
         }
-        var transDir = Path.Combine(localTripPath, "transactions");
+        var transDir = Path.Combine(localTripPath, AppConstants.Folders.Transactions);
         if (Directory.Exists(transDir))
         {
             foreach (var t in Directory.GetDirectories(transDir))
             {
-                var detailsPath = Path.Combine(t, "details_versioned");
+                var detailsPath = Path.Combine(t, AppConstants.Folders.DetailsVersioned);
                 if (Directory.Exists(detailsPath))
                 {
                     var latest = _engine.GetLatestVersionFolders(detailsPath);

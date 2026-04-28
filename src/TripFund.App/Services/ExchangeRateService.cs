@@ -22,7 +22,7 @@ public class ExchangeRateService : IExchangeRateService
     public ExchangeRateService(HttpClient httpClient, string? rootPath = null)
     {
         _httpClient = httpClient;
-        _tripsPath = Path.Combine(rootPath ?? FileSystem.AppDataDirectory, "trips");
+        _tripsPath = Path.Combine(rootPath ?? FileSystem.AppDataDirectory, AppConstants.Folders.Trips);
     }
 
     public async Task<decimal?> GetRateAsync(string tripSlug, string currency, DateTime date)
@@ -156,7 +156,7 @@ public class ExchangeRateService : IExchangeRateService
         string cacheKey = $"{tripSlug}_{date:yyyy_MM}";
         if (_memoryCache.TryGetValue(cacheKey, out var memCache)) return memCache;
 
-        var filePath = Path.Combine(_tripsPath, tripSlug, "cache", $"rates_{date:yyyy_MM}.json");
+        var filePath = Path.Combine(_tripsPath, tripSlug, AppConstants.Folders.Cache, string.Format(AppConstants.Files.ExchangeRatesTemplate, date));
         if (!File.Exists(filePath)) return null;
 
         try
@@ -189,10 +189,10 @@ public class ExchangeRateService : IExchangeRateService
                 cache.Rates[item.Key.ToString("yyyy-MM-dd")] = item.Value;
             }
 
-            var cacheDir = Path.Combine(_tripsPath, tripSlug, "cache");
+            var cacheDir = Path.Combine(_tripsPath, tripSlug, AppConstants.Folders.Cache);
             if (!Directory.Exists(cacheDir)) Directory.CreateDirectory(cacheDir);
 
-            var filePath = Path.Combine(cacheDir, $"rates_{date:yyyy_MM}.json");
+            var filePath = Path.Combine(cacheDir, string.Format(AppConstants.Files.ExchangeRatesTemplate, date));
             var json = JsonSerializer.Serialize(cache, _jsonOptions);
             await File.WriteAllTextAsync(filePath, json);
 

@@ -192,7 +192,7 @@ public class RemoteStorageLoggingTests : IDisposable
         {
             // Use different timestamps to ensure they are distinct
             var oldTimestamp = DateTime.UtcNow.AddMinutes(-30 + i).ToString("yyyyMMddTHHmmssZ");
-            File.WriteAllText(Path.Combine(logsDir, $"{oldTimestamp}.log"), "Old log content");
+            File.WriteAllText(Path.Combine(logsDir, $"sync_{oldTimestamp}.log"), "Old log content");
         }
 
         var mockFileSystem = new Mock<IRemoteFileSystem>();
@@ -207,7 +207,7 @@ public class RemoteStorageLoggingTests : IDisposable
         await (Task)method!.Invoke(engine, new object[] { tripSlug, mockFileSystem.Object })!;
 
         // Assert
-        var logFiles = Directory.GetFiles(logsDir, "*.log");
+        var logFiles = Directory.GetFiles(logsDir, "sync_*.log");
         // We had 25, we added 1 during sync = 26. Rotation should keep 20.
         Assert.Equal(20, logFiles.Length);
         
