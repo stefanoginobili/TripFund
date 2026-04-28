@@ -2,6 +2,12 @@ namespace TripFund.App.Constants;
 
 public static class AppConstants
 {
+    public static class Folders
+    {
+        public const string ContentFolder = ".content";
+        public const string VersionsFolder = ".versions";
+    }
+    
     public static class Files
     {
         public const string AppSettings = "app_settings.json";
@@ -10,9 +16,7 @@ public static class AppConstants
         public const string TripConfig = "trip_config.json";
         public const string TransactionDetails = "transaction_details.json";
         public const string InitialImportMarker = ".initial_import";
-        public const string ContentFolder = ".content";
         public const string TripFundFile = ".tripfund";
-        public const string VersionsFolder = ".versions";
     }
 
     public static class Metadata
@@ -24,7 +28,6 @@ public static class AppConstants
         public const string VersioningParents = "versioning.parents";
         public const string VersioningHead = "versioning.head";
         public const string TripSlug = "trip.slug";
-        public const string SharedLink = "sharedLink";
     }
 
     public static class ContentTypes

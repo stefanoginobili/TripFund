@@ -70,7 +70,7 @@ public class VersionedStorageEngine
 
     public List<VersionFolderInfo> GetVersionFolders(string rootPath)
     {
-        string versionsPath = Path.Combine(rootPath, AppConstants.Files.VersionsFolder);
+        string versionsPath = Path.Combine(rootPath, AppConstants.Folders.VersionsFolder);
         if (!Directory.Exists(versionsPath)) return new List<VersionFolderInfo>();
 
         var folderNames = Directory.GetDirectories(versionsPath).Select(Path.GetFileName).Where(n => n != null).Cast<string>();
@@ -125,7 +125,7 @@ public class VersionedStorageEngine
 
         if (content.TryGetValue(AppConstants.Metadata.VersioningHead, out var head) && !string.IsNullOrEmpty(head))
         {
-            var headPath = Path.Combine(rootPath, AppConstants.Files.VersionsFolder, head);
+            var headPath = Path.Combine(rootPath, AppConstants.Folders.VersionsFolder, head);
             return Directory.Exists(headPath) ? headPath : null;
         }
 
@@ -242,7 +242,7 @@ public class VersionedStorageEngine
         var versions = GetVersionFolders(rootPath);
         int nextSeq = (versions.Count == 0) ? 1 : versions.Max(v => v.Sequence) + 1;
         string folderName = $"{nextSeq:D3}_{kind.ToString().ToUpperInvariant()}_{deviceId}";
-        string versionsRoot = Path.Combine(rootPath, AppConstants.Files.VersionsFolder);
+        string versionsRoot = Path.Combine(rootPath, AppConstants.Folders.VersionsFolder);
 
         string workDirPath = string.IsNullOrEmpty(tempRootPath)
             ? Path.Combine(versionsRoot, folderName)

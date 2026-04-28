@@ -10,7 +10,7 @@ namespace TripFund.App.Models;
 public class LocalLeafFolder : LeafFolder
 {
     private readonly string _path;
-    private const string ContentFolderName = AppConstants.Files.ContentFolder;
+    private const string ContentFolderName = AppConstants.Folders.ContentFolder;
     private const string TripFundFileName = AppConstants.Files.TripFundFile;
 
     public LocalLeafFolder(string path)

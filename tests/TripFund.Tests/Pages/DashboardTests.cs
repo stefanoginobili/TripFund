@@ -522,12 +522,13 @@ public class DashboardTests : BunitContext
         transactionRows.Should().HaveCount(2);
 
         // Specifically check that expense row shows 50 (Mario's split), not 100 (total amount)
-        var expenseRow = transactionRows.First(r => r.InnerHtml.Contains("expense-icon"));
+        // Expenses have .category-theme-translucent, contributions have .contrib-icon
+        var expenseRow = transactionRows.First(r => r.QuerySelector(".category-theme-translucent") != null);
         var expenseAmount = expenseRow.QuerySelector(".transaction-amount")?.TextContent ?? "";
         expenseAmount.Should().Contain("50");
         expenseAmount.Should().NotContain("-");
 
-        var contribRow = transactionRows.First(r => r.InnerHtml.Contains("contrib-icon"));
+        var contribRow = transactionRows.First(r => r.QuerySelector(".contrib-icon") != null);
         var contribAmount = contribRow.QuerySelector(".transaction-amount")?.TextContent ?? "";
         contribAmount.Should().Contain("300");
         contribAmount.Should().NotContain("+");

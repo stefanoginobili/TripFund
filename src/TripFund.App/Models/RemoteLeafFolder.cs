@@ -14,7 +14,7 @@ public class RemoteLeafFolder : LeafFolder
     private readonly string _folderId;
     private readonly Dictionary<string, string> _parameters;
     
-    private const string ContentFolderName = AppConstants.Files.ContentFolder;
+    private const string ContentFolderName = AppConstants.Folders.ContentFolder;
     private const string TripFundFileName = AppConstants.Files.TripFundFile;
 
     public RemoteLeafFolder(IRemoteFileSystem fileSystem, string folderId, Dictionary<string, string> parameters)

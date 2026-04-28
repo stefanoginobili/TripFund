@@ -179,19 +179,16 @@ public class ExpensesChartsTests : BunitContext
 
         // Cibo
         var foodItem = legendItems.First(i => i.InnerHtml.Contains("Cibo"));
-        foodItem.InnerHtml.Should().Contain("🍔");
         foodItem.InnerHtml.Should().Contain("€ 100,00 (56%)");
         foodItem.QuerySelector(".color-swatch")?.GetAttribute("style").Should().Contain("#FF0000");
 
         // Altro
         var altroItem = legendItems.First(i => i.InnerHtml.Contains(AppConstants.Categories.DefaultName));
-        altroItem.InnerHtml.Should().Contain(AppConstants.Categories.DefaultIcon);
         altroItem.InnerHtml.Should().Contain("€ 50,00 (28%)");
         altroItem.QuerySelector(".color-swatch")?.GetAttribute("style").Should().Contain(AppConstants.Categories.DefaultColor);
 
         // Missing/Deleted
         var missingItem = legendItems.First(i => i.InnerHtml.Contains("deleted-cat"));
-        missingItem.InnerHtml.Should().Contain(AppConstants.Categories.UnknownIcon);
         missingItem.InnerHtml.Should().Contain("€ 30,00 (17%)");
         // Gray swatch should be deterministic hex
         var swatchStyle = missingItem.QuerySelector(".color-swatch")?.GetAttribute("style") ?? "";

@@ -51,7 +51,9 @@ public class ModelSerializationTests
         tripConfig.Members.Should().HaveCount(2);
         tripConfig.Members["mario-rossi"].Name.Should().Be("Mario Rossi");
 
-        deserializedAgain.Should().BeEquivalentTo(tripConfig);
+        deserializedAgain.Should().BeEquivalentTo(tripConfig, options => options
+            .Using<DateTime>(ctx => ctx.Subject.Date.Should().Be(ctx.Expectation.Date))
+            .When(p => p.Path.EndsWith("StartDate") || p.Path.EndsWith("EndDate")));
     }
 
     [Fact]

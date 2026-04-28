@@ -256,12 +256,12 @@ public class RemoteStorageSyncEngine
                             var metaPath = Path.Combine(fullPath, AppConstants.Files.TripFundFile);
                             if (File.Exists(metaPath)) archive.CreateEntryFromFile(metaPath, $"{normalizedPendingPath}/{AppConstants.Files.TripFundFile}");
 
-                            var dataDir = Path.Combine(fullPath, AppConstants.Files.ContentFolder);
+                            var dataDir = Path.Combine(fullPath, AppConstants.Folders.ContentFolder);
                             if (Directory.Exists(dataDir))
                             {
                                 foreach (var file in Directory.GetFiles(dataDir))
                                 {
-                                    archive.CreateEntryFromFile(file, $"{normalizedPendingPath}/{AppConstants.Files.ContentFolder}/{Path.GetFileName(file)}");
+                                    archive.CreateEntryFromFile(file, $"{normalizedPendingPath}/{AppConstants.Folders.ContentFolder}/{Path.GetFileName(file)}");
                                 }
                             }
                             
@@ -320,7 +320,7 @@ public class RemoteStorageSyncEngine
                     // If the path contains ".versions", the versioned storage root is its parent
                     var normalizedPath = relativePath.Replace('\\', '/');
                     var parts = normalizedPath.Split('/');
-                    int versionsIdx = Array.IndexOf(parts, AppConstants.Files.VersionsFolder);
+                    int versionsIdx = Array.IndexOf(parts, AppConstants.Folders.VersionsFolder);
                     if (versionsIdx > 0)
                     {
                         var rootRelative = string.Join(Path.DirectorySeparatorChar, parts.Take(versionsIdx));

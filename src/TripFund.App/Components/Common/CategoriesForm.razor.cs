@@ -12,6 +12,7 @@ public partial class CategoriesForm
     [Parameter] public bool IsReadonly { get; set; }
 
     [Inject] private IJSRuntime JSRuntime { get; set; } = default!;
+    [Inject] private Services.IAlertService Alerts { get; set; } = default!;
 
     private bool isAdding = false;
     private string? editingSlug = null;
@@ -147,8 +148,18 @@ public partial class CategoriesForm
 
     private async Task DeleteCategory(string slug)
     {
-        Categories.Remove(slug);
-        await CategoriesChanged.InvokeAsync(Categories);
+        bool confirm = await Alerts.ConfirmAsync(
+            "Elimina Categoria",
+            $"Sei sicuro di voler eliminare <b>{Categories[slug].Name}</b>?",
+            "Elimina",
+            "Annulla",
+            Services.AlertType.Warning);
+
+        if (confirm)
+        {
+            Categories.Remove(slug);
+            await CategoriesChanged.InvokeAsync(Categories);
+        }
     }
 
     private async Task MoveUp(string slug)

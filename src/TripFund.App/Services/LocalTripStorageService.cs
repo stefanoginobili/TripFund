@@ -166,7 +166,7 @@ public class LocalTripStorageService
         // Cache the head for next access since no conflict found
         await _engine.UpdateHeadAsync(configPath, latest.FolderName);
 
-        var headLeaf = new LocalLeafFolder(Path.Combine(configPath, AppConstants.Files.VersionsFolder, latest.FolderName));
+        var headLeaf = new LocalLeafFolder(Path.Combine(configPath, AppConstants.Folders.VersionsFolder, latest.FolderName));
         if (await headLeaf.IsDataEmptyAsync()) return null;
 
         var headBytes = await headLeaf.ReadDataFileAsync(AppConstants.Files.TripConfig);
@@ -202,7 +202,7 @@ public class LocalTripStorageService
 
         var tempRoot = Path.Combine(_tripsPath, tripSlug, "temp", "commits", "config");
         var folderName = await _engine.CommitAsync(configPath, deviceId, kind, changedFiles, metadata: metadata, parentVersions: parentVersions, contentType: AppConstants.ContentTypes.TripConfig, tempRootPath: tempRoot);
-        await RegisterPendingUploadAsync(tripSlug, Path.Combine("config_versioned", AppConstants.Files.VersionsFolder, folderName));
+        await RegisterPendingUploadAsync(tripSlug, Path.Combine("config_versioned", AppConstants.Folders.VersionsFolder, folderName));
     }
 
     public virtual async Task<List<Transaction>> GetTransactionsAsync(string tripSlug)
@@ -271,7 +271,7 @@ public class LocalTripStorageService
         // Cache the head for next access since no conflict found
         await _engine.UpdateHeadAsync(detailsRoot, latest.FolderName);
 
-        var headLeaf = new LocalLeafFolder(Path.Combine(detailsRoot, AppConstants.Files.VersionsFolder, latest.FolderName));
+        var headLeaf = new LocalLeafFolder(Path.Combine(detailsRoot, AppConstants.Folders.VersionsFolder, latest.FolderName));
         if (await headLeaf.IsDataEmptyAsync())
         {
             return new TransactionVersionInfo { VersionFolderName = latest.FolderName, IsDeleted = true };
@@ -305,7 +305,7 @@ public class LocalTripStorageService
         if (attachment == null) return null;
 
         var leafPath = Path.Combine(_tripsPath, tripSlug, "transactions", transactionId, "attachments", attachment.Name);
-        var path = Path.Combine(leafPath, AppConstants.Files.ContentFolder, attachment.OriginalName);
+        var path = Path.Combine(leafPath, AppConstants.Folders.ContentFolder, attachment.OriginalName);
         return File.Exists(path) ? path : null;
     }
 
@@ -387,7 +387,7 @@ public class LocalTripStorageService
 
         var tempRoot = Path.Combine(_tripsPath, tripSlug, "temp", "commits", "transactions", transaction.Id);
         var folderName = await _engine.CommitAsync(detailsRoot, deviceId, kind, changedFiles, metadata: metadata, parentVersions: parentVersions, contentType: AppConstants.ContentTypes.TransactionDetail, tempRootPath: tempRoot);
-        await RegisterPendingUploadAsync(tripSlug, Path.Combine("transactions", transaction.Id, "details_versioned", AppConstants.Files.VersionsFolder, folderName));
+        await RegisterPendingUploadAsync(tripSlug, Path.Combine("transactions", transaction.Id, "details_versioned", AppConstants.Folders.VersionsFolder, folderName));
     }
 
     public virtual async Task<List<ConflictVersion<Transaction>>> GetConflictingTransactionVersionsAsync(string tripSlug, string transactionId)
@@ -398,7 +398,7 @@ public class LocalTripStorageService
         var result = new List<ConflictVersion<Transaction>>();
         foreach (var v in latestVersions)
         {
-            var leaf = new LocalLeafFolder(Path.Combine(detailsRoot, AppConstants.Files.VersionsFolder, v.FolderName));
+            var leaf = new LocalLeafFolder(Path.Combine(detailsRoot, AppConstants.Folders.VersionsFolder, v.FolderName));
             var metadata = await leaf.GetMetadataAsync();
             
             var cv = new ConflictVersion<Transaction>
@@ -437,7 +437,7 @@ public class LocalTripStorageService
         var result = new List<ConflictVersion<TripConfig>>();
         foreach (var v in latestVersions)
         {
-            var leaf = new LocalLeafFolder(Path.Combine(configRoot, AppConstants.Files.VersionsFolder, v.FolderName));
+            var leaf = new LocalLeafFolder(Path.Combine(configRoot, AppConstants.Folders.VersionsFolder, v.FolderName));
             var metadata = await leaf.GetMetadataAsync();
             
             var cv = new ConflictVersion<TripConfig>
@@ -491,7 +491,7 @@ public class LocalTripStorageService
 
         var tempRoot = Path.Combine(_tripsPath, tripSlug, "temp", "commits", "config");
         var folderName = await _engine.CommitAsync(configRoot, deviceId, CommitKind.Res, changedFiles, metadata: metadata, parentVersions: parentVersions, contentType: AppConstants.ContentTypes.TripConfig, tempRootPath: tempRoot);
-        await RegisterPendingUploadAsync(tripSlug, Path.Combine("config_versioned", AppConstants.Files.VersionsFolder, folderName));
+        await RegisterPendingUploadAsync(tripSlug, Path.Combine("config_versioned", AppConstants.Folders.VersionsFolder, folderName));
     }
 
     public virtual async Task ResolveConflictAsync(string tripSlug, Transaction? resolvedTransaction, string deviceId)
@@ -521,7 +521,7 @@ public class LocalTripStorageService
                 if (latestVersions.Count > 0)
                 {
                     var latest = latestVersions[0];
-                    var leaf = new LocalLeafFolder(Path.Combine(detailsRoot, AppConstants.Files.VersionsFolder, latest.FolderName));
+                    var leaf = new LocalLeafFolder(Path.Combine(detailsRoot, AppConstants.Folders.VersionsFolder, latest.FolderName));
                     try
                     {
                         var prevBytes = await leaf.ReadDataFileAsync(AppConstants.Files.TransactionDetails);
@@ -537,7 +537,7 @@ public class LocalTripStorageService
                     var allVersions = _engine.GetVersionFolders(detailsRoot).OrderByDescending(v => v.Sequence);
                     foreach (var v in allVersions)
                     {
-                        var leaf = new LocalLeafFolder(Path.Combine(detailsRoot, AppConstants.Files.VersionsFolder, v.FolderName));
+                        var leaf = new LocalLeafFolder(Path.Combine(detailsRoot, AppConstants.Folders.VersionsFolder, v.FolderName));
                         try
                         {
                             var prevBytes = await leaf.ReadDataFileAsync(AppConstants.Files.TransactionDetails);
@@ -570,7 +570,7 @@ public class LocalTripStorageService
 
         var tempRoot = Path.Combine(_tripsPath, tripSlug, "temp", "commits", "transactions", transactionId);
         var folderName = await _engine.CommitAsync(detailsRoot, deviceId, CommitKind.Res, changedFiles, metadata: metadata, parentVersions: parentVersions, contentType: AppConstants.ContentTypes.TransactionDetail, tempRootPath: tempRoot);
-        await RegisterPendingUploadAsync(tripSlug, Path.Combine("transactions", transactionId, "details_versioned", AppConstants.Files.VersionsFolder, folderName));
+        await RegisterPendingUploadAsync(tripSlug, Path.Combine("transactions", transactionId, "details_versioned", AppConstants.Folders.VersionsFolder, folderName));
     }
 
     public virtual async Task DeleteTripAsync(string tripSlug)
@@ -828,7 +828,7 @@ public class LocalTripStorageService
 
     private async Task<Transaction?> GetTransactionFromFolderAsync(string detailsPath, string folderName)
     {
-        var leaf = new LocalLeafFolder(Path.Combine(detailsPath, AppConstants.Files.VersionsFolder, folderName));
+        var leaf = new LocalLeafFolder(Path.Combine(detailsPath, AppConstants.Folders.VersionsFolder, folderName));
         try
         {
             if (await leaf.IsDataEmptyAsync()) return null; // Likely a DEL version
@@ -840,7 +840,7 @@ public class LocalTripStorageService
 
     private async Task<TripConfig?> GetTripConfigFromFolderAsync(string configPath, string folderName)
     {
-        var leaf = new LocalLeafFolder(Path.Combine(configPath, AppConstants.Files.VersionsFolder, folderName));
+        var leaf = new LocalLeafFolder(Path.Combine(configPath, AppConstants.Folders.VersionsFolder, folderName));
         try
         {
             if (await leaf.IsDataEmptyAsync()) return null;
@@ -863,7 +863,7 @@ public class LocalTripStorageService
 
         if (localLatest == null) return null;
 
-        var leaf = new LocalLeafFolder(Path.Combine(configPath, AppConstants.Files.VersionsFolder, localLatest.FolderName));
+        var leaf = new LocalLeafFolder(Path.Combine(configPath, AppConstants.Folders.VersionsFolder, localLatest.FolderName));
         try
         {
             var bytes = await leaf.ReadDataFileAsync(AppConstants.Files.TripConfig);
@@ -885,7 +885,7 @@ public class LocalTripStorageService
 
         if (localLatest == null) return null;
 
-        var leaf = new LocalLeafFolder(Path.Combine(detailsPath, AppConstants.Files.VersionsFolder, localLatest.FolderName));
+        var leaf = new LocalLeafFolder(Path.Combine(detailsPath, AppConstants.Folders.VersionsFolder, localLatest.FolderName));
         try
         {
             var bytes = await leaf.ReadDataFileAsync(AppConstants.Files.TransactionDetails);
