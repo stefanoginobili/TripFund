@@ -56,8 +56,8 @@ public static class AppConstants
     {
         public const string DefaultSlug = "altro";
         public const string DefaultName = "Altro";
-        public const string DefaultIcon = "💸";
-        public const string DefaultColor = "#808080"; // Standard Gray
+        public const string DefaultIcon = "💰";
+        public const string DefaultColor = "#DC3545"; // Expense theme red
         public const string UnknownIcon = "﹖";
 
         public static readonly Dictionary<string, (string Name, string Icon, string Color)> DefaultTripCategories = new()

@@ -37,6 +37,7 @@ namespace TripFund.App.Components.Pages
         private bool isLocating = false;
         private string deviceId = "";
         private string authorName = "";
+        private bool _shouldScrollCategory = false;
 
         protected override async Task OnInitializedAsync()
         {
@@ -352,6 +353,21 @@ namespace TripFund.App.Components.Pages
         private void OnDescriptionInput(ChangeEventArgs e)
         {
             description = e.Value?.ToString() ?? "";
+        }
+
+        private async Task OpenCategoryDropdown()
+        {
+            _shouldScrollCategory = true;
+            await Task.CompletedTask;
+        }
+
+        protected override async Task OnAfterRenderAsync(bool firstRender)
+        {
+            if (_shouldScrollCategory)
+            {
+                _shouldScrollCategory = false;
+                await JSRuntime.InvokeVoidAsync("appLogic.scrollIntoView", "#selected-category-item", "center");
+            }
         }
 
         private void SelectCategory(string? slug)
