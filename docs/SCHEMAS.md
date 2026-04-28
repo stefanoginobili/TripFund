@@ -3,7 +3,7 @@
 This document defines the exact JSON structures to be used in the application. As per architecture guidelines, we heavily rely on Dictionaries (Key-Value objects).
 
 ## 1. Trip Configuration (`trip_config.json`)
-This file is stored inside the specific version folder of the trip's `config_versioned` folder (see `ARCHITECTURE.md` for folders' structure).
+This file is stored inside the specific version folder of the trip's `config` folder (see `ARCHITECTURE.md` for folders' structure).
 **Crucial:** Members are identified by unique, human-readable slugs (e.g., `alice`, `mario-rossi`), NOT GUIDs.
 
 ```json
@@ -63,7 +63,7 @@ This file is stored inside the specific version folder of the trip's `config_ver
 * Note 2: `author` is a plain string representing the physical user of the device (retrieved from `app_settings.json`'s `authorName`), NOT a trip member's slug. It is used purely for auditing and conflict resolution purposes. It is set each time the configuration is created or updated.
 
 ## 2. Transaction (`transaction_details.json`)
-This file is stored inside the specific version folder of the trip's `transactions/[TransactionID]/details_versioned` (see `ARCHITECTURE.md` for folders' structure).
+This file is stored inside the specific version folder of the trip's `transactions/[TransactionID]/details` (see `ARCHITECTURE.md` for folders' structure).
 
 ```json
 {
@@ -171,11 +171,11 @@ This file is stored in a subfolder of the specific trip (`[AppData]/trips/[TripS
     "local": {
       "pending": [
         {
-          "path": "config_versioned/001_NEW_mario-rossi-abcd1234",
+          "path": "config/001_NEW_mario-rossi-abcd1234",
           "createdAt": "2026-04-12T22:33:12.890Z"
         },
         {
-          "path": "transactions/20260416T204312Z-021c3e7b/details_versioned/001_NEW_mario-rossi-abcd1234",
+          "path": "transactions/20260416T204312Z-021c3e7b/details/001_NEW_mario-rossi-abcd1234",
           "createdAt": "2026-04-16T20:43:12.450Z"
         }
       ]

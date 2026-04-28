@@ -40,7 +40,7 @@ public class LocalTripStorageTests : IDisposable
         loaded!.Name.Should().Be("Test Trip");
         loaded.UpdatedAt.Should().BeCloseTo(DateTime.UtcNow, TimeSpan.FromSeconds(5));
 
-        var configDir = Path.Combine(_tempPath, "trips", slug, "config_versioned");
+        var configDir = Path.Combine(_tempPath, "trips", slug, "config");
         var versionDir = Path.Combine(configDir, ".versions", "001_NEW_mario");
         Directory.Exists(versionDir).Should().BeTrue();
         File.Exists(Path.Combine(configDir, ".tripfund")).Should().BeTrue("Pointer file should exist at root");
@@ -56,7 +56,7 @@ public class LocalTripStorageTests : IDisposable
         var config = new TripConfig { Name = "Optimized Trip" };
         await _service.SaveTripConfigAsync(slug, config, "mario");
         
-        var configPath = Path.Combine(_tempPath, "trips", slug, "config_versioned");
+        var configPath = Path.Combine(_tempPath, "trips", slug, "config");
         var pointerFile = Path.Combine(configPath, ".tripfund");
         File.Exists(pointerFile).Should().BeTrue();
 
@@ -90,7 +90,7 @@ public class LocalTripStorageTests : IDisposable
         transactions.Should().ContainSingle();
         transactions[0].Description.Should().Be("Lunch");
 
-        var detailsDir = Path.Combine(_tempPath, "trips", tripSlug, "transactions", "trans-1", "details_versioned");
+        var detailsDir = Path.Combine(_tempPath, "trips", tripSlug, "transactions", "trans-1", "details");
         var versionDir = Path.Combine(detailsDir, ".versions", "001_NEW_mario");
         Directory.Exists(versionDir).Should().BeTrue();
         File.Exists(Path.Combine(versionDir, ".content", "transaction_details.json")).Should().BeTrue();
@@ -113,7 +113,7 @@ public class LocalTripStorageTests : IDisposable
         transactions.Should().ContainSingle();
         transactions[0].Description.Should().Be("Lunch V2");
         
-        var detailsDir = Path.Combine(_tempPath, "trips", tripSlug, "transactions", "trans-1", "details_versioned");
+        var detailsDir = Path.Combine(_tempPath, "trips", tripSlug, "transactions", "trans-1", "details");
         var versionsDir = Path.Combine(detailsDir, ".versions");
         Directory.GetDirectories(versionsDir).Should().HaveCount(2);
         Directory.GetDirectories(versionsDir).Should().Contain(d => Path.GetFileName(d) == "002_UPD_mario");
@@ -137,7 +137,7 @@ public class LocalTripStorageTests : IDisposable
         // Assert
         transactions.Should().BeEmpty();
 
-        var detailsDir = Path.Combine(_tempPath, "trips", tripSlug, "transactions", "trans-1", "details_versioned");
+        var detailsDir = Path.Combine(_tempPath, "trips", tripSlug, "transactions", "trans-1", "details");
         var versionsDir = Path.Combine(detailsDir, ".versions");
         Directory.GetDirectories(versionsDir).Should().HaveCount(2);
         Directory.GetDirectories(versionsDir).Should().Contain(d => Path.GetFileName(d) == "002_DEL_mario");
@@ -161,7 +161,7 @@ public class LocalTripStorageTests : IDisposable
         await _service.SaveTransactionAsync(tripSlug, t1, "mario-123", isDelete: true);
 
         // Assert
-        var detailsDir = Path.Combine(_tempPath, "trips", tripSlug, "transactions", "trans-1", "details_versioned");
+        var detailsDir = Path.Combine(_tempPath, "trips", tripSlug, "transactions", "trans-1", "details");
         var delVersionDir = Path.Combine(detailsDir, ".versions", "002_DEL_mario-123");
         var metadataFile = Path.Combine(delVersionDir, ".tripfund");
         
@@ -185,7 +185,7 @@ public class LocalTripStorageTests : IDisposable
         // Arrange
         var tripSlug = "test-trip";
         var transId = "trans-1";
-        var detailsDir = Path.Combine(_tempPath, "trips", tripSlug, "transactions", transId, "details_versioned");
+        var detailsDir = Path.Combine(_tempPath, "trips", tripSlug, "transactions", transId, "details");
         var versionsDir = Path.Combine(detailsDir, ".versions");
         Directory.CreateDirectory(versionsDir);
         
@@ -219,7 +219,7 @@ public class LocalTripStorageTests : IDisposable
         // Arrange
         var tripSlug = "test-trip";
         var transId = "trans-1";
-        var detailsDir = Path.Combine(_tempPath, "trips", tripSlug, "transactions", transId, "details_versioned");
+        var detailsDir = Path.Combine(_tempPath, "trips", tripSlug, "transactions", transId, "details");
         var versionsDir = Path.Combine(detailsDir, ".versions");
         Directory.CreateDirectory(versionsDir);
         
@@ -264,7 +264,7 @@ public class LocalTripStorageTests : IDisposable
         var firstVersion = await _service.GetLatestTransactionVersionAsync(tripSlug, transId);
         var originalCreatedAt = firstVersion!.CreatedAt;
         
-        var detailsDir = Path.Combine(_tempPath, "trips", tripSlug, "transactions", transId, "details_versioned");
+        var detailsDir = Path.Combine(_tempPath, "trips", tripSlug, "transactions", transId, "details");
         var versionsDir = Path.Combine(detailsDir, ".versions");
 
         // Setup conflict: 002_UPD_mario, 002_UPD_luigi
@@ -299,7 +299,7 @@ public class LocalTripStorageTests : IDisposable
         
         await _service.SaveTransactionAsync(tripSlug, t1, deviceId);
         
-        var detailsDir = Path.Combine(_tempPath, "trips", tripSlug, "transactions", "trans-1", "details_versioned");
+        var detailsDir = Path.Combine(_tempPath, "trips", tripSlug, "transactions", "trans-1", "details");
         var v1Dir = Path.Combine(detailsDir, ".versions", "001_NEW_device1");
         
         // Simulate successful sync
@@ -453,7 +453,7 @@ public class LocalTripStorageTests : IDisposable
         var tripSlug = "sync-test-trip";
         var state = new SyncState();
         state.Sync.Remote.AppliedPackages.Add("pack1.zip");
-        state.Sync.Local.Pending.Add(new PendingUpload { Path = "config_versioned/001_NEW_mario", CreatedAt = DateTime.UtcNow.ToString("O") });
+        state.Sync.Local.Pending.Add(new PendingUpload { Path = "config/001_NEW_mario", CreatedAt = DateTime.UtcNow.ToString("O") });
 
         // Act
         await _service.SaveSyncStateAsync(tripSlug, state);
@@ -463,7 +463,7 @@ public class LocalTripStorageTests : IDisposable
         loaded.Should().NotBeNull();
         loaded.Sync.Remote.AppliedPackages.Should().Contain("pack1.zip");
         loaded.Sync.Local.Pending.Should().HaveCount(1);
-        loaded.Sync.Local.Pending[0].Path.Should().Be("config_versioned/001_NEW_mario");
+        loaded.Sync.Local.Pending[0].Path.Should().Be("config/001_NEW_mario");
 
         var syncPath = Path.Combine(_tempPath, "trips", tripSlug, "sync", "sync_state.json");
         File.Exists(syncPath).Should().BeTrue("sync_state.json should be in the 'sync' subfolder");

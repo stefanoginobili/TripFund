@@ -22,20 +22,20 @@ All application data resides locally. The absolute source of truth for the offli
 ### 2.3. Trip Data Directories
 Inside each `[TripSlug]` folder, data is partitioned into two distinct domains, both governed by the Versioned Storage Engine:
 
-1. **Config:** `[AppData]/trips/[TripSlug]/config_versioned/`
+1. **Config:** `[AppData]/trips/[TripSlug]/config/`
     - Contains high-level trip settings.
     - **Is Versioned:** YES.
 2. **Transactions:** `[AppData]/trips/[TripSlug]/transactions/[TransactionID]/`
     - **TransactionID Format:** `yyyyMMddTHHmmssZ-[guidprefix]` (e.g., `20260325T143000Z-a1b2c3d4`). The prefix is the first 8 characters of a standard GUID.
     - **Structure:**
-        - `details_versioned/`: Versioned folder containing the transaction state.
+        - `details/`: Versioned folder containing the transaction state.
         - `attachments/[AttachmentName]/`: Unversioned leaf folders containing the actual attachment files.
 
 ## 3. The Versioned Storage Engine
 The application utilizes an append-only, soft-deletion storage engine. Data is stored in "Leaf" folders organized within "Versioned" folders.
 
 ### 3.1. Versioned Folder Structure
-A Versioned folder (like `config_versioned/` or `details_versioned/`) acts as the root for a DAG of versions. Its structure is:
+A Versioned folder (like `config/` or `details/`) acts as the root for a DAG of versions. Its structure is:
 - **`.versions/`**: A subdirectory containing all individual Leaf folders.
 - **`.tripfund`**: A metadata file at the root used as a "Head" pointer for performance optimization.
     - `contentType`: Always `tripfund/versioned-storage`.

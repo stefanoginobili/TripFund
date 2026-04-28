@@ -408,7 +408,7 @@ public class RemoteStorageSyncEngine
     private async Task<List<VersionedFolderConflictException>> GetLocalConflictsAsync(string localTripPath)
     {
         var conflicts = new List<VersionedFolderConflictException>();
-        var configPath = Path.Combine(localTripPath, AppConstants.Folders.ConfigVersioned);
+        var configPath = Path.Combine(localTripPath, AppConstants.Folders.Config);
         if (Directory.Exists(configPath))
         {
             var latest = _engine.GetLatestVersionFolders(configPath);
@@ -424,7 +424,7 @@ public class RemoteStorageSyncEngine
         {
             foreach (var t in Directory.GetDirectories(transDir))
             {
-                var detailsPath = Path.Combine(t, AppConstants.Folders.DetailsVersioned);
+                var detailsPath = Path.Combine(t, AppConstants.Folders.Details);
                 if (Directory.Exists(detailsPath))
                 {
                     var latest = _engine.GetLatestVersionFolders(detailsPath);

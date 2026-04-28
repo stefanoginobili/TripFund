@@ -7,13 +7,12 @@ public static class AppConstants
         public const string Content = ".content";
         public const string Versions = ".versions";
         public const string Trips = "trips";
-        public const string ConfigVersioned = "config_versioned";
+        public const string Config = "config";
         public const string Transactions = "transactions";
-        public const string DetailsVersioned = "details_versioned";
+        public const string Details = "details";
         public const string Attachments = "attachments";
         public const string Temp = "temp";
         public const string Commits = "commits";
-        public const string Config = "config";
         public const string Sync = "sync";
         public const string Logs = "logs";
         public const string Cache = "cache";

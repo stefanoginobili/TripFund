@@ -30,7 +30,7 @@ public class ConflictResolutionLogicTests
         var config1 = new TripConfig { Name = "Version 1" };
         var config2 = new TripConfig { Name = "Version 2" };
 
-        var configPath = Path.Combine(_testRoot, "trips", tripSlug, "config_versioned");
+        var configPath = Path.Combine(_testRoot, "trips", tripSlug, "config");
         var versionsPath = Path.Combine(configPath, ".versions");
         Directory.CreateDirectory(versionsPath);
 
@@ -60,7 +60,7 @@ public class ConflictResolutionLogicTests
         string tripSlug = "test-trip";
         string resolverDevice = "resolver";
         
-        var configPath = Path.Combine(_testRoot, "trips", tripSlug, "config_versioned");
+        var configPath = Path.Combine(_testRoot, "trips", tripSlug, "config");
         var versionsPath = Path.Combine(configPath, ".versions");
         Directory.CreateDirectory(versionsPath);
 
@@ -96,7 +96,7 @@ public class ConflictResolutionLogicTests
         string tripSlug = "test-trip";
         string txId = "20260420T100000Z-abcd";
         
-        var detailsPath = Path.Combine(_testRoot, "trips", tripSlug, "transactions", txId, "details_versioned");
+        var detailsPath = Path.Combine(_testRoot, "trips", tripSlug, "transactions", txId, "details");
         var versionsPath = Path.Combine(detailsPath, ".versions");
         Directory.CreateDirectory(versionsPath);
 
@@ -127,7 +127,7 @@ public class ConflictResolutionLogicTests
         string txId = "20260420T100000Z-abcd";
         string resolverDevice = "resolver";
         
-        var detailsPath = Path.Combine(_testRoot, "trips", tripSlug, "transactions", txId, "details_versioned");
+        var detailsPath = Path.Combine(_testRoot, "trips", tripSlug, "transactions", txId, "details");
         var versionsPath = Path.Combine(detailsPath, ".versions");
         Directory.CreateDirectory(versionsPath);
 

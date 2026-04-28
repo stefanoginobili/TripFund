@@ -67,7 +67,7 @@ public class ExplicitAncestryTests
         // Actually, the user's case happens when sync brings in a version that diverged earlier.
         // Let's manually create the folders to match the exact scenario.
 
-        var detailsRoot = Path.Combine(_testRoot, "trips", _tripSlug, "transactions", txId, "details_versioned");
+        var detailsRoot = Path.Combine(_testRoot, "trips", _tripSlug, "transactions", txId, "details");
         
         // 002_UPD_pixel pointing to 001
         await CreateVersionFolder(detailsRoot, 2, CommitKind.Upd, _deviceId_Pixel, new[] { v001 });
@@ -98,7 +98,7 @@ public class ExplicitAncestryTests
     public async Task Conflict_ShouldBeResolved_WhenResVersionPointsToMultipleParents()
     {
         var txId = "res-test";
-        var detailsRoot = Path.Combine(_testRoot, "trips", _tripSlug, "transactions", txId, "details_versioned");
+        var detailsRoot = Path.Combine(_testRoot, "trips", _tripSlug, "transactions", txId, "details");
         Directory.CreateDirectory(detailsRoot);
 
         await CreateVersionFolder(detailsRoot, 1, CommitKind.New, "dev1", Array.Empty<string>());
@@ -153,7 +153,7 @@ public class ExplicitAncestryTests
 
     private List<VersionFolderInfo> GetVersions(string txId)
     {
-        var path = Path.Combine(_testRoot, "trips", _tripSlug, "transactions", txId, "details_versioned");
+        var path = Path.Combine(_testRoot, "trips", _tripSlug, "transactions", txId, "details");
         var engine = new VersionedStorageEngine();
         return engine.GetVersionFolders(path);
     }

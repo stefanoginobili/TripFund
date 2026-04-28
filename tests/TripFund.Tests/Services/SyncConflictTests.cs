@@ -62,14 +62,14 @@ public class SyncConflictTests : IDisposable
         Directory.CreateDirectory(localTripPath);
 
         // 1. Create a config conflict (two NEW roots)
-        var configPath = Path.Combine(localTripPath, "config_versioned");
+        var configPath = Path.Combine(localTripPath, "config");
         Directory.CreateDirectory(configPath);
         await CreateVersionInRoot(configPath, "001_NEW_mario", "m", "m");
         await CreateVersionInRoot(configPath, "001_NEW_luigi", "l", "l");
 
         // 2. Create a transaction conflict
         var transId = "tx-123";
-        var transDetailsDir = Path.Combine(localTripPath, "transactions", transId, "details_versioned");
+        var transDetailsDir = Path.Combine(localTripPath, "transactions", transId, "details");
         Directory.CreateDirectory(transDetailsDir);
         
         // Base version 001

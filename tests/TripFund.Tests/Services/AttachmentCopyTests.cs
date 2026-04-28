@@ -53,7 +53,7 @@ public class AttachmentCopyTests : IDisposable
         var transRoot = Path.Combine(_tempPath, "trips", tripSlug, "transactions", transactionId);
         
         // Verify Details V1
-        var v1Path = Path.Combine(transRoot, "details_versioned", ".versions", "001_NEW_device1");
+        var v1Path = Path.Combine(transRoot, "details", ".versions", "001_NEW_device1");
         Directory.Exists(v1Path).Should().BeTrue("Details V1 folder should exist");
         File.Exists(Path.Combine(v1Path, ".content", "transaction_details.json")).Should().BeTrue();
 
@@ -87,7 +87,7 @@ public class AttachmentCopyTests : IDisposable
         await _service.SaveTransactionAsync(tripSlug, t2, "device1", attachments: newAttachments);
 
         // Assert: V2 details created
-        var v2Path = Path.Combine(transRoot, "details_versioned", ".versions", "002_UPD_device1");
+        var v2Path = Path.Combine(transRoot, "details", ".versions", "002_UPD_device1");
         Directory.Exists(v2Path).Should().BeTrue("Details V2 folder should exist");
         
         // Assert: Attachments are not duplicated but all exist in unversioned folder
@@ -122,7 +122,7 @@ public class AttachmentCopyTests : IDisposable
 
         await _service.SaveTransactionAsync(tripSlug, t1, "device1", attachments: attachments);
 
-        // Act: Update, keeping only keep.jpg in details_versioned
+        // Act: Update, keeping only keep.jpg in details
         var t2 = new Transaction 
         { 
             Id = transactionId, 
