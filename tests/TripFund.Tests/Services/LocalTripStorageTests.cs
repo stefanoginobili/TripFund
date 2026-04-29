@@ -45,6 +45,11 @@ public class LocalTripStorageTests : IDisposable
         Directory.Exists(versionDir).Should().BeTrue();
         File.Exists(Path.Combine(configDir, ".tripfund")).Should().BeTrue("Pointer file should exist at root");
         File.Exists(Path.Combine(versionDir, ".tripfund")).Should().BeTrue("Metadata file should exist in version dir");
+        
+        var metadata = await File.ReadAllTextAsync(Path.Combine(versionDir, ".tripfund"));
+        metadata.Should().Contain("versioning.sequence=1");
+        metadata.Should().Contain("versioning.kind=NEW");
+
         File.Exists(Path.Combine(versionDir, ".content", "trip_config.json")).Should().BeTrue();
     }
 
@@ -206,8 +211,8 @@ public class LocalTripStorageTests : IDisposable
         await File.WriteAllTextAsync(Path.Combine(v2, ".content", "transaction_details.json"), System.Text.Json.JsonSerializer.Serialize(t2));
 
         // Update root metadata
-        var engine = new VersionedStorageEngine();
-        await engine.UpdateHeadAsync(detailsDir, "mario");
+        var engine = new VersionedStorageEngine(detailsDir, "mario", "mario");
+        await engine.UpdateHeadAsync();
 
         // Act
         var transactions = await _service.GetTransactionsAsync(tripSlug);
@@ -238,8 +243,8 @@ public class LocalTripStorageTests : IDisposable
         await File.WriteAllTextAsync(Path.Combine(v2, ".tripfund"), "author=l\ndevice=l\ncreatedAt=2023-10-01T12:00:00.000Z");
 
         // Update root metadata
-        var engine = new VersionedStorageEngine();
-        await engine.UpdateHeadAsync(detailsDir, "mario");
+        var engine = new VersionedStorageEngine(detailsDir, "mario", "mario");
+        await engine.UpdateHeadAsync();
 
         var resolvedTrans = new Transaction { Id = transId, Description = "Resolved" };
 
@@ -286,8 +291,8 @@ public class LocalTripStorageTests : IDisposable
         await File.WriteAllTextAsync(Path.Combine(v2l, ".tripfund"), "author=l\ndevice=l\ncreatedAt=2023-10-01T12:00:00.000Z");
 
         // Update root metadata
-        var engine = new VersionedStorageEngine();
-        await engine.UpdateHeadAsync(detailsDir, "mario");
+        var engine = new VersionedStorageEngine(detailsDir, "mario", "mario");
+        await engine.UpdateHeadAsync();
 
         var resolvedTrans = new Transaction { Id = transId, Description = "Resolved" };
 

@@ -8,7 +8,6 @@ namespace TripFund.App.Services;
 public class RemoteStorageSyncEngine
 {
     private readonly LocalTripStorageService _localStorage;
-    private readonly VersionedStorageEngine _engine = new();
 
     public RemoteStorageSyncEngine(LocalTripStorageService localStorage)
     {
@@ -393,13 +392,21 @@ public class RemoteStorageSyncEngine
 
     private async Task<List<VersionedFolderConflictException>> GetLocalConflictsAsync(string localTripPath)
     {
+        var settings = await _localStorage.GetAppSettingsAsync();
+        var deviceId = settings?.DeviceId ?? "unknown";
+        var author = settings?.AuthorName ?? "Unknown";
+
         var conflicts = new List<VersionedFolderConflictException>();
         var configPath = Path.Combine(localTripPath, AppConstants.Folders.Config);
-        if (Directory.Exists(configPath) && _engine.HasConflicts(configPath))
+        if (Directory.Exists(configPath))
         {
-            var diverging = _engine.GetConflictFolderNames(configPath);
-            var baseVer = _engine.GetConflictBaseFolder(configPath);
-            conflicts.Add(new TripConfigConflictException(diverging, baseVer));
+            var engine = new VersionedStorageEngine(configPath, deviceId, author);
+            if (engine.HasConflicts())
+            {
+                var diverging = engine.GetConflictFolderNames();
+                var baseVer = engine.GetConflictBaseFolder();
+                conflicts.Add(new TripConfigConflictException(diverging, baseVer));
+            }
         }
         var transDir = Path.Combine(localTripPath, AppConstants.Folders.Transactions);
         if (Directory.Exists(transDir))
@@ -407,11 +414,15 @@ public class RemoteStorageSyncEngine
             foreach (var t in Directory.GetDirectories(transDir))
             {
                 var detailsPath = Path.Combine(t, AppConstants.Folders.Details);
-                if (Directory.Exists(detailsPath) && _engine.HasConflicts(detailsPath))
+                if (Directory.Exists(detailsPath))
                 {
-                    var diverging = _engine.GetConflictFolderNames(detailsPath);
-                    var baseVer = _engine.GetConflictBaseFolder(detailsPath);
-                    conflicts.Add(new TransactionConflictException(Path.GetFileName(t), diverging, baseVer));
+                    var engine = new VersionedStorageEngine(detailsPath, deviceId, author);
+                    if (engine.HasConflicts())
+                    {
+                        var diverging = engine.GetConflictFolderNames();
+                        var baseVer = engine.GetConflictBaseFolder();
+                        conflicts.Add(new TransactionConflictException(Path.GetFileName(t), diverging, baseVer));
+                    }
                 }
             }
         }

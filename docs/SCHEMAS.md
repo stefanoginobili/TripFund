@@ -212,6 +212,8 @@ Every leaf folder contains a `.tripfund` file (plain text, key-value pairs).
 - `createdAt`: `yyyy-MM-ddTHH:mm:ss.fffZ`.
 - `contentType`: Explicit semantic type.
 - `versioning.parents`: Comma-separated list of parent folder names (empty for `001_NEW`).
+- `versioning.sequence`: The sequential number of the commit (e.g., `3`).
+- `versioning.kind`: The kind of commit (`NEW`, `UPD`, `RES`, `DEL`).
 
 **Allowed Content Types:**
 - `tripfund/trip-config`: For trip configuration versions.

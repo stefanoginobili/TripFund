@@ -67,8 +67,8 @@ public class SyncConflictTests : IDisposable
         await CreateVersionInRoot(configPath, "001_NEW_mario", "m", "m");
         await CreateVersionInRoot(configPath, "001_NEW_luigi", "l", "l");
         
-        var engine = new VersionedStorageEngine();
-        await engine.UpdateHeadAsync(configPath, "m");
+        var engine = new VersionedStorageEngine(configPath, "m", "m");
+        await engine.UpdateHeadAsync();
 
         // 2. Create a transaction conflict
         var transId = "tx-123";
@@ -82,7 +82,7 @@ public class SyncConflictTests : IDisposable
         await CreateVersionInRoot(transDetailsDir, "002_UPD_mario", "m", "m", "001_NEW_mario");
         await CreateVersionInRoot(transDetailsDir, "002_UPD_luigi", "l", "l", "001_NEW_mario");
         
-        await engine.UpdateHeadAsync(transDetailsDir, "m");
+        await new VersionedStorageEngine(transDetailsDir, "m", "m").UpdateHeadAsync();
 
         // Registry setup
         var registry = new LocalTripRegistry();
@@ -135,8 +135,8 @@ public class SyncConflictTests : IDisposable
     public async Task GetLatestVersionFolders_ShouldHandleDivergingBranchesOfDifferentLengths()
     {
         // Scenario from user: 001_m, 002_m, 003_m, 004_m, 005_m AND 003_c, 004_c
-        var engine = new VersionedStorageEngine();
         var root = Path.Combine(_tempPath, "divergence-test");
+        var engine = new VersionedStorageEngine(root, "m", "m");
         Directory.CreateDirectory(root);
         
         await CreateVersionInRoot(root, "001_NEW_mario", "m", "m");
@@ -151,9 +151,9 @@ public class SyncConflictTests : IDisposable
         await CreateVersionInRoot(root, "004_UPD_carlo", "c", "c", "003_UPD_carlo");
 
         // Act
-        var versions = engine.GetVersionFolders(root);
+        var versions = engine.GetVersionFolders();
         var latest = engine.GetLatestVersionFolders(versions);
-        var baseVer = engine.GetBaseVersionFolder(root, latest, versions);
+        var baseVer = engine.GetBaseVersionFolder(latest, versions);
 
         // Assert
         latest.Should().HaveCount(2);
@@ -166,8 +166,8 @@ public class SyncConflictTests : IDisposable
     public async Task GetLatestVersionFolders_ShouldInvalidateResIfNewerCommitExistsOnOtherThread()
     {
         // Scenario: 001_m, 002_m, 002_c, 003_RES_m (resolves 002_m, 002_c), 003_c (newer carlo diverged from 002_c)
-        var engine = new VersionedStorageEngine();
         var root = Path.Combine(_tempPath, "res-invalidation-test");
+        var engine = new VersionedStorageEngine(root, "l", "l");
         Directory.CreateDirectory(root);
 
         await CreateVersionInRoot(root, "001_NEW_mario", "m", "m");
@@ -181,9 +181,9 @@ public class SyncConflictTests : IDisposable
         await CreateVersionInRoot(root, "003_UPD_carlo", "c", "c", "002_UPD_carlo");
 
         // Act
-        var versions = engine.GetVersionFolders(root);
+        var versions = engine.GetVersionFolders();
         var latest = engine.GetLatestVersionFolders(versions);
-        var baseVer = engine.GetBaseVersionFolder(root, latest, versions);
+        var baseVer = engine.GetBaseVersionFolder(latest, versions);
 
         // Assert
         latest.Should().HaveCount(2);

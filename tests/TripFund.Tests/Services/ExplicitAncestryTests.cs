@@ -75,15 +75,13 @@ public class ExplicitAncestryTests
 
         // 003_UPD_pixel pointing to 002_pixel
         await CreateVersionFolder(detailsRoot, 3, CommitKind.Upd, _deviceId_Pixel, new[] { v002_pix });
-        var v003_pix = "003_UPD_pixel-9-pro";
 
         // 004_UPD_macbook pointing to 002_macbook
         await CreateVersionFolder(detailsRoot, 4, CommitKind.Upd, _deviceId_Macbook, new[] { v002_mac });
-        var v004_mac = "004_UPD_macbook";
 
         // Act
-        var engine = new VersionedStorageEngine();
-        var leaves = engine.GetLatestVersionFolders(detailsRoot);
+        var engine = new VersionedStorageEngine(detailsRoot, _deviceId_Macbook, "Test");
+        var leaves = engine.GetLatestVersionFolders();
 
         // Assert
         Assert.Equal(2, leaves.Count);
@@ -106,14 +104,14 @@ public class ExplicitAncestryTests
         await CreateVersionFolder(detailsRoot, 2, CommitKind.Upd, "dev2", new[] { "001_NEW_dev1" });
 
         // Currently 2 leaves: 002_UPD_dev1 and 002_UPD_dev2
-        var engine = new VersionedStorageEngine();
-        Assert.Equal(2, engine.GetLatestVersionFolders(detailsRoot).Count);
+        var engine = new VersionedStorageEngine(detailsRoot, "dev1", "Test");
+        Assert.Equal(2, engine.GetLatestVersionFolders().Count);
 
         // Resolution: 003_RES_dev1 pointing to both
         await CreateVersionFolder(detailsRoot, 3, CommitKind.Res, "dev1", new[] { "002_UPD_dev1", "002_UPD_dev2" });
 
         // Act
-        var leaves = engine.GetLatestVersionFolders(detailsRoot);
+        var leaves = engine.GetLatestVersionFolders();
 
         // Assert
         Assert.Single(leaves);
@@ -132,13 +130,13 @@ public class ExplicitAncestryTests
         await CreateVersionFolder(root, 3, CommitKind.Upd, "d", new[] { "002_UPD_d" });
         await CreateVersionFolder(root, 4, CommitKind.Upd, "d", new[] { "003_UPD_d" });
 
-        var engine = new VersionedStorageEngine();
-        var all = engine.GetVersionFolders(root);
+        // Act
+        var engine = new VersionedStorageEngine(root, "d", "Test");
+        var all = engine.GetVersionFolders();
         var v4 = all.First(v => v.Sequence == 4);
-        var v1 = all.First(v => v.Sequence == 1);
 
         // Act & Assert
-        Assert.True(engine.GetLatestVersionFolders(all).Any(v => v.Sequence == 4));
+        Assert.Contains(v4, engine.GetLatestVersionFolders(all));
         Assert.Single(engine.GetLatestVersionFolders(all));
         
         // Manual check of Supersedes logic
@@ -154,8 +152,8 @@ public class ExplicitAncestryTests
     private List<VersionFolderInfo> GetVersions(string txId)
     {
         var path = Path.Combine(_testRoot, "trips", _tripSlug, "transactions", txId, "details");
-        var engine = new VersionedStorageEngine();
-        return engine.GetVersionFolders(path);
+        var engine = new VersionedStorageEngine(path, "test", "test");
+        return engine.GetVersionFolders();
     }
 
     private async Task CreateVersionFolder(string root, int seq, CommitKind kind, string deviceId, IEnumerable<string> parents)

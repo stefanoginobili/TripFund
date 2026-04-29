@@ -51,6 +51,8 @@ public static class AppConstants
         public const string VersioningParents = "versioning.parents";
         public const string VersioningHead = "versioning.head";
         public const string VersioningConflict = "versioning.conflict";
+        public const string VersioningSequence = "versioning.sequence";
+        public const string VersioningKind = "versioning.kind";
         public const string TripSlug = "trip.slug";
     }
 

@@ -25,7 +25,6 @@ public class OneDriveRemoteStorageService : IRemoteStorageService, IRemoteFileSy
     private readonly LocalTripStorageService _localStorage;
     private readonly IMicrosoftAuthConfiguration _config;
     private readonly RemoteStorageSyncEngine _syncEngine;
-    private readonly VersionedStorageEngine _engine = new();
     private readonly SemaphoreSlim _authSemaphore = new(1, 1);
     private readonly ConcurrentDictionary<string, string> _idToNameCache = new();
 

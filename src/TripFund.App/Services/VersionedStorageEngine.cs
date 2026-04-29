@@ -71,9 +71,20 @@ public class VersionedStorageEngine
 {
     private static readonly Regex VersionRegex = new(@"^(?<nnn>\d{3})_(?<kind>NEW|UPD|RES|DEL|new|upd|res|del)_(?<deviceId>[a-z0-9\-]+)$", RegexOptions.Compiled);
 
-    public List<VersionFolderInfo> GetVersionFolders(string rootPath)
+    private readonly string _rootPath;
+    private readonly string _deviceId;
+    private readonly string _author;
+
+    public VersionedStorageEngine(string rootPath, string deviceId, string author)
     {
-        string versionsPath = Path.Combine(rootPath, AppConstants.Folders.Versions);
+        _rootPath = rootPath;
+        _deviceId = deviceId;
+        _author = author;
+    }
+
+    public List<VersionFolderInfo> GetVersionFolders()
+    {
+        string versionsPath = Path.Combine(_rootPath, AppConstants.Folders.Versions);
         if (!Directory.Exists(versionsPath)) return new List<VersionFolderInfo>();
 
         var folderNames = Directory.GetDirectories(versionsPath).Select(Path.GetFileName).Where(n => n != null).Cast<string>();
@@ -116,9 +127,9 @@ public class VersionedStorageEngine
         };
     }
 
-    public Dictionary<string, string> GetMetadata(string rootPath)
+    public Dictionary<string, string> GetMetadata()
     {
-        var pointerFile = Path.Combine(rootPath, AppConstants.Files.TripFundFile);
+        var pointerFile = Path.Combine(_rootPath, AppConstants.Files.TripFundFile);
         if (!File.Exists(pointerFile)) return new Dictionary<string, string>();
 
         return File.ReadAllLines(pointerFile)
@@ -127,27 +138,27 @@ public class VersionedStorageEngine
             .ToDictionary(p => p[0].Trim(), p => p[1].Trim());
     }
 
-    public string? ResolveHeadPath(string rootPath)
+    public string? ResolveHeadPath()
     {
-        var meta = GetMetadata(rootPath);
+        var meta = GetMetadata();
         if (meta.TryGetValue(AppConstants.Metadata.VersioningHead, out var head) && !string.IsNullOrEmpty(head))
         {
-            var headPath = Path.Combine(rootPath, AppConstants.Folders.Versions, head);
+            var headPath = Path.Combine(_rootPath, AppConstants.Folders.Versions, head);
             return Directory.Exists(headPath) ? headPath : null;
         }
 
         return null;
     }
 
-    public bool HasConflicts(string rootPath)
+    public bool HasConflicts()
     {
-        var meta = GetMetadata(rootPath);
+        var meta = GetMetadata();
         return meta.TryGetValue(AppConstants.Metadata.VersioningConflict, out var conflict) && !string.IsNullOrEmpty(conflict);
     }
 
-    public List<string> GetConflictFolderNames(string rootPath)
+    public List<string> GetConflictFolderNames()
     {
-        var meta = GetMetadata(rootPath);
+        var meta = GetMetadata();
         if (meta.TryGetValue(AppConstants.Metadata.VersioningConflict, out var conflict) && !string.IsNullOrEmpty(conflict))
         {
             return conflict.Split(',', StringSplitOptions.RemoveEmptyEntries).ToList();
@@ -155,21 +166,21 @@ public class VersionedStorageEngine
         return new List<string>();
     }
 
-    public async Task UpdateHeadAsync(string rootPath, string deviceId)
+    public async Task UpdateHeadAsync()
     {
-        var leaves = GetLatestVersionFolders(rootPath);
+        var leaves = GetLatestVersionFolders();
         if (leaves.Count == 0) return;
 
         // Selection logic for versioning.head:
         // 1. A leaf created by current deviceId.
         // 2. The leaf with highest sequence.
-        var head = leaves.FirstOrDefault(l => l.DeviceId == deviceId) ?? leaves.OrderByDescending(l => l.Sequence).First();
+        var head = leaves.FirstOrDefault(l => l.DeviceId == _deviceId) ?? leaves.OrderByDescending(l => l.Sequence).First();
 
         // Logic for versioning.conflict:
         // CSV of all leaf folder names if count > 1.
         var conflict = leaves.Count > 1 ? string.Join(",", leaves.Select(l => l.FolderName)) : string.Empty;
 
-        var pointerFile = Path.Combine(rootPath, AppConstants.Files.TripFundFile);
+        var pointerFile = Path.Combine(_rootPath, AppConstants.Files.TripFundFile);
         var meta = new Dictionary<string, string>
         {
             [AppConstants.Metadata.ContentType] = AppConstants.ContentTypes.VersionedStorage,
@@ -181,9 +192,9 @@ public class VersionedStorageEngine
         await File.WriteAllLinesAsync(pointerFile, lines);
     }
 
-    public List<VersionFolderInfo> GetLatestVersionFolders(string rootPath)
+    public List<VersionFolderInfo> GetLatestVersionFolders()
     {
-        var versions = GetVersionFolders(rootPath);
+        var versions = GetVersionFolders();
         return GetLatestVersionFolders(versions);
     }
 
@@ -238,29 +249,29 @@ public class VersionedStorageEngine
         return false;
     }
 
-    public bool IsNew(string rootPath)
+    public bool IsNew()
     {
-        var meta = GetMetadata(rootPath);
+        var meta = GetMetadata();
         return !meta.ContainsKey(AppConstants.Metadata.VersioningHead);
     }
 
-    public string? GetConflictBaseFolder(string rootPath)
+    public string? GetConflictBaseFolder()
     {
-        var conflictNames = GetConflictFolderNames(rootPath);
+        var conflictNames = GetConflictFolderNames();
         if (conflictNames.Count <= 1) return null;
 
-        var allVersions = GetVersionFolders(rootPath);
+        var allVersions = GetVersionFolders();
         var leaves = allVersions.Where(v => conflictNames.Contains(v.FolderName)).ToList();
-        return GetBaseVersionFolder(rootPath, leaves, allVersions);
+        return GetBaseVersionFolder(leaves, allVersions);
     }
 
-    public List<VersionFolderInfo> GetConflictingFoldersInfo(string rootPath)
+    public List<VersionFolderInfo> GetConflictingFoldersInfo()
     {
-        var conflictNames = GetConflictFolderNames(rootPath);
+        var conflictNames = GetConflictFolderNames();
         return GetVersionFolders(conflictNames);
     }
 
-    internal string? GetBaseVersionFolder(string rootPath, List<VersionFolderInfo> leaves, List<VersionFolderInfo> allVersions)
+    internal string? GetBaseVersionFolder(List<VersionFolderInfo> leaves, List<VersionFolderInfo> allVersions)
     {
         if (leaves.Count <= 1) return null;
 
@@ -313,20 +324,17 @@ public class VersionedStorageEngine
     }
 
     public async Task<string> CommitAsync(
-        string rootPath,
-        string deviceId,
         CommitKind kind,
         Dictionary<string, byte[]> changedFiles,
         List<string>? deletedFiles = null,
-        Dictionary<string, string>? metadata = null,
         IEnumerable<string>? parentVersions = null,
         string? contentType = null,
         string? tempRootPath = null)
     {
-        var versions = GetVersionFolders(rootPath);
+        var versions = GetVersionFolders();
         int nextSeq = (versions.Count == 0) ? 1 : versions.Max(v => v.Sequence) + 1;
-        string folderName = $"{nextSeq:D3}_{kind.ToString().ToUpperInvariant()}_{deviceId}";
-        string versionsRoot = Path.Combine(rootPath, AppConstants.Folders.Versions);
+        string folderName = $"{nextSeq:D3}_{kind.ToString().ToUpperInvariant()}_{_deviceId}";
+        string versionsRoot = Path.Combine(_rootPath, AppConstants.Folders.Versions);
 
         string workDirPath = string.IsNullOrEmpty(tempRootPath)
             ? Path.Combine(versionsRoot, folderName)
@@ -339,17 +347,20 @@ public class VersionedStorageEngine
         Directory.CreateDirectory(workDirPath);
 
         var leaf = new LocalLeafFolder(workDirPath);
-        var metaDict = metadata != null ? new Dictionary<string, string>(metadata) : new Dictionary<string, string>();
+        var metaDict = new Dictionary<string, string>();
 
-        if (!metaDict.ContainsKey(AppConstants.Metadata.Author)) metaDict[AppConstants.Metadata.Author] = "unknown";
-        if (!metaDict.ContainsKey(AppConstants.Metadata.DeviceId)) metaDict[AppConstants.Metadata.DeviceId] = deviceId;
-        if (!metaDict.ContainsKey(AppConstants.Metadata.CreatedAt)) metaDict[AppConstants.Metadata.CreatedAt] = DateTime.UtcNow.ToString("yyyy-MM-ddTHH:mm:ss.fffZ");
+        metaDict[AppConstants.Metadata.Author] = _author;
+        metaDict[AppConstants.Metadata.DeviceId] = _deviceId;
+        metaDict[AppConstants.Metadata.CreatedAt] = DateTime.UtcNow.ToString("yyyy-MM-ddTHH:mm:ss.fffZ");
         if (!string.IsNullOrEmpty(contentType)) metaDict[AppConstants.Metadata.ContentType] = contentType;
 
         if (parentVersions != null && parentVersions.Any())
         {
             metaDict[AppConstants.Metadata.VersioningParents] = string.Join(",", parentVersions);
         }
+
+        metaDict[AppConstants.Metadata.VersioningSequence] = nextSeq.ToString();
+        metaDict[AppConstants.Metadata.VersioningKind] = kind.ToString().ToUpperInvariant();
 
         await leaf.SaveMetadataAsync(metaDict);
 
@@ -409,7 +420,7 @@ public class VersionedStorageEngine
             Directory.Move(workDirPath, finalPath);
         }
 
-        await UpdateHeadAsync(rootPath, deviceId);
+        await UpdateHeadAsync();
 
         return folderName;
     }

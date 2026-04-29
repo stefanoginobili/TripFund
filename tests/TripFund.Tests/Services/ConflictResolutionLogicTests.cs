@@ -47,8 +47,8 @@ public class ConflictResolutionLogicTests
         await File.WriteAllLinesAsync(Path.Combine(folder2, ".tripfund"), new[] { "author=User2", "device=device2", "timestamp=2026-04-20T10:00:00Z" });
 
         // Update root metadata
-        var engine = new VersionedStorageEngine();
-        await engine.UpdateHeadAsync(configPath, "device1");
+        var engine = new VersionedStorageEngine(configPath, "device1", "User1");
+        await engine.UpdateHeadAsync();
 
         // Act
         var conflicts = await _storage.GetConflictingConfigVersionsAsync(tripSlug);
@@ -81,8 +81,8 @@ public class ConflictResolutionLogicTests
         await File.WriteAllLinesAsync(Path.Combine(folder2, ".tripfund"), new[] { "author=User2", "device=device2", "timestamp=2026-04-20T10:00:00Z" });
 
         // Update root metadata
-        var engine = new VersionedStorageEngine();
-        await engine.UpdateHeadAsync(configPath, resolverDevice);
+        var engine = new VersionedStorageEngine(configPath, resolverDevice, "ResolverUser");
+        await engine.UpdateHeadAsync();
 
         var winner = new TripConfig { Name = "V2 (Winner)" };
 
@@ -121,8 +121,8 @@ public class ConflictResolutionLogicTests
         await File.WriteAllLinesAsync(Path.Combine(folder2, ".tripfund"), new[] { "author=User2", "device=device2", "timestamp=2026-04-20T10:00:00Z" });
 
         // Update root metadata
-        var engine = new VersionedStorageEngine();
-        await engine.UpdateHeadAsync(detailsPath, "device1");
+        var engine = new VersionedStorageEngine(detailsPath, "device1", "User1");
+        await engine.UpdateHeadAsync();
 
         // Act
         var conflicts = await _storage.GetConflictingTransactionVersionsAsync(tripSlug, txId);
@@ -155,8 +155,8 @@ public class ConflictResolutionLogicTests
         await File.WriteAllLinesAsync(Path.Combine(folder2, ".tripfund"), new[] { "author=User2", "device=device2", "timestamp=2026-04-20T10:00:00Z" });
 
         // Update root metadata
-        var engine = new VersionedStorageEngine();
-        await engine.UpdateHeadAsync(detailsPath, resolverDevice);
+        var engine = new VersionedStorageEngine(detailsPath, resolverDevice, "ResolverUser");
+        await engine.UpdateHeadAsync();
 
         // Act - resolve choosing the deletion (null winner)
         await _storage.ResolveConflictAsync(tripSlug, txId, null, resolverDevice);
