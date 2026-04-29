@@ -37,9 +37,10 @@ The application utilizes an append-only, soft-deletion storage engine. Data is s
 ### 3.1. Versioned Folder Structure
 A Versioned folder (like `config/` or `details/`) acts as the root for a DAG of versions. Its structure is:
 - **`.versions/`**: A subdirectory containing all individual Leaf folders.
-- **`.tripfund`**: A metadata file at the root used as a "Head" pointer for performance optimization.
+- **`.tripfund`**: A metadata file at the root used as a cached "Head" and "Conflict" pointer for performance optimization.
     - `contentType`: Always `tripfund/versioned-storage`.
-    - `versioning.head`: The name of the latest valid Leaf folder (e.g., `005_UPD_device1`). This field is **empty** if a conflict is detected (multiple leaves), signaling that the engine must fallback to the full DAG evaluation.
+    - `versioning.head`: The name of the active Leaf folder for the current device. This field is **never empty** if at least one version exists. It determines what data the UI displays.
+    - `versioning.conflict`: A comma-separated list of all current DAG leaves (conflicting versions). If empty, no conflict is active.
 
 ### 3.2. Leaf Folder Structure
 Every Leaf folder (located inside `.versions/` or representing an attachment) MUST strictly follow this structure:
@@ -85,19 +86,28 @@ When a user modifies data and saves:
 6. Write the `.tripfund` file.
 7. Once all files are written, atomically `Move` the completed folder to its final destination.
 
-### 3.6. Conflict Detection & Resolution (DAG)
-The versioning system operates as a **Directed Acyclic Graph (DAG)** of folders.
+### 3.6. Conflict Detection & Resolution (Metadata-Driven)
+The versioning system operates as a **Directed Acyclic Graph (DAG)** of folders, but for performance, conflict status and the active head are cached in the `.tripfund` file.
 
-**Divergence Detection (Leaves):**
-A version folder is a "Leaf" if it is NOT **superseded** by any other folder. A conflict is active if there is more than one Leaf.
-A folder **A** supersedes folder **B** if:
-1.  **Explicit Ancestry**: Folder **B** is an ancestor of folder **A**. This means **B** is either a direct parent of **A** (listed in its `versioning.parents` metadata) or an ancestor of one of its parents.
+**Divergence Detection:**
+A conflict is active if the `versioning.conflict` property in the `.tripfund` file is NOT empty. The UI MUST be read-only when one or more conflicts are detected.
+
+**Metadata Updates:**
+The `.tripfund` metadata is re-evaluated by scanning the `.versions` directory ONLY during the `UpdateHeadAsync` operation. All other operations (reads, conflict checks) strictly rely on the cached metadata to avoid expensive filesystem scans.
+1.  **Evaluation Phase**: The engine scans the `.versions/` directory to identify all "Leaves" (versions not superseded by any other version).
+2.  **Selection Logic for `versioning.head`**: 
+    - The engine prefers a leaf created by the current `deviceId`. 
+    - If no local leaf is found, it selects the leaf with the highest sequence number.
+3.  **Conflict Logic**: 
+    - If more than one leaf is found, their folder names are stored as a CSV in `versioning.conflict`.
+    - If exactly one leaf is found, `versioning.conflict` is cleared (empty).
 
 **Resolution Algorithm:**
 1.  **User Selection**: The user chooses a winning state via the UI.
 2.  **Create RES folder**: Calculate `NextSeq = MAX(all_folders.Sequence) + 1` and create a `[NextSeq]_RES_[deviceId]` folder.
-3.  **Explicit Linkage**: Write `versioning.parents=[list_of_all_conflicting_leaves]` in the `.tripfund` file.
+3.  **Explicit Linkage**: Write `versioning.parents=[list_of_all_conflicting_leaves]` in the `.tripfund` file of the new leaf.
 4.  **Payload**: Copy the winning data payload into the `.content/` folder.
+5.  **Finalize**: Call `UpdateHeadAsync` to update the root `.tripfund` metadata.
 
 ## 4. Remote Storage Synchronization
 The synchronization process groups local changes into differential ZIP packages to minimize network overhead and ensure consistency.

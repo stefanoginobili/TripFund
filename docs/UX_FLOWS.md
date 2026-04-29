@@ -93,3 +93,4 @@ This document strictly defines the user flows and UI layouts. **All UI text must
 - **Trigger:** Sync detects multiple active folders for the same transaction version.
 - **UI:** The Trip Dashboard displays an alert banner at the top listing conflicted transactions.
 - **Action:** Tapping a conflict opens a modal showing side-by-side basic info of the conflicting versions. The user picks the correct one, which is saved as the new highest version.
+- **Rule:** When there is one or more conflicts to resolve, the UI must be readonly. This means no new transactions can be created, and existing ones cannot be edited or deleted until all conflicts are resolved.

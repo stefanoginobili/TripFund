@@ -50,6 +50,7 @@ public static class AppConstants
         public const string ContentType = "contentType";
         public const string VersioningParents = "versioning.parents";
         public const string VersioningHead = "versioning.head";
+        public const string VersioningConflict = "versioning.conflict";
         public const string TripSlug = "trip.slug";
     }
 

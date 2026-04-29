@@ -239,3 +239,13 @@ This file is stored inside the trip's `cache` folder (`[AppData]/trips/[TripSlug
 * Note 1: Each key in the `rates` dictionary is a date in `yyyy-MM-dd` format.
 * Note 2: The value for each date is another dictionary where keys are ISO currency codes and values are the exchange rate (1 EUR = X Foreign Currency).
 * Note 3: If a rate for a specific date is missing (e.g., weekends or holidays), the application logic will fallback to the last available rate or download missing data from the ECB.
+
+## 9. Versioned Folder Root Metadata (`.tripfund`)
+Every versioned folder (e.g., `config/`, `details/`) contains a `.tripfund` file at its root. This file is local-only and acts as a cached pointer for performance optimization.
+
+**Mandatory Keys:**
+- `contentType`: Always `tripfund/versioned-storage`.
+- `versioning.head`: The folder name of the active leaf (e.g., `005_UPD_device1`). Determines the current state displayed in the UI.
+- `versioning.conflict`: A comma-separated list of all leaf folder names (e.g., `005_UPD_device1,006_UPD_device2`). If this property is populated, the trip or transaction is in a conflicted state and the UI MUST be read-only.
+
+Note: This file is re-calculated and updated ONLY when new versions are committed or after a synchronization session.

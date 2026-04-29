@@ -36,6 +36,7 @@ namespace TripFund.App.Components.Pages
         private string authorName = "";
         private bool isSubmitting = false;
         private bool shouldScroll = false;
+        private bool isReadonly = false;
 
         protected override async Task OnInitializedAsync()
         {
@@ -44,6 +45,12 @@ namespace TripFund.App.Components.Pages
             var settings = await Storage.GetAppSettingsAsync();
             deviceId = settings?.DeviceId ?? "unknown";
             authorName = settings?.AuthorName ?? "Unknown";
+
+            var registry = await Storage.GetTripRegistryAsync();
+            if (registry != null && registry.Trips.TryGetValue(tripSlug, out var entry))
+            {
+                isReadonly = (entry.RemoteStorage?.Readonly ?? false) || await Storage.HasConflictsAsync(tripSlug);
+            }
 
             if (config != null)
             {

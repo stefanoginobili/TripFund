@@ -53,7 +53,7 @@ namespace TripFund.App.Components.Common
                 var registry = await Storage.GetTripRegistryAsync();
                 if (registry != null && registry.Trips.TryGetValue(TripSlug, out var entry))
                 {
-                    isReadonly = entry.RemoteStorage?.Readonly ?? false;
+                    isReadonly = (entry.RemoteStorage?.Readonly ?? false) || await Storage.HasConflictsAsync(TripSlug);
                 }
                 
                 await previewTask;

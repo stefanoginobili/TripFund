@@ -395,15 +395,11 @@ public class RemoteStorageSyncEngine
     {
         var conflicts = new List<VersionedFolderConflictException>();
         var configPath = Path.Combine(localTripPath, AppConstants.Folders.Config);
-        if (Directory.Exists(configPath))
+        if (Directory.Exists(configPath) && _engine.HasConflicts(configPath))
         {
-            var latest = _engine.GetLatestVersionFolders(configPath);
-            if (latest.Count > 1)
-            {
-                var diverging = latest.Select(v => v.FolderName).ToList();
-                var baseVer = _engine.GetBaseVersionFolder(configPath, latest[0].Sequence);
-                conflicts.Add(new TripConfigConflictException(diverging, baseVer));
-            }
+            var diverging = _engine.GetConflictFolderNames(configPath);
+            var baseVer = _engine.GetConflictBaseFolder(configPath);
+            conflicts.Add(new TripConfigConflictException(diverging, baseVer));
         }
         var transDir = Path.Combine(localTripPath, AppConstants.Folders.Transactions);
         if (Directory.Exists(transDir))
@@ -411,15 +407,11 @@ public class RemoteStorageSyncEngine
             foreach (var t in Directory.GetDirectories(transDir))
             {
                 var detailsPath = Path.Combine(t, AppConstants.Folders.Details);
-                if (Directory.Exists(detailsPath))
+                if (Directory.Exists(detailsPath) && _engine.HasConflicts(detailsPath))
                 {
-                    var latest = _engine.GetLatestVersionFolders(detailsPath);
-                    if (latest.Count > 1)
-                    {
-                        var diverging = latest.Select(v => v.FolderName).ToList();
-                        var baseVer = _engine.GetBaseVersionFolder(detailsPath, latest[0].Sequence);
-                        conflicts.Add(new TransactionConflictException(Path.GetFileName(t), diverging, baseVer));
-                    }
+                    var diverging = _engine.GetConflictFolderNames(detailsPath);
+                    var baseVer = _engine.GetConflictBaseFolder(detailsPath);
+                    conflicts.Add(new TransactionConflictException(Path.GetFileName(t), diverging, baseVer));
                 }
             }
         }

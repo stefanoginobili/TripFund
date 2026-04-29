@@ -46,6 +46,10 @@ public class ConflictResolutionLogicTests
         await File.WriteAllTextAsync(Path.Combine(folder2, ".content", "trip_config.json"), JsonSerializer.Serialize(config2));
         await File.WriteAllLinesAsync(Path.Combine(folder2, ".tripfund"), new[] { "author=User2", "device=device2", "timestamp=2026-04-20T10:00:00Z" });
 
+        // Update root metadata
+        var engine = new VersionedStorageEngine();
+        await engine.UpdateHeadAsync(configPath, "device1");
+
         // Act
         var conflicts = await _storage.GetConflictingConfigVersionsAsync(tripSlug);
 
@@ -75,6 +79,10 @@ public class ConflictResolutionLogicTests
         Directory.CreateDirectory(Path.Combine(folder2, ".content"));
         await File.WriteAllTextAsync(Path.Combine(folder2, ".content", "trip_config.json"), JsonSerializer.Serialize(new TripConfig { Name = "V2" }));
         await File.WriteAllLinesAsync(Path.Combine(folder2, ".tripfund"), new[] { "author=User2", "device=device2", "timestamp=2026-04-20T10:00:00Z" });
+
+        // Update root metadata
+        var engine = new VersionedStorageEngine();
+        await engine.UpdateHeadAsync(configPath, resolverDevice);
 
         var winner = new TripConfig { Name = "V2 (Winner)" };
 
@@ -112,6 +120,10 @@ public class ConflictResolutionLogicTests
         await File.WriteAllTextAsync(Path.Combine(folder2, ".content", "transaction_details.json"), JsonSerializer.Serialize(new Transaction { Id = txId, Amount = 20 }));
         await File.WriteAllLinesAsync(Path.Combine(folder2, ".tripfund"), new[] { "author=User2", "device=device2", "timestamp=2026-04-20T10:00:00Z" });
 
+        // Update root metadata
+        var engine = new VersionedStorageEngine();
+        await engine.UpdateHeadAsync(detailsPath, "device1");
+
         // Act
         var conflicts = await _storage.GetConflictingTransactionVersionsAsync(tripSlug, txId);
 
@@ -141,6 +153,10 @@ public class ConflictResolutionLogicTests
         var folder2 = Path.Combine(versionsPath, "001_NEW_device2");
         Directory.CreateDirectory(folder2); // No .content folder for DEL
         await File.WriteAllLinesAsync(Path.Combine(folder2, ".tripfund"), new[] { "author=User2", "device=device2", "timestamp=2026-04-20T10:00:00Z" });
+
+        // Update root metadata
+        var engine = new VersionedStorageEngine();
+        await engine.UpdateHeadAsync(detailsPath, resolverDevice);
 
         // Act - resolve choosing the deletion (null winner)
         await _storage.ResolveConflictAsync(tripSlug, txId, null, resolverDevice);

@@ -23,7 +23,7 @@
                         </button>
                     </Trigger>
                     <ChildContent>
-                        <button class="dropdown-item-vibe text-danger" @onclick="DeleteTransaction">
+                        <button class="dropdown-item-vibe text-danger" @onclick="DeleteTransaction" disabled="@isReadonly">
                             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="me-2">
                                 <polyline points="3 6 5 6 21 6"></polyline>
                                 <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
@@ -230,7 +230,7 @@
                     }
                     else
                     {
-                        <button class="btn-dashed-vibe @(isLocating ? "locating" : "")" @onclick="FetchLocation" disabled="@isLocating">
+                        <button class="btn-dashed-vibe @(isLocating ? "locating" : "")" @onclick="FetchLocation" disabled="@(isLocating || isReadonly)">
                             <div class="dashed-btn-content">
                                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                     @if (isLocating)
@@ -255,7 +255,7 @@
                     <p class="text-danger fw-bold" style="text-align: center;">@errorMessage</p>
                 }
 
-                <button class="btn-vibe btn-primary-vibe mt-2 mb-4" @onclick="HandleSubmit" disabled="@(isSubmitting || isLocating || !HasChanges())">
+                <button class="btn-vibe btn-primary-vibe mt-2 mb-4" @onclick="HandleSubmit" disabled="@(isSubmitting || isLocating || !HasChanges() || isReadonly)">
                     @(isSubmitting ? "Salvataggio..." : "Salva")
                 </button>
             </div>

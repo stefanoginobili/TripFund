@@ -66,6 +66,9 @@ public class SyncConflictTests : IDisposable
         Directory.CreateDirectory(configPath);
         await CreateVersionInRoot(configPath, "001_NEW_mario", "m", "m");
         await CreateVersionInRoot(configPath, "001_NEW_luigi", "l", "l");
+        
+        var engine = new VersionedStorageEngine();
+        await engine.UpdateHeadAsync(configPath, "m");
 
         // 2. Create a transaction conflict
         var transId = "tx-123";
@@ -78,6 +81,8 @@ public class SyncConflictTests : IDisposable
         // Conflict at 002 (both point to 001)
         await CreateVersionInRoot(transDetailsDir, "002_UPD_mario", "m", "m", "001_NEW_mario");
         await CreateVersionInRoot(transDetailsDir, "002_UPD_luigi", "l", "l", "001_NEW_mario");
+        
+        await engine.UpdateHeadAsync(transDetailsDir, "m");
 
         // Registry setup
         var registry = new LocalTripRegistry();
@@ -148,7 +153,7 @@ public class SyncConflictTests : IDisposable
         // Act
         var versions = engine.GetVersionFolders(root);
         var latest = engine.GetLatestVersionFolders(versions);
-        var baseVer = engine.GetBaseVersionFolder(root, latest);
+        var baseVer = engine.GetBaseVersionFolder(root, latest, versions);
 
         // Assert
         latest.Should().HaveCount(2);
@@ -178,14 +183,14 @@ public class SyncConflictTests : IDisposable
         // Act
         var versions = engine.GetVersionFolders(root);
         var latest = engine.GetLatestVersionFolders(versions);
-        var baseVer = engine.GetBaseVersionFolder(root, latest);
+        var baseVer = engine.GetBaseVersionFolder(root, latest, versions);
 
         // Assert
         latest.Should().HaveCount(2);
         latest.Select(v => v.FolderName).Should().Contain("003_RES_luigi");
         latest.Select(v => v.FolderName).Should().Contain("003_UPD_carlo");
         
-        // Base should be 001_mario because it's the LCA of the two leaves
-        baseVer.Should().Be("001_NEW_mario");
+        // Base should be 002_carlo because it's the LCA of the two leaves in the DAG
+        baseVer.Should().Be("002_UPD_carlo");
     }
 }

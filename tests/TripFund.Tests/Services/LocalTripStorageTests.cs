@@ -205,6 +205,10 @@ public class LocalTripStorageTests : IDisposable
         var t2 = new Transaction { Id = transId, Description = "Luigi's" };
         await File.WriteAllTextAsync(Path.Combine(v2, ".content", "transaction_details.json"), System.Text.Json.JsonSerializer.Serialize(t2));
 
+        // Update root metadata
+        var engine = new VersionedStorageEngine();
+        await engine.UpdateHeadAsync(detailsDir, "mario");
+
         // Act
         var transactions = await _service.GetTransactionsAsync(tripSlug);
 
@@ -232,6 +236,10 @@ public class LocalTripStorageTests : IDisposable
         Directory.CreateDirectory(Path.Combine(v2, ".content"));
         await File.WriteAllTextAsync(Path.Combine(v1, ".tripfund"), "author=m\ndevice=m\ncreatedAt=2023-10-01T12:00:00.000Z");
         await File.WriteAllTextAsync(Path.Combine(v2, ".tripfund"), "author=l\ndevice=l\ncreatedAt=2023-10-01T12:00:00.000Z");
+
+        // Update root metadata
+        var engine = new VersionedStorageEngine();
+        await engine.UpdateHeadAsync(detailsDir, "mario");
 
         var resolvedTrans = new Transaction { Id = transId, Description = "Resolved" };
 
@@ -276,6 +284,10 @@ public class LocalTripStorageTests : IDisposable
         Directory.CreateDirectory(Path.Combine(v2l, ".content"));
         await File.WriteAllTextAsync(Path.Combine(v2m, ".tripfund"), "author=m\ndevice=m\ncreatedAt=2023-10-01T12:00:00.000Z");
         await File.WriteAllTextAsync(Path.Combine(v2l, ".tripfund"), "author=l\ndevice=l\ncreatedAt=2023-10-01T12:00:00.000Z");
+
+        // Update root metadata
+        var engine = new VersionedStorageEngine();
+        await engine.UpdateHeadAsync(detailsDir, "mario");
 
         var resolvedTrans = new Transaction { Id = transId, Description = "Resolved" };
 

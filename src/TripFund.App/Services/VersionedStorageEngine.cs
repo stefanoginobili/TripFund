@@ -1,6 +1,9 @@
 using System.Text.RegularExpressions;
 using TripFund.App.Models;
 using TripFund.App.Constants;
+using System.Runtime.CompilerServices;
+
+[assembly: InternalsVisibleTo("TripFund.Tests")]
 
 namespace TripFund.App.Services;
 
@@ -89,7 +92,7 @@ public class VersionedStorageEngine
         return versions;
     }
 
-    public List<VersionFolderInfo> GetVersionFolders(IEnumerable<string> folderNames)
+    internal List<VersionFolderInfo> GetVersionFolders(IEnumerable<string> folderNames)
     {
         return folderNames
             .Select(name => ParseVersionFolder(name!))
@@ -99,7 +102,7 @@ public class VersionedStorageEngine
             .ToList();
     }
 
-    public VersionFolderInfo? ParseVersionFolder(string folderName)
+    internal VersionFolderInfo? ParseVersionFolder(string folderName)
     {
         var match = VersionRegex.Match(folderName);
         if (!match.Success) return null;
@@ -113,17 +116,21 @@ public class VersionedStorageEngine
         };
     }
 
-    public string? ResolveHeadPath(string rootPath)
+    public Dictionary<string, string> GetMetadata(string rootPath)
     {
         var pointerFile = Path.Combine(rootPath, AppConstants.Files.TripFundFile);
-        if (!File.Exists(pointerFile)) return null;
+        if (!File.Exists(pointerFile)) return new Dictionary<string, string>();
 
-        var content = File.ReadAllLines(pointerFile)
+        return File.ReadAllLines(pointerFile)
             .Select(l => l.Split('=', 2))
             .Where(p => p.Length == 2)
             .ToDictionary(p => p[0].Trim(), p => p[1].Trim());
+    }
 
-        if (content.TryGetValue(AppConstants.Metadata.VersioningHead, out var head) && !string.IsNullOrEmpty(head))
+    public string? ResolveHeadPath(string rootPath)
+    {
+        var meta = GetMetadata(rootPath);
+        if (meta.TryGetValue(AppConstants.Metadata.VersioningHead, out var head) && !string.IsNullOrEmpty(head))
         {
             var headPath = Path.Combine(rootPath, AppConstants.Folders.Versions, head);
             return Directory.Exists(headPath) ? headPath : null;
@@ -132,13 +139,42 @@ public class VersionedStorageEngine
         return null;
     }
 
-    public async Task UpdateHeadAsync(string rootPath, string? targetFolderName)
+    public bool HasConflicts(string rootPath)
     {
+        var meta = GetMetadata(rootPath);
+        return meta.TryGetValue(AppConstants.Metadata.VersioningConflict, out var conflict) && !string.IsNullOrEmpty(conflict);
+    }
+
+    public List<string> GetConflictFolderNames(string rootPath)
+    {
+        var meta = GetMetadata(rootPath);
+        if (meta.TryGetValue(AppConstants.Metadata.VersioningConflict, out var conflict) && !string.IsNullOrEmpty(conflict))
+        {
+            return conflict.Split(',', StringSplitOptions.RemoveEmptyEntries).ToList();
+        }
+        return new List<string>();
+    }
+
+    public async Task UpdateHeadAsync(string rootPath, string deviceId)
+    {
+        var leaves = GetLatestVersionFolders(rootPath);
+        if (leaves.Count == 0) return;
+
+        // Selection logic for versioning.head:
+        // 1. A leaf created by current deviceId.
+        // 2. The leaf with highest sequence.
+        var head = leaves.FirstOrDefault(l => l.DeviceId == deviceId) ?? leaves.OrderByDescending(l => l.Sequence).First();
+
+        // Logic for versioning.conflict:
+        // CSV of all leaf folder names if count > 1.
+        var conflict = leaves.Count > 1 ? string.Join(",", leaves.Select(l => l.FolderName)) : string.Empty;
+
         var pointerFile = Path.Combine(rootPath, AppConstants.Files.TripFundFile);
         var meta = new Dictionary<string, string>
         {
             [AppConstants.Metadata.ContentType] = AppConstants.ContentTypes.VersionedStorage,
-            [AppConstants.Metadata.VersioningHead] = targetFolderName ?? string.Empty
+            [AppConstants.Metadata.VersioningHead] = head.FolderName,
+            [AppConstants.Metadata.VersioningConflict] = conflict
         };
 
         var lines = meta.Select(kvp => $"{kvp.Key}={kvp.Value}");
@@ -151,7 +187,7 @@ public class VersionedStorageEngine
         return GetLatestVersionFolders(versions);
     }
 
-    public List<VersionFolderInfo> GetLatestVersionFolders(List<VersionFolderInfo> versions)
+    internal List<VersionFolderInfo> GetLatestVersionFolders(List<VersionFolderInfo> versions)
     {
         if (versions.Count == 0) return new List<VersionFolderInfo>();
 
@@ -202,30 +238,78 @@ public class VersionedStorageEngine
         return false;
     }
 
-    public string? GetBaseVersionFolder(string rootPath, List<VersionFolderInfo> leaves)
+    public bool IsNew(string rootPath)
+    {
+        var meta = GetMetadata(rootPath);
+        return !meta.ContainsKey(AppConstants.Metadata.VersioningHead);
+    }
+
+    public string? GetConflictBaseFolder(string rootPath)
+    {
+        var conflictNames = GetConflictFolderNames(rootPath);
+        if (conflictNames.Count <= 1) return null;
+
+        var allVersions = GetVersionFolders(rootPath);
+        var leaves = allVersions.Where(v => conflictNames.Contains(v.FolderName)).ToList();
+        return GetBaseVersionFolder(rootPath, leaves, allVersions);
+    }
+
+    public List<VersionFolderInfo> GetConflictingFoldersInfo(string rootPath)
+    {
+        var conflictNames = GetConflictFolderNames(rootPath);
+        return GetVersionFolders(conflictNames);
+    }
+
+    internal string? GetBaseVersionFolder(string rootPath, List<VersionFolderInfo> leaves, List<VersionFolderInfo> allVersions)
     {
         if (leaves.Count <= 1) return null;
 
-        var versions = GetVersionFolders(rootPath);
-        int minLeafSeq = leaves.Min(l => l.Sequence);
+        // 1. Get all ancestors for each leaf (including the leaf itself)
+        var ancestorSets = leaves.Select(leaf => GetAllAncestors(leaf, allVersions)).ToList();
 
-        for (int s = minLeafSeq - 1; s >= 1; s--)
+        // 2. Find intersection (folders that are ancestors of ALL leaves)
+        var commonAncestors = ancestorSets[0];
+        for (int i = 1; i < ancestorSets.Count; i++)
         {
-            var atSeq = versions.Where(v => v.Sequence == s).ToList();
-            if (atSeq.Count == 1) return atSeq[0].FolderName;
+            commonAncestors.IntersectWith(ancestorSets[i]);
         }
 
-        return null;
-    }
+        // 3. Remove the leaves themselves from common ancestors if they are part of it 
+        // (an LCA must be a strict ancestor if we have multiple diverging leaves)
+        foreach (var leaf in leaves)
+        {
+            commonAncestors.Remove(leaf.FolderName);
+        }
 
-    public string? GetBaseVersionFolder(string rootPath, int conflictSequence)
-    {
-        var versions = GetVersionFolders(rootPath);
-        return versions
-            .Where(v => v.Sequence < conflictSequence)
+        if (commonAncestors.Count == 0) return null;
+
+        // 4. Pick the one with the highest sequence number
+        return allVersions
+            .Where(v => commonAncestors.Contains(v.FolderName))
             .OrderByDescending(v => v.Sequence)
             .Select(v => v.FolderName)
             .FirstOrDefault();
+    }
+
+    private HashSet<string> GetAllAncestors(VersionFolderInfo folder, List<VersionFolderInfo> allVersions)
+    {
+        var ancestors = new HashSet<string> { folder.FolderName };
+        var queue = new Queue<string>(folder.ParentVersions);
+
+        while (queue.Count > 0)
+        {
+            var parentName = queue.Dequeue();
+            if (ancestors.Add(parentName))
+            {
+                var parentInfo = allVersions.FirstOrDefault(v => v.FolderName == parentName);
+                if (parentInfo != null)
+                {
+                    foreach (var p in parentInfo.ParentVersions) queue.Enqueue(p);
+                }
+            }
+        }
+
+        return ancestors;
     }
 
     public async Task<string> CommitAsync(
@@ -325,7 +409,7 @@ public class VersionedStorageEngine
             Directory.Move(workDirPath, finalPath);
         }
 
-        await UpdateHeadAsync(rootPath, folderName);
+        await UpdateHeadAsync(rootPath, deviceId);
 
         return folderName;
     }
