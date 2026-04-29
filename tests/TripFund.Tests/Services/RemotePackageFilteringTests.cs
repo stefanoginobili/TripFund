@@ -10,7 +10,7 @@ namespace TripFund.Tests.Services;
 public class RemotePackageFilteringTests : IDisposable
 {
     private readonly string _tempPath;
-    private readonly LocalTripStorageService _localStorage;
+    private readonly LocalStorageService _localStorage;
     private readonly RemoteStorageSyncEngine _syncEngine;
     private const string LocalDeviceId = "local-device-123";
 
@@ -18,7 +18,7 @@ public class RemotePackageFilteringTests : IDisposable
     {
         _tempPath = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString());
         Directory.CreateDirectory(_tempPath);
-        _localStorage = new LocalTripStorageService(_tempPath);
+        _localStorage = new LocalStorageService(_tempPath);
         _syncEngine = new RemoteStorageSyncEngine(_localStorage);
     }
 
@@ -110,7 +110,7 @@ public class RemotePackageFilteringTests : IDisposable
         mockFileSystem.Verify(f => f.DownloadFileContentAsync("pkg_wrong_ext", It.IsAny<Dictionary<string, string>>()), Times.Never);
 
         // Verify it was added to appliedPackages
-        var syncState = await _localStorage.GetSyncStateAsync(tripSlug);
+        var syncState = await _localStorage.GetLocalTripStorage(tripSlug).GetSyncStateAsync();
         syncState.Sync.Remote.AppliedPackages.Should().Contain("pack_20231001T120000Z_other-device.zip");
         syncState.Sync.Remote.AppliedPackages.Should().NotContain("pack_20231001T120000Z_other-device.zip.part");
     }

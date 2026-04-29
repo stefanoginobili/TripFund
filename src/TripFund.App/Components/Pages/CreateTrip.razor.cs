@@ -9,7 +9,7 @@ namespace TripFund.App.Components.Pages
 {
     public partial class CreateTrip
     {
-        [Inject] private LocalTripStorageService Storage { get; set; } = default!;
+        [Inject] private LocalStorageService Storage { get; set; } = default!;
         [Inject] private IRemoteStorageService RemoteStorage { get; set; } = default!;
         [Inject] private NavigationManager Nav { get; set; } = default!;
         [Inject] private IJSRuntime JSRuntime { get; set; } = default!;
@@ -117,7 +117,7 @@ namespace TripFund.App.Components.Pages
 
             var settings = await Storage.GetAppSettingsAsync();
 
-            await Storage.SaveTripConfigAsync(finalSlug, tripConfig, settings?.DeviceId ?? "unknown");
+            await Storage.GetLocalTripStorage(finalSlug).SaveTripConfigAsync(tripConfig, settings?.DeviceId ?? "unknown");
 
             RemoteStorageConfig? remoteStorage = null;
             if (!string.IsNullOrEmpty(Provider))

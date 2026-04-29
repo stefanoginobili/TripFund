@@ -14,7 +14,8 @@ namespace TripFund.Tests.Pages;
 
 public class ExpensesChartsTests : BunitContext
 {
-    private readonly Mock<LocalTripStorageService> _storageMock;
+    private readonly Mock<LocalStorageService> _storageMock;
+    private readonly Mock<LocalTripStorage> _tripStorageMock;
     private readonly Mock<IExchangeRateService> _exchangeRatesMock;
 
     public ExpensesChartsTests()
@@ -23,9 +24,13 @@ public class ExpensesChartsTests : BunitContext
         System.Globalization.CultureInfo.DefaultThreadCurrentCulture = itCulture;
         System.Globalization.CultureInfo.DefaultThreadCurrentUICulture = itCulture;
 
-        _storageMock = new Mock<LocalTripStorageService>("dummy_path");
+        _storageMock = new Mock<LocalStorageService>("dummy_path");
+        _tripStorageMock = new Mock<LocalTripStorage>(_storageMock.Object, "test-trip");
         _exchangeRatesMock = new Mock<IExchangeRateService>();
         
+        _storageMock.Setup(s => s.GetLocalTripStorage(It.IsAny<string>())).Returns(_tripStorageMock.Object);
+        _storageMock.Setup(s => s.GetAppSettingsAsync()).ReturnsAsync(new AppSettings { AuthorName = "Test", DeviceId = "test" });
+
         Services.AddSingleton(_storageMock.Object);
         Services.AddSingleton(_exchangeRatesMock.Object);
         
@@ -55,8 +60,8 @@ public class ExpensesChartsTests : BunitContext
             new Transaction { Type = "expense", Currency = "USD", Category = "food", Amount = 50 }
         };
 
-        _storageMock.Setup(s => s.GetTripConfigAsync(tripSlug)).ReturnsAsync(config);
-        _storageMock.Setup(s => s.GetTransactionsAsync(tripSlug)).ReturnsAsync(transactions);
+        _tripStorageMock.Setup(s => s.GetTripConfigAsync()).ReturnsAsync(config);
+        _tripStorageMock.Setup(s => s.GetTransactionsAsync()).ReturnsAsync(transactions);
         
         // Mock rates available
         _exchangeRatesMock.Setup(x => x.AreRatesMissingAsync(tripSlug, It.IsAny<IEnumerable<DateTime>>(), It.IsAny<IEnumerable<string>>()))
@@ -98,8 +103,8 @@ public class ExpensesChartsTests : BunitContext
             new Transaction { Type = "expense", Currency = "USD", Category = "food", Amount = 50 }
         };
 
-        _storageMock.Setup(s => s.GetTripConfigAsync(tripSlug)).ReturnsAsync(config);
-        _storageMock.Setup(s => s.GetTransactionsAsync(tripSlug)).ReturnsAsync(transactions);
+        _tripStorageMock.Setup(s => s.GetTripConfigAsync()).ReturnsAsync(config);
+        _tripStorageMock.Setup(s => s.GetTransactionsAsync()).ReturnsAsync(transactions);
         
         // Mock rates missing
         _exchangeRatesMock.Setup(x => x.AreRatesMissingAsync(tripSlug, It.IsAny<IEnumerable<DateTime>>(), It.IsAny<IEnumerable<string>>()))
@@ -130,8 +135,8 @@ public class ExpensesChartsTests : BunitContext
             new Transaction { Type = "expense", Currency = "EUR", Category = "food", Amount = 100 }
         };
 
-        _storageMock.Setup(s => s.GetTripConfigAsync(tripSlug)).ReturnsAsync(config);
-        _storageMock.Setup(s => s.GetTransactionsAsync(tripSlug)).ReturnsAsync(transactions);
+        _tripStorageMock.Setup(s => s.GetTripConfigAsync()).ReturnsAsync(config);
+        _tripStorageMock.Setup(s => s.GetTransactionsAsync()).ReturnsAsync(transactions);
 
         // Act
         var cut = Render<ExpensesCharts>(parameters => parameters.Add(p => p.tripSlug, tripSlug));
@@ -167,8 +172,8 @@ public class ExpensesChartsTests : BunitContext
             new Transaction { Type = "expense", Currency = "EUR", Category = "deleted-cat", Amount = 30 } // Missing from config
         };
 
-        _storageMock.Setup(s => s.GetTripConfigAsync(tripSlug)).ReturnsAsync(config);
-        _storageMock.Setup(s => s.GetTransactionsAsync(tripSlug)).ReturnsAsync(transactions);
+        _tripStorageMock.Setup(s => s.GetTripConfigAsync()).ReturnsAsync(config);
+        _tripStorageMock.Setup(s => s.GetTransactionsAsync()).ReturnsAsync(transactions);
 
         // Act
         var cut = Render<ExpensesCharts>(parameters => parameters.Add(p => p.tripSlug, tripSlug));
@@ -219,8 +224,8 @@ public class ExpensesChartsTests : BunitContext
             new Transaction { Type = "expense", Currency = "EUR", Category = "food", Amount = 100 }
         };
 
-        _storageMock.Setup(s => s.GetTripConfigAsync(tripSlug)).ReturnsAsync(config);
-        _storageMock.Setup(s => s.GetTransactionsAsync(tripSlug)).ReturnsAsync(transactions);
+        _tripStorageMock.Setup(s => s.GetTripConfigAsync()).ReturnsAsync(config);
+        _tripStorageMock.Setup(s => s.GetTransactionsAsync()).ReturnsAsync(transactions);
 
         // Act
         var cut = Render<ExpensesCharts>(parameters => parameters.Add(p => p.tripSlug, tripSlug));

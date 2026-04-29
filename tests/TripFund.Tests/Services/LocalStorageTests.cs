@@ -4,16 +4,16 @@ using TripFund.App.Services;
 
 namespace TripFund.Tests.Services;
 
-public class LocalTripStorageTests : IDisposable
+public class LocalStorageTests : IDisposable
 {
     private readonly string _tempPath;
-    private readonly LocalTripStorageService _service;
+    private readonly LocalStorageService _service;
 
-    public LocalTripStorageTests()
+    public LocalStorageTests()
     {
         _tempPath = Path.Combine(Path.GetTempPath(), "TripFundTests_" + Guid.NewGuid().ToString("n"));
         Directory.CreateDirectory(_tempPath);
-        _service = new LocalTripStorageService(_tempPath);
+        _service = new LocalStorageService(_tempPath);
     }
 
     public void Dispose()
@@ -29,11 +29,12 @@ public class LocalTripStorageTests : IDisposable
     {
         // Arrange
         var slug = "test-trip";
+        var tripStorage = _service.GetLocalTripStorage(slug);
         var config = new TripConfig { Id = "guid-1", Name = "Test Trip" };
 
         // Act
-        await _service.SaveTripConfigAsync(slug, config, "mario");
-        var loaded = await _service.GetTripConfigAsync(slug);
+        await tripStorage.SaveTripConfigAsync(config, "mario");
+        var loaded = await tripStorage.GetTripConfigAsync();
 
         // Assert
         loaded.Should().NotBeNull();
@@ -58,22 +59,23 @@ public class LocalTripStorageTests : IDisposable
     {
         // Arrange
         var slug = "test-trip";
+        var tripStorage = _service.GetLocalTripStorage(slug);
         var config = new TripConfig { Name = "Optimized Trip" };
-        await _service.SaveTripConfigAsync(slug, config, "mario");
+        await tripStorage.SaveTripConfigAsync(config, "mario");
         
         var configPath = Path.Combine(_tempPath, "trips", slug, "config");
         var pointerFile = Path.Combine(configPath, ".tripfund");
         File.Exists(pointerFile).Should().BeTrue();
 
         // Act & Assert 1: Read should use the head
-        var loaded = await _service.GetTripConfigAsync(slug);
+        var loaded = await tripStorage.GetTripConfigAsync();
         loaded!.Name.Should().Be("Optimized Trip");
 
         // Act 2: Manually corrupt the head to point to a non-existing folder
         await File.WriteAllTextAsync(pointerFile, "contentType=tripfund/versioned-storage\nversioning.head=999_NON_EXISTING");
         
         // Assert: Read should fallback to DAG evaluation and REPAIR the head
-        var loaded2 = await _service.GetTripConfigAsync(slug);
+        var loaded2 = await tripStorage.GetTripConfigAsync();
         loaded2!.Name.Should().Be("Optimized Trip");
         
         var repairedHead = await File.ReadAllTextAsync(pointerFile);
@@ -85,11 +87,12 @@ public class LocalTripStorageTests : IDisposable
     {
         // Arrange
         var tripSlug = "test-trip";
+        var tripStorage = _service.GetLocalTripStorage(tripSlug);
         var transaction = new Transaction { Id = "trans-1", Description = "Lunch" };
 
         // Act
-        await _service.SaveTransactionAsync(tripSlug, transaction, "mario");
-        var transactions = await _service.GetTransactionsAsync(tripSlug);
+        await tripStorage.SaveTransactionAsync(transaction, "mario");
+        var transactions = await tripStorage.GetTransactionsAsync();
 
         // Assert
         transactions.Should().ContainSingle();
@@ -106,13 +109,14 @@ public class LocalTripStorageTests : IDisposable
     {
         // Arrange
         var tripSlug = "test-trip";
+        var tripStorage = _service.GetLocalTripStorage(tripSlug);
         var t1 = new Transaction { Id = "trans-1", Description = "Lunch V1" };
         var t2 = new Transaction { Id = "trans-1", Description = "Lunch V2" };
 
         // Act
-        await _service.SaveTransactionAsync(tripSlug, t1, "mario");
-        await _service.SaveTransactionAsync(tripSlug, t2, "mario");
-        var transactions = await _service.GetTransactionsAsync(tripSlug);
+        await tripStorage.SaveTransactionAsync(t1, "mario");
+        await tripStorage.SaveTransactionAsync(t2, "mario");
+        var transactions = await tripStorage.GetTransactionsAsync();
 
         // Assert
         transactions.Should().ContainSingle();
@@ -132,12 +136,13 @@ public class LocalTripStorageTests : IDisposable
     {
         // Arrange
         var tripSlug = "test-trip";
+        var tripStorage = _service.GetLocalTripStorage(tripSlug);
         var t1 = new Transaction { Id = "trans-1", Description = "Lunch" };
 
         // Act
-        await _service.SaveTransactionAsync(tripSlug, t1, "mario");
-        await _service.SaveTransactionAsync(tripSlug, t1, "mario", isDelete: true);
-        var transactions = await _service.GetTransactionsAsync(tripSlug);
+        await tripStorage.SaveTransactionAsync(t1, "mario");
+        await tripStorage.SaveTransactionAsync(t1, "mario", isDelete: true);
+        var transactions = await tripStorage.GetTransactionsAsync();
 
         // Assert
         transactions.Should().BeEmpty();
@@ -157,13 +162,14 @@ public class LocalTripStorageTests : IDisposable
     {
         // Arrange
         var tripSlug = "test-trip";
+        var tripStorage = _service.GetLocalTripStorage(tripSlug);
         var t1 = new Transaction { Id = "trans-1", Description = "Lunch" };
         var settings = new AppSettings { AuthorName = "Mario Rossi", DeviceId = "mario-123" };
         await _service.SaveAppSettingsAsync(settings);
 
         // Act
-        await _service.SaveTransactionAsync(tripSlug, t1, "mario-123");
-        await _service.SaveTransactionAsync(tripSlug, t1, "mario-123", isDelete: true);
+        await tripStorage.SaveTransactionAsync(t1, "mario-123");
+        await tripStorage.SaveTransactionAsync(t1, "mario-123", isDelete: true);
 
         // Assert
         var detailsDir = Path.Combine(_tempPath, "trips", tripSlug, "transactions", "trans-1", "details");
@@ -189,6 +195,7 @@ public class LocalTripStorageTests : IDisposable
     {
         // Arrange
         var tripSlug = "test-trip";
+        var tripStorage = _service.GetLocalTripStorage(tripSlug);
         var transId = "trans-1";
         var detailsDir = Path.Combine(_tempPath, "trips", tripSlug, "transactions", transId, "details");
         var versionsDir = Path.Combine(detailsDir, ".versions");
@@ -215,7 +222,7 @@ public class LocalTripStorageTests : IDisposable
         await engine.UpdateHeadAsync();
 
         // Act
-        var transactions = await _service.GetTransactionsAsync(tripSlug);
+        var transactions = await tripStorage.GetTransactionsAsync();
 
         // Assert - Should not throw, should pick one
         transactions.Should().HaveCount(1);
@@ -227,6 +234,7 @@ public class LocalTripStorageTests : IDisposable
     {
         // Arrange
         var tripSlug = "test-trip";
+        var tripStorage = _service.GetLocalTripStorage(tripSlug);
         var transId = "trans-1";
         var detailsDir = Path.Combine(_tempPath, "trips", tripSlug, "transactions", transId, "details");
         var versionsDir = Path.Combine(detailsDir, ".versions");
@@ -249,14 +257,14 @@ public class LocalTripStorageTests : IDisposable
         var resolvedTrans = new Transaction { Id = transId, Description = "Resolved" };
 
         // Act
-        await _service.ResolveConflictAsync(tripSlug, resolvedTrans, "mario");
+        await tripStorage.ResolveConflictAsync(resolvedTrans, "mario");
 
         // Assert
         // New resolved version should be 002_RES_mario
         Directory.GetDirectories(versionsDir).Should().HaveCount(3);
         Directory.GetDirectories(versionsDir).Should().Contain(d => Path.GetFileName(d) == "002_RES_mario");
 
-        var loaded = await _service.GetLatestTransactionVersionAsync(tripSlug, transId);
+        var loaded = await tripStorage.GetLatestTransactionVersionAsync(transId);
         loaded!.Description.Should().Be("Resolved");
         
         var resDir = Path.Combine(versionsDir, "002_RES_mario");
@@ -269,12 +277,13 @@ public class LocalTripStorageTests : IDisposable
     {
         // Arrange
         var tripSlug = "test-trip";
+        var tripStorage = _service.GetLocalTripStorage(tripSlug);
         var transId = "trans-1";
         
         // Create initial version
         var t1 = new Transaction { Id = transId, Description = "V1" };
-        await _service.SaveTransactionAsync(tripSlug, t1, "mario");
-        var firstVersion = await _service.GetLatestTransactionVersionAsync(tripSlug, transId);
+        await tripStorage.SaveTransactionAsync(t1, "mario");
+        var firstVersion = await tripStorage.GetLatestTransactionVersionAsync(transId);
         var originalCreatedAt = firstVersion!.CreatedAt;
         
         var detailsDir = Path.Combine(_tempPath, "trips", tripSlug, "transactions", transId, "details");
@@ -298,10 +307,10 @@ public class LocalTripStorageTests : IDisposable
 
         // Act
         await Task.Delay(100);
-        await _service.ResolveConflictAsync(tripSlug, resolvedTrans, "mario");
+        await tripStorage.ResolveConflictAsync(resolvedTrans, "mario");
 
         // Assert
-        var loaded = await _service.GetLatestTransactionVersionAsync(tripSlug, transId);
+        var loaded = await tripStorage.GetLatestTransactionVersionAsync(transId);
         loaded!.CreatedAt.Should().Be(originalCreatedAt);
         loaded.UpdatedAt.Should().BeAfter(originalCreatedAt);
     }
@@ -311,10 +320,11 @@ public class LocalTripStorageTests : IDisposable
     {
         // Arrange
         var tripSlug = "test-trip";
+        var tripStorage = _service.GetLocalTripStorage(tripSlug);
         var t1 = new Transaction { Id = "trans-1", Description = "V1" };
         var deviceId = "device1";
         
-        await _service.SaveTransactionAsync(tripSlug, t1, deviceId);
+        await tripStorage.SaveTransactionAsync(t1, deviceId);
         
         var detailsDir = Path.Combine(_tempPath, "trips", tripSlug, "transactions", "trans-1", "details");
         var v1Dir = Path.Combine(detailsDir, ".versions", "001_NEW_device1");
@@ -325,7 +335,7 @@ public class LocalTripStorageTests : IDisposable
 
         // Act: Update to V2
         var t2 = new Transaction { Id = "trans-1", Description = "V2" };
-        await _service.SaveTransactionAsync(tripSlug, t2, deviceId);
+        await tripStorage.SaveTransactionAsync(t2, deviceId);
 
         // Assert
         var v2Dir = Path.Combine(detailsDir, ".versions", "002_UPD_device1");
@@ -366,6 +376,7 @@ public class LocalTripStorageTests : IDisposable
         // Arrange
         var slug1 = "good-trip";
         var slug2 = "broken-trip";
+        var tripStorage1 = _service.GetLocalTripStorage(slug1);
         
         var registry = await _service.GetTripRegistryAsync();
         registry.Trips[slug1] = new TripRegistryEntry { CreatedAt = DateTime.UtcNow };
@@ -374,7 +385,7 @@ public class LocalTripStorageTests : IDisposable
 
         // Setup good trip
         var config = new TripConfig { Name = "Good Trip", StartDate = DateTime.Today, EndDate = DateTime.Today.AddDays(1) };
-        await _service.SaveTripConfigAsync(slug1, config, "device-1");
+        await tripStorage1.SaveTripConfigAsync(config, "device-1");
 
         // Setup broken trip: directory exists but no config
         var brokenDir = Path.Combine(_tempPath, "trips", slug2);
@@ -468,13 +479,14 @@ public class LocalTripStorageTests : IDisposable
     {
         // Arrange
         var tripSlug = "sync-test-trip";
+        var tripStorage = _service.GetLocalTripStorage(tripSlug);
         var state = new SyncState();
         state.Sync.Remote.AppliedPackages.Add("pack1.zip");
         state.Sync.Local.Pending.Add(new PendingUpload { Path = "config/001_NEW_mario", CreatedAt = DateTime.UtcNow.ToString("O") });
 
         // Act
-        await _service.SaveSyncStateAsync(tripSlug, state);
-        var loaded = await _service.GetSyncStateAsync(tripSlug);
+        await tripStorage.SaveSyncStateAsync(state);
+        var loaded = await tripStorage.GetSyncStateAsync();
 
         // Assert
         loaded.Should().NotBeNull();

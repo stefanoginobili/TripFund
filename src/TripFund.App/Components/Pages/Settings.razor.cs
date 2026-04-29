@@ -8,7 +8,7 @@ namespace TripFund.App.Components.Pages
 {
     public partial class Settings
     {
-        [Inject] private LocalTripStorageService Storage { get; set; } = default!;
+        [Inject] private LocalStorageService Storage { get; set; } = default!;
         [Inject] private NavigationManager Nav { get; set; } = default!;
         [Inject] private IJSRuntime JSRuntime { get; set; } = default!;
 

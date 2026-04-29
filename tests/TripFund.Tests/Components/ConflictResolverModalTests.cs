@@ -14,7 +14,8 @@ namespace TripFund.Tests.Components;
 
 public class ConflictResolverModalTests : BunitContext
 {
-    private readonly Mock<LocalTripStorageService> _storageMock;
+    private readonly Mock<LocalStorageService> _storageMock;
+    private readonly Mock<LocalTripStorage> _tripStorageMock;
     private readonly Mock<IAlertService> _alertServiceMock;
 
     public ConflictResolverModalTests()
@@ -23,8 +24,11 @@ public class ConflictResolverModalTests : BunitContext
         var tempPath = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString());
         Directory.CreateDirectory(tempPath);
         
-        _storageMock = new Mock<LocalTripStorageService>(tempPath);
+        _storageMock = new Mock<LocalStorageService>(tempPath);
+        _tripStorageMock = new Mock<LocalTripStorage>(_storageMock.Object, "trip1");
         _alertServiceMock = new Mock<IAlertService>();
+
+        _storageMock.Setup(s => s.GetLocalTripStorage(It.IsAny<string>())).Returns(_tripStorageMock.Object);
 
         Services.AddSingleton(_storageMock.Object);
         Services.AddSingleton(_alertServiceMock.Object);
@@ -41,7 +45,7 @@ public class ConflictResolverModalTests : BunitContext
             new ConflictVersion<Transaction> { Author = "Bob", Timestamp = DateTime.UtcNow, Data = new Transaction { Id = "tx1", Amount = 20, Description = "B" } }
         };
 
-        _storageMock.Setup(s => s.GetConflictingTransactionVersionsAsync(It.IsAny<string>(), "tx1"))
+        _tripStorageMock.Setup(ts => ts.GetConflictingTransactionVersionsAsync("tx1"))
             .ReturnsAsync(versions);
         _storageMock.Setup(s => s.GetAppSettingsAsync()).ReturnsAsync(new AppSettings { DeviceId = "dev1" });
 
@@ -83,7 +87,7 @@ public class ConflictResolverModalTests : BunitContext
             new ConflictVersion<Transaction> { Author = "Bob", Timestamp = DateTime.UtcNow, Data = new Transaction { Id = "tx1", Date = date2, Amount = 10, Timezone = "Europe/Rome" } }
         };
 
-        _storageMock.Setup(s => s.GetConflictingTransactionVersionsAsync(It.IsAny<string>(), "tx1"))
+        _tripStorageMock.Setup(ts => ts.GetConflictingTransactionVersionsAsync("tx1"))
             .ReturnsAsync(versions);
         _storageMock.Setup(s => s.GetAppSettingsAsync()).ReturnsAsync(new AppSettings { DeviceId = "dev1" });
 
@@ -120,7 +124,7 @@ public class ConflictResolverModalTests : BunitContext
             new ConflictVersion<Transaction> { Author = "Bob", Timestamp = DateTime.UtcNow, Data = new Transaction { Id = "tx1", Amount = 20, Description = "B" } }
         };
 
-        _storageMock.Setup(s => s.GetConflictingTransactionVersionsAsync(It.IsAny<string>(), "tx1"))
+        _tripStorageMock.Setup(ts => ts.GetConflictingTransactionVersionsAsync("tx1"))
             .ReturnsAsync(versions);
         _storageMock.Setup(s => s.GetAppSettingsAsync()).ReturnsAsync(new AppSettings { DeviceId = "dev1" });
 
@@ -158,7 +162,7 @@ public class ConflictResolverModalTests : BunitContext
             new ConflictVersion<Transaction> { Author = "Alice", Timestamp = DateTime.UtcNow, Data = new Transaction { Id = "tx1", Amount = 10 } }
         };
 
-        _storageMock.Setup(s => s.GetConflictingTransactionVersionsAsync(It.IsAny<string>(), "tx1"))
+        _tripStorageMock.Setup(ts => ts.GetConflictingTransactionVersionsAsync("tx1"))
             .ReturnsAsync(versions);
         _storageMock.Setup(s => s.GetAppSettingsAsync()).ReturnsAsync(new AppSettings { DeviceId = "dev1" });
 

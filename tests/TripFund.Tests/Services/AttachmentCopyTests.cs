@@ -7,13 +7,14 @@ namespace TripFund.Tests.Services;
 public class AttachmentCopyTests : IDisposable
 {
     private readonly string _tempPath;
-    private readonly LocalTripStorageService _service;
+    private readonly LocalStorageService _service;
+    private const string TripSlug = "test-trip";
 
     public AttachmentCopyTests()
     {
         _tempPath = Path.Combine(Path.GetTempPath(), "TripFundAttachmentTests_" + Guid.NewGuid().ToString("n"));
         Directory.CreateDirectory(_tempPath);
-        _service = new LocalTripStorageService(_tempPath);
+        _service = new LocalStorageService(_tempPath);
     }
 
     public void Dispose()
@@ -28,7 +29,7 @@ public class AttachmentCopyTests : IDisposable
     public async Task SaveTransaction_ShouldStoreAttachmentsInLeafFoldersWithDataAndMetadata()
     {
         // Arrange
-        var tripSlug = "test-trip";
+        var tripStorage = _service.GetLocalTripStorage(TripSlug);
         var transactionId = "trans-1";
         var t1 = new Transaction 
         { 
@@ -48,9 +49,9 @@ public class AttachmentCopyTests : IDisposable
         };
 
         // Act 1: Create initial version with two attachments
-        await _service.SaveTransactionAsync(tripSlug, t1, "device1", attachments: attachments);
+        await tripStorage.SaveTransactionAsync(t1, "device1", attachments: attachments);
 
-        var transRoot = Path.Combine(_tempPath, "trips", tripSlug, "transactions", transactionId);
+        var transRoot = Path.Combine(_tempPath, "trips", TripSlug, "transactions", transactionId);
         
         // Verify Details V1
         var v1Path = Path.Combine(transRoot, "details", ".versions", "001_NEW_device1");
@@ -84,7 +85,7 @@ public class AttachmentCopyTests : IDisposable
             { "ATT_003", new byte[] { 7, 8, 9 } }
         };
 
-        await _service.SaveTransactionAsync(tripSlug, t2, "device1", attachments: newAttachments);
+        await tripStorage.SaveTransactionAsync(t2, "device1", attachments: newAttachments);
 
         // Assert: V2 details created
         var v2Path = Path.Combine(transRoot, "details", ".versions", "002_UPD_device1");
@@ -101,7 +102,7 @@ public class AttachmentCopyTests : IDisposable
     public async Task UpdateTransaction_ShouldKeepPhysicalFilesWhenRemovedFromMetadata()
     {
         // Arrange
-        var tripSlug = "test-trip";
+        var tripStorage = _service.GetLocalTripStorage(TripSlug);
         var transactionId = "trans-1";
         var t1 = new Transaction 
         { 
@@ -120,7 +121,7 @@ public class AttachmentCopyTests : IDisposable
             { "ATT_DELETE", new byte[] { 4, 5, 6 } }
         };
 
-        await _service.SaveTransactionAsync(tripSlug, t1, "device1", attachments: attachments);
+        await tripStorage.SaveTransactionAsync(t1, "device1", attachments: attachments);
 
         // Act: Update, keeping only keep.jpg in details
         var t2 = new Transaction 
@@ -133,17 +134,17 @@ public class AttachmentCopyTests : IDisposable
             }
         };
 
-        await _service.SaveTransactionAsync(tripSlug, t2, "device1");
+        await tripStorage.SaveTransactionAsync(t2, "device1");
 
         // Assert
-        var transRoot = Path.Combine(_tempPath, "trips", tripSlug, "transactions", transactionId);
+        var transRoot = Path.Combine(_tempPath, "trips", TripSlug, "transactions", transactionId);
         var attKeepPath = Path.Combine(transRoot, "attachments", "ATT_KEEP", ".content", "keep.jpg");
         var attDeletePath = Path.Combine(transRoot, "attachments", "ATT_DELETE", ".content", "delete.png");
         
         File.Exists(attKeepPath).Should().BeTrue("Physical file for kept attachment should exist");
         File.Exists(attDeletePath).Should().BeTrue("Physical file for removed attachment should ALSO exist (soft delete/history preservation)");
 
-        var latestTx = await _service.GetLatestTransactionVersionAsync(tripSlug, transactionId);
+        var latestTx = await tripStorage.GetLatestTransactionVersionAsync(transactionId);
         latestTx!.Attachments.Should().HaveCount(1);
         latestTx.Attachments[0].Name.Should().Be("ATT_KEEP");
     }

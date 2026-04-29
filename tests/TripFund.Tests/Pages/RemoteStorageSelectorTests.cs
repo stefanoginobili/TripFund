@@ -12,7 +12,7 @@ namespace TripFund.Tests.Pages;
 
 public class RemoteStorageSelectorTests : BunitContext
 {
-    private readonly Mock<LocalTripStorageService> _storageMock;
+    private readonly Mock<LocalStorageService> _storageMock;
     private readonly Mock<IRemoteStorageService> _remoteStorageMock;
     private readonly Mock<IAlertService> _alertMock;
     private readonly Mock<OneDriveRemoteStorageService> _oneDriveMock;
@@ -20,7 +20,7 @@ public class RemoteStorageSelectorTests : BunitContext
 
     public RemoteStorageSelectorTests()
     {
-        _storageMock = new Mock<LocalTripStorageService>("dummy_path");
+        _storageMock = new Mock<LocalStorageService>("dummy_path");
         _remoteStorageMock = new Mock<IRemoteStorageService>();
         _alertMock = new Mock<IAlertService>();
         _pickerServiceMock = new Mock<IOneDrivePickerService>();

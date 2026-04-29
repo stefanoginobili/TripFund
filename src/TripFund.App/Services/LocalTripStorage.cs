@@ -1,109 +1,34 @@
 using System.Text.Json;
-using System.Text.Json.Serialization;
 using TripFund.App.Models;
-using TripFund.App.Utilities;
 using TripFund.App.Constants;
 
 namespace TripFund.App.Services;
 
-public class ConflictVersion<T>
+public class LocalTripStorage
 {
-    public T? Data { get; set; }
-    public string Author { get; set; } = string.Empty;
-    public DateTime Timestamp { get; set; }
-    public string FolderName { get; set; } = string.Empty;
-    public string DeviceId { get; set; } = string.Empty;
-}
+    private readonly LocalStorageService _globalStorage;
+    public string TripSlug { get; }
 
-public class LocalTripStorageService
-{
-    private readonly string _rootPath;
-    private readonly string _tripsPath;
-    private readonly JsonSerializerOptions _jsonOptions = new()
+    public LocalTripStorage(LocalStorageService globalStorage, string tripSlug)
     {
-        WriteIndented = true,
-        PropertyNameCaseInsensitive = true,
-        Converters = { new DateTimeJsonConverter() }
-    };
-
-    public virtual string TripsPath => _tripsPath;
-    public virtual string AppDataPath => _rootPath;
-
-    public LocalTripStorageService(string? rootPath = null)
-    {
-        _rootPath = rootPath ?? FileSystem.AppDataDirectory;
-        _tripsPath = Path.Combine(_rootPath, AppConstants.Folders.Trips);
-        
-        if (!Directory.Exists(_rootPath))
-        {
-            Directory.CreateDirectory(_rootPath);
-        }
-        
-        if (!Directory.Exists(_tripsPath))
-        {
-            Directory.CreateDirectory(_tripsPath);
-        }
+        _globalStorage = globalStorage;
+        TripSlug = tripSlug;
     }
 
-    private async Task SaveJsonAtomicAsync<T>(string path, T data)
+    public class TransactionVersionInfo
     {
-        var directory = Path.GetDirectoryName(path);
-        if (!string.IsNullOrEmpty(directory) && !Directory.Exists(directory))
-        {
-            Directory.CreateDirectory(directory);
-        }
-
-        var tempPath = path + ".tmp";
-        var json = JsonSerializer.Serialize(data, _jsonOptions);
-        await File.WriteAllTextAsync(tempPath, json);
-        
-        if (File.Exists(path)) File.Delete(path);
-        File.Move(tempPath, path);
+        public Transaction? Transaction { get; set; }
+        public string VersionFolderName { get; set; } = string.Empty;
+        public bool IsDeleted { get; set; }
     }
 
-    public virtual async Task<AppSettings?> GetAppSettingsAsync()
+    public virtual async Task<bool> HasConflictsAsync()
     {
-        var path = Path.Combine(_rootPath, AppConstants.Files.AppSettings);
-        if (!File.Exists(path)) return null;
-        var json = await File.ReadAllTextAsync(path);
-        return JsonSerializer.Deserialize<AppSettings>(json, _jsonOptions);
-    }
-    public virtual Task SaveAppSettingsAsync(AppSettings settings)
-    {
-        var path = Path.Combine(_rootPath, AppConstants.Files.AppSettings);
-        return SaveJsonAtomicAsync(path, settings);
-    }
-
-    public virtual async Task<LocalTripRegistry> GetTripRegistryAsync()
-    {
-        var path = Path.Combine(_rootPath, AppConstants.Files.KnownTrips);
-        if (!File.Exists(path)) return new LocalTripRegistry();
-        
-        try
-        {
-            var json = await File.ReadAllTextAsync(path);
-            return JsonSerializer.Deserialize<LocalTripRegistry>(json, _jsonOptions) ?? new LocalTripRegistry();
-        }
-        catch (JsonException)
-        {
-            // If the file is corrupted, return empty registry to allow recovery
-            return new LocalTripRegistry();
-        }
-    }
-
-    public virtual Task SaveTripRegistryAsync(LocalTripRegistry registry)
-    {
-        var path = Path.Combine(_rootPath, AppConstants.Files.KnownTrips);
-        return SaveJsonAtomicAsync(path, registry);
-    }
-
-    public virtual async Task<bool> HasConflictsAsync(string tripSlug)
-    {
-        var settings = await GetAppSettingsAsync();
+        var settings = await _globalStorage.GetAppSettingsAsync();
         var deviceId = settings?.DeviceId ?? "unknown";
         var author = settings?.AuthorName ?? "Unknown";
 
-        var localTripPath = Path.Combine(_tripsPath, tripSlug);
+        var localTripPath = Path.Combine(_globalStorage.TripsPath, TripSlug);
         
         var configPath = Path.Combine(localTripPath, AppConstants.Folders.Config);
         if (Directory.Exists(configPath) && new VersionedStorageEngine(configPath, deviceId, author).HasConflicts()) return true;
@@ -121,20 +46,19 @@ public class LocalTripStorageService
         return false;
     }
 
-    public virtual async Task<TripConfig?> GetTripConfigAsync(string tripSlug)
+    public virtual async Task<TripConfig?> GetTripConfigAsync()
     {
-        var settings = await GetAppSettingsAsync();
+        var settings = await _globalStorage.GetAppSettingsAsync();
         var deviceId = settings?.DeviceId ?? "unknown";
         var author = settings?.AuthorName ?? "Unknown";
 
-        var configPath = Path.Combine(_tripsPath, tripSlug, AppConstants.Folders.Config);
+        var configPath = Path.Combine(_globalStorage.TripsPath, TripSlug, AppConstants.Folders.Config);
         if (!Directory.Exists(configPath)) return null;
 
         var engine = new VersionedStorageEngine(configPath, deviceId, author);
         var headPath = engine.ResolveHeadPath();
         if (headPath == null)
         {
-            // Initial/Migration scan OR Broken head: if metadata is missing or invalid, recalculate it
             await engine.UpdateHeadAsync();
             headPath = engine.ResolveHeadPath();
         }
@@ -146,28 +70,27 @@ public class LocalTripStorageService
 
             var bytes = await leaf.ReadDataFileAsync(AppConstants.Files.TripConfig);
             var json = System.Text.Encoding.UTF8.GetString(bytes);
-            return JsonSerializer.Deserialize<TripConfig>(json, _jsonOptions);
+            return JsonSerializer.Deserialize<TripConfig>(json, _globalStorage.JsonOptions);
         }
 
         return null;
     }
 
-    public virtual async Task SaveTripConfigAsync(string tripSlug, TripConfig config, string deviceId, bool isResolve = false)
+    public virtual async Task SaveTripConfigAsync(TripConfig config, string deviceId, bool isResolve = false)
     {
-        var configPath = Path.Combine(_tripsPath, tripSlug, AppConstants.Folders.Config);
+        var configPath = Path.Combine(_globalStorage.TripsPath, TripSlug, AppConstants.Folders.Config);
         if (!Directory.Exists(configPath)) Directory.CreateDirectory(configPath);
 
-        // Ensure the config.Id is always the tripSlug (local folder name)
-        config.Id = tripSlug;
+        config.Id = TripSlug;
 
-        var settings = await GetAppSettingsAsync();
+        var settings = await _globalStorage.GetAppSettingsAsync();
         var author = settings?.AuthorName ?? "Unknown";
         config.Author = author;
 
         if (config.CreatedAt == default) config.CreatedAt = DateTime.UtcNow;
         config.UpdatedAt = DateTime.UtcNow;
 
-        var json = JsonSerializer.Serialize(config, _jsonOptions);
+        var json = JsonSerializer.Serialize(config, _globalStorage.JsonOptions);
         var bytes = System.Text.Encoding.UTF8.GetBytes(json);
 
         var changedFiles = new Dictionary<string, byte[]> { { AppConstants.Files.TripConfig, bytes } };
@@ -194,21 +117,21 @@ public class LocalTripStorageService
             parentVersions = head != null ? new List<string> { Path.GetFileName(head) } : new List<string>();
         }
 
-        var tempRoot = Path.Combine(_tripsPath, tripSlug, AppConstants.Folders.Temp, AppConstants.Folders.Commits, AppConstants.Folders.Config);
+        var tempRoot = Path.Combine(_globalStorage.TripsPath, TripSlug, AppConstants.Folders.Temp, AppConstants.Folders.Commits, AppConstants.Folders.Config);
         var folderName = await engine.CommitAsync(kind, changedFiles, parentVersions: parentVersions, contentType: AppConstants.ContentTypes.TripConfig, tempRootPath: tempRoot);
-        await RegisterPendingUploadAsync(tripSlug, Path.Combine(AppConstants.Folders.Config, AppConstants.Folders.Versions, folderName));
+        await RegisterPendingUploadAsync(Path.Combine(AppConstants.Folders.Config, AppConstants.Folders.Versions, folderName));
     }
 
-    public virtual async Task<List<Transaction>> GetTransactionsAsync(string tripSlug)
+    public virtual async Task<List<Transaction>> GetTransactionsAsync()
     {
-        var transactionsDir = Path.Combine(_tripsPath, tripSlug, AppConstants.Folders.Transactions);
+        var transactionsDir = Path.Combine(_globalStorage.TripsPath, TripSlug, AppConstants.Folders.Transactions);
         if (!Directory.Exists(transactionsDir)) return new List<Transaction>();
 
         var result = new List<Transaction>();
         foreach (var transRoot in Directory.GetDirectories(transactionsDir))
         {
             var transactionId = Path.GetFileName(transRoot);
-            var transaction = await GetLatestTransactionVersionAsync(tripSlug, transactionId);
+            var transaction = await GetLatestTransactionVersionAsync(transactionId);
             if (transaction != null)
             {
                 result.Add(transaction);
@@ -218,20 +141,19 @@ public class LocalTripStorageService
         return result;
     }
 
-    public virtual async Task<TransactionVersionInfo?> GetLatestTransactionVersionWithDetailsAsync(string tripSlug, string transactionId)
+    public virtual async Task<TransactionVersionInfo?> GetLatestTransactionVersionWithDetailsAsync(string transactionId)
     {
-        var settings = await GetAppSettingsAsync();
+        var settings = await _globalStorage.GetAppSettingsAsync();
         var deviceId = settings?.DeviceId ?? "unknown";
         var author = settings?.AuthorName ?? "Unknown";
 
-        var detailsRoot = Path.Combine(_tripsPath, tripSlug, AppConstants.Folders.Transactions, transactionId, AppConstants.Folders.Details);
+        var detailsRoot = Path.Combine(_globalStorage.TripsPath, TripSlug, AppConstants.Folders.Transactions, transactionId, AppConstants.Folders.Details);
         if (!Directory.Exists(detailsRoot)) return null;
 
         var engine = new VersionedStorageEngine(detailsRoot, deviceId, author);
         var headPath = engine.ResolveHeadPath();
         if (headPath == null)
         {
-            // Initial/Migration scan OR Broken head: if metadata is missing or invalid, recalculate it
             await engine.UpdateHeadAsync();
             headPath = engine.ResolveHeadPath();
         }
@@ -247,7 +169,7 @@ public class LocalTripStorageService
 
             var bytes = await leaf.ReadDataFileAsync(AppConstants.Files.TransactionDetails);
             var json = System.Text.Encoding.UTF8.GetString(bytes);
-            var transaction = JsonSerializer.Deserialize<Transaction>(json, _jsonOptions);
+            var transaction = JsonSerializer.Deserialize<Transaction>(json, _globalStorage.JsonOptions);
             if (transaction == null) return null;
 
             return new TransactionVersionInfo
@@ -260,39 +182,32 @@ public class LocalTripStorageService
         return null;
     }
 
-    public virtual async Task<Transaction?> GetLatestTransactionVersionAsync(string tripSlug, string transactionId)
+    public virtual async Task<Transaction?> GetLatestTransactionVersionAsync(string transactionId)
     {
-        var info = await GetLatestTransactionVersionWithDetailsAsync(tripSlug, transactionId);
+        var info = await GetLatestTransactionVersionWithDetailsAsync(transactionId);
         if (info == null || info.IsDeleted) return null;
         return info.Transaction;
     }
 
-    public virtual async Task<string?> GetAttachmentPath(string tripSlug, string transactionId, string attachmentName)
+    public virtual async Task<string?> GetAttachmentPath(string transactionId, string attachmentName)
     {
-        var info = await GetLatestTransactionVersionWithDetailsAsync(tripSlug, transactionId);
+        var info = await GetLatestTransactionVersionWithDetailsAsync(transactionId);
         if (info == null || info.IsDeleted || info.Transaction == null) return null;
 
         var attachment = info.Transaction.Attachments.FirstOrDefault(a => a.Name == attachmentName);
         if (attachment == null) return null;
 
-        var leafPath = Path.Combine(_tripsPath, tripSlug, AppConstants.Folders.Transactions, transactionId, AppConstants.Folders.Attachments, attachment.Name);
+        var leafPath = Path.Combine(_globalStorage.TripsPath, TripSlug, AppConstants.Folders.Transactions, transactionId, AppConstants.Folders.Attachments, attachment.Name);
         var path = Path.Combine(leafPath, AppConstants.Folders.Content, attachment.OriginalName);
         return File.Exists(path) ? path : null;
     }
 
-    public class TransactionVersionInfo
+    public virtual async Task SaveTransactionAsync(Transaction transaction, string deviceId, bool isDelete = false, Dictionary<string, byte[]>? attachments = null)
     {
-        public Transaction? Transaction { get; set; }
-        public string VersionFolderName { get; set; } = string.Empty;
-        public bool IsDeleted { get; set; }
-    }
-
-    public virtual async Task SaveTransactionAsync(string tripSlug, Transaction transaction, string deviceId, bool isDelete = false, Dictionary<string, byte[]>? attachments = null)
-    {
-        var settings = await GetAppSettingsAsync();
+        var settings = await _globalStorage.GetAppSettingsAsync();
         var author = settings?.AuthorName ?? "Unknown";
 
-        var transRoot = Path.Combine(_tripsPath, tripSlug, AppConstants.Folders.Transactions, transaction.Id);
+        var transRoot = Path.Combine(_globalStorage.TripsPath, TripSlug, AppConstants.Folders.Transactions, transaction.Id);
         if (!Directory.Exists(transRoot)) Directory.CreateDirectory(transRoot);
 
         var detailsRoot = Path.Combine(transRoot, AppConstants.Folders.Details);
@@ -322,16 +237,15 @@ public class LocalTripStorageService
             transaction.Author = author;
             if (transaction.CreatedAt == default)
             {
-                var existing = await GetLatestTransactionVersionAsync(tripSlug, transaction.Id);
+                var existing = await GetLatestTransactionVersionAsync(transaction.Id);
                 if (existing != null) transaction.CreatedAt = existing.CreatedAt;
                 else transaction.CreatedAt = DateTime.UtcNow;
             }
             transaction.UpdatedAt = DateTime.UtcNow;
 
-            var json = JsonSerializer.Serialize(transaction, _jsonOptions);
+            var json = JsonSerializer.Serialize(transaction, _globalStorage.JsonOptions);
             changedFiles[AppConstants.Files.TransactionDetails] = System.Text.Encoding.UTF8.GetBytes(json);
             
-            // Save attachments to the unversioned 'attachments' folder
             if (attachments != null)
             {
                 var attachmentsDir = Path.Combine(transRoot, AppConstants.Folders.Attachments);
@@ -342,7 +256,6 @@ public class LocalTripStorageService
                     var attachmentName = attachmentEntry.Key;
                     var content = attachmentEntry.Value;
 
-                    // Match with Transaction.Attachments to get the OriginalName
                     var attMetadata = transaction.Attachments.FirstOrDefault(a => a.Name == attachmentName);
                     if (attMetadata != null)
                     {
@@ -354,7 +267,7 @@ public class LocalTripStorageService
                             { AppConstants.Metadata.ContentType, AppConstants.ContentTypes.TransactionAttachment }
                         };
 
-                        var tempAttDir = Path.Combine(_tripsPath, tripSlug, AppConstants.Folders.Temp, AppConstants.Folders.Commits, AppConstants.Folders.Attachments, transaction.Id, attachmentName);
+                        var tempAttDir = Path.Combine(_globalStorage.TripsPath, TripSlug, AppConstants.Folders.Temp, AppConstants.Folders.Commits, AppConstants.Folders.Attachments, transaction.Id, attachmentName);
                         if (Directory.Exists(tempAttDir)) Directory.Delete(tempAttDir, true);
                         Directory.CreateDirectory(tempAttDir);
 
@@ -366,24 +279,24 @@ public class LocalTripStorageService
                         if (Directory.Exists(finalAttDir)) Directory.Delete(finalAttDir, true);
                         Directory.Move(tempAttDir, finalAttDir);
 
-                        await RegisterPendingUploadAsync(tripSlug, Path.Combine(AppConstants.Folders.Transactions, transaction.Id, AppConstants.Folders.Attachments, attachmentName));
+                        await RegisterPendingUploadAsync(Path.Combine(AppConstants.Folders.Transactions, transaction.Id, AppConstants.Folders.Attachments, attachmentName));
                     }
                 }
             }
         }
 
-        var tempRoot = Path.Combine(_tripsPath, tripSlug, AppConstants.Folders.Temp, AppConstants.Folders.Commits, AppConstants.Folders.Transactions, transaction.Id);
+        var tempRoot = Path.Combine(_globalStorage.TripsPath, TripSlug, AppConstants.Folders.Temp, AppConstants.Folders.Commits, AppConstants.Folders.Transactions, transaction.Id);
         var folderName = await engine.CommitAsync(kind, changedFiles, parentVersions: parentVersions, contentType: AppConstants.ContentTypes.TransactionDetail, tempRootPath: tempRoot);
-        await RegisterPendingUploadAsync(tripSlug, Path.Combine(AppConstants.Folders.Transactions, transaction.Id, AppConstants.Folders.Details, AppConstants.Folders.Versions, folderName));
+        await RegisterPendingUploadAsync(Path.Combine(AppConstants.Folders.Transactions, transaction.Id, AppConstants.Folders.Details, AppConstants.Folders.Versions, folderName));
     }
 
-    public virtual async Task<List<ConflictVersion<Transaction>>> GetConflictingTransactionVersionsAsync(string tripSlug, string transactionId)
+    public virtual async Task<List<ConflictVersion<Transaction>>> GetConflictingTransactionVersionsAsync(string transactionId)
     {
-        var settings = await GetAppSettingsAsync();
+        var settings = await _globalStorage.GetAppSettingsAsync();
         var deviceId = settings?.DeviceId ?? "unknown";
         var author = settings?.AuthorName ?? "Unknown";
 
-        var detailsRoot = Path.Combine(_tripsPath, tripSlug, AppConstants.Folders.Transactions, transactionId, AppConstants.Folders.Details);
+        var detailsRoot = Path.Combine(_globalStorage.TripsPath, TripSlug, AppConstants.Folders.Transactions, transactionId, AppConstants.Folders.Details);
         var engine = new VersionedStorageEngine(detailsRoot, deviceId, author);
         var latestVersions = engine.GetConflictingFoldersInfo();
 
@@ -411,7 +324,7 @@ public class LocalTripStorageService
                 {
                     var bytes = await leaf.ReadDataFileAsync(AppConstants.Files.TransactionDetails);
                     var json = System.Text.Encoding.UTF8.GetString(bytes);
-                    cv.Data = JsonSerializer.Deserialize<Transaction>(json, _jsonOptions);
+                    cv.Data = JsonSerializer.Deserialize<Transaction>(json, _globalStorage.JsonOptions);
                 }
                 catch (FileNotFoundException) { }
             }
@@ -421,13 +334,13 @@ public class LocalTripStorageService
         return result;
     }
 
-    public virtual async Task<List<ConflictVersion<TripConfig>>> GetConflictingConfigVersionsAsync(string tripSlug)
+    public virtual async Task<List<ConflictVersion<TripConfig>>> GetConflictingConfigVersionsAsync()
     {
-        var settings = await GetAppSettingsAsync();
+        var settings = await _globalStorage.GetAppSettingsAsync();
         var deviceId = settings?.DeviceId ?? "unknown";
         var author = settings?.AuthorName ?? "Unknown";
 
-        var configRoot = Path.Combine(_tripsPath, tripSlug, AppConstants.Folders.Config);
+        var configRoot = Path.Combine(_globalStorage.TripsPath, TripSlug, AppConstants.Folders.Config);
         var engine = new VersionedStorageEngine(configRoot, deviceId, author);
         var latestVersions = engine.GetConflictingFoldersInfo();
 
@@ -455,7 +368,7 @@ public class LocalTripStorageService
                 {
                     var bytes = await leaf.ReadDataFileAsync(AppConstants.Files.TripConfig);
                     var json = System.Text.Encoding.UTF8.GetString(bytes);
-                    cv.Data = JsonSerializer.Deserialize<TripConfig>(json, _jsonOptions);
+                    cv.Data = JsonSerializer.Deserialize<TripConfig>(json, _globalStorage.JsonOptions);
                 }
                 catch (FileNotFoundException) { }
             }
@@ -465,12 +378,12 @@ public class LocalTripStorageService
         return result;
     }
 
-    public virtual async Task ResolveConfigConflictAsync(string tripSlug, TripConfig? resolvedConfig, string deviceId)
+    public virtual async Task ResolveConfigConflictAsync(TripConfig? resolvedConfig, string deviceId)
     {
-        var settings = await GetAppSettingsAsync();
+        var settings = await _globalStorage.GetAppSettingsAsync();
         var author = settings?.AuthorName ?? "Unknown";
 
-        var configRoot = Path.Combine(_tripsPath, tripSlug, AppConstants.Folders.Config);
+        var configRoot = Path.Combine(_globalStorage.TripsPath, TripSlug, AppConstants.Folders.Config);
         var engine = new VersionedStorageEngine(configRoot, deviceId, author);
         var parentVersions = engine.GetConflictFolderNames();
 
@@ -479,30 +392,30 @@ public class LocalTripStorageService
         {
             resolvedConfig.Author = author;
             resolvedConfig.UpdatedAt = DateTime.UtcNow;
-            var json = JsonSerializer.Serialize(resolvedConfig, _jsonOptions);
+            var json = JsonSerializer.Serialize(resolvedConfig, _globalStorage.JsonOptions);
             changedFiles[AppConstants.Files.TripConfig] = System.Text.Encoding.UTF8.GetBytes(json);
         }
 
-        var tempRoot = Path.Combine(_tripsPath, tripSlug, AppConstants.Folders.Temp, AppConstants.Folders.Commits, AppConstants.Folders.Config);
+        var tempRoot = Path.Combine(_globalStorage.TripsPath, TripSlug, AppConstants.Folders.Temp, AppConstants.Folders.Commits, AppConstants.Folders.Config);
         var folderName = await engine.CommitAsync(CommitKind.Res, changedFiles, parentVersions: parentVersions, contentType: AppConstants.ContentTypes.TripConfig, tempRootPath: tempRoot);
-        await RegisterPendingUploadAsync(tripSlug, Path.Combine(AppConstants.Folders.Config, AppConstants.Folders.Versions, folderName));
+        await RegisterPendingUploadAsync(Path.Combine(AppConstants.Folders.Config, AppConstants.Folders.Versions, folderName));
     }
 
-    public virtual async Task ResolveConflictAsync(string tripSlug, Transaction? resolvedTransaction, string deviceId)
+    public virtual async Task ResolveConflictAsync(Transaction? resolvedTransaction, string deviceId)
     {
         if (resolvedTransaction == null)
         {
             throw new ArgumentNullException(nameof(resolvedTransaction), "TransactionId is required for deletion resolution.");
         }
-        await ResolveConflictAsync(tripSlug, resolvedTransaction.Id, resolvedTransaction, deviceId);
+        await ResolveConflictAsync(resolvedTransaction.Id, resolvedTransaction, deviceId);
     }
 
-    public virtual async Task ResolveConflictAsync(string tripSlug, string transactionId, Transaction? resolvedTransaction, string deviceId)
+    public virtual async Task ResolveConflictAsync(string transactionId, Transaction? resolvedTransaction, string deviceId)
     {
-        var settings = await GetAppSettingsAsync();
+        var settings = await _globalStorage.GetAppSettingsAsync();
         var author = settings?.AuthorName ?? "Unknown";
 
-        var detailsRoot = Path.Combine(_tripsPath, tripSlug, AppConstants.Folders.Transactions, transactionId, AppConstants.Folders.Details);
+        var detailsRoot = Path.Combine(_globalStorage.TripsPath, TripSlug, AppConstants.Folders.Transactions, transactionId, AppConstants.Folders.Details);
         var engine = new VersionedStorageEngine(detailsRoot, deviceId, author);
         
         var parentVersions = engine.GetConflictFolderNames();
@@ -521,7 +434,7 @@ public class LocalTripStorageService
                     {
                         var prevBytes = await leaf.ReadDataFileAsync(AppConstants.Files.TransactionDetails);
                         var prevJson = System.Text.Encoding.UTF8.GetString(prevBytes);
-                        var prev = JsonSerializer.Deserialize<Transaction>(prevJson, _jsonOptions);
+                        var prev = JsonSerializer.Deserialize<Transaction>(prevJson, _globalStorage.JsonOptions);
                         if (prev != null) resolvedTransaction.CreatedAt = prev.CreatedAt;
                     }
                     catch (FileNotFoundException) { }
@@ -537,7 +450,7 @@ public class LocalTripStorageService
                         {
                             var prevBytes = await leaf.ReadDataFileAsync(AppConstants.Files.TransactionDetails);
                             var prevJson = System.Text.Encoding.UTF8.GetString(prevBytes);
-                            var prev = JsonSerializer.Deserialize<Transaction>(prevJson, _jsonOptions);
+                            var prev = JsonSerializer.Deserialize<Transaction>(prevJson, _globalStorage.JsonOptions);
                             if (prev != null && prev.CreatedAt != default)
                             {
                                 resolvedTransaction.CreatedAt = prev.CreatedAt;
@@ -555,114 +468,24 @@ public class LocalTripStorageService
             }
             
             resolvedTransaction.UpdatedAt = DateTime.UtcNow;
-            var json = JsonSerializer.Serialize(resolvedTransaction, _jsonOptions);
+            var json = JsonSerializer.Serialize(resolvedTransaction, _globalStorage.JsonOptions);
             changedFiles[AppConstants.Files.TransactionDetails] = System.Text.Encoding.UTF8.GetBytes(json);
         }
 
-        var tempRoot = Path.Combine(_tripsPath, tripSlug, AppConstants.Folders.Temp, AppConstants.Folders.Commits, AppConstants.Folders.Transactions, transactionId);
+        var tempRoot = Path.Combine(_globalStorage.TripsPath, TripSlug, AppConstants.Folders.Temp, AppConstants.Folders.Commits, AppConstants.Folders.Transactions, transactionId);
         var folderName = await engine.CommitAsync(CommitKind.Res, changedFiles, parentVersions: parentVersions, contentType: AppConstants.ContentTypes.TransactionDetail, tempRootPath: tempRoot);
-        await RegisterPendingUploadAsync(tripSlug, Path.Combine(AppConstants.Folders.Transactions, transactionId, AppConstants.Folders.Details, AppConstants.Folders.Versions, folderName));
+        await RegisterPendingUploadAsync(Path.Combine(AppConstants.Folders.Transactions, transactionId, AppConstants.Folders.Details, AppConstants.Folders.Versions, folderName));
     }
 
-    public virtual async Task DeleteTripAsync(string tripSlug)
+    public virtual async Task<SyncState> GetSyncStateAsync()
     {
-        // Remove from registry
-        var registry = await GetTripRegistryAsync();
-        if (registry.Trips.ContainsKey(tripSlug))
-        {
-            registry.Trips.Remove(tripSlug);
-            await SaveTripRegistryAsync(registry);
-        }
-
-        // Delete local folder
-        var tripDir = Path.Combine(_tripsPath, tripSlug);
-        if (Directory.Exists(tripDir))
-        {
-            Directory.Delete(tripDir, true);
-        }
-    }
-
-    public virtual async Task InitializeInitialImportAsync(string tripSlug)
-    {
-        var tripDir = Path.Combine(_tripsPath, tripSlug);
-        if (!Directory.Exists(tripDir)) Directory.CreateDirectory(tripDir);
-        await File.WriteAllTextAsync(Path.Combine(tripDir, AppConstants.Files.InitialImportMarker), DateTime.UtcNow.ToString("O"));
-    }
-
-    public virtual void CompleteInitialImport(string tripSlug)
-    {
-        var markerPath = Path.Combine(_tripsPath, tripSlug, AppConstants.Files.InitialImportMarker);
-        if (File.Exists(markerPath)) File.Delete(markerPath);
-    }
-
-    public virtual async Task CleanupIncompleteImportsAsync()
-    {
-        if (!Directory.Exists(_tripsPath)) return;
-
-        var directories = Directory.GetDirectories(_tripsPath);
-        foreach (var tripDir in directories)
-        {
-            var slug = Path.GetFileName(tripDir);
-            var markerPath = Path.Combine(tripDir, AppConstants.Files.InitialImportMarker);
-            if (File.Exists(markerPath))
-            {
-                await DeleteTripAsync(slug);
-            }
-        }
-    }
-
-    public virtual async Task CleanupBrokenTripsAsync()
-    {
-        var registry = await GetTripRegistryAsync();
-        var toDelete = new List<string>();
-
-        foreach (var entry in registry.Trips)
-        {
-            var config = await GetTripConfigAsync(entry.Key);
-            if (config == null)
-            {
-                toDelete.Add(entry.Key);
-            }
-        }
-
-        foreach (var slug in toDelete)
-        {
-            await DeleteTripAsync(slug);
-        }
-    }
-
-    public virtual Task CleanupTempFoldersAsync()
-    {
-        if (!Directory.Exists(_tripsPath)) return Task.CompletedTask;
-
-        var directories = Directory.GetDirectories(_tripsPath);
-        foreach (var tripDir in directories)
-        {
-            var tempPath = Path.Combine(tripDir, AppConstants.Folders.Temp);
-            if (Directory.Exists(tempPath))
-            {
-                try
-                {
-                    Directory.Delete(tempPath, true);
-                }
-                catch
-                {
-                    // Ignore errors during cleanup (e.g. file in use)
-                }
-            }
-        }
-        return Task.CompletedTask;
-    }
-
-    public virtual async Task<SyncState> GetSyncStateAsync(string tripSlug)
-    {
-        var path = Path.Combine(_tripsPath, tripSlug, AppConstants.Folders.Sync, AppConstants.Files.SyncState);
+        var path = Path.Combine(_globalStorage.TripsPath, TripSlug, AppConstants.Folders.Sync, AppConstants.Files.SyncState);
         if (!File.Exists(path)) return new SyncState();
 
         try
         {
             var json = await File.ReadAllTextAsync(path);
-            return JsonSerializer.Deserialize<SyncState>(json, _jsonOptions) ?? new SyncState();
+            return JsonSerializer.Deserialize<SyncState>(json, _globalStorage.JsonOptions) ?? new SyncState();
         }
         catch (JsonException)
         {
@@ -670,19 +493,18 @@ public class LocalTripStorageService
         }
     }
 
-    public virtual Task SaveSyncStateAsync(string tripSlug, SyncState state)
+    public virtual Task SaveSyncStateAsync(SyncState state)
     {
-        var syncDir = Path.Combine(_tripsPath, tripSlug, AppConstants.Folders.Sync);
+        var syncDir = Path.Combine(_globalStorage.TripsPath, TripSlug, AppConstants.Folders.Sync);
         var path = Path.Combine(syncDir, AppConstants.Files.SyncState);
-        return SaveJsonAtomicAsync(path, state);
+        return _globalStorage.SaveJsonAtomicAsync(path, state);
     }
 
-    public virtual async Task RegisterPendingUploadAsync(string tripSlug, string relativePath)
+    public virtual async Task RegisterPendingUploadAsync(string relativePath)
     {
         var normalizedPath = relativePath.Replace('\\', '/');
-        var state = await GetSyncStateAsync(tripSlug);
+        var state = await GetSyncStateAsync();
         
-        // Avoid duplicates
         if (state.Sync.Local.Pending.Any(u => u.Path == normalizedPath)) return;
 
         state.Sync.Local.Pending.Add(new PendingUpload
@@ -691,18 +513,17 @@ public class LocalTripStorageService
             CreatedAt = DateTime.UtcNow.ToString("yyyy-MM-ddTHH:mm:ss.fffZ", System.Globalization.CultureInfo.InvariantCulture)
         });
 
-        await SaveSyncStateAsync(tripSlug, state);
+        await SaveSyncStateAsync(state);
     }
 
-    public virtual async Task<List<ConflictInfo>> GetConflictsAsync(string tripSlug)
+    public virtual async Task<List<ConflictInfo>> GetConflictsAsync()
     {
         var conflicts = new List<ConflictInfo>();
-        var settings = await GetAppSettingsAsync();
+        var settings = await _globalStorage.GetAppSettingsAsync();
         var deviceId = settings?.DeviceId ?? "unknown";
         var author = settings?.AuthorName ?? "Unknown";
 
-        // 1. Check Trip Config
-        var configPath = Path.Combine(_tripsPath, tripSlug, AppConstants.Folders.Config);
+        var configPath = Path.Combine(_globalStorage.TripsPath, TripSlug, AppConstants.Folders.Config);
         if (Directory.Exists(configPath) && new VersionedStorageEngine(configPath, deviceId, author).HasConflicts())
         {
             conflicts.Add(new ConflictInfo
@@ -713,8 +534,7 @@ public class LocalTripStorageService
             });
         }
 
-        // 2. Check Transactions
-        var transDir = Path.Combine(_tripsPath, tripSlug, AppConstants.Folders.Transactions);
+        var transDir = Path.Combine(_globalStorage.TripsPath, TripSlug, AppConstants.Folders.Transactions);
         if (Directory.Exists(transDir))
         {
             var transactionIds = Directory.GetDirectories(transDir).Select(Path.GetFileName);
@@ -731,7 +551,6 @@ public class LocalTripStorageService
 
                 var transVersions = engine.GetConflictingFoldersInfo();
                 
-                // Use LCA for labeling to show what was there BEFORE the conflict
                 var lcaFolderName = engine.GetConflictBaseFolder();
                 Transaction? labelTrans = null;
                 
@@ -740,13 +559,11 @@ public class LocalTripStorageService
                     labelTrans = await GetTransactionFromFolderAsync(detailsPath, lcaFolderName);
                 }
                 
-                // Fallback to local branch if LCA is missing or is a deletion
                 if (labelTrans == null)
                 {
-                    labelTrans = await GetLocalBranchTransactionAsync(tripSlug, transId, deviceId);
+                    labelTrans = await GetLocalBranchTransactionAsync(transId, deviceId);
                 }
                 
-                // Final fallback: try any version that isn't a deletion
                 if (labelTrans == null)
                 {
                     foreach (var v in transVersions)
@@ -769,7 +586,7 @@ public class LocalTripStorageService
                     }
                     else if (labelTrans.Type == "contribution")
                     {
-                        var currentConfig = await GetTripConfigAsync(tripSlug);
+                        var currentConfig = await GetTripConfigAsync();
                         var memberSlug = labelTrans.Split.Keys.FirstOrDefault() ?? "unknown";
                         var memberName = (currentConfig != null && currentConfig.Members.TryGetValue(memberSlug, out var m)) ? m.Name : memberSlug;
                         
@@ -796,9 +613,9 @@ public class LocalTripStorageService
         return conflicts;
     }
 
-    public virtual async Task UpdateVersionHeadsAfterSyncAsync(string tripSlug, IEnumerable<string> impactedRootPaths)
+    public virtual async Task UpdateVersionHeadsAfterSyncAsync(IEnumerable<string> impactedRootPaths)
     {
-        var settings = await GetAppSettingsAsync();
+        var settings = await _globalStorage.GetAppSettingsAsync();
         var deviceId = settings?.DeviceId ?? "unknown";
         var author = settings?.AuthorName ?? "Unknown";
 
@@ -814,45 +631,19 @@ public class LocalTripStorageService
         var leaf = new LocalLeafFolder(Path.Combine(detailsPath, AppConstants.Folders.Versions, folderName));
         try
         {
-            if (await leaf.IsDataEmptyAsync()) return null; // Likely a DEL version
+            if (await leaf.IsDataEmptyAsync()) return null;
             var bytes = await leaf.ReadDataFileAsync(AppConstants.Files.TransactionDetails);
-            return JsonSerializer.Deserialize<Transaction>(System.Text.Encoding.UTF8.GetString(bytes), _jsonOptions);
+            return JsonSerializer.Deserialize<Transaction>(System.Text.Encoding.UTF8.GetString(bytes), _globalStorage.JsonOptions);
         }
         catch { return null; }
     }
 
-    private async Task<TripConfig?> GetLocalBranchTripConfigAsync(string tripSlug, string deviceId)
+    private async Task<Transaction?> GetLocalBranchTransactionAsync(string transactionId, string deviceId)
     {
-        var settings = await GetAppSettingsAsync();
+        var settings = await _globalStorage.GetAppSettingsAsync();
         var author = settings?.AuthorName ?? "Unknown";
 
-        var configPath = Path.Combine(_tripsPath, tripSlug, AppConstants.Folders.Config);
-        if (!Directory.Exists(configPath)) return null;
-
-        var engine = new VersionedStorageEngine(configPath, deviceId, author);
-        var allVersions = engine.GetVersionFolders();
-        var localLatest = allVersions
-            .Where(v => v.DeviceId == deviceId)
-            .OrderByDescending(v => v.Sequence)
-            .FirstOrDefault();
-
-        if (localLatest == null) return null;
-
-        var leaf = new LocalLeafFolder(Path.Combine(configPath, AppConstants.Folders.Versions, localLatest.FolderName));
-        try
-        {
-            var bytes = await leaf.ReadDataFileAsync(AppConstants.Files.TripConfig);
-            return JsonSerializer.Deserialize<TripConfig>(System.Text.Encoding.UTF8.GetString(bytes), _jsonOptions);
-        }
-        catch { return null; }
-    }
-
-    private async Task<Transaction?> GetLocalBranchTransactionAsync(string tripSlug, string transactionId, string deviceId)
-    {
-        var settings = await GetAppSettingsAsync();
-        var author = settings?.AuthorName ?? "Unknown";
-
-        var detailsPath = Path.Combine(_tripsPath, tripSlug, AppConstants.Folders.Transactions, transactionId, AppConstants.Folders.Details);
+        var detailsPath = Path.Combine(_globalStorage.TripsPath, TripSlug, AppConstants.Folders.Transactions, transactionId, AppConstants.Folders.Details);
         if (!Directory.Exists(detailsPath)) return null;
 
         var engine = new VersionedStorageEngine(detailsPath, deviceId, author);
@@ -868,7 +659,7 @@ public class LocalTripStorageService
         try
         {
             var bytes = await leaf.ReadDataFileAsync(AppConstants.Files.TransactionDetails);
-            return JsonSerializer.Deserialize<Transaction>(System.Text.Encoding.UTF8.GetString(bytes), _jsonOptions);
+            return JsonSerializer.Deserialize<Transaction>(System.Text.Encoding.UTF8.GetString(bytes), _globalStorage.JsonOptions);
         }
         catch { return null; }
     }

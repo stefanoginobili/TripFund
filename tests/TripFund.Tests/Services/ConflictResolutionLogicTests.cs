@@ -12,25 +12,26 @@ namespace TripFund.Tests.Services;
 public class ConflictResolutionLogicTests
 {
     private readonly string _testRoot;
-    private readonly LocalTripStorageService _storage;
+    private readonly LocalStorageService _storage;
+    private const string TripSlug = "test-trip";
 
     public ConflictResolutionLogicTests()
     {
         _testRoot = Path.Combine(Path.GetTempPath(), "TripFundTests_" + Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(_testRoot);
-        _storage = new LocalTripStorageService(_testRoot);
+        _storage = new LocalStorageService(_testRoot);
     }
 
     [Fact]
     public async Task GetConflictingConfigVersionsAsync_ShouldReturnMultipleVersions()
     {
         // Arrange
-        string tripSlug = "test-trip";
+        var tripStorage = _storage.GetLocalTripStorage(TripSlug);
         
         var config1 = new TripConfig { Name = "Version 1" };
         var config2 = new TripConfig { Name = "Version 2" };
 
-        var configPath = Path.Combine(_testRoot, "trips", tripSlug, "config");
+        var configPath = Path.Combine(_testRoot, "trips", TripSlug, "config");
         var versionsPath = Path.Combine(configPath, ".versions");
         Directory.CreateDirectory(versionsPath);
 
@@ -51,7 +52,7 @@ public class ConflictResolutionLogicTests
         await engine.UpdateHeadAsync();
 
         // Act
-        var conflicts = await _storage.GetConflictingConfigVersionsAsync(tripSlug);
+        var conflicts = await tripStorage.GetConflictingConfigVersionsAsync();
 
         // Assert
         Assert.Equal(2, conflicts.Count);
@@ -61,10 +62,10 @@ public class ConflictResolutionLogicTests
     public async Task ResolveConfigConflictAsync_ShouldCreateResFolder()
     {
         // Arrange
-        string tripSlug = "test-trip";
+        var tripStorage = _storage.GetLocalTripStorage(TripSlug);
         string resolverDevice = "resolver";
         
-        var configPath = Path.Combine(_testRoot, "trips", tripSlug, "config");
+        var configPath = Path.Combine(_testRoot, "trips", TripSlug, "config");
         var versionsPath = Path.Combine(configPath, ".versions");
         Directory.CreateDirectory(versionsPath);
 
@@ -87,13 +88,13 @@ public class ConflictResolutionLogicTests
         var winner = new TripConfig { Name = "V2 (Winner)" };
 
         // Act
-        await _storage.ResolveConfigConflictAsync(tripSlug, winner, resolverDevice);
+        await tripStorage.ResolveConfigConflictAsync(winner, resolverDevice);
 
         // Assert
         var folders = Directory.GetDirectories(versionsPath).Select(Path.GetFileName).Where(f => f != null).Cast<string>().ToList();
         Assert.Contains(folders, f => f.Contains("_RES_"));
         
-        var finalConfig = await _storage.GetTripConfigAsync(tripSlug);
+        var finalConfig = await tripStorage.GetTripConfigAsync();
         Assert.Equal("V2 (Winner)", finalConfig?.Name);
     }
 
@@ -101,10 +102,10 @@ public class ConflictResolutionLogicTests
     public async Task GetConflictingTransactionVersionsAsync_ShouldReturnMultipleVersions()
     {
         // Arrange
-        string tripSlug = "test-trip";
+        var tripStorage = _storage.GetLocalTripStorage(TripSlug);
         string txId = "20260420T100000Z-abcd";
         
-        var detailsPath = Path.Combine(_testRoot, "trips", tripSlug, "transactions", txId, "details");
+        var detailsPath = Path.Combine(_testRoot, "trips", TripSlug, "transactions", txId, "details");
         var versionsPath = Path.Combine(detailsPath, ".versions");
         Directory.CreateDirectory(versionsPath);
 
@@ -125,7 +126,7 @@ public class ConflictResolutionLogicTests
         await engine.UpdateHeadAsync();
 
         // Act
-        var conflicts = await _storage.GetConflictingTransactionVersionsAsync(tripSlug, txId);
+        var conflicts = await tripStorage.GetConflictingTransactionVersionsAsync(txId);
 
         // Assert
         Assert.Equal(2, conflicts.Count);
@@ -135,11 +136,11 @@ public class ConflictResolutionLogicTests
     public async Task ResolveTransactionConflictWithDeletion_ShouldCreateResFolderWithNoData()
     {
         // Arrange
-        string tripSlug = "test-trip";
+        var tripStorage = _storage.GetLocalTripStorage(TripSlug);
         string txId = "20260420T100000Z-abcd";
         string resolverDevice = "resolver";
         
-        var detailsPath = Path.Combine(_testRoot, "trips", tripSlug, "transactions", txId, "details");
+        var detailsPath = Path.Combine(_testRoot, "trips", TripSlug, "transactions", txId, "details");
         var versionsPath = Path.Combine(detailsPath, ".versions");
         Directory.CreateDirectory(versionsPath);
 
@@ -159,7 +160,7 @@ public class ConflictResolutionLogicTests
         await engine.UpdateHeadAsync();
 
         // Act - resolve choosing the deletion (null winner)
-        await _storage.ResolveConflictAsync(tripSlug, txId, null, resolverDevice);
+        await tripStorage.ResolveConflictAsync(txId, null, resolverDevice);
 
         // Assert
         var folders = Directory.GetDirectories(versionsPath).Select(Path.GetFileName).Where(f => f != null).Cast<string>().ToList();
@@ -168,7 +169,7 @@ public class ConflictResolutionLogicTests
         
         Assert.True(await leaf.IsDataEmptyAsync());
         
-        var finalTx = await _storage.GetLatestTransactionVersionAsync(tripSlug, txId);
+        var finalTx = await tripStorage.GetLatestTransactionVersionAsync(txId);
         Assert.Null(finalTx);
     }
 }

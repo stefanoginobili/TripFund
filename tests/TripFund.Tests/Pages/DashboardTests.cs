@@ -13,7 +13,8 @@ namespace TripFund.Tests.Pages;
 
 public class DashboardTests : BunitContext
 {
-    private readonly Mock<LocalTripStorageService> _storageMock;
+    private readonly Mock<LocalStorageService> _storageMock;
+    private readonly Mock<LocalTripStorage> _tripStorageMock;
 
     public DashboardTests()
     {
@@ -21,8 +22,11 @@ public class DashboardTests : BunitContext
         System.Globalization.CultureInfo.DefaultThreadCurrentCulture = itCulture;
         System.Globalization.CultureInfo.DefaultThreadCurrentUICulture = itCulture;
 
-        _storageMock = new Mock<LocalTripStorageService>("dummy_path");
+        _storageMock = new Mock<LocalStorageService>("dummy_path");
+        _tripStorageMock = new Mock<LocalTripStorage>(_storageMock.Object, "test-trip");
         _storageMock.Setup(s => s.GetTripRegistryAsync()).ReturnsAsync(new LocalTripRegistry());
+        _storageMock.Setup(s => s.GetLocalTripStorage(It.IsAny<string>())).Returns(_tripStorageMock.Object);
+        
         Services.AddSingleton(_storageMock.Object);
         Services.AddSingleton(new Mock<IEmailService>().Object);
         Services.AddSingleton(new Mock<IAlertService>().Object);
@@ -84,8 +88,8 @@ public class DashboardTests : BunitContext
             }
         };
 
-        _storageMock.Setup(s => s.GetTripConfigAsync(tripSlug)).ReturnsAsync(config);
-        _storageMock.Setup(s => s.GetTransactionsAsync(tripSlug)).ReturnsAsync(transactions);
+        _tripStorageMock.Setup(ts => ts.GetTripConfigAsync()).ReturnsAsync(config);
+        _tripStorageMock.Setup(ts => ts.GetTransactionsAsync()).ReturnsAsync(transactions);
 
         // Act
         var cut = Render<TripDashboard>(parameters => parameters.Add(p => p.tripSlug, tripSlug));
@@ -163,10 +167,10 @@ public class DashboardTests : BunitContext
         var syncState = new SyncState();
         syncState.Sync.LastSuccessAt = lastSynchronized;
 
-        _storageMock.Setup(s => s.GetTripConfigAsync(tripSlug)).ReturnsAsync(config);
-        _storageMock.Setup(s => s.GetTransactionsAsync(tripSlug)).ReturnsAsync(new List<Transaction>());
+        _tripStorageMock.Setup(ts => ts.GetTripConfigAsync()).ReturnsAsync(config);
+        _tripStorageMock.Setup(ts => ts.GetTransactionsAsync()).ReturnsAsync(new List<Transaction>());
         _storageMock.Setup(s => s.GetTripRegistryAsync()).ReturnsAsync(registry);
-        _storageMock.Setup(s => s.GetSyncStateAsync(tripSlug)).ReturnsAsync(syncState);
+        _tripStorageMock.Setup(ts => ts.GetSyncStateAsync()).ReturnsAsync(syncState);
 
         // Act
         var cut = Render<TripDashboard>(parameters => parameters.Add(p => p.tripSlug, tripSlug));
@@ -191,10 +195,10 @@ public class DashboardTests : BunitContext
         };
         var syncState = new SyncState { Sync = new SyncData { LastSuccessAt = null } };
 
-        _storageMock.Setup(s => s.GetTripConfigAsync(tripSlug)).ReturnsAsync(config);
-        _storageMock.Setup(s => s.GetTransactionsAsync(tripSlug)).ReturnsAsync(new List<Transaction>());
+        _tripStorageMock.Setup(ts => ts.GetTripConfigAsync()).ReturnsAsync(config);
+        _tripStorageMock.Setup(ts => ts.GetTransactionsAsync()).ReturnsAsync(new List<Transaction>());
         _storageMock.Setup(s => s.GetTripRegistryAsync()).ReturnsAsync(registry);
-        _storageMock.Setup(s => s.GetSyncStateAsync(tripSlug)).ReturnsAsync(syncState);
+        _tripStorageMock.Setup(ts => ts.GetSyncStateAsync()).ReturnsAsync(syncState);
 
         // Act
         var cut = Render<TripDashboard>(parameters => parameters.Add(p => p.tripSlug, tripSlug));
@@ -221,8 +225,8 @@ public class DashboardTests : BunitContext
             }
         };
 
-        _storageMock.Setup(s => s.GetTripConfigAsync(tripSlug)).ReturnsAsync(config);
-        _storageMock.Setup(s => s.GetTransactionsAsync(tripSlug)).ReturnsAsync(new List<Transaction>());
+        _tripStorageMock.Setup(ts => ts.GetTripConfigAsync()).ReturnsAsync(config);
+        _tripStorageMock.Setup(ts => ts.GetTransactionsAsync()).ReturnsAsync(new List<Transaction>());
         _storageMock.Setup(s => s.GetTripRegistryAsync()).ReturnsAsync(registry);
 
         var cut = Render<TripDashboard>(parameters => parameters.Add(p => p.tripSlug, tripSlug));
@@ -251,8 +255,8 @@ public class DashboardTests : BunitContext
         {
             new Transaction { Type = "contribution", Currency = "EUR", Amount = 150, Split = new Dictionary<string, SplitInfo> { { "m", new SplitInfo { Amount = 150 } } } }
         };
-        _storageMock.Setup(s => s.GetTripConfigAsync(tripSlug)).ReturnsAsync(config);
-        _storageMock.Setup(s => s.GetTransactionsAsync(tripSlug)).ReturnsAsync(transactions);
+        _tripStorageMock.Setup(ts => ts.GetTripConfigAsync()).ReturnsAsync(config);
+        _tripStorageMock.Setup(ts => ts.GetTransactionsAsync()).ReturnsAsync(transactions);
 
         // Act
         var cut = Render<TripDashboard>(p => p.Add(x => x.tripSlug, tripSlug));
@@ -293,8 +297,8 @@ public class DashboardTests : BunitContext
             }
         };
 
-        _storageMock.Setup(s => s.GetTripConfigAsync(tripSlug)).ReturnsAsync(config);
-        _storageMock.Setup(s => s.GetTransactionsAsync(tripSlug)).ReturnsAsync(transactions);
+        _tripStorageMock.Setup(ts => ts.GetTripConfigAsync()).ReturnsAsync(config);
+        _tripStorageMock.Setup(ts => ts.GetTransactionsAsync()).ReturnsAsync(transactions);
 
         // Act
         var cut = Render<TripDashboard>(parameters => parameters.Add(p => p.tripSlug, tripSlug));
@@ -344,8 +348,8 @@ public class DashboardTests : BunitContext
             }
         };
 
-        _storageMock.Setup(s => s.GetTripConfigAsync(tripSlug)).ReturnsAsync(config);
-        _storageMock.Setup(s => s.GetTransactionsAsync(tripSlug)).ReturnsAsync(transactions);
+        _tripStorageMock.Setup(ts => ts.GetTripConfigAsync()).ReturnsAsync(config);
+        _tripStorageMock.Setup(ts => ts.GetTransactionsAsync()).ReturnsAsync(transactions);
 
         // Act
         var cut = Render<TripDashboard>(parameters => parameters.Add(p => p.tripSlug, tripSlug));
@@ -395,8 +399,8 @@ public class DashboardTests : BunitContext
             new Transaction { Id = "20260404T100000Z-11223344", Currency = "USD", Date = now, Amount = 30, Description = "USD TX", Split = new Dictionary<string, SplitInfo>() }
         };
 
-        _storageMock.Setup(s => s.GetTripConfigAsync(tripSlug)).ReturnsAsync(config);
-        _storageMock.Setup(s => s.GetTransactionsAsync(tripSlug)).ReturnsAsync(transactions);
+        _tripStorageMock.Setup(ts => ts.GetTripConfigAsync()).ReturnsAsync(config);
+        _tripStorageMock.Setup(ts => ts.GetTransactionsAsync()).ReturnsAsync(transactions);
 
         // Act
         var cut = Render<TripDashboard>(parameters => parameters.Add(p => p.tripSlug, tripSlug));
@@ -432,8 +436,8 @@ public class DashboardTests : BunitContext
             Members = new Dictionary<string, User> { { "mario", new User { Name = "Mario" } } }
         };
 
-        _storageMock.Setup(s => s.GetTripConfigAsync(tripSlug)).ReturnsAsync(config);
-        _storageMock.Setup(s => s.GetTransactionsAsync(tripSlug)).ReturnsAsync(new List<Transaction>());
+        _tripStorageMock.Setup(ts => ts.GetTripConfigAsync()).ReturnsAsync(config);
+        _tripStorageMock.Setup(ts => ts.GetTransactionsAsync()).ReturnsAsync(new List<Transaction>());
 
         // Act
         var cut = Render<TripDashboard>(parameters => parameters.Add(p => p.tripSlug, tripSlug));
@@ -496,8 +500,8 @@ public class DashboardTests : BunitContext
             }
         };
 
-        _storageMock.Setup(s => s.GetTripConfigAsync(tripSlug)).ReturnsAsync(config);
-        _storageMock.Setup(s => s.GetTransactionsAsync(tripSlug)).ReturnsAsync(transactions);
+        _tripStorageMock.Setup(ts => ts.GetTripConfigAsync()).ReturnsAsync(config);
+        _tripStorageMock.Setup(ts => ts.GetTransactionsAsync()).ReturnsAsync(transactions);
 
         // Act
         var cut = Render<MemberDashboard>(parameters => parameters
@@ -566,8 +570,8 @@ public class DashboardTests : BunitContext
             }
         };
 
-        _storageMock.Setup(s => s.GetTripConfigAsync(tripSlug)).ReturnsAsync(config);
-        _storageMock.Setup(s => s.GetTransactionsAsync(tripSlug)).ReturnsAsync(transactions);
+        _tripStorageMock.Setup(ts => ts.GetTripConfigAsync()).ReturnsAsync(config);
+        _tripStorageMock.Setup(ts => ts.GetTransactionsAsync()).ReturnsAsync(transactions);
 
         // Act
         var cut = Render<MemberDashboard>(parameters => parameters
@@ -618,8 +622,8 @@ public class DashboardTests : BunitContext
             }
         };
 
-        _storageMock.Setup(s => s.GetTripConfigAsync(tripSlug)).ReturnsAsync(config);
-        _storageMock.Setup(s => s.GetTransactionsAsync(tripSlug)).ReturnsAsync(transactions);
+        _tripStorageMock.Setup(ts => ts.GetTripConfigAsync()).ReturnsAsync(config);
+        _tripStorageMock.Setup(ts => ts.GetTransactionsAsync()).ReturnsAsync(transactions);
 
         // Act
         var cut = Render<MemberDashboard>(parameters => parameters
@@ -649,8 +653,8 @@ public class DashboardTests : BunitContext
         {
             new Transaction { Type = "contribution", Currency = "EUR", Amount = 150, Split = new Dictionary<string, SplitInfo> { { "m", new SplitInfo { Amount = 150 } } } }
         };
-        _storageMock.Setup(s => s.GetTripConfigAsync(tripSlug)).ReturnsAsync(config);
-        _storageMock.Setup(s => s.GetTransactionsAsync(tripSlug)).ReturnsAsync(transactions);
+        _tripStorageMock.Setup(ts => ts.GetTripConfigAsync()).ReturnsAsync(config);
+        _tripStorageMock.Setup(ts => ts.GetTransactionsAsync()).ReturnsAsync(transactions);
 
         // Act
         var cut = Render<MemberDashboard>(p => p.Add(x => x.tripSlug, tripSlug).Add(x => x.memberSlug, memberSlug));
@@ -692,8 +696,8 @@ public class DashboardTests : BunitContext
             }
         };
 
-        _storageMock.Setup(s => s.GetTripConfigAsync(tripSlug)).ReturnsAsync(config);
-        _storageMock.Setup(s => s.GetTransactionsAsync(tripSlug)).ReturnsAsync(transactions);
+        _tripStorageMock.Setup(ts => ts.GetTripConfigAsync()).ReturnsAsync(config);
+        _tripStorageMock.Setup(ts => ts.GetTransactionsAsync()).ReturnsAsync(transactions);
 
         // Act
         var cut = Render<MemberDashboard>(parameters => parameters
@@ -747,8 +751,8 @@ public class DashboardTests : BunitContext
             Members = new Dictionary<string, User> { { "mario", new User { Name = "Mario", Email = "mario@example.com" } } }
         };
 
-        _storageMock.Setup(s => s.GetTripConfigAsync(tripSlug)).ReturnsAsync(config);
-        _storageMock.Setup(s => s.GetTransactionsAsync(tripSlug)).ReturnsAsync(new List<Transaction>());
+        _tripStorageMock.Setup(ts => ts.GetTripConfigAsync()).ReturnsAsync(config);
+        _tripStorageMock.Setup(ts => ts.GetTransactionsAsync()).ReturnsAsync(new List<Transaction>());
 
         // Act
         var cut = Render<MemberDashboard>(parameters => parameters
@@ -804,8 +808,8 @@ public class DashboardTests : BunitContext
             }
         };
 
-        _storageMock.Setup(s => s.GetTripConfigAsync(tripSlug)).ReturnsAsync(config);
-        _storageMock.Setup(s => s.GetTransactionsAsync(tripSlug)).ReturnsAsync(transactions);
+        _tripStorageMock.Setup(ts => ts.GetTripConfigAsync()).ReturnsAsync(config);
+        _tripStorageMock.Setup(ts => ts.GetTransactionsAsync()).ReturnsAsync(transactions);
 
         // Act
         var cut = Render<MemberDashboard>(parameters => parameters

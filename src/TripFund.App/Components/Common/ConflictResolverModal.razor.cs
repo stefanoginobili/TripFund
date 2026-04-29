@@ -7,7 +7,7 @@ namespace TripFund.App.Components.Common;
 
 public partial class ConflictResolverModal
 {
-    [Inject] private LocalTripStorageService Storage { get; set; } = default!;
+    [Inject] private LocalStorageService Storage { get; set; } = default!;
     [Inject] private IAlertService AlertService { get; set; } = default!;
 
     [Parameter] public bool IsVisible { get; set; }
@@ -53,16 +53,17 @@ public partial class ConflictResolverModal
 
                 var settings = await Storage.GetAppSettingsAsync();
                 currentDeviceId = settings?.DeviceId ?? string.Empty;
-                currentConfig = await Storage.GetTripConfigAsync(TripSlug);
+                var tripStorage = Storage.GetLocalTripStorage(TripSlug);
+                currentConfig = await tripStorage.GetTripConfigAsync();
 
                 if (conflictType == "config")
                 {
-                    configVersions = await Storage.GetConflictingConfigVersionsAsync(TripSlug);
+                    configVersions = await tripStorage.GetConflictingConfigVersionsAsync();
                     CalculateConfigDiffs();
                 }
                 else
                 {
-                    transactionVersions = await Storage.GetConflictingTransactionVersionsAsync(TripSlug, conflictId);
+                    transactionVersions = await tripStorage.GetConflictingTransactionVersionsAsync(conflictId);
                     CalculateTransactionDiffs();
                 }
 
@@ -208,12 +209,12 @@ public partial class ConflictResolverModal
         if (Conflict?.Type == "config" && configVersions != null)
         {
             var winner = configVersions[selectedIndex.Value].Data;
-            await Storage.ResolveConfigConflictAsync(TripSlug, winner, deviceId);
+            await Storage.GetLocalTripStorage(TripSlug).ResolveConfigConflictAsync(winner, deviceId);
         }
         else if (Conflict != null && transactionVersions != null)
         {
             var winner = transactionVersions[selectedIndex.Value].Data;
-            await Storage.ResolveConflictAsync(TripSlug, Conflict.Id, winner, deviceId);
+            await Storage.GetLocalTripStorage(TripSlug).ResolveConflictAsync(Conflict.Id, winner, deviceId);
         }
 
         isSaving = false;

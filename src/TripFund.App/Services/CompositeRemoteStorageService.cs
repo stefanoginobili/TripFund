@@ -8,12 +8,12 @@ public class CompositeRemoteStorageService : IRemoteStorageService
 {
     public event Action<string, bool>? OnSyncStateChanged;
     private readonly OneDriveRemoteStorageService _onedrive;
-    private readonly LocalTripStorageService _storage;
+    private readonly LocalStorageService _storage;
     private readonly HashSet<string> _syncingTrips = new();
 
     public CompositeRemoteStorageService(
         OneDriveRemoteStorageService onedrive,
-        LocalTripStorageService storage)
+        LocalStorageService storage)
     {
         _onedrive = onedrive;
         _storage = storage;
@@ -88,9 +88,9 @@ public class CompositeRemoteStorageService : IRemoteStorageService
                 }
 
                 // Update sync state with last success timestamp
-                var syncState = await _storage.GetSyncStateAsync(tripSlug);
+                var syncState = await _storage.GetLocalTripStorage(tripSlug).GetSyncStateAsync();
                 syncState.Sync.LastSuccessAt = DateTime.UtcNow;
-                await _storage.SaveSyncStateAsync(tripSlug, syncState);
+                await _storage.GetLocalTripStorage(tripSlug).SaveSyncStateAsync(syncState);
             }
         }
         finally

@@ -7,9 +7,9 @@ namespace TripFund.App.Services;
 
 public class RemoteStorageSyncEngine
 {
-    private readonly LocalTripStorageService _localStorage;
+    private readonly LocalStorageService _localStorage;
 
-    public RemoteStorageSyncEngine(LocalTripStorageService localStorage)
+    public RemoteStorageSyncEngine(LocalStorageService localStorage)
     {
         _localStorage = localStorage;
     }
@@ -119,7 +119,7 @@ public class RemoteStorageSyncEngine
             
             logger.LogInfo($"Remote storage is {(entry.RemoteStorage.Readonly ? "READ-ONLY" : "READ-WRITE")}");
 
-            var syncState = await _localStorage.GetSyncStateAsync(tripSlug);
+            var syncState = await _localStorage.GetLocalTripStorage(tripSlug).GetSyncStateAsync();
             var localTripPath = Path.Combine(_localStorage.TripsPath, tripSlug);
 
             // 2. Download Phase
@@ -190,14 +190,14 @@ public class RemoteStorageSyncEngine
                     if (impactedRoots.Count > 0)
                     {
                         logger.LogInfo($"Recalculating heads for {impactedRoots.Count} impacted versioned folders...");
-                        await _localStorage.UpdateVersionHeadsAfterSyncAsync(tripSlug, impactedRoots);
+                        await _localStorage.GetLocalTripStorage(tripSlug).UpdateVersionHeadsAfterSyncAsync(impactedRoots);
                     }
 
                     foreach (var package in toDownload)
                     {
                         syncState.Sync.Remote.AppliedPackages.Add(package.Name);
                     }
-                    await _localStorage.SaveSyncStateAsync(tripSlug, syncState);
+                    await _localStorage.GetLocalTripStorage(tripSlug).SaveSyncStateAsync(syncState);
                     Directory.Delete(tempPath, true);
                 }
                 else
@@ -279,7 +279,7 @@ public class RemoteStorageSyncEngine
                         if (uploaded == null) throw new Exception("Failed to upload ZIP package.");
 
                         syncState.Sync.Local.Pending.RemoveAll(u => uploadedPaths.Contains(u.Path));
-                        await _localStorage.SaveSyncStateAsync(tripSlug, syncState);
+                        await _localStorage.GetLocalTripStorage(tripSlug).SaveSyncStateAsync(syncState);
                         File.Delete(tempZipPath);
                         logger.LogInfo($"Uploaded {uploadedPaths.Count} folders in package {packageName}");
                     }

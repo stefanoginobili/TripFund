@@ -19,7 +19,7 @@ public class OneDriveSyncLogicTests : IDisposable
     private readonly Mock<IWebAuthenticator> _authenticatorMock;
     private readonly Mock<IMicrosoftAuthConfiguration> _configMock;
     private readonly OneDriveRemoteStorageService _service;
-    private readonly LocalTripStorageService _localStorage;
+    private readonly LocalStorageService _localStorage;
     private readonly string _tempPath;
 
     public OneDriveSyncLogicTests()
@@ -31,7 +31,7 @@ public class OneDriveSyncLogicTests : IDisposable
         _tempPath = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString());
         Directory.CreateDirectory(_tempPath);
         
-        _localStorage = new LocalTripStorageService(_tempPath);
+        _localStorage = new LocalStorageService(_tempPath);
         
         var httpClientFactoryMock = new Mock<IHttpClientFactory>();
         var client = new HttpClient { BaseAddress = new Uri(_server.Urls[0]) };
@@ -154,7 +154,7 @@ public class OneDriveSyncLogicTests : IDisposable
 
             // 3. UPLOAD PHASE mocks
             // Prepare a local pending upload
-            await _localStorage.SaveTripConfigAsync(tripSlug, new TripConfig { Name = "Local Trip" }, deviceId);
+            await _localStorage.GetLocalTripStorage(tripSlug).SaveTripConfigAsync(new TripConfig { Name = "Local Trip" }, deviceId);
             // This creates config/001_NEW_local-device-id/
 
             // Expect upload of .zip directly
@@ -172,7 +172,7 @@ public class OneDriveSyncLogicTests : IDisposable
             Assert.True(File.Exists(Path.Combine(remoteLeaf, ".content", "trip_config.json")));
 
             // Verify SyncState updated
-            var syncState = await _localStorage.GetSyncStateAsync(tripSlug);
+            var syncState = await _localStorage.GetLocalTripStorage(tripSlug).GetSyncStateAsync();
             Assert.Contains(remotePkgName, syncState.Sync.Remote.AppliedPackages);
             Assert.Empty(syncState.Sync.Local.Pending); // Should be cleared after success
             // Verify Upload was called
@@ -225,7 +225,7 @@ public class OneDriveSyncLogicTests : IDisposable
             .RespondWith(Response.Create().WithStatusCode(200).WithBody("{ \"value\": [] }"));
 
         // Phase 3: Prepare LARGE content (> 2MB)
-        await _localStorage.SaveTripConfigAsync(tripSlug, new TripConfig { Name = "Large Trip" }, deviceId);
+        await _localStorage.GetLocalTripStorage(tripSlug).SaveTripConfigAsync(new TripConfig { Name = "Large Trip" }, deviceId);
         var pendingLeaf = Path.Combine(localTripPath, "config", ".versions", $"001_NEW_{deviceId}");
         var largeFile = Path.Combine(pendingLeaf, ".content", "large.bin");
         Directory.CreateDirectory(Path.GetDirectoryName(largeFile)!);

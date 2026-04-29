@@ -8,7 +8,7 @@ namespace TripFund.App.Components.Pages
 {
     public partial class EditTrip
     {
-        [Inject] private LocalTripStorageService Storage { get; set; } = default!;
+        [Inject] private LocalStorageService Storage { get; set; } = default!;
         [Inject] private NavigationManager Nav { get; set; } = default!;
         [Inject] private IAlertService Alerts { get; set; } = default!;
         [Inject] private IJSRuntime JSRuntime { get; set; } = default!;
@@ -62,7 +62,7 @@ namespace TripFund.App.Components.Pages
 
         protected override async Task OnInitializedAsync()
         {
-            config = await Storage.GetTripConfigAsync(tripSlug);
+            config = await Storage.GetLocalTripStorage(tripSlug).GetTripConfigAsync();
             if (config != null)
             {
                 originalConfigJson = System.Text.Json.JsonSerializer.Serialize(config);
@@ -71,7 +71,7 @@ namespace TripFund.App.Components.Pages
             var registry = await Storage.GetTripRegistryAsync();
             if (registry != null && registry.Trips.TryGetValue(tripSlug, out var entry))
             {
-                isReadonly = (entry.RemoteStorage?.Readonly ?? false) || await Storage.HasConflictsAsync(tripSlug);
+                isReadonly = (entry.RemoteStorage?.Readonly ?? false) || await Storage.GetLocalTripStorage(tripSlug).HasConflictsAsync();
             }
 
             var settings = await Storage.GetAppSettingsAsync();
@@ -354,7 +354,7 @@ namespace TripFund.App.Components.Pages
             if (config.Currencies.Count == 0) { error = "Aggiungi almeno una valuta."; return; }
 
             var settings = await Storage.GetAppSettingsAsync();
-            await Storage.SaveTripConfigAsync(tripSlug, config, settings?.DeviceId ?? "unknown");
+            await Storage.GetLocalTripStorage(tripSlug).SaveTripConfigAsync(config, settings?.DeviceId ?? "unknown");
             Nav.NavigateTo($"/trip/{tripSlug}");
         }
 

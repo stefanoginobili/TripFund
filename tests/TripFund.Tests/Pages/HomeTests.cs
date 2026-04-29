@@ -10,7 +10,8 @@ namespace TripFund.Tests.Pages;
 
 public class HomeTests : BunitContext
 {
-    private readonly Mock<LocalTripStorageService> _storageMock;
+    private readonly Mock<LocalStorageService> _storageMock;
+    private readonly Mock<LocalTripStorage> _tripStorageMock;
     private readonly Mock<IRemoteStorageService> _remoteStorageMock;
     private readonly Mock<IAlertService> _alertMock;
     private readonly Mock<OneDriveRemoteStorageService> _oneDriveMock;
@@ -23,7 +24,8 @@ public class HomeTests : BunitContext
         System.Globalization.CultureInfo.DefaultThreadCurrentCulture = itCulture;
         System.Globalization.CultureInfo.DefaultThreadCurrentUICulture = itCulture;
 
-        _storageMock = new Mock<LocalTripStorageService>("dummy_path");
+        _storageMock = new Mock<LocalStorageService>("dummy_path");
+        _tripStorageMock = new Mock<LocalTripStorage>(_storageMock.Object, "test-trip");
         _remoteStorageMock = new Mock<IRemoteStorageService>();
         _alertMock = new Mock<IAlertService>();
         _msAuthConfigMock = new Mock<IMicrosoftAuthConfiguration>();
@@ -37,6 +39,8 @@ public class HomeTests : BunitContext
             _msAuthConfigMock.Object,
             new RemoteStorageSyncEngine(_storageMock.Object),
             "https://graph.microsoft.com/v1.0");
+
+        _storageMock.Setup(s => s.GetLocalTripStorage(It.IsAny<string>())).Returns(_tripStorageMock.Object);
 
         Services.AddSingleton(_storageMock.Object);
         Services.AddSingleton(_remoteStorageMock.Object);
@@ -83,9 +87,18 @@ public class HomeTests : BunitContext
         var past = new TripConfig { Id = "p", Name = "Past Trip", StartDate = today.AddDays(-20), EndDate = today.AddDays(-10) };
 
         _storageMock.Setup(s => s.GetTripRegistryAsync()).ReturnsAsync(registry);
-        _storageMock.Setup(s => s.GetTripConfigAsync("current")).ReturnsAsync(current);
-        _storageMock.Setup(s => s.GetTripConfigAsync("future")).ReturnsAsync(future);
-        _storageMock.Setup(s => s.GetTripConfigAsync("past")).ReturnsAsync(past);
+        
+        var currentTripMock = new Mock<LocalTripStorage>(_storageMock.Object, "current");
+        currentTripMock.Setup(t => t.GetTripConfigAsync()).ReturnsAsync(current);
+        _storageMock.Setup(s => s.GetLocalTripStorage("current")).Returns(currentTripMock.Object);
+
+        var futureTripMock = new Mock<LocalTripStorage>(_storageMock.Object, "future");
+        futureTripMock.Setup(t => t.GetTripConfigAsync()).ReturnsAsync(future);
+        _storageMock.Setup(s => s.GetLocalTripStorage("future")).Returns(futureTripMock.Object);
+
+        var pastTripMock = new Mock<LocalTripStorage>(_storageMock.Object, "past");
+        pastTripMock.Setup(t => t.GetTripConfigAsync()).ReturnsAsync(past);
+        _storageMock.Setup(s => s.GetLocalTripStorage("past")).Returns(pastTripMock.Object);
 
         // Act
         var cut = Render<Home>();

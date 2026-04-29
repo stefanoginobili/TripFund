@@ -9,7 +9,7 @@ namespace TripFund.App.Components.Pages
 {
     public partial class MemberDashboard
     {
-        [Inject] private LocalTripStorageService Storage { get; set; } = default!;
+        [Inject] private LocalStorageService Storage { get; set; } = default!;
         [Inject] private IEmailService EmailService { get; set; } = default!;
         [Inject] private IAlertService AlertService { get; set; } = default!;
         [Inject] private NavigationManager Nav { get; set; } = default!;
@@ -41,17 +41,17 @@ namespace TripFund.App.Components.Pages
 
         protected override async Task OnInitializedAsync()
         {
-            config = await Storage.GetTripConfigAsync(tripSlug);
+            config = await Storage.GetLocalTripStorage(tripSlug).GetTripConfigAsync();
             
             var registry = await Storage.GetTripRegistryAsync();
             if (registry != null && registry.Trips.TryGetValue(tripSlug, out var entry))
             {
-                isReadonly = (entry.RemoteStorage?.Readonly ?? false) || await Storage.HasConflictsAsync(tripSlug);
+                isReadonly = (entry.RemoteStorage?.Readonly ?? false) || await Storage.GetLocalTripStorage(tripSlug).HasConflictsAsync();
             }
 
             if (config != null)
             {
-                allTransactions = await Storage.GetTransactionsAsync(tripSlug);
+                allTransactions = await Storage.GetLocalTripStorage(tripSlug).GetTransactionsAsync();
 
                 if (config.Members.TryGetValue(memberSlug, out var m))
                 {

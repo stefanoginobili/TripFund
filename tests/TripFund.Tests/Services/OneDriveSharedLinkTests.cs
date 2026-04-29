@@ -27,7 +27,7 @@ public class OneDriveSharedLinkTests : IDisposable
         _tempPath = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString());
         Directory.CreateDirectory(_tempPath);
         
-        var localStorage = new LocalTripStorageService(_tempPath);
+        var localStorage = new LocalStorageService(_tempPath);
         
         var httpClientFactoryMock = new Mock<IHttpClientFactory>();
         var client = new HttpClient { BaseAddress = new Uri(_server.Urls[0]) };

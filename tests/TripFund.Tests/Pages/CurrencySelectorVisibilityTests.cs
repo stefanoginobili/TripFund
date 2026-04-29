@@ -13,7 +13,8 @@ namespace TripFund.Tests.Pages;
 
 public class CurrencySelectorVisibilityTests : BunitContext
 {
-    private readonly Mock<LocalTripStorageService> _storageMock;
+    private readonly Mock<LocalStorageService> _storageMock;
+    private readonly Mock<LocalTripStorage> _tripStorageMock;
     private readonly Mock<IAlertService> _alertMock;
     private readonly Mock<IEmailService> _emailMock;
     private readonly Mock<INativeDatePickerService> _datePickerMock;
@@ -21,13 +22,15 @@ public class CurrencySelectorVisibilityTests : BunitContext
 
     public CurrencySelectorVisibilityTests()
     {
-        _storageMock = new Mock<LocalTripStorageService>("dummy_path");
+        _storageMock = new Mock<LocalStorageService>("dummy_path");
+        _tripStorageMock = new Mock<LocalTripStorage>(_storageMock.Object, "test-trip");
         _alertMock = new Mock<IAlertService>();
         _emailMock = new Mock<IEmailService>();
         _datePickerMock = new Mock<INativeDatePickerService>();
         _thumbnailMock = new Mock<IThumbnailService>();
         
         _storageMock.Setup(s => s.GetTripRegistryAsync()).ReturnsAsync(new LocalTripRegistry());
+        _storageMock.Setup(s => s.GetLocalTripStorage(It.IsAny<string>())).Returns(_tripStorageMock.Object);
         
         Services.AddSingleton(_storageMock.Object);
         Services.AddSingleton(_alertMock.Object);
@@ -61,7 +64,7 @@ public class CurrencySelectorVisibilityTests : BunitContext
             },
             Members = new Dictionary<string, User> { { "mario", new User { Name = "Mario" } } }
         };
-        _storageMock.Setup(s => s.GetTripConfigAsync(tripSlug)).ReturnsAsync(config);
+        _tripStorageMock.Setup(ts => ts.GetTripConfigAsync()).ReturnsAsync(config);
 
         // Act - Request USD
         var nav = Services.GetRequiredService<NavigationManager>();
@@ -92,7 +95,7 @@ public class CurrencySelectorVisibilityTests : BunitContext
             },
             Members = new Dictionary<string, User> { { "mario", new User { Name = "Mario" } } }
         };
-        _storageMock.Setup(s => s.GetTripConfigAsync(tripSlug)).ReturnsAsync(config);
+        _tripStorageMock.Setup(ts => ts.GetTripConfigAsync()).ReturnsAsync(config);
 
         // Act - Request EUR
         var nav = Services.GetRequiredService<NavigationManager>();
@@ -119,8 +122,8 @@ public class CurrencySelectorVisibilityTests : BunitContext
             Currencies = new Dictionary<string, Currency> { { "EUR", new Currency { Symbol = "€" } } },
             Members = new Dictionary<string, User> { { "mario", new User { Name = "Mario" } } }
         };
-        _storageMock.Setup(s => s.GetTripConfigAsync(tripSlug)).ReturnsAsync(config);
-        _storageMock.Setup(s => s.GetTransactionsAsync(tripSlug)).ReturnsAsync(new List<Transaction>());
+        _tripStorageMock.Setup(ts => ts.GetTripConfigAsync()).ReturnsAsync(config);
+        _tripStorageMock.Setup(ts => ts.GetTransactionsAsync()).ReturnsAsync(new List<Transaction>());
 
         // Act
         var cut = Render<TripDashboard>(parameters => parameters.Add(p => p.tripSlug, tripSlug));
@@ -143,8 +146,8 @@ public class CurrencySelectorVisibilityTests : BunitContext
             },
             Members = new Dictionary<string, User> { { "mario", new User { Name = "Mario" } } }
         };
-        _storageMock.Setup(s => s.GetTripConfigAsync(tripSlug)).ReturnsAsync(config);
-        _storageMock.Setup(s => s.GetTransactionsAsync(tripSlug)).ReturnsAsync(new List<Transaction>());
+        _tripStorageMock.Setup(ts => ts.GetTripConfigAsync()).ReturnsAsync(config);
+        _tripStorageMock.Setup(ts => ts.GetTransactionsAsync()).ReturnsAsync(new List<Transaction>());
 
         // Act
         var cut = Render<TripDashboard>(parameters => parameters.Add(p => p.tripSlug, tripSlug));
@@ -165,8 +168,8 @@ public class CurrencySelectorVisibilityTests : BunitContext
             Currencies = new Dictionary<string, Currency> { { "EUR", new Currency { Symbol = "€" } } },
             Members = new Dictionary<string, User> { { memberSlug, new User { Name = "Mario" } } }
         };
-        _storageMock.Setup(s => s.GetTripConfigAsync(tripSlug)).ReturnsAsync(config);
-        _storageMock.Setup(s => s.GetTransactionsAsync(tripSlug)).ReturnsAsync(new List<Transaction>());
+        _tripStorageMock.Setup(ts => ts.GetTripConfigAsync()).ReturnsAsync(config);
+        _tripStorageMock.Setup(ts => ts.GetTransactionsAsync()).ReturnsAsync(new List<Transaction>());
 
         // Act
         var cut = Render<MemberDashboard>(parameters => parameters
@@ -188,7 +191,7 @@ public class CurrencySelectorVisibilityTests : BunitContext
             Currencies = new Dictionary<string, Currency> { { "EUR", new Currency { Symbol = "€" } } },
             Members = new Dictionary<string, User> { { "mario", new User { Name = "Mario" } } }
         };
-        _storageMock.Setup(s => s.GetTripConfigAsync(tripSlug)).ReturnsAsync(config);
+        _tripStorageMock.Setup(ts => ts.GetTripConfigAsync()).ReturnsAsync(config);
         
         var nav = Services.GetRequiredService<NavigationManager>();
         nav.NavigateTo($"/trip/{tripSlug}/contribution?currency=EUR");
@@ -223,7 +226,7 @@ public class CurrencySelectorVisibilityTests : BunitContext
             Currencies = new Dictionary<string, Currency> { { "USD", new Currency { Symbol = "$" } } },
             Members = new Dictionary<string, User> { { memberSlug, new User { Name = "Mario" } } }
         };
-        _storageMock.Setup(s => s.GetTripConfigAsync(tripSlug)).ReturnsAsync(config);
+        _tripStorageMock.Setup(ts => ts.GetTripConfigAsync()).ReturnsAsync(config);
         
         var nav = Services.GetRequiredService<NavigationManager>();
         nav.NavigateTo($"/trip/{tripSlug}/contribution?member={memberSlug}&currency=USD");

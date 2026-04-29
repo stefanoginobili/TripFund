@@ -11,7 +11,7 @@ namespace TripFund.Tests.Pages;
 
 public class OnboardingTests : BunitContext
 {
-    private readonly Mock<LocalTripStorageService> _storageMock;
+    private readonly Mock<LocalStorageService> _storageMock;
 
     public OnboardingTests()
     {
@@ -19,7 +19,7 @@ public class OnboardingTests : BunitContext
         System.Globalization.CultureInfo.DefaultThreadCurrentCulture = itCulture;
         System.Globalization.CultureInfo.DefaultThreadCurrentUICulture = itCulture;
 
-        _storageMock = new Mock<LocalTripStorageService>("dummy_path");
+        _storageMock = new Mock<LocalStorageService>("dummy_path");
         Services.AddSingleton(_storageMock.Object);
     }
 

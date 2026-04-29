@@ -7,7 +7,7 @@ namespace TripFund.App.Components.Pages
 {
     public partial class Home
     {
-        [Inject] private LocalTripStorageService Storage { get; set; } = default!;
+        [Inject] private LocalStorageService Storage { get; set; } = default!;
         [Inject] private IRemoteStorageService RemoteStorage { get; set; } = default!;
         [Inject] private NavigationManager Nav { get; set; } = default!;
         [Inject] private IAlertService Alert { get; set; } = default!;
@@ -104,7 +104,7 @@ namespace TripFund.App.Components.Pages
 
             foreach (var entry in registry.Trips)
             {
-                var config = await Storage.GetTripConfigAsync(entry.Key);
+                var config = await Storage.GetLocalTripStorage(entry.Key).GetTripConfigAsync();
                 if (config != null)
                 {
                     allLoaded.Add(new TripListItem 

@@ -22,7 +22,7 @@ public class OneDriveRemoteStorageService : IRemoteStorageService, IRemoteFileSy
     private readonly HttpClient _httpClient;
     private readonly IHttpClientFactory _httpClientFactory;
     private readonly IWebAuthenticator _authenticator;
-    private readonly LocalTripStorageService _localStorage;
+    private readonly LocalStorageService _localStorage;
     private readonly IMicrosoftAuthConfiguration _config;
     private readonly RemoteStorageSyncEngine _syncEngine;
     private readonly SemaphoreSlim _authSemaphore = new(1, 1);
@@ -33,7 +33,7 @@ public class OneDriveRemoteStorageService : IRemoteStorageService, IRemoteFileSy
     public OneDriveRemoteStorageService(
         IHttpClientFactory httpClientFactory,
         IWebAuthenticator authenticator,
-        LocalTripStorageService localStorage,
+        LocalStorageService localStorage,
         IMicrosoftAuthConfiguration config,
         RemoteStorageSyncEngine syncEngine,
         string graphBaseUrl = AppConstants.MicrosoftApi.GraphBaseUrl)

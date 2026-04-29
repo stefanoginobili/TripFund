@@ -27,7 +27,7 @@ public class RemoteStorageLoggingTests : IDisposable
         _tempPath = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString());
         Directory.CreateDirectory(_tempPath);
         
-        var localStorage = new LocalTripStorageService(_tempPath);
+        var localStorage = new LocalStorageService(_tempPath);
         
         var httpClientFactoryMock = new Mock<IHttpClientFactory>();
         var client = new HttpClient { BaseAddress = new Uri(_server.Urls[0]) };
@@ -129,7 +129,7 @@ public class RemoteStorageLoggingTests : IDisposable
                 } 
             } 
         };
-        var localStorage = new LocalTripStorageService(_tempPath);
+        var localStorage = new LocalStorageService(_tempPath);
         await localStorage.SaveTripRegistryAsync(registry);
         
         var localTripDir = Path.Combine(localStorage.TripsPath, tripSlug);
@@ -182,7 +182,7 @@ public class RemoteStorageLoggingTests : IDisposable
     {
         // Arrange
         var tripSlug = "rotation-test";
-        var localStorage = new LocalTripStorageService(_tempPath);
+        var localStorage = new LocalStorageService(_tempPath);
         var engine = new RemoteStorageSyncEngine(localStorage);
         
         // Create 25 dummy log files in the sync/logs directory

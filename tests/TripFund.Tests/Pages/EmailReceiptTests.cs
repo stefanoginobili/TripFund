@@ -14,7 +14,8 @@ namespace TripFund.Tests.Pages;
 
 public class EmailReceiptTests : BunitContext
 {
-    private readonly Mock<LocalTripStorageService> _storageMock;
+    private readonly Mock<LocalStorageService> _storageMock;
+    private readonly Mock<LocalTripStorage> _tripStorageMock;
     private readonly Mock<IEmailService> _emailMock;
     private readonly Mock<IAlertService> _alertMock;
 
@@ -24,9 +25,13 @@ public class EmailReceiptTests : BunitContext
         System.Globalization.CultureInfo.DefaultThreadCurrentCulture = itCulture;
         System.Globalization.CultureInfo.DefaultThreadCurrentUICulture = itCulture;
 
-        _storageMock = new Mock<LocalTripStorageService>("dummy_path");
+        _storageMock = new Mock<LocalStorageService>("dummy_path");
+        _tripStorageMock = new Mock<LocalTripStorage>(_storageMock.Object, "test-trip");
         _emailMock = new Mock<IEmailService>();
         _alertMock = new Mock<IAlertService>();
+
+        _storageMock.Setup(s => s.GetLocalTripStorage(It.IsAny<string>())).Returns(_tripStorageMock.Object);
+        _storageMock.Setup(s => s.GetTripRegistryAsync()).ReturnsAsync(new LocalTripRegistry());
 
         Services.AddSingleton(_storageMock.Object);
         Services.AddSingleton(_emailMock.Object);
@@ -63,13 +68,13 @@ public class EmailReceiptTests : BunitContext
                 { "mario", new User { Name = "Mario", Email = "mario@example.com", Avatar = "M" } }
             }
         };
-        _storageMock.Setup(s => s.GetTripConfigAsync(tripSlug)).ReturnsAsync(config);
+        _tripStorageMock.Setup(s => s.GetTripConfigAsync()).ReturnsAsync(config);
         
         var transactions = new List<Transaction>();
-        _storageMock.Setup(s => s.GetTransactionsAsync(tripSlug)).ReturnsAsync(transactions);
+        _tripStorageMock.Setup(s => s.GetTransactionsAsync()).ReturnsAsync(transactions);
         
-        _storageMock.Setup(s => s.SaveTransactionAsync(tripSlug, It.IsAny<Transaction>(), It.IsAny<string>(), It.IsAny<bool>(), It.IsAny<Dictionary<string, byte[]>>()))
-            .Callback<string, Transaction, string, bool, Dictionary<string, byte[]>>((s, t, d, b, a) => transactions.Add(t))
+        _tripStorageMock.Setup(s => s.SaveTransactionAsync(It.IsAny<Transaction>(), It.IsAny<string>(), It.IsAny<bool>(), It.IsAny<Dictionary<string, byte[]>>()))
+            .Callback<Transaction, string, bool, Dictionary<string, byte[]>>((t, d, b, a) => transactions.Add(t))
             .Returns(Task.CompletedTask);
         
         // Mock alert confirmation to return TRUE (Sì)
@@ -116,8 +121,8 @@ public class EmailReceiptTests : BunitContext
                 { "mario", new User { Name = "Mario", Email = "mario@example.com", Avatar = "M" } }
             }
         };
-        _storageMock.Setup(s => s.GetTripConfigAsync(tripSlug)).ReturnsAsync(config);
-        _storageMock.Setup(s => s.GetTransactionsAsync(tripSlug)).ReturnsAsync(new List<Transaction>());
+        _tripStorageMock.Setup(s => s.GetTripConfigAsync()).ReturnsAsync(config);
+        _tripStorageMock.Setup(s => s.GetTransactionsAsync()).ReturnsAsync(new List<Transaction>());
         
         // Mock alert confirmation to return FALSE (No)
         _alertMock.Setup(a => a.ConfirmAsync("Invia ricevuta", It.IsAny<string>(), "Sì", "No", It.IsAny<AlertType>()))
@@ -161,13 +166,13 @@ public class EmailReceiptTests : BunitContext
                 { "mario", new User { Name = "Mario", Email = "", Avatar = "M" } }
             }
         };
-        _storageMock.Setup(s => s.GetTripConfigAsync(tripSlug)).ReturnsAsync(config);
+        _tripStorageMock.Setup(s => s.GetTripConfigAsync()).ReturnsAsync(config);
         
         var transactions = new List<Transaction>();
-        _storageMock.Setup(s => s.GetTransactionsAsync(tripSlug)).ReturnsAsync(transactions);
+        _tripStorageMock.Setup(s => s.GetTransactionsAsync()).ReturnsAsync(transactions);
         
-        _storageMock.Setup(s => s.SaveTransactionAsync(tripSlug, It.IsAny<Transaction>(), It.IsAny<string>(), It.IsAny<bool>(), It.IsAny<Dictionary<string, byte[]>>()))
-            .Callback<string, Transaction, string, bool, Dictionary<string, byte[]>>((s, t, d, b, a) => transactions.Add(t))
+        _tripStorageMock.Setup(s => s.SaveTransactionAsync(It.IsAny<Transaction>(), It.IsAny<string>(), It.IsAny<bool>(), It.IsAny<Dictionary<string, byte[]>>()))
+            .Callback<Transaction, string, bool, Dictionary<string, byte[]>>((t, d, b, a) => transactions.Add(t))
             .Returns(Task.CompletedTask);
         
         // Mock alert confirmation to return TRUE (Sì)

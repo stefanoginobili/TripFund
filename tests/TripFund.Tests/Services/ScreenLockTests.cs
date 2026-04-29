@@ -8,7 +8,7 @@ namespace TripFund.Tests.Services;
 public class ScreenLockTests
 {
     private readonly Mock<OneDriveRemoteStorageService> _onedriveMock;
-    private readonly Mock<LocalTripStorageService> _storageMock;
+    private readonly Mock<LocalStorageService> _storageMock;
     private readonly CompositeRemoteStorageService _service;
 
     public ScreenLockTests()
@@ -16,7 +16,7 @@ public class ScreenLockTests
         var tempPath = Path.Combine(Path.GetTempPath(), "TripFundTests_" + Guid.NewGuid().ToString());
         Directory.CreateDirectory(tempPath);
 
-        _storageMock = new Mock<LocalTripStorageService>(tempPath);
+        _storageMock = new Mock<LocalStorageService>(tempPath);
         _onedriveMock = new Mock<OneDriveRemoteStorageService>(
             new Mock<IHttpClientFactory>().Object,
             new Mock<TripFund.App.Services.IWebAuthenticator>().Object,
@@ -46,7 +46,11 @@ public class ScreenLockTests
         };
 
         _storageMock.Setup(s => s.GetTripRegistryAsync()).ReturnsAsync(registry);
-        _storageMock.Setup(s => s.GetSyncStateAsync(tripSlug)).ReturnsAsync(new SyncState());
+        
+        var mockTripStorage = new Mock<LocalTripStorage>(_storageMock.Object, tripSlug);
+        mockTripStorage.Setup(s => s.GetSyncStateAsync()).ReturnsAsync(new SyncState());
+        _storageMock.Setup(s => s.GetLocalTripStorage(tripSlug)).Returns(mockTripStorage.Object);
+
         _onedriveMock.Setup(s => s.SynchronizeAsync(tripSlug)).Returns(Task.CompletedTask);
 
         // Act

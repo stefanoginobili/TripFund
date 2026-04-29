@@ -9,7 +9,7 @@ namespace TripFund.App.Components.Pages
 {
     public partial class ExpenseEditor
     {
-        [Inject] private LocalTripStorageService Storage { get; set; } = default!;
+        [Inject] private LocalStorageService Storage { get; set; } = default!;
         [Inject] private NavigationManager Nav { get; set; } = default!;
         [Inject] private IJSRuntime JSRuntime { get; set; } = default!;
         [Inject] private IAlertService Alerts { get; set; } = default!;
@@ -21,7 +21,7 @@ namespace TripFund.App.Components.Pages
         [SupplyParameterFromQuery] public string? edit { get; set; }
 
         private TripConfig? config;
-        private LocalTripStorageService.TransactionVersionInfo? editingInfo;
+        private LocalTripStorage.TransactionVersionInfo? editingInfo;
         private string? originalTxJson;
         private string selectedCurrency = "";
         private decimal totalAmount;
@@ -42,7 +42,8 @@ namespace TripFund.App.Components.Pages
 
         protected override async Task OnInitializedAsync()
         {
-            config = await Storage.GetTripConfigAsync(tripSlug);
+            var tripStorage = Storage.GetLocalTripStorage(tripSlug);
+            config = await tripStorage.GetTripConfigAsync();
             var settings = await Storage.GetAppSettingsAsync();
             deviceId = settings?.DeviceId ?? "unknown";
             authorName = settings?.AuthorName ?? "Unknown";
@@ -50,7 +51,7 @@ namespace TripFund.App.Components.Pages
             var registry = await Storage.GetTripRegistryAsync();
             if (registry != null && registry.Trips.TryGetValue(tripSlug, out var entry))
             {
-                isReadonly = (entry.RemoteStorage?.Readonly ?? false) || await Storage.HasConflictsAsync(tripSlug);
+                isReadonly = (entry.RemoteStorage?.Readonly ?? false) || await tripStorage.HasConflictsAsync();
             }
 
             if (config != null)
@@ -65,7 +66,7 @@ namespace TripFund.App.Components.Pages
 
                 if (!string.IsNullOrEmpty(edit))
                 {
-                    editingInfo = await Storage.GetLatestTransactionVersionWithDetailsAsync(tripSlug, edit);
+                    editingInfo = await tripStorage.GetLatestTransactionVersionWithDetailsAsync(edit);
                     if (editingInfo != null && editingInfo.Transaction != null && editingInfo.Transaction.Type == "expense")
                     {
                         var tx = editingInfo.Transaction;
@@ -117,7 +118,7 @@ namespace TripFund.App.Components.Pages
                             var localizedTime = TimeZoneInfo.ConvertTimeFromUtc(att.CreatedAt, tz);
                             info.DisplayTimestamp = localizedTime.ToString("dd/MM/yyyy HH:mm");
 
-                            var path = await Storage.GetAttachmentPath(tripSlug, edit, att.Name);
+                            var path = await tripStorage.GetAttachmentPath(edit, att.Name);
                             if (!string.IsNullOrEmpty(path))
                             {
                                 var ext = Path.GetExtension(att.Name).ToLower();
@@ -280,7 +281,7 @@ namespace TripFund.App.Components.Pages
 
             try
             {
-                await Storage.SaveTransactionAsync(tripSlug, editingInfo.Transaction, deviceId, isDelete: true);
+                await Storage.GetLocalTripStorage(tripSlug).SaveTransactionAsync(editingInfo.Transaction, deviceId, isDelete: true);
                 await GoBack();
             }
             catch (Exception ex)
@@ -700,7 +701,7 @@ namespace TripFund.App.Components.Pages
 
             try
             {
-                await Storage.SaveTransactionAsync(tripSlug, transaction, deviceId, attachments: attachmentsDict);
+                await Storage.GetLocalTripStorage(tripSlug).SaveTransactionAsync(transaction, deviceId, attachments: attachmentsDict);
                 await GoBack();
             }
             catch (Exception ex)

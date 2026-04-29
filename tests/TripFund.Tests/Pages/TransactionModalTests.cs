@@ -11,7 +11,8 @@ namespace TripFund.Tests.Pages;
 
 public class TransactionModalTests : BunitContext
 {
-    private readonly Mock<LocalTripStorageService> _storageMock;
+    private readonly Mock<LocalStorageService> _storageMock;
+    private readonly Mock<LocalTripStorage> _tripStorageMock;
     private readonly Mock<IAlertService> _alertMock;
     private readonly Mock<IThumbnailService> _thumbnailMock;
 
@@ -21,9 +22,13 @@ public class TransactionModalTests : BunitContext
         System.Globalization.CultureInfo.DefaultThreadCurrentCulture = itCulture;
         System.Globalization.CultureInfo.DefaultThreadCurrentUICulture = itCulture;
 
-        _storageMock = new Mock<LocalTripStorageService>("dummy_path");
+        _storageMock = new Mock<LocalStorageService>("dummy_path");
+        _tripStorageMock = new Mock<LocalTripStorage>(_storageMock.Object, "test-trip");
         _alertMock = new Mock<IAlertService>();
         _thumbnailMock = new Mock<IThumbnailService>();
+
+        _storageMock.Setup(s => s.GetLocalTripStorage(It.IsAny<string>())).Returns(_tripStorageMock.Object);
+
         Services.AddSingleton(_storageMock.Object);
         Services.AddSingleton(_alertMock.Object);
         Services.AddSingleton(_thumbnailMock.Object);
@@ -176,8 +181,8 @@ public class TransactionModalTests : BunitContext
             Split = new Dictionary<string, SplitInfo>()
         };
 
-        _storageMock.Setup(s => s.GetAttachmentPath(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>()))
-            .ReturnsAsync((string ts, string tid, string fn) => $"fake/path/{fn}");
+        _tripStorageMock.Setup(s => s.GetAttachmentPath(It.IsAny<string>(), It.IsAny<string>()))
+            .ReturnsAsync((string tid, string fn) => $"fake/path/{fn}");
         
         _thumbnailMock.Setup(t => t.GetThumbnailBase64Async(It.Is<string>(s => s.Contains("receipt1.jpg"))))
             .ReturnsAsync("data:image/jpeg;base64,fake");

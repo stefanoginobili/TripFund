@@ -1,6 +1,6 @@
 @using TripFund.App.Services
 @using TripFund.App.Models
-@inject LocalTripStorageService Storage
+@inject LocalStorageService Storage
 @inject IRemoteStorageService RemoteStorage
 @implements IDisposable
 
@@ -150,14 +150,15 @@
             isReadonly = entry.RemoteStorage?.Readonly ?? false;
         }
 
-        var syncState = await Storage.GetSyncStateAsync(TripSlug);
+        var tripStorage = Storage.GetLocalTripStorage(TripSlug);
+        var syncState = await tripStorage.GetSyncStateAsync();
         lastSynchronized = syncState?.Sync?.LastSuccessAt;
         
-        hasConflictsFlag = await Storage.HasConflictsAsync(TripSlug);
+        hasConflictsFlag = await tripStorage.HasConflictsAsync();
 
         if (hasConflictsFlag)
         {
-            _conflicts = await Storage.GetConflictsAsync(TripSlug);
+            _conflicts = await tripStorage.GetConflictsAsync();
         }
         else
         {
@@ -184,7 +185,7 @@
         }
         catch (SyncConflictException)
         {
-            _conflicts = await Storage.GetConflictsAsync(TripSlug);
+            _conflicts = await Storage.GetLocalTripStorage(TripSlug).GetConflictsAsync();
             await InvokeAsync(StateHasChanged);
         }
         catch (Exception ex)

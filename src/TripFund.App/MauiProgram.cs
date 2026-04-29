@@ -27,7 +27,7 @@ public static class MauiProgram
 		builder.Services.AddSingleton<Services.OneDriveRemoteStorageService>();
 		builder.Services.AddHttpClient<Services.IOneDrivePickerService, Services.OneDrivePickerService>()
 			.AddStandardResilienceHandler();
-		builder.Services.AddSingleton<Services.LocalTripStorageService>();
+		builder.Services.AddSingleton<Services.LocalStorageService>();
 		builder.Services.AddHttpClient<Services.IExchangeRateService, Services.ExchangeRateService>();
 		builder.Services.AddSingleton<Services.RemoteStorageSyncEngine>();
 		builder.Services.AddSingleton<Services.IMicrosoftAuthConfiguration, Services.MicrosoftAuthConfiguration>();

@@ -8,7 +8,7 @@ namespace TripFund.App.Components.Pages
 {
     public partial class ExpensesCharts
     {
-        [Inject] private LocalTripStorageService Storage { get; set; } = default!;
+        [Inject] private LocalStorageService Storage { get; set; } = default!;
         [Inject] private NavigationManager Nav { get; set; } = default!;
         [Inject] private IExchangeRateService ExchangeRates { get; set; } = default!;
 
@@ -26,10 +26,10 @@ namespace TripFund.App.Components.Pages
 
         protected override async Task OnInitializedAsync()
         {
-            config = await Storage.GetTripConfigAsync(tripSlug);
+            config = await Storage.GetLocalTripStorage(tripSlug).GetTripConfigAsync();
             if (config == null) return;
 
-            var transactions = await Storage.GetTransactionsAsync(tripSlug);
+            var transactions = await Storage.GetLocalTripStorage(tripSlug).GetTransactionsAsync();
             tripExpenses = transactions.Where(t => t.Type == "expense").ToList();
 
             if (!tripExpenses.Any()) return;

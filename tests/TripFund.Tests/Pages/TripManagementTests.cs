@@ -11,7 +11,8 @@ namespace TripFund.Tests.Pages;
 
 public class TripManagementTests : BunitContext
 {
-    private readonly Mock<LocalTripStorageService> _storageMock;
+    private readonly Mock<LocalStorageService> _storageMock;
+    private readonly Mock<LocalTripStorage> _tripStorageMock;
     private readonly Mock<IRemoteStorageService> _remoteStorageMock;
     private readonly Mock<IAlertService> _alertMock;
     private readonly Mock<INativeDatePickerService> _datePickerMock;
@@ -22,16 +23,20 @@ public class TripManagementTests : BunitContext
         System.Globalization.CultureInfo.DefaultThreadCurrentCulture = itCulture;
         System.Globalization.CultureInfo.DefaultThreadCurrentUICulture = itCulture;
 
-        _storageMock = new Mock<LocalTripStorageService>("dummy_path");
+        _storageMock = new Mock<LocalStorageService>("dummy_path");
+        _tripStorageMock = new Mock<LocalTripStorage>(_storageMock.Object, "test-trip");
         _storageMock.Setup(s => s.TripsPath).Returns("dummy_trips_path");
+        _storageMock.Setup(s => s.GetLocalTripStorage(It.IsAny<string>())).Returns(_tripStorageMock.Object);
+
         _remoteStorageMock = new Mock<IRemoteStorageService>();
         _alertMock = new Mock<IAlertService>();
         _datePickerMock = new Mock<INativeDatePickerService>();
-        
+
         Services.AddSingleton(_storageMock.Object);
         Services.AddSingleton(_remoteStorageMock.Object);
         Services.AddSingleton(_alertMock.Object);
         Services.AddSingleton(_datePickerMock.Object);
+
 
         JSInterop.SetupVoid("appLogic.lockScroll");
         JSInterop.SetupVoid("appLogic.unlockScroll");
@@ -67,7 +72,7 @@ public class TripManagementTests : BunitContext
         await cut.Find(".btn-primary-vibe").ClickAsync();
 
         // Assert
-        _storageMock.Verify(s => s.SaveTripConfigAsync("new-trip_123", It.Is<TripConfig>(c => 
+        _tripStorageMock.Verify(s => s.SaveTripConfigAsync(It.Is<TripConfig>(c => 
             c.Id == "new-trip_123" && 
             c.Name == "New Trip" && 
             c.Currencies.ContainsKey("USD")), "mario", It.IsAny<bool>()), Times.Once);
@@ -115,7 +120,7 @@ public class TripManagementTests : BunitContext
             EndDate = DateTime.Now.AddDays(1),
             Currencies = new Dictionary<string, Currency> { { "EUR", new Currency { Symbol = "€", ExpectedQuotaPerMember = 100 } } }
         };
-        _storageMock.Setup(s => s.GetTripConfigAsync(tripSlug)).ReturnsAsync(config);
+        _tripStorageMock.Setup(s => s.GetTripConfigAsync()).ReturnsAsync(config);
         _storageMock.Setup(s => s.GetAppSettingsAsync()).ReturnsAsync(new AppSettings { AuthorName = "Mario", DeviceId = "mario" });
 
         var cut = Render<EditTrip>(parameters => parameters.Add(p => p.tripSlug, tripSlug));
@@ -127,7 +132,7 @@ public class TripManagementTests : BunitContext
         await cut.Find(".btn-primary-vibe").ClickAsync();
 
         // Assert
-        _storageMock.Verify(s => s.SaveTripConfigAsync(tripSlug, It.Is<TripConfig>(c => c.Name == "Updated Name"), It.IsAny<string>(), It.IsAny<bool>()), Times.Once);
+        _tripStorageMock.Verify(s => s.SaveTripConfigAsync(It.Is<TripConfig>(c => c.Name == "Updated Name"), It.IsAny<string>(), It.IsAny<bool>()), Times.Once);
     }
 
     [Fact]
@@ -142,7 +147,7 @@ public class TripManagementTests : BunitContext
             Members = new Dictionary<string, User> { { "mario", new User { Name = "Mario", Avatar = "👨" } } },
             Currencies = new Dictionary<string, Currency> { { "EUR", new Currency { Symbol = "€", ExpectedQuotaPerMember = 100 } } }
         };
-        _storageMock.Setup(s => s.GetTripConfigAsync(tripSlug)).ReturnsAsync(config);
+        _tripStorageMock.Setup(s => s.GetTripConfigAsync()).ReturnsAsync(config);
         _storageMock.Setup(s => s.GetAppSettingsAsync()).ReturnsAsync(new AppSettings { AuthorName = "Mario", DeviceId = "mario" });
 
         var cut = Render<EditTrip>(parameters => parameters.Add(p => p.tripSlug, tripSlug));
@@ -168,7 +173,7 @@ public class TripManagementTests : BunitContext
         await cut.Find(".btn-primary-vibe").ClickAsync();
 
         // Assert
-        _storageMock.Verify(s => s.SaveTripConfigAsync(tripSlug, It.Is<TripConfig>(c => 
+        _tripStorageMock.Verify(s => s.SaveTripConfigAsync(It.Is<TripConfig>(c => 
             c.Members.ContainsKey("luigi") && 
             c.Members["luigi"].Name == "Luigi" &&
             c.Members["luigi"].Avatar != "👤"), It.IsAny<string>(), It.IsAny<bool>()), Times.Once);
@@ -186,7 +191,7 @@ public class TripManagementTests : BunitContext
             Members = new Dictionary<string, User> { { "mario", new User { Name = "Mario", Avatar = "👨" } } },
             Currencies = new Dictionary<string, Currency> { { "EUR", new Currency { Symbol = "€", ExpectedQuotaPerMember = 100 } } }
         };
-        _storageMock.Setup(s => s.GetTripConfigAsync(tripSlug)).ReturnsAsync(config);
+        _tripStorageMock.Setup(s => s.GetTripConfigAsync()).ReturnsAsync(config);
         _storageMock.Setup(s => s.GetAppSettingsAsync()).ReturnsAsync(new AppSettings { AuthorName = "Mario", DeviceId = "mario" });
 
         var cut = Render<EditTrip>(parameters => parameters.Add(p => p.tripSlug, tripSlug));
@@ -220,7 +225,7 @@ public class TripManagementTests : BunitContext
             Members = new Dictionary<string, User> { { "mario", new User { Name = "Mario", Avatar = "👨" } } },
             Currencies = new Dictionary<string, Currency> { { "EUR", new Currency { Symbol = "€", ExpectedQuotaPerMember = 100 } } }
         };
-        _storageMock.Setup(s => s.GetTripConfigAsync(tripSlug)).ReturnsAsync(config);
+        _tripStorageMock.Setup(s => s.GetTripConfigAsync()).ReturnsAsync(config);
         _storageMock.Setup(s => s.GetAppSettingsAsync()).ReturnsAsync(new AppSettings { AuthorName = "Mario", DeviceId = "mario" });
 
         var cut = Render<EditTrip>(parameters => parameters.Add(p => p.tripSlug, tripSlug));
@@ -251,7 +256,7 @@ public class TripManagementTests : BunitContext
         // Arrange
         var tripSlug = "test-trip";
         var config = new TripConfig { Id = "1", Name = "Test" };
-        _storageMock.Setup(s => s.GetTripConfigAsync(tripSlug)).ReturnsAsync(config);
+        _tripStorageMock.Setup(s => s.GetTripConfigAsync()).ReturnsAsync(config);
         _storageMock.Setup(s => s.GetAppSettingsAsync()).ReturnsAsync(new AppSettings { AuthorName = "M", DeviceId = "m" });
         _alertMock.Setup(a => a.ConfirmAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<AlertType>()))
             .ReturnsAsync(true);

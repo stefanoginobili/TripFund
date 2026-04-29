@@ -10,14 +10,14 @@ namespace TripFund.Tests.Services;
 public class SyncConflictTests : IDisposable
 {
     private readonly string _tempPath;
-    private readonly LocalTripStorageService _localStorage;
+    private readonly LocalStorageService _localStorage;
     private readonly RemoteStorageSyncEngine _syncEngine;
 
     public SyncConflictTests()
     {
         _tempPath = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString());
         Directory.CreateDirectory(_tempPath);
-        _localStorage = new LocalTripStorageService(_tempPath);
+        _localStorage = new LocalStorageService(_tempPath);
         _syncEngine = new RemoteStorageSyncEngine(_localStorage);
     }
 

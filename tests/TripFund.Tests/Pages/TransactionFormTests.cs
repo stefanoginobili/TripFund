@@ -15,7 +15,8 @@ namespace TripFund.Tests.Pages;
 
 public class TransactionFormTests : BunitContext
 {
-    private readonly Mock<LocalTripStorageService> _storageMock;
+    private readonly Mock<LocalStorageService> _storageMock;
+    private readonly Mock<LocalTripStorage> _tripStorageMock;
     private readonly Mock<IAlertService> _alertMock;
     private readonly Mock<IEmailService> _emailMock;
     private readonly Mock<INativeDatePickerService> _datePickerMock;
@@ -27,12 +28,15 @@ public class TransactionFormTests : BunitContext
         System.Globalization.CultureInfo.DefaultThreadCurrentCulture = itCulture;
         System.Globalization.CultureInfo.DefaultThreadCurrentUICulture = itCulture;
 
-        _storageMock = new Mock<LocalTripStorageService>("dummy_path");
+        _storageMock = new Mock<LocalStorageService>("dummy_path");
+        _tripStorageMock = new Mock<LocalTripStorage>(_storageMock.Object, "test-trip");
         _alertMock = new Mock<IAlertService>();
         _emailMock = new Mock<IEmailService>();
         _datePickerMock = new Mock<INativeDatePickerService>();
         _thumbnailMock = new Mock<IThumbnailService>();
         
+        _storageMock.Setup(s => s.GetLocalTripStorage(It.IsAny<string>())).Returns(_tripStorageMock.Object);
+
         Services.AddSingleton(_storageMock.Object);
         Services.AddSingleton(_alertMock.Object);
         Services.AddSingleton(_emailMock.Object);
@@ -69,7 +73,7 @@ public class TransactionFormTests : BunitContext
                 { "carlo", new User { Name = "Carlo", Avatar = "C" } }
             }
         };
-        _storageMock.Setup(s => s.GetTripConfigAsync(tripSlug)).ReturnsAsync(config);
+        _tripStorageMock.Setup(s => s.GetTripConfigAsync()).ReturnsAsync(config);
 
         var cut = Render<ExpenseEditor>(parameters => parameters.Add(p => p.tripSlug, tripSlug));
 
@@ -102,7 +106,7 @@ public class TransactionFormTests : BunitContext
                 { "carlo", new User { Name = "Carlo", Avatar = "C" } }
             }
         };
-        _storageMock.Setup(s => s.GetTripConfigAsync(tripSlug)).ReturnsAsync(config);
+        _tripStorageMock.Setup(s => s.GetTripConfigAsync()).ReturnsAsync(config);
 
         var cut = Render<ExpenseEditor>(parameters => parameters.Add(p => p.tripSlug, tripSlug));
 
@@ -143,7 +147,7 @@ public class TransactionFormTests : BunitContext
                 { "luigi", new User { Name = "Luigi", Avatar = "L" } }
             }
         };
-        _storageMock.Setup(s => s.GetTripConfigAsync(tripSlug)).ReturnsAsync(config);
+        _tripStorageMock.Setup(s => s.GetTripConfigAsync()).ReturnsAsync(config);
 
         var cut = Render<ExpenseEditor>(parameters => parameters.Add(p => p.tripSlug, tripSlug));
 
@@ -181,7 +185,7 @@ public class TransactionFormTests : BunitContext
                 { "carlo", new User { Name = "Carlo", Avatar = "C" } }
             }
         };
-        _storageMock.Setup(s => s.GetTripConfigAsync(tripSlug)).ReturnsAsync(config);
+        _tripStorageMock.Setup(s => s.GetTripConfigAsync()).ReturnsAsync(config);
 
         var cut = Render<ExpenseEditor>(parameters => parameters.Add(p => p.tripSlug, tripSlug));
 
@@ -216,7 +220,7 @@ public class TransactionFormTests : BunitContext
                 { "carlo", new User { Name = "Carlo", Avatar = "C" } }
             }
         };
-        _storageMock.Setup(s => s.GetTripConfigAsync(tripSlug)).ReturnsAsync(config);
+        _tripStorageMock.Setup(s => s.GetTripConfigAsync()).ReturnsAsync(config);
 
         var cut = Render<ExpenseEditor>(parameters => parameters.Add(p => p.tripSlug, tripSlug));
 
@@ -259,11 +263,11 @@ public class TransactionFormTests : BunitContext
                 { "luigi", new User { Name = "Luigi", Avatar = "L" } }
             }
         };
-        _storageMock.Setup(s => s.GetTripConfigAsync(tripSlug)).ReturnsAsync(config);
+        _tripStorageMock.Setup(s => s.GetTripConfigAsync()).ReturnsAsync(config);
         
         Transaction? savedTransaction = null;
-        _storageMock.Setup(s => s.SaveTransactionAsync(tripSlug, It.IsAny<Transaction>(), It.IsAny<string>(), It.IsAny<bool>(), It.IsAny<Dictionary<string, byte[]>>()))
-            .Callback<string, Transaction, string, bool, Dictionary<string, byte[]>>((s, t, d, b, a) => savedTransaction = t)
+        _tripStorageMock.Setup(s => s.SaveTransactionAsync(It.IsAny<Transaction>(), It.IsAny<string>(), It.IsAny<bool>(), It.IsAny<Dictionary<string, byte[]>>()))
+            .Callback<Transaction, string, bool, Dictionary<string, byte[]>>((t, d, b, a) => savedTransaction = t)
             .Returns(Task.CompletedTask);
 
         var cut = Render<ExpenseEditor>(parameters => parameters.Add(p => p.tripSlug, tripSlug));
@@ -306,11 +310,11 @@ public class TransactionFormTests : BunitContext
                 { "mario", new User { Name = "Mario", Avatar = "M" } }
             }
         };
-        _storageMock.Setup(s => s.GetTripConfigAsync(tripSlug)).ReturnsAsync(config);
+        _tripStorageMock.Setup(s => s.GetTripConfigAsync()).ReturnsAsync(config);
         
         Transaction? savedTransaction = null;
-        _storageMock.Setup(s => s.SaveTransactionAsync(tripSlug, It.IsAny<Transaction>(), It.IsAny<string>(), It.IsAny<bool>(), It.IsAny<Dictionary<string, byte[]>>()))
-            .Callback<string, Transaction, string, bool, Dictionary<string, byte[]>>((s, t, d, b, a) => savedTransaction = t)
+        _tripStorageMock.Setup(s => s.SaveTransactionAsync(It.IsAny<Transaction>(), It.IsAny<string>(), It.IsAny<bool>(), It.IsAny<Dictionary<string, byte[]>>()))
+            .Callback<Transaction, string, bool, Dictionary<string, byte[]>>((t, d, b, a) => savedTransaction = t)
             .Returns(Task.CompletedTask);
 
         var cut = Render<ContributionEditor>(parameters => parameters.Add(p => p.tripSlug, tripSlug));
@@ -347,11 +351,11 @@ public class TransactionFormTests : BunitContext
                 { "mario", new User { Name = "Mario", Avatar = "M" } }
             }
         };
-        _storageMock.Setup(s => s.GetTripConfigAsync(tripSlug)).ReturnsAsync(config);
+        _tripStorageMock.Setup(s => s.GetTripConfigAsync()).ReturnsAsync(config);
         
         Transaction? savedTransaction = null;
-        _storageMock.Setup(s => s.SaveTransactionAsync(tripSlug, It.IsAny<Transaction>(), It.IsAny<string>(), It.IsAny<bool>(), It.IsAny<Dictionary<string, byte[]>>()))
-            .Callback<string, Transaction, string, bool, Dictionary<string, byte[]>>((s, t, d, b, a) => savedTransaction = t)
+        _tripStorageMock.Setup(s => s.SaveTransactionAsync(It.IsAny<Transaction>(), It.IsAny<string>(), It.IsAny<bool>(), It.IsAny<Dictionary<string, byte[]>>()))
+            .Callback<Transaction, string, bool, Dictionary<string, byte[]>>((t, d, b, a) => savedTransaction = t)
             .Returns(Task.CompletedTask);
 
         var cut = Render<ContributionEditor>(parameters => parameters.Add(p => p.tripSlug, tripSlug));
@@ -387,11 +391,11 @@ public class TransactionFormTests : BunitContext
                 { "mario", new User { Name = "Mario", Avatar = "M" } }
             }
         };
-        _storageMock.Setup(s => s.GetTripConfigAsync(tripSlug)).ReturnsAsync(config);
+        _tripStorageMock.Setup(s => s.GetTripConfigAsync()).ReturnsAsync(config);
         
         Transaction? savedTransaction = null;
-        _storageMock.Setup(s => s.SaveTransactionAsync(tripSlug, It.IsAny<Transaction>(), It.IsAny<string>(), It.IsAny<bool>(), It.IsAny<Dictionary<string, byte[]>>()))
-            .Callback<string, Transaction, string, bool, Dictionary<string, byte[]>>((s, t, d, b, a) => savedTransaction = t)
+        _tripStorageMock.Setup(s => s.SaveTransactionAsync(It.IsAny<Transaction>(), It.IsAny<string>(), It.IsAny<bool>(), It.IsAny<Dictionary<string, byte[]>>()))
+            .Callback<Transaction, string, bool, Dictionary<string, byte[]>>((t, d, b, a) => savedTransaction = t)
             .Returns(Task.CompletedTask);
 
         var cut = Render<ContributionEditor>(parameters => parameters.Add(p => p.tripSlug, tripSlug));
@@ -447,8 +451,8 @@ public class TransactionFormTests : BunitContext
             }
         };
 
-        _storageMock.Setup(s => s.GetTripConfigAsync(tripSlug)).ReturnsAsync(config);
-        _storageMock.Setup(s => s.GetTransactionsAsync(tripSlug)).ReturnsAsync(transactions);
+        _tripStorageMock.Setup(s => s.GetTripConfigAsync()).ReturnsAsync(config);
+        _tripStorageMock.Setup(s => s.GetTransactionsAsync()).ReturnsAsync(transactions);
 
         var nav = Services.GetRequiredService<NavigationManager>();
         nav.NavigateTo($"/trip/{tripSlug}/contribution?member={memberSlug}&currency={currencyCode}");
@@ -496,8 +500,8 @@ public class TransactionFormTests : BunitContext
             }
         };
 
-        _storageMock.Setup(s => s.GetTripConfigAsync(tripSlug)).ReturnsAsync(config);
-        _storageMock.Setup(s => s.GetTransactionsAsync(tripSlug)).ReturnsAsync(transactions);
+        _tripStorageMock.Setup(s => s.GetTripConfigAsync()).ReturnsAsync(config);
+        _tripStorageMock.Setup(s => s.GetTransactionsAsync()).ReturnsAsync(transactions);
 
         var nav = Services.GetRequiredService<NavigationManager>();
         nav.NavigateTo($"/trip/{tripSlug}/contribution?member={memberSlug}&currency={currencyCode}");
@@ -522,11 +526,11 @@ public class TransactionFormTests : BunitContext
             Currencies = new Dictionary<string, Currency> { { "EUR", new Currency { Symbol = "€" } } },
             Members = new Dictionary<string, User> { { "mario", new User { Name = "Mario" } } }
         };
-        _storageMock.Setup(s => s.GetTripConfigAsync(tripSlug)).ReturnsAsync(config);
+        _tripStorageMock.Setup(s => s.GetTripConfigAsync()).ReturnsAsync(config);
         
         Transaction? savedTransaction = null;
-        _storageMock.Setup(s => s.SaveTransactionAsync(tripSlug, It.IsAny<Transaction>(), It.IsAny<string>(), It.IsAny<bool>(), It.IsAny<Dictionary<string, byte[]>>()))
-            .Callback<string, Transaction, string, bool, Dictionary<string, byte[]>>((s, t, d, b, a) => savedTransaction = t)
+        _tripStorageMock.Setup(s => s.SaveTransactionAsync(It.IsAny<Transaction>(), It.IsAny<string>(), It.IsAny<bool>(), It.IsAny<Dictionary<string, byte[]>>()))
+            .Callback<Transaction, string, bool, Dictionary<string, byte[]>>((t, d, b, a) => savedTransaction = t)
             .Returns(Task.CompletedTask);
 
         var cut = Render<ExpenseEditor>(parameters => parameters.Add(p => p.tripSlug, tripSlug));
@@ -604,11 +608,11 @@ public class TransactionFormTests : BunitContext
             Currencies = new Dictionary<string, Currency> { { "EUR", new Currency { Symbol = "€" } } },
             Members = new Dictionary<string, User> { { "mario", new User { Name = "Mario" } } }
         };
-        _storageMock.Setup(s => s.GetTripConfigAsync(tripSlug)).ReturnsAsync(config);
+        _tripStorageMock.Setup(s => s.GetTripConfigAsync()).ReturnsAsync(config);
         
         Transaction? savedTransaction = null;
-        _storageMock.Setup(s => s.SaveTransactionAsync(tripSlug, It.IsAny<Transaction>(), It.IsAny<string>(), It.IsAny<bool>(), It.IsAny<Dictionary<string, byte[]>>()))
-            .Callback<string, Transaction, string, bool, Dictionary<string, byte[]>>((s, t, d, b, a) => savedTransaction = t)
+        _tripStorageMock.Setup(s => s.SaveTransactionAsync(It.IsAny<Transaction>(), It.IsAny<string>(), It.IsAny<bool>(), It.IsAny<Dictionary<string, byte[]>>()))
+            .Callback<Transaction, string, bool, Dictionary<string, byte[]>>((t, d, b, a) => savedTransaction = t)
             .Returns(Task.CompletedTask);
 
         var cut = Render<ExpenseEditor>(parameters => parameters.Add(p => p.tripSlug, tripSlug));
@@ -649,11 +653,11 @@ public class TransactionFormTests : BunitContext
             Currencies = new Dictionary<string, Currency> { { "EUR", new Currency { Symbol = "€" } } },
             Members = new Dictionary<string, User> { { "mario", new User { Name = "Mario" } } }
         };
-        _storageMock.Setup(s => s.GetTripConfigAsync(tripSlug)).ReturnsAsync(config);
+        _tripStorageMock.Setup(s => s.GetTripConfigAsync()).ReturnsAsync(config);
         
         Transaction? savedTransaction = null;
-        _storageMock.Setup(s => s.SaveTransactionAsync(tripSlug, It.IsAny<Transaction>(), It.IsAny<string>(), It.IsAny<bool>(), It.IsAny<Dictionary<string, byte[]>>()))
-            .Callback<string, Transaction, string, bool, Dictionary<string, byte[]>>((s, t, d, b, a) => savedTransaction = t)
+        _tripStorageMock.Setup(s => s.SaveTransactionAsync(It.IsAny<Transaction>(), It.IsAny<string>(), It.IsAny<bool>(), It.IsAny<Dictionary<string, byte[]>>()))
+            .Callback<Transaction, string, bool, Dictionary<string, byte[]>>((t, d, b, a) => savedTransaction = t)
             .Returns(Task.CompletedTask);
 
         var cut = Render<ExpenseEditor>(parameters => parameters.Add(p => p.tripSlug, tripSlug));
@@ -699,11 +703,11 @@ public class TransactionFormTests : BunitContext
             Currencies = new Dictionary<string, Currency> { { "EUR", new Currency { Symbol = "€" } } },
             Members = new Dictionary<string, User> { { "mario", new User { Name = "Mario" } } }
         };
-        _storageMock.Setup(s => s.GetTripConfigAsync(tripSlug)).ReturnsAsync(config);
+        _tripStorageMock.Setup(s => s.GetTripConfigAsync()).ReturnsAsync(config);
         
         Transaction? savedTransaction = null;
-        _storageMock.Setup(s => s.SaveTransactionAsync(tripSlug, It.IsAny<Transaction>(), It.IsAny<string>(), It.IsAny<bool>(), It.IsAny<Dictionary<string, byte[]>>()))
-            .Callback<string, Transaction, string, bool, Dictionary<string, byte[]>>((s, t, d, b, a) => savedTransaction = t)
+        _tripStorageMock.Setup(s => s.SaveTransactionAsync(It.IsAny<Transaction>(), It.IsAny<string>(), It.IsAny<bool>(), It.IsAny<Dictionary<string, byte[]>>()))
+            .Callback<Transaction, string, bool, Dictionary<string, byte[]>>((t, d, b, a) => savedTransaction = t)
             .Returns(Task.CompletedTask);
 
         var cut = Render<ExpenseEditor>(parameters => parameters.Add(p => p.tripSlug, tripSlug));
@@ -742,9 +746,9 @@ public class TransactionFormTests : BunitContext
         var config = new TripConfig { Id = "1", Name = "Test Trip", Currencies = new Dictionary<string, Currency> { { "EUR", new Currency { Symbol = "€" } } } };
         var transaction = new Transaction { Id = transactionId, Type = "expense", Amount = 100, Currency = "EUR", Description = "Test" };
 
-        _storageMock.Setup(s => s.GetTripConfigAsync(tripSlug)).ReturnsAsync(config);
-        _storageMock.Setup(s => s.GetLatestTransactionVersionWithDetailsAsync(tripSlug, transactionId))
-            .ReturnsAsync(new LocalTripStorageService.TransactionVersionInfo { Transaction = transaction });
+        _tripStorageMock.Setup(s => s.GetTripConfigAsync()).ReturnsAsync(config);
+        _tripStorageMock.Setup(s => s.GetLatestTransactionVersionWithDetailsAsync(transactionId))
+            .ReturnsAsync(new LocalTripStorage.TransactionVersionInfo { Transaction = transaction });
         _alertMock.Setup(a => a.ConfirmAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<AlertType>()))
             .ReturnsAsync(true);
 
@@ -763,7 +767,7 @@ public class TransactionFormTests : BunitContext
 
         // Assert
         _alertMock.Verify(a => a.ConfirmAsync("Elimina Spesa", It.IsAny<string>(), "Elimina", "Annulla", AlertType.Warning), Times.Once);
-        _storageMock.Verify(s => s.SaveTransactionAsync(tripSlug, transaction, "test-author", true, It.IsAny<Dictionary<string, byte[]>>()), Times.Once);
+        _tripStorageMock.Verify(s => s.SaveTransactionAsync(transaction, "test-author", true, It.IsAny<Dictionary<string, byte[]>>()), Times.Once);
         nav.Uri.Should().Contain($"/trip/{tripSlug}?currency=EUR");
     }
 
@@ -778,7 +782,7 @@ public class TransactionFormTests : BunitContext
             Currencies = new Dictionary<string, Currency> { { "USD", new Currency { Symbol = "$" } } },
             Members = new Dictionary<string, User> { { memberSlug, new User { Name = "Mario" } } }
         };
-        _storageMock.Setup(s => s.GetTripConfigAsync(tripSlug)).ReturnsAsync(config);
+        _tripStorageMock.Setup(s => s.GetTripConfigAsync()).ReturnsAsync(config);
         
         var nav = Services.GetRequiredService<NavigationManager>();
         nav.NavigateTo($"/trip/{tripSlug}/expense?member={memberSlug}&currency=USD");

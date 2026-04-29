@@ -8,7 +8,7 @@ namespace TripFund.App.Components.Common
 {
     public partial class TransactionModal
     {
-        [Inject] private LocalTripStorageService Storage { get; set; } = default!;
+        [Inject] private LocalStorageService Storage { get; set; } = default!;
         [Inject] private NavigationManager Nav { get; set; } = default!;
         [Inject] private IJSRuntime JSRuntime { get; set; } = default!;
         [Inject] private IThumbnailService Thumbnails { get; set; } = default!;
@@ -53,7 +53,7 @@ namespace TripFund.App.Components.Common
                 var registry = await Storage.GetTripRegistryAsync();
                 if (registry != null && registry.Trips.TryGetValue(TripSlug, out var entry))
                 {
-                    isReadonly = (entry.RemoteStorage?.Readonly ?? false) || await Storage.HasConflictsAsync(TripSlug);
+                    isReadonly = (entry.RemoteStorage?.Readonly ?? false) || await Storage.GetLocalTripStorage(TripSlug).HasConflictsAsync();
                 }
                 
                 await previewTask;
@@ -89,7 +89,7 @@ namespace TripFund.App.Components.Common
             {
                 if (Transaction?.Id != currentTxId) return;
 
-                var path = await Storage.GetAttachmentPath(TripSlug, Transaction.Id, preview.FileName);
+                var path = await Storage.GetLocalTripStorage(TripSlug).GetAttachmentPath(Transaction.Id, preview.FileName);
                 
                 if (!string.IsNullOrEmpty(path))
                 {
@@ -149,7 +149,7 @@ namespace TripFund.App.Components.Common
         private async Task OpenAttachment(string fileName)
         {
             if (Transaction == null) return;
-            var path = await Storage.GetAttachmentPath(TripSlug, Transaction.Id, fileName);
+            var path = await Storage.GetLocalTripStorage(TripSlug).GetAttachmentPath(Transaction.Id, fileName);
             if (!string.IsNullOrEmpty(path))
             {
                 await Launcher.Default.OpenAsync(new OpenFileRequest

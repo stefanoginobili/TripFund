@@ -7,7 +7,7 @@ namespace TripFund.App.Components.Pages
 {
     public partial class Onboarding
     {
-        [Inject] private LocalTripStorageService Storage { get; set; } = default!;
+        [Inject] private LocalStorageService Storage { get; set; } = default!;
         [Inject] private NavigationManager Nav { get; set; } = default!;
 
         private string authorName = string.Empty;

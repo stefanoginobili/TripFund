@@ -8,7 +8,7 @@ namespace TripFund.App.Components.Pages
 {
     public partial class ContributionEditor
     {
-        [Inject] private LocalTripStorageService Storage { get; set; } = default!;
+        [Inject] private LocalStorageService Storage { get; set; } = default!;
         [Inject] private IEmailService EmailService { get; set; } = default!;
         [Inject] private IAlertService AlertService { get; set; } = default!;
         [Inject] private NavigationManager Nav { get; set; } = default!;
@@ -40,8 +40,8 @@ namespace TripFund.App.Components.Pages
 
         protected override async Task OnInitializedAsync()
         {
-            config = await Storage.GetTripConfigAsync(tripSlug);
-            allTransactions = await Storage.GetTransactionsAsync(tripSlug) ?? new();
+            config = await Storage.GetLocalTripStorage(tripSlug).GetTripConfigAsync();
+            allTransactions = await Storage.GetLocalTripStorage(tripSlug).GetTransactionsAsync() ?? new();
             var settings = await Storage.GetAppSettingsAsync();
             deviceId = settings?.DeviceId ?? "unknown";
             authorName = settings?.AuthorName ?? "Unknown";
@@ -49,14 +49,14 @@ namespace TripFund.App.Components.Pages
             var registry = await Storage.GetTripRegistryAsync();
             if (registry != null && registry.Trips.TryGetValue(tripSlug, out var entry))
             {
-                isReadonly = (entry.RemoteStorage?.Readonly ?? false) || await Storage.HasConflictsAsync(tripSlug);
+                isReadonly = (entry.RemoteStorage?.Readonly ?? false) || await Storage.GetLocalTripStorage(tripSlug).HasConflictsAsync();
             }
 
             if (config != null)
             {
                 if (!string.IsNullOrEmpty(edit))
                 {
-                    editingTransaction = await Storage.GetLatestTransactionVersionAsync(tripSlug, edit);
+                    editingTransaction = await Storage.GetLocalTripStorage(tripSlug).GetLatestTransactionVersionAsync(edit);
                     if (editingTransaction != null && editingTransaction.Type == "contribution")
                     {
                         originalTxJson = System.Text.Json.JsonSerializer.Serialize(editingTransaction);
@@ -219,7 +219,7 @@ namespace TripFund.App.Components.Pages
 
             try
             {
-                await Storage.SaveTransactionAsync(tripSlug, editingTransaction, deviceId, isDelete: true);
+                await Storage.GetLocalTripStorage(tripSlug).SaveTransactionAsync(editingTransaction, deviceId, isDelete: true);
                 await GoBack();
             }
             catch (Exception ex)
@@ -337,7 +337,7 @@ namespace TripFund.App.Components.Pages
 
             try
             {
-                await Storage.SaveTransactionAsync(tripSlug, transaction, deviceId);
+                await Storage.GetLocalTripStorage(tripSlug).SaveTransactionAsync(transaction, deviceId);
                 
                 if (config.Members.TryGetValue(selectedMemberSlug, out var member))
                 {
@@ -346,7 +346,7 @@ namespace TripFund.App.Components.Pages
                     {
                         try
                         {
-                            var updatedTransactions = await Storage.GetTransactionsAsync(tripSlug);
+                            var updatedTransactions = await Storage.GetLocalTripStorage(tripSlug).GetTransactionsAsync();
                             var body = ReceiptGenerator.GenerateContributionText(config, selectedMemberSlug, transaction, updatedTransactions);
                             var recipients = string.IsNullOrEmpty(member.Email) ? Array.Empty<string>() : new[] { member.Email };
                             await EmailService.SendEmailAsync($"{config.Name} - Riepilogo versamenti", body, recipients);

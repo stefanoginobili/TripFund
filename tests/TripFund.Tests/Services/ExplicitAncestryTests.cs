@@ -13,7 +13,7 @@ namespace TripFund.Tests.Services;
 public class ExplicitAncestryTests
 {
     private readonly string _testRoot;
-    private readonly LocalTripStorageService _storage;
+    private readonly LocalStorageService _storage;
     private readonly string _tripSlug = "test-trip";
     private readonly string _deviceId_Pixel = "pixel-9-pro";
     private readonly string _deviceId_Macbook = "macbook";
@@ -22,7 +22,7 @@ public class ExplicitAncestryTests
     {
         _testRoot = Path.Combine(Path.GetTempPath(), "TripFundTests_Ancestry_" + Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(_testRoot);
-        _storage = new LocalTripStorageService(_testRoot);
+        _storage = new LocalStorageService(_testRoot);
     }
 
     [Fact]
@@ -45,15 +45,17 @@ public class ExplicitAncestryTests
             Description = "Initial"
         };
 
+        var tripStorage = _storage.GetLocalTripStorage(_tripSlug);
+
         // 1. 001_NEW_pixel
-        await _storage.SaveTransactionAsync(_tripSlug, transaction, _deviceId_Pixel);
+        await tripStorage.SaveTransactionAsync(transaction, _deviceId_Pixel);
         var versions = GetVersions(txId);
         var v001 = versions.First(v => v.Sequence == 1).FolderName;
 
         // 2. Divergence at 002
         // Force 002_UPD_macbook to point to 001
         transaction.Description = "Update from Macbook";
-        await _storage.SaveTransactionAsync(_tripSlug, transaction, _deviceId_Macbook);
+        await tripStorage.SaveTransactionAsync(transaction, _deviceId_Macbook);
         versions = GetVersions(txId);
         var v002_mac = versions.First(v => v.Sequence == 2 && v.DeviceId == _deviceId_Macbook).FolderName;
 
