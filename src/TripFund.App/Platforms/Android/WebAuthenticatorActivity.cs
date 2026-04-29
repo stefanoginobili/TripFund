@@ -7,10 +7,10 @@ namespace TripFund.App.Platforms.Android;
 [Activity(NoHistory = true, LaunchMode = LaunchMode.SingleTop, Exported = true)]
 [IntentFilter(new[] { Intent.ActionView },
               Categories = new[] { Intent.CategoryDefault, Intent.CategoryBrowsable },
-              DataScheme = WebAuthenticatorActivity.DataScheme)]
+              DataScheme = DataScheme)]
 [IntentFilter(new[] { Intent.ActionView },
               Categories = new[] { Intent.CategoryDefault, Intent.CategoryBrowsable },
-              DataScheme = WebAuthenticatorActivity.DataSchemeMicrosoft)]
+              DataScheme = DataSchemeMicrosoft)]
 public class WebAuthenticatorActivity : Microsoft.Maui.Authentication.WebAuthenticatorCallbackActivity
 {
 #if DEBUG

@@ -1,12 +1,10 @@
 using Android.App;
 using Android.Content.PM;
 using Android.OS;
-using Android.Views;
 using Android.Content;
 using AndroidX.AppCompat.App;
 using AndroidX.Core.View;
 using AndroidX.Core.OS;
-using Java.Util;
 
 namespace TripFund.App;
 

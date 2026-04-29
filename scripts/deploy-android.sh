@@ -5,7 +5,6 @@ ANDROID_SDK_PATH="$HOME/Library/Android/sdk"
 ADB_PATH="$ANDROID_SDK_PATH/platform-tools/adb"
 PROJECT_PATH="src/TripFund.App/TripFund.App.csproj"
 PACKAGE_NAME="com.stefanoginobili.tripfund.app.dev"
-ACTIVITY_NAME="crc643cc105478f029cff.MainActivity"
 
 # Colors for output
 GREEN='\033[0;32m'
@@ -75,9 +74,19 @@ dotnet build "$PROJECT_PATH" \
     -p:AndroidDeviceSerial="$SELECTED_SERIAL"
 
 if [ $? -eq 0 ]; then
-    printf "${YELLOW}Starting the app...${NC}\n"
-    $ADB_PATH -s "$SELECTED_SERIAL" shell am start -n "$PACKAGE_NAME/$ACTIVITY_NAME"
-    printf "\n${GREEN}SUCCESS: Deployed and started on $SELECTED_SERIAL!${NC}\n"
+    printf "${YELLOW}Restarting the app...${NC}\n"
+    $ADB_PATH -s "$SELECTED_SERIAL" shell am force-stop "$PACKAGE_NAME"
+    
+    # Dynamically find the launcher activity
+    LAUNCHER_ACTIVITY=$($ADB_PATH -s "$SELECTED_SERIAL" shell dumpsys package "$PACKAGE_NAME" | grep -A 1 "android.intent.action.MAIN:" | grep "$PACKAGE_NAME" | awk '{print $2}' | cut -d '/' -f 2 | cut -d '}' -f 1 | head -n 1)
+    
+    if [ -z "$LAUNCHER_ACTIVITY" ]; then
+        # Fallback to the known explicit name if grep fails
+        LAUNCHER_ACTIVITY="com.stefanoginobili.tripfund.app.MainActivity"
+    fi
+
+    $ADB_PATH -s "$SELECTED_SERIAL" shell am start -n "$PACKAGE_NAME/$LAUNCHER_ACTIVITY"
+    printf "\n${GREEN}SUCCESS: Deployed and restarted on $SELECTED_SERIAL!${NC}\n"
 else
     printf "\n${RED}[ERROR] Deployment failed.${NC}\n"
     exit 1
