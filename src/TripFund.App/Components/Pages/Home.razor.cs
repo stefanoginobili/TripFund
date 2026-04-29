@@ -219,6 +219,10 @@ namespace TripFund.App.Components.Pages
 
         private string FormatDates(DateTime start, DateTime end)
         {
+            if (start.Year == end.Year && start.Month == end.Month)
+            {
+                return $"{start:%d} - {end:d MMMM yyyy}";
+            }
             if (start.Year == end.Year)
             {
                 return $"{start:d MMMM} - {end:d MMMM yyyy}";
