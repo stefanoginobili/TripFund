@@ -99,9 +99,9 @@
         var progress = CalculateProgress(item.Config.StartDate, item.Config.EndDate);
         var progressPercent = (progress * 100).ToString("0.##", System.Globalization.CultureInfo.InvariantCulture);
         
-        var now = DateTime.Now;
-        var isStartFilled = now >= item.Config.StartDate.Date;
-        var isEndFilled = now >= item.Config.EndDate.Date.AddDays(1).AddSeconds(-1);
+        var today = DateTime.Today;
+        var isStartFilled = today >= item.Config.StartDate.Date;
+        var isEndFilled = today > item.Config.EndDate.Date;
         
         var airplaneFill = isHighlighted ? "#FFFFFF" : "#20563C";
         var airplaneStrokeColor = isHighlighted ? "#20563C" : "#FFFFFF";
