@@ -94,17 +94,17 @@ public class HomeTests : BunitContext
         // Sections
         cut.FindAll(".section-header-vibe").Select(e => e.TextContent).Should().Contain(new[] { "IN CORSO", "FUTURI", "PASSATI" });
 
-        // Icons
-        cut.FindAll(".trip-icon").Select(e => e.TextContent).Should().Contain(new[] { "🛫", "🕒", "🏁" });
+        // Airplane cursor instead of icons
+        cut.FindAll(".airplane-cursor").Count.Should().Be(3);
 
         // Grayscale for past
         cut.Find(".trip-card.grayscale").InnerHtml.Should().Contain("Past Trip");
 
-        // Pluralization
-        var badges = cut.FindAll(".member-badge").Select(e => e.TextContent).ToList();
-        badges.Any(b => b.Contains("1 Partecipante")).Should().BeTrue();
-        badges.Any(b => b.Contains("2 Partecipanti")).Should().BeTrue();
-        badges.Any(b => b.Contains("0 Partecipanti")).Should().BeTrue();
+        // Member pill
+        var badges = cut.FindAll(".member-pill").Select(e => e.TextContent).ToList();
+        badges.Any(b => b.Contains("1")).Should().BeTrue();
+        badges.Any(b => b.Contains("2")).Should().BeTrue();
+        badges.Any(b => b.Contains("0")).Should().BeTrue();
     }
 
     [Fact]

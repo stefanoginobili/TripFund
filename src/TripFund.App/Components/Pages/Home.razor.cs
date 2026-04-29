@@ -107,7 +107,12 @@ namespace TripFund.App.Components.Pages
                 var config = await Storage.GetTripConfigAsync(entry.Key);
                 if (config != null)
                 {
-                    allLoaded.Add(new TripListItem { Slug = entry.Key, Config = config });
+                    allLoaded.Add(new TripListItem 
+                    { 
+                        Slug = entry.Key, 
+                        Config = config,
+                        RemoteStorage = entry.Value.RemoteStorage
+                    });
                 }
             }
 
@@ -216,15 +221,31 @@ namespace TripFund.App.Components.Pages
         {
             if (start.Year == end.Year)
             {
-                return $"{start:d MMM} - {end:d MMM yyyy}";
+                return $"{start:d MMMM} - {end:d MMMM yyyy}";
             }
-            return $"{start:d MMM yyyy} - {end:d MMM yyyy}";
+            return $"{start:d MMMM yyyy} - {end:d MMMM yyyy}";
+        }
+
+        private double CalculateProgress(DateTime start, DateTime end)
+        {
+            var now = DateTime.Now;
+            var startDate = start.Date; // 00:00:00
+            var endDate = end.Date.AddDays(1).AddSeconds(-1); // 23:59:59
+
+            if (now < startDate) return 0;
+            if (now > endDate) return 1;
+
+            var totalDuration = (endDate - startDate).TotalSeconds;
+            var elapsedDuration = (now - startDate).TotalSeconds;
+
+            return Math.Clamp(elapsedDuration / totalDuration, 0, 1);
         }
 
         private class TripListItem
         {
             public string Slug { get; set; } = "";
             public TripConfig Config { get; set; } = new();
+            public RemoteStorageConfig? RemoteStorage { get; set; }
         }
     }
 }
