@@ -34,8 +34,15 @@ for dev in $RUNNING_DEVICES; do
     
     if [[ "$dev" == *"emulator"* ]]; then
         AVD_NAME=$($ADB_PATH -s "$dev" emu avd name 2>/dev/null | head -n 1 | tr -d '\r')
-        if [ -z "$AVD_NAME" ]; then AVD_NAME="$MODEL"; fi
-        LABEL="[Emulator] $AVD_NAME"
+        if [ -z "$AVD_NAME" ]; then 
+            AVD_NAME="$MODEL"
+        else
+            # Replace underscores with spaces for a "real" name
+            AVD_NAME="${AVD_NAME//_/ }"
+        fi
+        
+        API_LEVEL=$($ADB_PATH -s "$dev" shell getprop ro.build.version.sdk | tr -d '\r')
+        LABEL="[Emulator] $AVD_NAME (API $API_LEVEL)"
     else
         LABEL="[Physical] $MANUFACTURER $MODEL"
     fi
