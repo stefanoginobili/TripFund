@@ -28,6 +28,9 @@
 
         <!-- Bypasses XA0030 error for JDK 25 compatibility -->
         <_SuppressXA0030>true</_SuppressXA0030>
+
+        <!-- Bypasses Xcode version check for incompatible .NET iOS SDK versions -->
+        <ValidateXcodeVersion>false</ValidateXcodeVersion>
     </PropertyGroup>
 
     <PropertyGroup Condition="'$(Configuration)' == 'Debug'">

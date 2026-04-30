@@ -45,7 +45,7 @@ public class ThumbnailService : IThumbnailService
         var url = NSUrl.FromFilename(filePath);
         var size = new CGSize(200, 200);
         var scale = UIScreen.MainScreen.Scale;
-        var request = new QLThumbnailGeneratorRequest(url, size, scale, QLThumbnailGenerationRequestRepresentationTypes.Thumbnail);
+        var request = new QLThumbnailGenerationRequest(url, size, scale, QLThumbnailGenerationRequestRepresentationTypes.Thumbnail);
         
         var tcs = new TaskCompletionSource<string?>();
 
