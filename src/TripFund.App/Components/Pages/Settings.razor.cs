@@ -9,7 +9,6 @@ namespace TripFund.App.Components.Pages
     public partial class Settings
     {
         [Inject] private LocalStorageService Storage { get; set; } = default!;
-        [Inject] private NavigationManager Nav { get; set; } = default!;
         [Inject] private IJSRuntime JSRuntime { get; set; } = default!;
 
         private string authorName = string.Empty;
@@ -49,7 +48,7 @@ namespace TripFund.App.Components.Pages
 
             await Storage.SaveAppSettingsAsync(settings);
             deviceId = finalDeviceId;
-            Nav.NavigateTo("/");
+            await NavService.GoBackAsync();
         }
     }
 }

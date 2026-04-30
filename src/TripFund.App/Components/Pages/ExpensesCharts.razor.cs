@@ -9,7 +9,6 @@ namespace TripFund.App.Components.Pages
     public partial class ExpensesCharts
     {
         [Inject] private LocalStorageService Storage { get; set; } = default!;
-        [Inject] private NavigationManager Nav { get; set; } = default!;
         [Inject] private IExchangeRateService ExchangeRates { get; set; } = default!;
 
         [Parameter] public string tripSlug { get; set; } = "";

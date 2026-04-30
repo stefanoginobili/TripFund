@@ -32,6 +32,12 @@ public class TransactionModalTests : BunitContext
         Services.AddSingleton(_storageMock.Object);
         Services.AddSingleton(_alertMock.Object);
         Services.AddSingleton(_thumbnailMock.Object);
+        Services.AddSingleton<INavigationService>(sp => 
+        {
+            var navService = new NavigationService();
+            navService.Register(sp.GetRequiredService<NavigationManager>());
+            return navService;
+        });
     }
 
     [Fact]

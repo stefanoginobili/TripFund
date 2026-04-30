@@ -39,6 +39,12 @@ public class RemoteStorageSelectorTests : BunitContext
         Services.AddSingleton(_oneDriveMock.Object);
         Services.AddSingleton(_pickerServiceMock.Object);
         Services.AddSingleton(new Mock<IMicrosoftAuthConfiguration>().Object);
+        Services.AddSingleton<INavigationService>(sp => 
+        {
+            var navService = new NavigationService();
+            navService.Register(sp.GetRequiredService<NavigationManager>());
+            return navService;
+        });
     }
 
     [Fact]

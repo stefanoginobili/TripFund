@@ -21,6 +21,12 @@ public class OnboardingTests : BunitContext
 
         _storageMock = new Mock<LocalStorageService>("dummy_path");
         Services.AddSingleton(_storageMock.Object);
+        Services.AddSingleton<INavigationService>(sp => 
+        {
+            var navService = new NavigationService();
+            navService.Register(sp.GetRequiredService<NavigationManager>());
+            return navService;
+        });
     }
 
     [Fact]

@@ -48,7 +48,7 @@ public class OneDriveSyncLogicTests : IDisposable
             _server.Urls[0]);
 
         // Mock Authentication
-        _authenticatorMock.Setup(a => a.AuthenticateAsync(It.IsAny<WebAuthenticatorOptions>()))
+        _authenticatorMock.Setup(a => a.AuthenticateAsync(It.IsAny<WebAuthenticatorOptions>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new WebAuthenticatorResult());
     }
 

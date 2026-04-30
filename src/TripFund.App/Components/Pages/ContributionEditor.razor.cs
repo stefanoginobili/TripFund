@@ -7,12 +7,11 @@ using TripFund.App.Utilities;
 
 namespace TripFund.App.Components.Pages
 {
-    public partial class ContributionEditor
+    public partial class ContributionEditor : IDisposable
     {
         [Inject] private LocalStorageService Storage { get; set; } = default!;
         [Inject] private IEmailService EmailService { get; set; } = default!;
         [Inject] private IAlertService AlertService { get; set; } = default!;
-        [Inject] private NavigationManager Nav { get; set; } = default!;
         [Inject] private IJSRuntime JSRuntime { get; set; } = default!;
 
         [Parameter] public string tripSlug { get; set; } = "";
@@ -42,6 +41,7 @@ namespace TripFund.App.Components.Pages
 
         protected override async Task OnInitializedAsync()
         {
+            NavService.SetBeforeNavigateAction(ConfirmDiscardChanges);
             config = await Storage.GetLocalTripStorage(tripSlug).GetTripConfigAsync();
             allTransactions = await Storage.GetLocalTripStorage(tripSlug).GetTransactionsAsync() ?? new();
             var settings = await Storage.GetAppSettingsAsync();
@@ -153,6 +153,30 @@ namespace TripFund.App.Components.Pages
             return false;
         }
 
+        public void Dispose()
+        {
+            NavService.ClearBeforeNavigateAction();
+        }
+
+        private async Task<bool> ConfirmDiscardChanges()
+        {
+            if (isInternalNavigationAllowed || !HasChanges()) return true;
+
+            bool confirmed = await AlertService.ConfirmAsync(
+                "Modifiche non salvate",
+                "Hai apportato delle modifiche. Vuoi uscire senza salvare?",
+                "Esci",
+                "Rimani",
+                AlertType.Warning);
+
+            if (confirmed)
+            {
+                isInternalNavigationAllowed = true;
+            }
+
+            return confirmed;
+        }
+
         private Transaction BuildTransaction()
         {
             TimeZoneInfo tz;
@@ -238,49 +262,16 @@ namespace TripFund.App.Components.Pages
 
         private async Task GoBack()
         {
-            if (isInternalNavigationAllowed || !HasChanges())
-            {
-                isInternalNavigationAllowed = true;
-                if (!string.IsNullOrEmpty(member))
-                {
-                    Nav.NavigateTo($"/trip/{tripSlug}/member/{member}?currency={selectedCurrency}");
-                }
-                else
-                {
-                    Nav.NavigateTo($"/trip/{tripSlug}?currency={selectedCurrency}");
-                }
-            }
-            else
-            {
-                if (!string.IsNullOrEmpty(member))
-                {
-                    Nav.NavigateTo($"/trip/{tripSlug}/member/{member}?currency={selectedCurrency}");
-                }
-                else
-                {
-                    Nav.NavigateTo($"/trip/{tripSlug}?currency={selectedCurrency}");
-                }
-            }
-            await Task.CompletedTask;
+            await NavService.GoBackAsync();
         }
 
         private async Task HandleBeforeInternalNavigation(LocationChangingContext context)
         {
             if (isInternalNavigationAllowed) return;
 
-            if (HasChanges())
+            if (!await ConfirmDiscardChanges())
             {
-                bool confirmed = await AlertService.ConfirmAsync(
-                    "Modifiche non salvate",
-                    "Hai apportato delle modifiche. Vuoi uscire senza salvare?",
-                    "Esci",
-                    "Rimani",
-                    AlertType.Warning);
-
-                if (!confirmed)
-                {
-                    context.PreventNavigation();
-                }
+                context.PreventNavigation();
             }
         }
 

@@ -9,7 +9,6 @@ namespace TripFund.App.Components.Pages
     {
         [Inject] private LocalStorageService Storage { get; set; } = default!;
         [Inject] private IRemoteStorageService RemoteStorage { get; set; } = default!;
-        [Inject] private NavigationManager Nav { get; set; } = default!;
         [Inject] private IAlertService Alert { get; set; } = default!;
 
         private List<TripListItem> currentTrips = new();
@@ -30,8 +29,8 @@ namespace TripFund.App.Components.Pages
             await LoadTrips();
         }
 
-        private void NavigateToSettings() => Nav.NavigateTo("/settings");
-        private void NavigateToCreate(RemoteStorageSelection? selection) 
+        private async Task NavigateToSettings() => await NavService.NavigateAsync("/", "/settings");
+        private async Task NavigateToCreate(RemoteStorageSelection? selection) 
         {
             var uri = "/create-trip";
             if (selection != null)
@@ -42,9 +41,9 @@ namespace TripFund.App.Components.Pages
                     uri += $"&{p.Key}={Uri.EscapeDataString(p.Value)}";
                 }
             }
-            Nav.NavigateTo(uri);
+            await NavService.NavigateAsync("/", uri);
         }
-        private void NavigateToTrip(string slug) => Nav.NavigateTo($"/trip/{slug}");
+        private async Task NavigateToTrip(string slug) => await NavService.NavigateAsync("/", $"/trip/{slug}");
 
         private void HandleCreateTripClick()
         {
@@ -92,7 +91,7 @@ namespace TripFund.App.Components.Pages
                         StateHasChanged();
                     }
                 }
-                NavigateToCreate(selection);
+                await NavigateToCreate(selection);
             }
         }
 
@@ -197,7 +196,7 @@ namespace TripFund.App.Components.Pages
                 {
                     await RemoteStorage.SynchronizeAsync(slug);
                     Storage.CompleteInitialImport(slug);
-                    NavigateToTrip(slug);
+                    await NavigateToTrip(slug);
                 }
                 catch (SyncConflictException)
                 {

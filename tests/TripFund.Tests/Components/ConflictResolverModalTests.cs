@@ -1,4 +1,5 @@
 using Bunit;
+using Microsoft.AspNetCore.Components;
 using Microsoft.Extensions.DependencyInjection;
 using Moq;
 using TripFund.App.Components.Common;
@@ -32,7 +33,13 @@ public class ConflictResolverModalTests : BunitContext
 
         Services.AddSingleton(_storageMock.Object);
         Services.AddSingleton(_alertServiceMock.Object);
-    }
+        Services.AddSingleton<INavigationService>(sp => 
+        {
+            var navService = new NavigationService();
+            navService.Register(sp.GetRequiredService<NavigationManager>());
+            return navService;
+        });
+        }
 
     [Fact]
     public async Task SelectVersion_ShouldWorkOnlyWithButton()

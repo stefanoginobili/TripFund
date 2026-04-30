@@ -12,7 +12,6 @@ namespace TripFund.App.Components.Pages
         [Inject] private LocalStorageService Storage { get; set; } = default!;
         [Inject] private IEmailService EmailService { get; set; } = default!;
         [Inject] private IAlertService AlertService { get; set; } = default!;
-        [Inject] private NavigationManager Nav { get; set; } = default!;
         [Inject] private IJSRuntime JSRuntime { get; set; } = default!;
 
         [Parameter] public string tripSlug { get; set; } = "";
@@ -98,17 +97,11 @@ namespace TripFund.App.Components.Pages
             isTransactionModalOpen = false;
         }
 
-        private void EditTransaction(Transaction t)
+        private async Task EditTransaction(Transaction t)
         {
             isTransactionModalOpen = false;
             var route = t.Type == "contribution" ? "contribution" : "expense";
-            Nav.NavigateTo($"/trip/{tripSlug}/{route}?edit={t.Id}&currency={selectedCurrency}&member={memberSlug}");
-        }
-
-        private void NavigateToContribution()
-        {
-            if (isMissing) return;
-            Nav.NavigateTo($"/trip/{tripSlug}/contribution?member={memberSlug}&currency={selectedCurrency}");
+            await NavService.NavigateAsync($"/trip/{tripSlug}/member/{memberSlug}?currency={selectedCurrency}", $"/trip/{tripSlug}/{route}?edit={t.Id}&currency={selectedCurrency}&member={memberSlug}");
         }
 
         private async Task SendSummaryEmail()

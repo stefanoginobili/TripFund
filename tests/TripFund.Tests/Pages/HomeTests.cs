@@ -5,6 +5,7 @@ using TripFund.App.Components.Pages;
 using TripFund.App.Models;
 using TripFund.App.Services;
 using FluentAssertions;
+using Microsoft.AspNetCore.Components;
 
 namespace TripFund.Tests.Pages;
 
@@ -48,8 +49,12 @@ public class HomeTests : BunitContext
         Services.AddSingleton(_msAuthConfigMock.Object);
         Services.AddSingleton(_oneDriveMock.Object);
         Services.AddSingleton(_oneDrivePickerMock.Object);
-        // Also register OneDrivePickerService as itself if needed, but the component uses OneDrivePickerService concrete class?
-        // Let's check OneDrivePickerModal.razor
+        Services.AddSingleton<INavigationService>(sp => 
+        {
+            var navService = new NavigationService();
+            navService.Register(sp.GetRequiredService<NavigationManager>());
+            return navService;
+        });
     }
 
     [Fact]
@@ -137,7 +142,7 @@ public class HomeTests : BunitContext
         
         _alertMock.Setup(a => a.ConfirmAsync(It.IsAny<string>(), 
             It.Is<string>(s => s.Contains("Mario Rossi") && s.Contains("01/01/2024")), 
-            "Conferma", "Annulla", It.IsAny<AlertType>()))
+            "Conferma", "Annulla", It.IsAny<AlertType>(), It.IsAny<string>()))
             .ReturnsAsync(true);
 
         var cut = Render<Home>();
@@ -179,7 +184,7 @@ public class HomeTests : BunitContext
             if (task != null) await task;
         });
 
-        _alertMock.Verify(a => a.ShowAlertAsync("Errore", "Questo viaggio è già stato importato localmente.", "OK", AlertType.Error), Times.Once);
+        _alertMock.Verify(a => a.ShowAlertAsync("Errore", "Questo viaggio è già stato importato localmente.", "OK", AlertType.Error, It.IsAny<string>()), Times.Once);
         
         // Cleanup
         if (Directory.Exists(tripsPath)) Directory.Delete(tripsPath, true);
@@ -199,7 +204,7 @@ public class HomeTests : BunitContext
         _remoteStorageMock.Setup(r => r.GetRemoteUniqueId(It.IsAny<string>(), It.IsAny<Dictionary<string, string>>()))
             .Returns("remote-fail");
         
-        _alertMock.Setup(a => a.ConfirmAsync(It.IsAny<string>(), It.IsAny<string>(), "Conferma", "Annulla", It.IsAny<AlertType>()))
+        _alertMock.Setup(a => a.ConfirmAsync(It.IsAny<string>(), It.IsAny<string>(), "Conferma", "Annulla", It.IsAny<AlertType>(), It.IsAny<string>()))
             .ReturnsAsync(true);
 
         _remoteStorageMock.Setup(r => r.SynchronizeAsync(It.IsAny<string>()))
@@ -224,6 +229,6 @@ public class HomeTests : BunitContext
         // Assert
         var expectedSlug = "fail-trip";
         _storageMock.Verify(s => s.DeleteTripAsync(expectedSlug), Times.Once);
-        _alertMock.Verify(a => a.ShowAlertAsync("Errore", "Sincronizzazione fallita. Assicurati di avere una connessione attiva.", "OK", AlertType.Error), Times.Once);
+        _alertMock.Verify(a => a.ShowAlertAsync("Errore", "Sincronizzazione fallita. Assicurati di avere una connessione attiva.", "OK", AlertType.Error, It.IsAny<string>()), Times.Once);
     }
 }

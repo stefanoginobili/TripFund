@@ -8,7 +8,6 @@ namespace TripFund.App.Components.Pages
     public partial class Onboarding
     {
         [Inject] private LocalStorageService Storage { get; set; } = default!;
-        [Inject] private NavigationManager Nav { get; set; } = default!;
 
         private string authorName = string.Empty;
         private string deviceIdSuffix = Guid.NewGuid().ToString("n").Substring(0, 8);
@@ -31,7 +30,7 @@ namespace TripFund.App.Components.Pages
             };
 
             await Storage.SaveAppSettingsAsync(settings);
-            Nav.NavigateTo("/");
+            await NavService.NavigateAsync(string.Empty, "/");
         }
     }
 }

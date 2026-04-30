@@ -5,6 +5,7 @@ using TripFund.App.Components.Pages;
 using TripFund.App.Models;
 using TripFund.App.Services;
 using FluentAssertions;
+using Microsoft.AspNetCore.Components;
 using System.Collections.Generic;
 using System.Linq;
 using AngleSharp.Dom;
@@ -15,6 +16,10 @@ public class DashboardTests : BunitContext
 {
     private readonly Mock<LocalStorageService> _storageMock;
     private readonly Mock<LocalTripStorage> _tripStorageMock;
+    private readonly Mock<IRemoteStorageService> _remoteStorageMock;
+    private readonly Mock<IEmailService> _emailMock;
+    private readonly Mock<IAlertService> _alertMock;
+    private readonly Mock<IThumbnailService> _thumbnailMock;
 
     public DashboardTests()
     {
@@ -24,15 +29,26 @@ public class DashboardTests : BunitContext
 
         _storageMock = new Mock<LocalStorageService>("dummy_path");
         _tripStorageMock = new Mock<LocalTripStorage>(_storageMock.Object, "test-trip");
+        _remoteStorageMock = new Mock<IRemoteStorageService>();
+        _emailMock = new Mock<IEmailService>();
+        _alertMock = new Mock<IAlertService>();
+        _thumbnailMock = new Mock<IThumbnailService>();
+
         _storageMock.Setup(s => s.GetTripRegistryAsync()).ReturnsAsync(new LocalTripRegistry());
         _storageMock.Setup(s => s.GetLocalTripStorage(It.IsAny<string>())).Returns(_tripStorageMock.Object);
         
         Services.AddSingleton(_storageMock.Object);
-        Services.AddSingleton(new Mock<IEmailService>().Object);
-        Services.AddSingleton(new Mock<IAlertService>().Object);
-        Services.AddSingleton(new Mock<IThumbnailService>().Object);
-        Services.AddSingleton(new Mock<IRemoteStorageService>().Object);
+        Services.AddSingleton(_emailMock.Object);
+        Services.AddSingleton(_alertMock.Object);
+        Services.AddSingleton(_thumbnailMock.Object);
+        Services.AddSingleton(_remoteStorageMock.Object);
         Services.AddSingleton(new PdfReportService());
+        Services.AddSingleton<INavigationService>(sp => 
+        {
+            var navService = new NavigationService();
+            navService.Register(sp.GetRequiredService<NavigationManager>());
+            return navService;
+        });
         
         JSInterop.SetupVoid("appLogic.lockScroll");
         JSInterop.SetupVoid("appLogic.unlockScroll");
@@ -213,8 +229,6 @@ public class DashboardTests : BunitContext
     {
         // Arrange
         var tripSlug = "test-trip";
-        var remoteStorageMock = new Mock<IRemoteStorageService>();
-        Services.AddSingleton(remoteStorageMock.Object);
 
         var config = new TripConfig { Id = "1", Name = "Test Trip", Currencies = new Dictionary<string, Currency> { { "EUR", new Currency { Symbol = "€" } } } };
         var registry = new LocalTripRegistry
@@ -236,7 +250,7 @@ public class DashboardTests : BunitContext
         await syncBtn.ClickAsync(new Microsoft.AspNetCore.Components.Web.MouseEventArgs());
 
         // Assert
-        remoteStorageMock.Verify(s => s.SynchronizeAsync(tripSlug), Times.Once);
+        _remoteStorageMock.Verify(s => s.SynchronizeAsync(tripSlug), Times.Once);
     }
 
     [Fact]

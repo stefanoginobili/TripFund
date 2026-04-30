@@ -6,6 +6,9 @@ using AndroidX.AppCompat.App;
 using AndroidX.Core.View;
 using AndroidX.Core.OS;
 
+using AndroidX.Activity;
+using Microsoft.Extensions.DependencyInjection;
+
 namespace TripFund.App;
 
 [Activity(Theme = "@style/Maui.SplashTheme", MainLauncher = true, ConfigurationChanges = ConfigChanges.ScreenSize | ConfigChanges.Orientation | ConfigChanges.UiMode | ConfigChanges.ScreenLayout | ConfigChanges.SmallestScreenSize | ConfigChanges.Density)]
@@ -37,6 +40,8 @@ public class MainActivity : MauiAppCompatActivity
 
         base.OnCreate(savedInstanceState);
 
+        System.Diagnostics.Debug.WriteLine("[MainActivity] OnCreate");
+
         // Ensure configuration is updated for current resources
 #pragma warning disable CA1422
         if (Resources?.Configuration != null)
@@ -47,6 +52,7 @@ public class MainActivity : MauiAppCompatActivity
 #pragma warning restore CA1422
 
         AppCompatDelegate.DefaultNightMode = AppCompatDelegate.ModeNightNo;
+        
         if (Window != null)
         {
             WindowCompat.SetDecorFitsSystemWindows(Window, false);
@@ -71,5 +77,51 @@ public class MainActivity : MauiAppCompatActivity
                 }
             }
         }
+    }
+
+    public override bool DispatchKeyEvent(Android.Views.KeyEvent? e)
+    {
+        if (e?.KeyCode == Android.Views.Keycode.Back)
+        {
+            var services = IPlatformApplication.Current?.Services;
+            var navService = services?.GetService<Services.INavigationService>();
+
+            if (navService != null)
+            {
+                if (navService.StackCount > 0 || navService.HasBeforeNavigateAction)
+                {
+                    if (e.Action == Android.Views.KeyEventActions.Up)
+                    {
+                        System.Diagnostics.Debug.WriteLine($"[MainActivity] DispatchKeyEvent: Intercepted back for internal navigation. StackCount={navService.StackCount}");
+                        MainThread.BeginInvokeOnMainThread(async () =>
+                        {
+                            try
+                            {
+                                await navService.GoBackAsync();
+                            }
+                            catch (Exception ex)
+                            {
+                                System.Diagnostics.Debug.WriteLine($"[MainActivity] Error in GoBackAsync: {ex.Message}");
+                            }
+                        });
+                    }
+                    return true;
+                }
+                else
+                {
+                    // Stack is empty and no action registered: we want to exit the app.
+                    // We explicitly trigger OnBackPressed to ensure the OS handles the exit,
+                    // bypassing any focus-based interception by the WebView.
+                    if (e.Action == Android.Views.KeyEventActions.Up)
+                    {
+                        System.Diagnostics.Debug.WriteLine("[MainActivity] DispatchKeyEvent: Stack empty, triggering OS back (exit)");
+                        OnBackPressedDispatcher.OnBackPressed();
+                    }
+                    return true;
+                }
+            }
+        }
+
+        return base.DispatchKeyEvent(e);
     }
 }

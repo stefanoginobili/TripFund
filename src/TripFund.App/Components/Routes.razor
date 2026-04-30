@@ -2,6 +2,7 @@
 @using TripFund.App.Services
 @inject NavigationManager Nav
 @inject LocalStorageService Storage
+@inject TripFund.App.Services.INavigationService NavService
 
 <Router AppAssembly="@typeof(MauiProgram).Assembly">
     <Found Context="routeData">
@@ -18,10 +19,11 @@
 @code {
     protected override async Task OnInitializedAsync()
     {
+        NavService.Register(Nav);
         var settings = await Storage.GetAppSettingsAsync();
         if (string.IsNullOrEmpty(settings?.DeviceId) && !Nav.Uri.EndsWith("/onboarding"))
         {
-            Nav.NavigateTo("/onboarding");
+            await NavService.NavigateAsync(string.Empty, "/onboarding");
         }
     }
 }

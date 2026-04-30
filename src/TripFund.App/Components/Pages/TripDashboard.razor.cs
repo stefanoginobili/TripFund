@@ -12,7 +12,6 @@ namespace TripFund.App.Components.Pages
     public partial class TripDashboard
     {
         [Inject] private LocalStorageService Storage { get; set; } = default!;
-        [Inject] private NavigationManager Nav { get; set; } = default!;
         [Inject] private IJSRuntime JSRuntime { get; set; } = default!;
         [Inject] private IRemoteStorageService RemoteStorage { get; set; } = default!;
         [Inject] private PdfReportService PdfService { get; set; } = default!;
@@ -95,10 +94,10 @@ namespace TripFund.App.Components.Pages
             isTransactionModalOpen = false;
         }
 
-        private void OpenMemberDashboard(string slug)
+        private async Task OpenMemberDashboard(string slug)
         {
             isMembersModalOpen = false;
-            Nav.NavigateTo($"/trip/{tripSlug}/member/{slug}?currency={selectedCurrency}");
+            await NavService.NavigateAsync($"/trip/{tripSlug}?currency={selectedCurrency}", $"/trip/{tripSlug}/member/{slug}?currency={selectedCurrency}");
         }
 
         private async Task GenerateReport()
@@ -120,11 +119,11 @@ namespace TripFund.App.Components.Pages
             }
         }
 
-        private void EditTransaction(Transaction t)
+        private async Task EditTransaction(Transaction t)
         {
             isTransactionModalOpen = false;
             var route = t.Type == "contribution" ? "contribution" : "expense";
-            Nav.NavigateTo($"/trip/{tripSlug}/{route}?edit={t.Id}&currency={selectedCurrency}");
+            await NavService.NavigateAsync($"/trip/{tripSlug}?currency={selectedCurrency}", $"/trip/{tripSlug}/{route}?edit={t.Id}&currency={selectedCurrency}");
         }
 
         private void CalculateStats()

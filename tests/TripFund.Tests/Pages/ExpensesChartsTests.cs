@@ -5,6 +5,7 @@ using TripFund.App.Components.Pages;
 using TripFund.App.Models;
 using TripFund.App.Services;
 using FluentAssertions;
+using Microsoft.AspNetCore.Components;
 using System.Collections.Generic;
 using System.Linq;
 using TripFund.App.Constants;
@@ -33,6 +34,12 @@ public class ExpensesChartsTests : BunitContext
 
         Services.AddSingleton(_storageMock.Object);
         Services.AddSingleton(_exchangeRatesMock.Object);
+        Services.AddSingleton<INavigationService>(sp => 
+        {
+            var navService = new NavigationService();
+            navService.Register(sp.GetRequiredService<NavigationManager>());
+            return navService;
+        });
         
         JSInterop.SetupVoid("appLogic.lockScroll");
         JSInterop.SetupVoid("appLogic.unlockScroll");

@@ -43,6 +43,12 @@ public class TransactionFormTests : BunitContext
         Services.AddSingleton(_datePickerMock.Object);
         Services.AddSingleton(_thumbnailMock.Object);
         Services.AddSingleton(new Mock<IRemoteStorageService>().Object);
+        Services.AddSingleton<INavigationService>(sp => 
+        {
+            var navService = new NavigationService();
+            navService.Register(sp.GetRequiredService<NavigationManager>());
+            return navService;
+        });
 
         // Mock JS Interop for scrolling (called in OnAfterRender)
         JSInterop.SetupVoid("appLogic.scrollIntoView", _ => true);
@@ -736,12 +742,13 @@ public class TransactionFormTests : BunitContext
     }
 
     [Fact]
-    public void EditExpense_ShouldDeleteTransaction()
+    public async Task EditExpense_ShouldDeleteTransaction()
     {
         // Arrange
         var tripSlug = "test-trip";
         var transactionId = "trans-123";
         var nav = Services.GetRequiredService<NavigationManager>();
+        var navService = Services.GetRequiredService<INavigationService>();
 
         var config = new TripConfig { Id = "1", Name = "Test Trip", Currencies = new Dictionary<string, Currency> { { "EUR", new Currency { Symbol = "€" } } } };
         var transaction = new Transaction { Id = transactionId, Type = "expense", Amount = 100, Currency = "EUR", Description = "Test" };
@@ -749,10 +756,10 @@ public class TransactionFormTests : BunitContext
         _tripStorageMock.Setup(s => s.GetTripConfigAsync()).ReturnsAsync(config);
         _tripStorageMock.Setup(s => s.GetLatestTransactionVersionWithDetailsAsync(transactionId))
             .ReturnsAsync(new LocalTripStorage.TransactionVersionInfo { Transaction = transaction });
-        _alertMock.Setup(a => a.ConfirmAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<AlertType>()))
+        _alertMock.Setup(a => a.ConfirmAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<AlertType>(), It.IsAny<string>()))
             .ReturnsAsync(true);
 
-        nav.NavigateTo($"/trip/{tripSlug}/expense?edit={transactionId}");
+        await navService.NavigateAsync($"/trip/{tripSlug}?currency=EUR", $"/trip/{tripSlug}/expense?edit={transactionId}");
         var cut = Render<ExpenseEditor>(parameters => parameters
             .Add(p => p.tripSlug, tripSlug)
         );
@@ -766,7 +773,7 @@ public class TransactionFormTests : BunitContext
         deleteBtn.Click();
 
         // Assert
-        _alertMock.Verify(a => a.ConfirmAsync("Elimina Spesa", It.IsAny<string>(), "Elimina", "Annulla", AlertType.Warning), Times.Once);
+        _alertMock.Verify(a => a.ConfirmAsync("Elimina Spesa", It.IsAny<string>(), "Elimina", "Annulla", AlertType.Warning, It.IsAny<string>()), Times.Once);
         _tripStorageMock.Verify(s => s.SaveTransactionAsync(transaction, "test-author", true, It.IsAny<Dictionary<string, byte[]>>()), Times.Once);
         nav.Uri.Should().Contain($"/trip/{tripSlug}?currency=EUR");
     }
@@ -785,7 +792,8 @@ public class TransactionFormTests : BunitContext
         _tripStorageMock.Setup(s => s.GetTripConfigAsync()).ReturnsAsync(config);
         
         var nav = Services.GetRequiredService<NavigationManager>();
-        nav.NavigateTo($"/trip/{tripSlug}/expense?member={memberSlug}&currency=USD");
+        var navService = Services.GetRequiredService<INavigationService>();
+        await navService.NavigateAsync($"/trip/{tripSlug}/member/{memberSlug}?currency=USD", $"/trip/{tripSlug}/expense?member={memberSlug}&currency=USD");
 
         var cut = Render<ExpenseEditor>(parameters => parameters.Add(p => p.tripSlug, tripSlug));
 

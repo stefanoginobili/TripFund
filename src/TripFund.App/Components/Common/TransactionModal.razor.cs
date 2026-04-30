@@ -9,7 +9,6 @@ namespace TripFund.App.Components.Common
     public partial class TransactionModal
     {
         [Inject] private LocalStorageService Storage { get; set; } = default!;
-        [Inject] private NavigationManager Nav { get; set; } = default!;
         [Inject] private IJSRuntime JSRuntime { get; set; } = default!;
         [Inject] private IThumbnailService Thumbnails { get; set; } = default!;
 

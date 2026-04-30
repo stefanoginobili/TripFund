@@ -1,4 +1,4 @@
-﻿namespace TripFund.App;
+namespace TripFund.App;
 
 public partial class App : Application
 {

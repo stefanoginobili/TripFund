@@ -43,7 +43,7 @@ public class RemoteStorageLoggingTests : IDisposable
             syncEngine,
             _server.Urls[0]);
 
-        _authenticatorMock.Setup(a => a.AuthenticateAsync(It.IsAny<WebAuthenticatorOptions>()))
+        _authenticatorMock.Setup(a => a.AuthenticateAsync(It.IsAny<WebAuthenticatorOptions>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new WebAuthenticatorResult());
     }
 

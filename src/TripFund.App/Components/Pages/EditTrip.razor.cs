@@ -7,10 +7,9 @@ using TripFund.App.Utilities;
 
 namespace TripFund.App.Components.Pages
 {
-    public partial class EditTrip
+    public partial class EditTrip : IDisposable
     {
         [Inject] private LocalStorageService Storage { get; set; } = default!;
-        [Inject] private NavigationManager Nav { get; set; } = default!;
         [Inject] private IAlertService Alerts { get; set; } = default!;
         [Inject] private IJSRuntime JSRuntime { get; set; } = default!;
 
@@ -64,6 +63,7 @@ namespace TripFund.App.Components.Pages
 
         protected override async Task OnInitializedAsync()
         {
+            NavService.SetBeforeNavigateAction(ConfirmDiscardChanges);
             config = await Storage.GetLocalTripStorage(tripSlug).GetTripConfigAsync();
             if (config != null)
             {
@@ -156,6 +156,30 @@ namespace TripFund.App.Components.Pages
             var normalizedOriginalJson = System.Text.Json.JsonSerializer.Serialize(normalizedOriginal);
 
             return currentJson != normalizedOriginalJson;
+        }
+
+        public void Dispose()
+        {
+            NavService.ClearBeforeNavigateAction();
+        }
+
+        private async Task<bool> ConfirmDiscardChanges()
+        {
+            if (isInternalNavigationAllowed || !HasChanges()) return true;
+
+            bool confirmed = await Alerts.ConfirmAsync(
+                "Modifiche non salvate",
+                "Hai apportato delle modifiche. Vuoi uscire senza salvare?",
+                "Esci",
+                "Rimani",
+                AlertType.Warning);
+
+            if (confirmed)
+            {
+                isInternalNavigationAllowed = true;
+            }
+
+            return confirmed;
         }
 
         private void ToggleEmojiPicker() => showEmojiPicker = !showEmojiPicker;
@@ -326,6 +350,11 @@ namespace TripFund.App.Components.Pages
             }
         }
 
+        private async Task GoBack()
+        {
+            await NavService.GoBackAsync();
+        }
+
         private async Task HandleSave()
         {
             if (config == null) return;
@@ -358,7 +387,7 @@ namespace TripFund.App.Components.Pages
             var settings = await Storage.GetAppSettingsAsync();
             await Storage.GetLocalTripStorage(tripSlug).SaveTripConfigAsync(config, settings?.DeviceId ?? "unknown");
             isInternalNavigationAllowed = true;
-            Nav.NavigateTo($"/trip/{tripSlug}");
+            await NavService.GoBackAsync();
         }
 
         private async Task HandleDelete()
@@ -374,7 +403,7 @@ namespace TripFund.App.Components.Pages
             {
                 await Storage.DeleteTripAsync(tripSlug);
                 isInternalNavigationAllowed = true;
-                Nav.NavigateTo("/");
+                await NavService.GoBackAsync();
             }
         }
 
@@ -382,19 +411,9 @@ namespace TripFund.App.Components.Pages
         {
             if (isInternalNavigationAllowed) return;
 
-            if (HasChanges())
+            if (!await ConfirmDiscardChanges())
             {
-                bool confirmed = await Alerts.ConfirmAsync(
-                    "Modifiche non salvate",
-                    "Hai apportato delle modifiche. Vuoi uscire senza salvare?",
-                    "Esci",
-                    "Rimani",
-                    AlertType.Warning);
-
-                if (!confirmed)
-                {
-                    context.PreventNavigation();
-                }
+                context.PreventNavigation();
             }
         }
     }

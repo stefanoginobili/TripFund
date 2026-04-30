@@ -1,4 +1,5 @@
 using Bunit;
+using Microsoft.AspNetCore.Components;
 using Microsoft.Extensions.DependencyInjection;
 using Moq;
 using TripFund.App.Components.Common;
@@ -19,6 +20,12 @@ namespace TripFund.Tests.Components
         {
             _alertMock = new Mock<IAlertService>();
             Services.AddSingleton(_alertMock.Object);
+            Services.AddSingleton<INavigationService>(sp => 
+            {
+                var navService = new NavigationService();
+                navService.Register(sp.GetRequiredService<NavigationManager>());
+                return navService;
+            });
             
             // Mock JS Interop
             JSInterop.SetupVoid("appLogic.selectText", _ => true);

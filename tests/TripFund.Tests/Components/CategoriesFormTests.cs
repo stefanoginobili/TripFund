@@ -17,6 +17,12 @@ public class CategoriesFormTests : BunitContext
     {
         _alertMock = new Mock<IAlertService>();
         Services.AddSingleton(_alertMock.Object);
+        Services.AddSingleton<INavigationService>(sp => 
+        {
+            var navService = new NavigationService();
+            navService.Register(sp.GetRequiredService<NavigationManager>());
+            return navService;
+        });
 
         JSInterop.SetupVoid("appLogic.positionMenu", _ => true);
         JSInterop.SetupVoid("appLogic.scrollIntoView", _ => true);

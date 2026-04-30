@@ -39,6 +39,12 @@ public class CurrencySelectorVisibilityTests : BunitContext
         Services.AddSingleton(_thumbnailMock.Object);
         Services.AddSingleton(new Mock<IRemoteStorageService>().Object);
         Services.AddSingleton(new PdfReportService());
+        Services.AddSingleton<INavigationService>(sp => 
+        {
+            var navService = new NavigationService();
+            navService.Register(sp.GetRequiredService<NavigationManager>());
+            return navService;
+        });
 
         JSInterop.SetupVoid("appLogic.scrollIntoView", _ => true);
         JSInterop.SetupVoid("appLogic.selectText", _ => true);
@@ -194,7 +200,8 @@ public class CurrencySelectorVisibilityTests : BunitContext
         _tripStorageMock.Setup(ts => ts.GetTripConfigAsync()).ReturnsAsync(config);
         
         var nav = Services.GetRequiredService<NavigationManager>();
-        nav.NavigateTo($"/trip/{tripSlug}/contribution?currency=EUR");
+        var navService = Services.GetRequiredService<INavigationService>();
+        await navService.NavigateAsync($"/trip/{tripSlug}?currency=EUR", $"/trip/{tripSlug}/contribution?currency=EUR");
 
         var cut = Render<ContributionEditor>(parameters => parameters.Add(p => p.tripSlug, tripSlug));
 
@@ -229,7 +236,8 @@ public class CurrencySelectorVisibilityTests : BunitContext
         _tripStorageMock.Setup(ts => ts.GetTripConfigAsync()).ReturnsAsync(config);
         
         var nav = Services.GetRequiredService<NavigationManager>();
-        nav.NavigateTo($"/trip/{tripSlug}/contribution?member={memberSlug}&currency=USD");
+        var navService = Services.GetRequiredService<INavigationService>();
+        await navService.NavigateAsync($"/trip/{tripSlug}/member/{memberSlug}?currency=USD", $"/trip/{tripSlug}/contribution?member={memberSlug}&currency=USD");
 
         var cut = Render<ContributionEditor>(parameters => parameters.Add(p => p.tripSlug, tripSlug));
 

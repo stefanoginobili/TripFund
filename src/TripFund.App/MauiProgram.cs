@@ -35,6 +35,7 @@ public static class MauiProgram
 		builder.Services.AddSingleton<Services.IRemoteStorageService, Services.CompositeRemoteStorageService>();
 		builder.Services.AddSingleton<Services.IAlertService, Services.VibeAlertService>();
 		builder.Services.AddSingleton<Services.IThumbnailService, Services.ThumbnailService>();
+		builder.Services.AddSingleton<Services.INavigationService, Services.NavigationService>();
 		builder.Services.AddSingleton<Services.IEmailService, Services.EmailService>();
 		builder.Services.AddSingleton<Services.PdfReportService>();
 

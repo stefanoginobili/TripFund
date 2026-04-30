@@ -8,10 +8,9 @@ using TripFund.App.Constants;
 
 namespace TripFund.App.Components.Pages
 {
-    public partial class ExpenseEditor
+    public partial class ExpenseEditor : IDisposable
     {
         [Inject] private LocalStorageService Storage { get; set; } = default!;
-        [Inject] private NavigationManager Nav { get; set; } = default!;
         [Inject] private IJSRuntime JSRuntime { get; set; } = default!;
         [Inject] private IAlertService Alerts { get; set; } = default!;
         [Inject] private IThumbnailService Thumbnails { get; set; } = default!;
@@ -44,6 +43,7 @@ namespace TripFund.App.Components.Pages
 
         protected override async Task OnInitializedAsync()
         {
+            NavService.SetBeforeNavigateAction(ConfirmDiscardChanges);
             var tripStorage = Storage.GetLocalTripStorage(tripSlug);
             config = await tripStorage.GetTripConfigAsync();
             var settings = await Storage.GetAppSettingsAsync();
@@ -229,6 +229,30 @@ namespace TripFund.App.Components.Pages
             return false;
         }
 
+        public void Dispose()
+        {
+            NavService.ClearBeforeNavigateAction();
+        }
+
+        private async Task<bool> ConfirmDiscardChanges()
+        {
+            if (isInternalNavigationAllowed || !HasChanges()) return true;
+
+            var confirmed = await Alerts.ConfirmAsync(
+                "Modifiche non salvate",
+                "Hai apportato delle modifiche. Vuoi uscire senza salvare?",
+                "Esci",
+                "Rimani",
+                AlertType.Warning);
+
+            if (confirmed)
+            {
+                isInternalNavigationAllowed = true;
+            }
+
+            return confirmed;
+        }
+
         private Transaction BuildTransaction()
         {
             var included = memberSplits.Where(m => m.IsIncluded).ToList();
@@ -302,52 +326,16 @@ namespace TripFund.App.Components.Pages
 
         private async Task GoBack()
         {
-            if (isInternalNavigationAllowed || !HasChanges())
-            {
-                isInternalNavigationAllowed = true;
-                if (!string.IsNullOrEmpty(member))
-                {
-                    Nav.NavigateTo($"/trip/{tripSlug}/member/{member}?currency={selectedCurrency}");
-                }
-                else
-                {
-                    Nav.NavigateTo($"/trip/{tripSlug}?currency={selectedCurrency}");
-                }
-            }
-            else
-            {
-                // NavigationLock will handle the prompt if we try to navigate via Nav.NavigateTo
-                // But since GoBack is called by the header button, we can just trigger a navigation here
-                // and the Lock will intercept it.
-                if (!string.IsNullOrEmpty(member))
-                {
-                    Nav.NavigateTo($"/trip/{tripSlug}/member/{member}?currency={selectedCurrency}");
-                }
-                else
-                {
-                    Nav.NavigateTo($"/trip/{tripSlug}?currency={selectedCurrency}");
-                }
-            }
-            await Task.CompletedTask;
+            await NavService.GoBackAsync();
         }
 
         private async Task HandleBeforeInternalNavigation(LocationChangingContext context)
         {
             if (isInternalNavigationAllowed) return;
 
-            if (HasChanges())
+            if (!await ConfirmDiscardChanges())
             {
-                bool confirmed = await Alerts.ConfirmAsync(
-                    "Modifiche non salvate",
-                    "Hai apportato delle modifiche. Vuoi uscire senza salvare?",
-                    "Esci",
-                    "Rimani",
-                    AlertType.Warning);
-
-                if (!confirmed)
-                {
-                    context.PreventNavigation();
-                }
+                context.PreventNavigation();
             }
         }
 

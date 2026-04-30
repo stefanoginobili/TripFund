@@ -2,7 +2,7 @@
 
 <div class="app-page">
     <header class="app-header">
-        <button class="icon-btn" @onclick='() => Nav.NavigateTo("/")'>
+        <button class="icon-btn" @onclick="NavService.GoBackAsync">
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <line x1="19" y1="12" x2="5" y2="12"></line>
                 <polyline points="12 19 5 12 12 5"></polyline>
@@ -21,7 +21,7 @@
                     </button>
                 </Trigger>
                 <ChildContent>
-                    <button class="dropdown-item-vibe" @onclick='() => Nav.NavigateTo($"/trip/{tripSlug}/edit")' disabled="@isReadonly">
+                    <button class="dropdown-item-vibe" @onclick='() => NavService.NavigateAsync($"/trip/{tripSlug}?currency={selectedCurrency}", $"/trip/{tripSlug}/edit")' disabled="@isReadonly">
                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="me-2">
                             <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
                             <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
@@ -38,7 +38,7 @@
                         </svg>
                         Report Spese
                     </button>
-                    <button class="dropdown-item-vibe" @onclick='() => Nav.NavigateTo($"/trip/{tripSlug}/charts")'>
+                    <button class="dropdown-item-vibe" @onclick='() => NavService.NavigateAsync($"/trip/{tripSlug}?currency={selectedCurrency}", $"/trip/{tripSlug}/charts")'>
                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="me-2">
                             <path d="M21.21 15.89A10 10 0 1 1 8 2.83"></path>
                             <path d="M22 12A10 10 0 0 0 12 2v10z"></path>
@@ -86,14 +86,14 @@
             </div>
 
             <div class="quick-actions">
-                <button class="action-btn contribute-btn" @onclick='() => Nav.NavigateTo($"/trip/{tripSlug}/contribution?currency={selectedCurrency}")' disabled="@isReadonly">
+                <button class="action-btn contribute-btn" @onclick='() => NavService.NavigateAsync($"/trip/{tripSlug}?currency={selectedCurrency}", $"/trip/{tripSlug}/contribution?currency={selectedCurrency}")' disabled="@isReadonly">
                     <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline>
                         <polyline points="17 6 23 6 23 12"></polyline>
                     </svg>
                     Registra Versamento
                 </button>
-                <button class="action-btn expense-btn" @onclick='() => Nav.NavigateTo($"/trip/{tripSlug}/expense?currency={selectedCurrency}")' disabled="@isReadonly">
+                <button class="action-btn expense-btn" @onclick='() => NavService.NavigateAsync($"/trip/{tripSlug}?currency={selectedCurrency}", $"/trip/{tripSlug}/expense?currency={selectedCurrency}")' disabled="@isReadonly">
                     <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <polyline points="23 18 13.5 8.5 8.5 13.5 1 6"></polyline>
                         <polyline points="17 18 23 18 23 12"></polyline>

@@ -1,4 +1,5 @@
 using Bunit;
+using Microsoft.AspNetCore.Components;
 using Microsoft.Extensions.DependencyInjection;
 using TripFund.App.Components.Common;
 using TripFund.App.Services;
@@ -8,6 +9,16 @@ namespace TripFund.Tests.Components;
 
 public class VibeAlertTests : BunitContext
 {
+    public VibeAlertTests()
+    {
+        Services.AddSingleton<INavigationService>(sp => 
+        {
+            var navService = new NavigationService();
+            navService.Register(sp.GetRequiredService<NavigationManager>());
+            return navService;
+        });
+    }
+
     [Fact]
     public void VibeAlert_ShouldNotRenderWhenNotVisible()
     {

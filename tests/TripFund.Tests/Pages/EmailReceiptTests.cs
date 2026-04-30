@@ -5,6 +5,7 @@ using TripFund.App.Components.Pages;
 using TripFund.App.Models;
 using TripFund.App.Services;
 using FluentAssertions;
+using Microsoft.AspNetCore.Components;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -38,6 +39,12 @@ public class EmailReceiptTests : BunitContext
         Services.AddSingleton(_alertMock.Object);
         Services.AddSingleton(new Mock<INativeDatePickerService>().Object);
         Services.AddSingleton(new Mock<IRemoteStorageService>().Object);
+        Services.AddSingleton<INavigationService>(sp => 
+        {
+            var navService = new NavigationService();
+            navService.Register(sp.GetRequiredService<NavigationManager>());
+            return navService;
+        });
 
         // Mock JS Interop for scrolling (called in OnAfterRender)
         JSInterop.SetupVoid("appLogic.scrollIntoView", _ => true);
@@ -78,7 +85,7 @@ public class EmailReceiptTests : BunitContext
             .Returns(Task.CompletedTask);
         
         // Mock alert confirmation to return TRUE (Sì)
-        _alertMock.Setup(a => a.ConfirmAsync("Invia ricevuta", It.IsAny<string>(), "Sì", "No", It.IsAny<AlertType>()))
+        _alertMock.Setup(a => a.ConfirmAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<AlertType>(), It.IsAny<string>()))
             .ReturnsAsync(true);
 
         var cut = Render<ContributionEditor>(parameters => parameters.Add(p => p.tripSlug, tripSlug));
@@ -96,7 +103,7 @@ public class EmailReceiptTests : BunitContext
 
         // Assert
         // 1. Verify Alert was shown
-        _alertMock.Verify(a => a.ConfirmAsync("Invia ricevuta", It.Is<string>(s => s.Contains("Mario")), "Sì", "No", It.IsAny<AlertType>()), Times.Once);
+        _alertMock.Verify(a => a.ConfirmAsync("Invia ricevuta", It.Is<string>(s => s.Contains("Mario")), "Sì", "No", It.IsAny<AlertType>(), It.IsAny<string>()), Times.Once);
         
         // 2. Verify Email was sent
         _emailMock.Verify(e => e.SendEmailAsync(
@@ -125,7 +132,7 @@ public class EmailReceiptTests : BunitContext
         _tripStorageMock.Setup(s => s.GetTransactionsAsync()).ReturnsAsync(new List<Transaction>());
         
         // Mock alert confirmation to return FALSE (No)
-        _alertMock.Setup(a => a.ConfirmAsync("Invia ricevuta", It.IsAny<string>(), "Sì", "No", It.IsAny<AlertType>()))
+        _alertMock.Setup(a => a.ConfirmAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<AlertType>(), It.IsAny<string>()))
             .ReturnsAsync(false);
 
         var cut = Render<ContributionEditor>(parameters => parameters.Add(p => p.tripSlug, tripSlug));
@@ -143,7 +150,7 @@ public class EmailReceiptTests : BunitContext
 
         // Assert
         // 1. Verify Alert was shown
-        _alertMock.Verify(a => a.ConfirmAsync("Invia ricevuta", It.IsAny<string>(), "Sì", "No", It.IsAny<AlertType>()), Times.Once);
+        _alertMock.Verify(a => a.ConfirmAsync("Invia ricevuta", It.IsAny<string>(), "Sì", "No", It.IsAny<AlertType>(), It.IsAny<string>()), Times.Once);
 
         // 2. Verify Email was NEVER sent
         _emailMock.Verify(e => e.SendEmailAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<IEnumerable<string>>()), Times.Never);
@@ -176,7 +183,7 @@ public class EmailReceiptTests : BunitContext
             .Returns(Task.CompletedTask);
         
         // Mock alert confirmation to return TRUE (Sì)
-        _alertMock.Setup(a => a.ConfirmAsync("Invia ricevuta", It.IsAny<string>(), "Sì", "No", It.IsAny<AlertType>()))
+        _alertMock.Setup(a => a.ConfirmAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<AlertType>(), It.IsAny<string>()))
             .ReturnsAsync(true);
 
         var cut = Render<ContributionEditor>(parameters => parameters.Add(p => p.tripSlug, tripSlug));
@@ -194,7 +201,7 @@ public class EmailReceiptTests : BunitContext
 
         // Assert
         // 1. Verify Alert was shown
-        _alertMock.Verify(a => a.ConfirmAsync("Invia ricevuta", It.Is<string>(s => s.Contains("Mario")), "Sì", "No", It.IsAny<AlertType>()), Times.Once);
+        _alertMock.Verify(a => a.ConfirmAsync("Invia ricevuta", It.Is<string>(s => s.Contains("Mario")), "Sì", "No", It.IsAny<AlertType>(), It.IsAny<string>()), Times.Once);
         
         // 2. Verify Email was sent with empty recipients
         _emailMock.Verify(e => e.SendEmailAsync(

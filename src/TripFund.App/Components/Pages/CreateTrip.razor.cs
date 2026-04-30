@@ -147,7 +147,7 @@ namespace TripFund.App.Components.Pages
                 _ = RemoteStorage.SynchronizeAsync(finalSlug);
             }
 
-            Nav.NavigateTo($"/trip/{finalSlug}");
+            await NavService.NavigateAsync("/", $"/trip/{finalSlug}");
         }
     }
 }
