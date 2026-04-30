@@ -117,8 +117,7 @@ public class LocalTripStorage
             parentVersions = head != null ? new List<string> { Path.GetFileName(head) } : new List<string>();
         }
 
-        var tempRoot = Path.Combine(_globalStorage.TripsPath, TripSlug, AppConstants.Folders.Temp, AppConstants.Folders.Commits, AppConstants.Folders.Config);
-        var folderName = await engine.CommitAsync(kind, changedFiles, parentVersions: parentVersions, contentType: AppConstants.ContentTypes.TripConfig, tempRootPath: tempRoot);
+        var folderName = await engine.CommitAsync(kind, changedFiles, parentVersions: parentVersions, contentType: AppConstants.ContentTypes.TripConfig);
         await RegisterPendingUploadAsync(Path.Combine(AppConstants.Folders.Config, AppConstants.Folders.Versions, folderName));
     }
 
@@ -285,8 +284,7 @@ public class LocalTripStorage
             }
         }
 
-        var tempRoot = Path.Combine(_globalStorage.TripsPath, TripSlug, AppConstants.Folders.Temp, AppConstants.Folders.Commits, AppConstants.Folders.Transactions, transaction.Id);
-        var folderName = await engine.CommitAsync(kind, changedFiles, parentVersions: parentVersions, contentType: AppConstants.ContentTypes.TransactionDetail, tempRootPath: tempRoot);
+        var folderName = await engine.CommitAsync(kind, changedFiles, parentVersions: parentVersions, contentType: AppConstants.ContentTypes.TransactionDetail);
         await RegisterPendingUploadAsync(Path.Combine(AppConstants.Folders.Transactions, transaction.Id, AppConstants.Folders.Details, AppConstants.Folders.Versions, folderName));
     }
 
@@ -396,8 +394,7 @@ public class LocalTripStorage
             changedFiles[AppConstants.Files.TripConfig] = System.Text.Encoding.UTF8.GetBytes(json);
         }
 
-        var tempRoot = Path.Combine(_globalStorage.TripsPath, TripSlug, AppConstants.Folders.Temp, AppConstants.Folders.Commits, AppConstants.Folders.Config);
-        var folderName = await engine.CommitAsync(CommitKind.Res, changedFiles, parentVersions: parentVersions, contentType: AppConstants.ContentTypes.TripConfig, tempRootPath: tempRoot);
+        var folderName = await engine.CommitAsync(CommitKind.Res, changedFiles, parentVersions: parentVersions, contentType: AppConstants.ContentTypes.TripConfig);
         await RegisterPendingUploadAsync(Path.Combine(AppConstants.Folders.Config, AppConstants.Folders.Versions, folderName));
     }
 
@@ -472,8 +469,7 @@ public class LocalTripStorage
             changedFiles[AppConstants.Files.TransactionDetails] = System.Text.Encoding.UTF8.GetBytes(json);
         }
 
-        var tempRoot = Path.Combine(_globalStorage.TripsPath, TripSlug, AppConstants.Folders.Temp, AppConstants.Folders.Commits, AppConstants.Folders.Transactions, transactionId);
-        var folderName = await engine.CommitAsync(CommitKind.Res, changedFiles, parentVersions: parentVersions, contentType: AppConstants.ContentTypes.TransactionDetail, tempRootPath: tempRoot);
+        var folderName = await engine.CommitAsync(CommitKind.Res, changedFiles, parentVersions: parentVersions, contentType: AppConstants.ContentTypes.TransactionDetail);
         await RegisterPendingUploadAsync(Path.Combine(AppConstants.Folders.Transactions, transactionId, AppConstants.Folders.Details, AppConstants.Folders.Versions, folderName));
     }
 

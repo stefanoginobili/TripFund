@@ -328,100 +328,114 @@ public class VersionedStorageEngine
         Dictionary<string, byte[]> changedFiles,
         List<string>? deletedFiles = null,
         IEnumerable<string>? parentVersions = null,
-        string? contentType = null,
-        string? tempRootPath = null)
+        string? contentType = null)
     {
         var versions = GetVersionFolders();
         int nextSeq = (versions.Count == 0) ? 1 : versions.Max(v => v.Sequence) + 1;
         string folderName = $"{nextSeq:D3}_{kind.ToString().ToUpperInvariant()}_{_deviceId}";
         string versionsRoot = Path.Combine(_rootPath, AppConstants.Folders.Versions);
 
-        string workDirPath = string.IsNullOrEmpty(tempRootPath)
-            ? Path.Combine(versionsRoot, folderName)
-            : Path.Combine(tempRootPath, folderName);
+        // Staging path: {root}/temp/commits/{Guid}
+        string stagingRoot = Path.Combine(_rootPath, AppConstants.Folders.Temp, AppConstants.Folders.Commits, Guid.NewGuid().ToString());
+        string workDirPath = Path.Combine(stagingRoot, folderName);
 
-        if (!Directory.Exists(Path.GetDirectoryName(workDirPath))) 
-            Directory.CreateDirectory(Path.GetDirectoryName(workDirPath)!);
-
-        if (Directory.Exists(workDirPath)) Directory.Delete(workDirPath, true);
-        Directory.CreateDirectory(workDirPath);
-
-        var leaf = new LocalLeafFolder(workDirPath);
-        var metaDict = new Dictionary<string, string>();
-
-        metaDict[AppConstants.Metadata.Author] = _author;
-        metaDict[AppConstants.Metadata.DeviceId] = _deviceId;
-        metaDict[AppConstants.Metadata.CreatedAt] = DateTime.UtcNow.ToString("yyyy-MM-ddTHH:mm:ss.fffZ");
-        if (!string.IsNullOrEmpty(contentType)) metaDict[AppConstants.Metadata.ContentType] = contentType;
-
-        if (parentVersions != null && parentVersions.Any())
+        try
         {
-            metaDict[AppConstants.Metadata.VersioningParents] = string.Join(",", parentVersions);
-        }
+            if (!Directory.Exists(stagingRoot))
+                Directory.CreateDirectory(stagingRoot);
 
-        metaDict[AppConstants.Metadata.VersioningSequence] = nextSeq.ToString();
-        metaDict[AppConstants.Metadata.VersioningKind] = kind.ToString().ToUpperInvariant();
+            Directory.CreateDirectory(workDirPath);
 
-        await leaf.SaveMetadataAsync(metaDict);
+            var leaf = new LocalLeafFolder(workDirPath);
+            var metaDict = new Dictionary<string, string>();
 
-        if (kind != CommitKind.Del)
-        {
-            await leaf.EnsureDataDirectoryAsync();
+            metaDict[AppConstants.Metadata.Author] = _author;
+            metaDict[AppConstants.Metadata.DeviceId] = _deviceId;
+            metaDict[AppConstants.Metadata.CreatedAt] = DateTime.UtcNow.ToString("yyyy-MM-ddTHH:mm:ss.fffZ");
+            if (!string.IsNullOrEmpty(contentType)) metaDict[AppConstants.Metadata.ContentType] = contentType;
 
-            // For 'upd' and 'res', we need to copy previous state
-            if (kind == CommitKind.Upd || kind == CommitKind.Res)
+            if (parentVersions != null && parentVersions.Any())
             {
-                // We prioritize the first provided parent as the source for copying
-                string? sourceFolderName = parentVersions?.FirstOrDefault();
-                
-                if (string.IsNullOrEmpty(sourceFolderName))
-                {
-                    // Fallback to latest sequence if no parents provided (should not happen in new system)
-                    var previousVersions = versions.Where(v => v.Sequence < nextSeq).ToList();
-                    if (previousVersions.Any())
-                    {
-                        var maxPrevSeq = previousVersions.Max(v => v.Sequence);
-                        var latestOfPrev = previousVersions.Where(v => v.Sequence == maxPrevSeq).ToList();
-                        var resOfPrev = latestOfPrev.Where(v => v.Kind == CommitKind.Res).ToList();
-                        sourceFolderName = resOfPrev.Any() ? resOfPrev.First().FolderName : latestOfPrev.First().FolderName;
-                    }
-                }
+                metaDict[AppConstants.Metadata.VersioningParents] = string.Join(",", parentVersions);
+            }
 
-                if (!string.IsNullOrEmpty(sourceFolderName))
-                {
-                    var prevLeaf = new LocalLeafFolder(Path.Combine(versionsRoot, sourceFolderName));
+            metaDict[AppConstants.Metadata.VersioningSequence] = nextSeq.ToString();
+            metaDict[AppConstants.Metadata.VersioningKind] = kind.ToString().ToUpperInvariant();
 
-                    if (!(await prevLeaf.IsDataEmptyAsync()))
+            await leaf.SaveMetadataAsync(metaDict);
+
+            if (kind != CommitKind.Del)
+            {
+                await leaf.EnsureDataDirectoryAsync();
+
+                // For 'upd' and 'res', we need to copy previous state
+                if (kind == CommitKind.Upd || kind == CommitKind.Res)
+                {
+                    // We prioritize the first provided parent as the source for copying
+                    string? sourceFolderName = parentVersions?.FirstOrDefault();
+
+                    if (string.IsNullOrEmpty(sourceFolderName))
                     {
-                        var prevFiles = await prevLeaf.ListDataFilesAsync();
-                        foreach (var fileName in prevFiles)
+                        // Fallback to latest sequence if no parents provided (should not happen in new system)
+                        var previousVersions = versions.Where(v => v.Sequence < nextSeq).ToList();
+                        if (previousVersions.Any())
                         {
-                            if (deletedFiles != null && deletedFiles.Contains(fileName)) continue;
-                            if (changedFiles.ContainsKey(fileName)) continue;
+                            var maxPrevSeq = previousVersions.Max(v => v.Sequence);
+                            var latestOfPrev = previousVersions.Where(v => v.Sequence == maxPrevSeq).ToList();
+                            var resOfPrev = latestOfPrev.Where(v => v.Kind == CommitKind.Res).ToList();
+                            sourceFolderName = resOfPrev.Any() ? resOfPrev.First().FolderName : latestOfPrev.First().FolderName;
+                        }
+                    }
 
-                            var content = await prevLeaf.ReadDataFileAsync(fileName);
-                            await leaf.WriteDataFileAsync(fileName, content);
+                    if (!string.IsNullOrEmpty(sourceFolderName))
+                    {
+                        var prevLeaf = new LocalLeafFolder(Path.Combine(versionsRoot, sourceFolderName));
+
+                        if (!(await prevLeaf.IsDataEmptyAsync()))
+                        {
+                            var prevFiles = await prevLeaf.ListDataFilesAsync();
+                            foreach (var fileName in prevFiles)
+                            {
+                                if (deletedFiles != null && deletedFiles.Contains(fileName)) continue;
+                                if (changedFiles.ContainsKey(fileName)) continue;
+
+                                var content = await prevLeaf.ReadDataFileAsync(fileName);
+                                await leaf.WriteDataFileAsync(fileName, content);
+                            }
                         }
                     }
                 }
+
+                foreach (var file in changedFiles)
+                {
+                    await leaf.WriteDataFileAsync(file.Key, file.Value);
+                }
             }
 
-            foreach (var file in changedFiles)
-            {
-                await leaf.WriteDataFileAsync(file.Key, file.Value);
-            }
-        }
-
-        if (!string.IsNullOrEmpty(tempRootPath))
-        {
+            // Atomic move to final location
             string finalPath = Path.Combine(versionsRoot, folderName);
             if (!Directory.Exists(versionsRoot)) Directory.CreateDirectory(versionsRoot);
             if (Directory.Exists(finalPath)) Directory.Delete(finalPath, true);
             Directory.Move(workDirPath, finalPath);
+
+            await UpdateHeadAsync();
+
+            return folderName;
         }
-
-        await UpdateHeadAsync();
-
-        return folderName;
+        finally
+        {
+            // Cleanup staging area
+            if (Directory.Exists(stagingRoot))
+            {
+                try
+                {
+                    Directory.Delete(stagingRoot, true);
+                }
+                catch
+                {
+                    // Ignore errors during cleanup
+                }
+            }
+        }
     }
 }
