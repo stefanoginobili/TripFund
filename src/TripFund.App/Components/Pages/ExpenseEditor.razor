@@ -1,5 +1,7 @@
 @page "/trip/{tripSlug}/expense"
 
+<NavigationLock ConfirmExternalNavigation="@HasChanges()" OnBeforeInternalNavigation="HandleBeforeInternalNavigation" />
+
 <div class="app-page">
     <header class="app-header">
         <button class="icon-btn" @onclick="GoBack">

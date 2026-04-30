@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Components;
+using Microsoft.AspNetCore.Components.Routing;
 using Microsoft.JSInterop;
 using TripFund.App.Models;
 using TripFund.App.Services;
@@ -59,6 +60,7 @@ namespace TripFund.App.Components.Pages
         };
 
         private bool isReadonly = false;
+        private bool isInternalNavigationAllowed = false;
 
         protected override async Task OnInitializedAsync()
         {
@@ -355,6 +357,7 @@ namespace TripFund.App.Components.Pages
 
             var settings = await Storage.GetAppSettingsAsync();
             await Storage.GetLocalTripStorage(tripSlug).SaveTripConfigAsync(config, settings?.DeviceId ?? "unknown");
+            isInternalNavigationAllowed = true;
             Nav.NavigateTo($"/trip/{tripSlug}");
         }
 
@@ -370,7 +373,28 @@ namespace TripFund.App.Components.Pages
             if (confirm)
             {
                 await Storage.DeleteTripAsync(tripSlug);
+                isInternalNavigationAllowed = true;
                 Nav.NavigateTo("/");
+            }
+        }
+
+        private async Task HandleBeforeInternalNavigation(LocationChangingContext context)
+        {
+            if (isInternalNavigationAllowed) return;
+
+            if (HasChanges())
+            {
+                bool confirmed = await Alerts.ConfirmAsync(
+                    "Modifiche non salvate",
+                    "Hai apportato delle modifiche. Vuoi uscire senza salvare?",
+                    "Esci",
+                    "Rimani",
+                    AlertType.Warning);
+
+                if (!confirmed)
+                {
+                    context.PreventNavigation();
+                }
             }
         }
     }

@@ -65,6 +65,14 @@ This document outlines the standard rules and behaviors for UI components across
 - **ARIA Labels:** Icons functioning as buttons (without visible text) must include appropriate ARIA labels for screen readers.
 - **Contrast:** Ensure sufficient contrast ratios between text/icons and their backgrounds, particularly for disabled states, so they remain legible.
 
-## 8. Global Styling & CSS
+## 8. Navigation Integrity
+- **Unsaved Changes Prompt:** Forms that modify data (create or edit) must track a "dirty" state. If the user attempts to navigate away (via header back button, browser navigation, or OS back gesture) while the form has unsaved changes, the app must display a confirmation dialog.
+- **Dialog Text:** 
+  - Title: "Modifiche non salvate"
+  - Message: "Hai apportato delle modifiche. Vuoi uscire senza salvare?"
+  - Buttons: "Esci" (Exit/Discard) and "Rimani" (Stay).
+- **Silent Exit:** If no changes have been made, or if navigation is triggered by a successful save/delete action, the prompt must not be shown.
+
+## 9. Global Styling & CSS
 - **Centralized Styles:** Whenever working with application-wide styles, and when it is possible to match the feature requirements, styles must be defined in a centralized way (e.g., in global CSS files like `app.css` or through shared component abstractions).
 - **UI Coherence:** Avoid redundant local CSS overrides or inline styles that duplicate common patterns. Centralized styling ensures that the UI remains visually coherent and maintainable across all application pages.

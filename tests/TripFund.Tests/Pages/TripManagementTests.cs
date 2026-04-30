@@ -274,4 +274,38 @@ public class TripManagementTests : BunitContext
         _alertMock.Verify(a => a.ConfirmAsync("Elimina Viaggio", It.IsAny<string>(), "Elimina", "Annulla", AlertType.Warning), Times.Once);
         _storageMock.Verify(s => s.DeleteTripAsync(tripSlug), Times.Once);
     }
+
+    [Fact]
+    public void EditTrip_ModifyingField_ShouldEnableSaveButton()
+    {
+        // Arrange
+        var tripSlug = "test-trip";
+        var config = new TripConfig 
+        { 
+            Id = "guid-1", 
+            Name = "Original Name", 
+            Currencies = new Dictionary<string, Currency> { { "EUR", new Currency { Symbol = "€", ExpectedQuotaPerMember = 100 } } }
+        };
+        _tripStorageMock.Setup(s => s.GetTripConfigAsync()).ReturnsAsync(config);
+        _storageMock.Setup(s => s.GetAppSettingsAsync()).ReturnsAsync(new AppSettings { AuthorName = "Mario", DeviceId = "mario" });
+
+        var cut = Render<EditTrip>(parameters => parameters.Add(p => p.tripSlug, tripSlug));
+
+        // Initial state: Save button should be disabled
+        var saveBtn = cut.Find(".btn-primary-vibe");
+        saveBtn.HasAttribute("disabled").Should().BeTrue();
+
+        // Act: Modify name
+        var nameInput = cut.Find(".form-group-vibe:nth-of-type(1) input.form-control-vibe");
+        nameInput.Input("Modified Name");
+
+        // Assert: Save button should be enabled
+        saveBtn.HasAttribute("disabled").Should().BeFalse();
+        
+        // Act: Revert name
+        nameInput.Input("Original Name");
+        
+        // Assert: Save button should be disabled again
+        saveBtn.HasAttribute("disabled").Should().BeTrue();
+    }
 }

@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Components;
+using Microsoft.AspNetCore.Components.Routing;
 using Microsoft.JSInterop;
 using TripFund.App.Models;
 using TripFund.App.Services;
@@ -39,6 +40,7 @@ namespace TripFund.App.Components.Pages
         private string authorName = "";
         private bool _shouldScrollCategory = false;
         private bool isReadonly = false;
+        private bool isInternalNavigationAllowed = false;
 
         protected override async Task OnInitializedAsync()
         {
@@ -167,7 +169,14 @@ namespace TripFund.App.Components.Pages
 
         private bool HasChanges()
         {
-            if (editingInfo == null) return true; // Always enabled for new
+            if (editingInfo == null) 
+            {
+                return totalAmount != 0 || 
+                       !string.IsNullOrWhiteSpace(description) || 
+                       attachments.Any(a => !a.IsExisting) || 
+                       locationInfo != null || 
+                       selectedCategorySlug != null;
+            }
             if (originalTxJson == null) return true;
 
             var currentTx = BuildTransaction();
@@ -282,6 +291,7 @@ namespace TripFund.App.Components.Pages
             try
             {
                 await Storage.GetLocalTripStorage(tripSlug).SaveTransactionAsync(editingInfo.Transaction, deviceId, isDelete: true);
+                isInternalNavigationAllowed = true;
                 await GoBack();
             }
             catch (Exception ex)
@@ -292,15 +302,53 @@ namespace TripFund.App.Components.Pages
 
         private async Task GoBack()
         {
-            if (!string.IsNullOrEmpty(member))
+            if (isInternalNavigationAllowed || !HasChanges())
             {
-                Nav.NavigateTo($"/trip/{tripSlug}/member/{member}?currency={selectedCurrency}");
+                isInternalNavigationAllowed = true;
+                if (!string.IsNullOrEmpty(member))
+                {
+                    Nav.NavigateTo($"/trip/{tripSlug}/member/{member}?currency={selectedCurrency}");
+                }
+                else
+                {
+                    Nav.NavigateTo($"/trip/{tripSlug}?currency={selectedCurrency}");
+                }
             }
             else
             {
-                Nav.NavigateTo($"/trip/{tripSlug}?currency={selectedCurrency}");
+                // NavigationLock will handle the prompt if we try to navigate via Nav.NavigateTo
+                // But since GoBack is called by the header button, we can just trigger a navigation here
+                // and the Lock will intercept it.
+                if (!string.IsNullOrEmpty(member))
+                {
+                    Nav.NavigateTo($"/trip/{tripSlug}/member/{member}?currency={selectedCurrency}");
+                }
+                else
+                {
+                    Nav.NavigateTo($"/trip/{tripSlug}?currency={selectedCurrency}");
+                }
             }
             await Task.CompletedTask;
+        }
+
+        private async Task HandleBeforeInternalNavigation(LocationChangingContext context)
+        {
+            if (isInternalNavigationAllowed) return;
+
+            if (HasChanges())
+            {
+                bool confirmed = await Alerts.ConfirmAsync(
+                    "Modifiche non salvate",
+                    "Hai apportato delle modifiche. Vuoi uscire senza salvare?",
+                    "Esci",
+                    "Rimani",
+                    AlertType.Warning);
+
+                if (!confirmed)
+                {
+                    context.PreventNavigation();
+                }
+            }
         }
 
         private int GetDecimals()
@@ -702,6 +750,7 @@ namespace TripFund.App.Components.Pages
             try
             {
                 await Storage.GetLocalTripStorage(tripSlug).SaveTransactionAsync(transaction, deviceId, attachments: attachmentsDict);
+                isInternalNavigationAllowed = true;
                 await GoBack();
             }
             catch (Exception ex)

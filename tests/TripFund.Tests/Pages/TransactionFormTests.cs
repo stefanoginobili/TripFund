@@ -795,4 +795,58 @@ public class TransactionFormTests : BunitContext
         // Assert
         nav.Uri.Should().Contain($"/trip/{tripSlug}/member/{memberSlug}?currency=USD");
     }
+
+    [Fact]
+    public void ExpenseEditor_New_ShouldInitiallyHaveSaveButtonDisabled()
+    {
+        // Arrange
+        var tripSlug = "test-trip";
+        var config = new TripConfig
+        {
+            Id = "123",
+            Name = "Test Trip",
+            Currencies = new Dictionary<string, Currency> { { "EUR", new Currency { Symbol = "€" } } },
+            Members = new Dictionary<string, User> { { "mario", new User { Name = "Mario", Avatar = "M" } } }
+        };
+        _tripStorageMock.Setup(s => s.GetTripConfigAsync()).ReturnsAsync(config);
+
+        var cut = Render<ExpenseEditor>(parameters => parameters.Add(p => p.tripSlug, tripSlug));
+
+        // Initial state: Save button should be disabled (refined HasChanges logic)
+        var saveBtn = cut.Find(".btn-primary-vibe");
+        saveBtn.HasAttribute("disabled").Should().BeTrue();
+
+        // Act: Enter amount
+        cut.Find(".amount-input").Change("10,00");
+
+        // Assert: Save button should be enabled
+        saveBtn.HasAttribute("disabled").Should().BeFalse();
+    }
+
+    [Fact]
+    public void ContributionEditor_New_ShouldInitiallyHaveSaveButtonDisabled()
+    {
+        // Arrange
+        var tripSlug = "test-trip";
+        var config = new TripConfig
+        {
+            Id = "123",
+            Name = "Test Trip",
+            Currencies = new Dictionary<string, Currency> { { "EUR", new Currency { Symbol = "€" } } },
+            Members = new Dictionary<string, User> { { "mario", new User { Name = "Mario", Avatar = "M" } } }
+        };
+        _tripStorageMock.Setup(s => s.GetTripConfigAsync()).ReturnsAsync(config);
+
+        var cut = Render<ContributionEditor>(parameters => parameters.Add(p => p.tripSlug, tripSlug));
+
+        // Initial state: Save button should be disabled (refined HasChanges logic)
+        var saveBtn = cut.Find(".btn-primary-vibe");
+        saveBtn.HasAttribute("disabled").Should().BeTrue();
+
+        // Act: Change amount
+        cut.Find(".amount-input").Change("50,00");
+
+        // Assert: Save button should be enabled
+        saveBtn.HasAttribute("disabled").Should().BeFalse();
+    }
 }

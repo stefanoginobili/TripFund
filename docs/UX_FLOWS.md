@@ -36,6 +36,7 @@ This document strictly defines the user flows and UI layouts. **All UI text must
 
 ## 5. Edit Trip
 - **Top Bar:** Back button (left).
+- **Navigation:** Requires confirmation if changes are unsaved (see UI Components Rule 8).
 - **Form:** Edit Name, Dates, Members, and Currencies.
 - **Trip Slug:** Displayed as read-only.
 - **Members Management:** Inline creation (empty row). Requires Name, Slug, Email, and Emoji (default "👤"). **Crucial:** Member slug is editable ONLY during creation. Once saved, it becomes read-only. Slugs must be unique within the trip.
@@ -44,6 +45,7 @@ This document strictly defines the user flows and UI layouts. **All UI text must
 
 ## 6. Add Contribution (Registra Versamento)
 - **Top Bar:** Back button (left).
+- **Navigation:** Requires confirmation if changes are unsaved (see UI Components Rule 8).
 - **Header:** Contextual currency selector (pre-selected based on the dashboard's state).
 - **Form:** - Datetime picker (default: now).
   - Large text input for Amount.
@@ -53,6 +55,7 @@ This document strictly defines the user flows and UI layouts. **All UI text must
 
 ## 7. Add Expense (Registra Spesa)
 - **Top Bar:** Back button (left).
+- **Navigation:** Requires confirmation if changes are unsaved (see UI Components Rule 8).
 - **Header:** Contextual currency selector (pre-selected based on the dashboard).
 - **Form:**
   - Large text input for Amount.
