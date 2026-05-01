@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Components;
 using System.Diagnostics;
+using TripFund.App.Utilities;
 
 namespace TripFund.App.Services;
 
@@ -40,28 +41,28 @@ public class NavigationService : INavigationService
 
     public async Task NavigateAsync(string fromUrl, string toUrl)
     {
-        Debug.WriteLine($"[NavService] NavigateAsync: from='{fromUrl}' to='{toUrl}'");
+        TripFundLogger.Debug($"[NavService] NavigateAsync: from='{fromUrl}' to='{toUrl}'");
         
         if (_beforeNavigateAction != null)
         {
             var canProceed = await _beforeNavigateAction();
             if (!canProceed) 
             {
-                Debug.WriteLine("[NavService] NavigateAsync: Vetoed by BeforeNavigateAction");
+                TripFundLogger.Debug("[NavService] NavigateAsync: Vetoed by BeforeNavigateAction");
                 return;
             }
         }
 
         if (fromUrl == toUrl)
         {
-             Debug.WriteLine("[NavService] NavigateAsync: Ignored push because fromUrl == toUrl");
+             TripFundLogger.Debug("[NavService] NavigateAsync: Ignored push because fromUrl == toUrl");
         }
         else if (!string.IsNullOrEmpty(fromUrl))
         {
             if (_historyStack.Count == 0 || _historyStack.Peek() != fromUrl)
             {
                 _historyStack.Push(fromUrl);
-                Debug.WriteLine($"[NavService] NavigateAsync: Pushed '{fromUrl}'. StackCount={_historyStack.Count}");
+                TripFundLogger.Debug($"[NavService] NavigateAsync: Pushed '{fromUrl}'. StackCount={_historyStack.Count}");
             }
         }
         
@@ -70,26 +71,26 @@ public class NavigationService : INavigationService
 
     public async Task<bool> GoBackAsync()
     {
-        Debug.WriteLine($"[NavService] GoBackAsync: StackCount={_historyStack.Count}");
+        TripFundLogger.Debug($"[NavService] GoBackAsync: StackCount={_historyStack.Count}");
         
         if (_beforeNavigateAction != null)
         {
             var canProceed = await _beforeNavigateAction();
             if (!canProceed)
             {
-                Debug.WriteLine("[NavService] GoBackAsync: Vetoed by BeforeNavigateAction");
+                TripFundLogger.Debug("[NavService] GoBackAsync: Vetoed by BeforeNavigateAction");
                 return true; // We handled it by staying
             }
         }
 
         if (_historyStack.Count == 0)
         {
-            Debug.WriteLine("[NavService] GoBackAsync: Stack empty, returning false");
+            TripFundLogger.Debug("[NavService] GoBackAsync: Stack empty, returning false");
             return false; // Signaling to exit the app
         }
 
         var targetUrl = _historyStack.Pop();
-        Debug.WriteLine($"[NavService] GoBackAsync: Popped '{targetUrl}'. Navigating (replace=true). StackCount={_historyStack.Count}");
+        TripFundLogger.Debug($"[NavService] GoBackAsync: Popped '{targetUrl}'. Navigating (replace=true). StackCount={_historyStack.Count}");
         
         GetNavigationManager().NavigateTo(targetUrl, replace: true);
         return true;
@@ -97,7 +98,7 @@ public class NavigationService : INavigationService
 
     public async Task ResetToRootAsync()
     {
-        Debug.WriteLine("[NavService] ResetToRootAsync: Clearing history and navigating to root");
+        TripFundLogger.Debug("[NavService] ResetToRootAsync: Clearing history and navigating to root");
         _historyStack.Clear();
         _beforeNavigateAction = null;
         GetNavigationManager().NavigateTo("");

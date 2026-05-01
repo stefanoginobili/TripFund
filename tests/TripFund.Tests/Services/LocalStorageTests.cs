@@ -464,13 +464,15 @@ public class LocalStorageTests : IDisposable
         await File.WriteAllTextAsync(path, "{ \"invalid\": json... ");
         
         // Assert: Get should recover
-        var recovered = await _service.GetTripRegistryAsync();
+        // We create a new service instance to bypass in-memory cache
+        var newService = new LocalStorageService(_tempPath);
+        var recovered = await newService.GetTripRegistryAsync();
         recovered.Should().NotBeNull();
         recovered.Trips.Should().BeEmpty();
 
         // Act 3: Save again should fix it
-        await _service.SaveTripRegistryAsync(registry);
-        var fixedRegistry = await _service.GetTripRegistryAsync();
+        await newService.SaveTripRegistryAsync(registry);
+        var fixedRegistry = await newService.GetTripRegistryAsync();
         fixedRegistry.Trips.Should().ContainKey("trip-1");
     }
 

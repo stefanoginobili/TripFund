@@ -1,6 +1,7 @@
 using TripFund.App.Models;
 using Microsoft.Maui.Devices;
 using Microsoft.Maui.ApplicationModel;
+using TripFund.App.Utilities;
 
 namespace TripFund.App.Services;
 
@@ -126,14 +127,14 @@ public class CompositeRemoteStorageService : IRemoteStorageService
                 catch (Exception ex)
                 {
                     // Fail silently as it might be called on non-supported platforms or in tests
-                    System.Diagnostics.Debug.WriteLine($"Failed to set KeepScreenOn: {ex.Message}");
+                    TripFundLogger.Error("Failed to set KeepScreenOn", ex);
                 }
             });
         }
         catch (Exception ex)
         {
             // Fail silently as it might be called on non-supported platforms or in tests
-            System.Diagnostics.Debug.WriteLine($"UpdateKeepScreenOn error: {ex.Message}");
+            TripFundLogger.Error("UpdateKeepScreenOn error", ex);
         }
     }
 }

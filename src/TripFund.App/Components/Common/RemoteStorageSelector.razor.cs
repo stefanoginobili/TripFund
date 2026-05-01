@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Components;
 using Microsoft.JSInterop;
 using TripFund.App.Models;
 using TripFund.App.Services;
+using TripFund.App.Utilities;
 
 namespace TripFund.App.Components.Common
 {
@@ -153,7 +154,7 @@ namespace TripFund.App.Components.Common
             catch (Exception ex)
             {
                 linkResolveError = "Si è verificato un errore durante la verifica del link.";
-                Console.WriteLine($"Error resolving link: {ex}");
+                TripFundLogger.Error("Error resolving link", ex);
             }
             finally
             {
@@ -201,7 +202,7 @@ namespace TripFund.App.Components.Common
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Error opening OneDrive picker: {ex}");
+                TripFundLogger.Error("Error opening OneDrive picker", ex);
                 await AlertService.ShowAlertAsync("Errore", "Si è verificato un errore durante l'apertura del selettore.", type: AlertType.Error);
             }
             finally

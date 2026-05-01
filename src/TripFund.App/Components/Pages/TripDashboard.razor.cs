@@ -116,7 +116,7 @@ namespace TripFund.App.Components.Pages
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Error generating report: {ex}");
+                TripFundLogger.Error("Error generating report", ex);
                 // In a real app, show an alert to the user.
             }
         }

@@ -49,7 +49,7 @@ public class PdfFontResolver : IFontResolver
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"PdfFontResolver.GetFont error for {faceName}: {ex}");
+            TripFundLogger.Error($"PdfFontResolver.GetFont error for {faceName}", ex);
         }
         
         // Return Roboto-Regular if anything else fails

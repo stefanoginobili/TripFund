@@ -167,6 +167,7 @@ public class DashboardTests : BunitContext
     [InlineData(5, "Sincronizzato 5 minuti fa")]
     [InlineData(60, "Sincronizzato più di un'ora fa")]
     [InlineData(120, "Sincronizzato più di 2 ore fa")]
+    [InlineData(4321, "Sincronizzato molto tempo fa")]
     public void TripDashboard_ShouldFormatSyncTimeCorrectly(int minutesAgo, string expectedText)
     {
         // Arrange

@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Routing;
 using Microsoft.JSInterop;
+using TripFund.App.Utilities;
 
 namespace TripFund.App.Components.Layout
 {
@@ -31,7 +32,7 @@ namespace TripFund.App.Components.Layout
             catch (Exception ex)
             {
                 // Silently fail if JS runtime is not ready yet during navigation
-                System.Diagnostics.Debug.WriteLine($"Scroll reset error: {ex.Message}");
+                TripFundLogger.Error("Scroll reset error", ex);
             }
         }
 

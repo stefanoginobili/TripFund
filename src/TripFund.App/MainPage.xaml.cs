@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Components;
 using Microsoft.JSInterop;
 using System.Diagnostics;
 using Microsoft.Extensions.DependencyInjection;
+using TripFund.App.Utilities;
 
 namespace TripFund.App;
 
@@ -20,12 +21,12 @@ public partial class MainPage : ContentPage
         var navService = _services.GetService<Services.INavigationService>();
         if (navService == null) return false;
 
-        Debug.WriteLine($"[MainPage] OnBackButtonPressed: StackCount={navService.StackCount}, HasBeforeNavigateAction={navService.HasBeforeNavigateAction}");
+        TripFundLogger.Debug($"[MainPage] OnBackButtonPressed: StackCount={navService.StackCount}, HasBeforeNavigateAction={navService.HasBeforeNavigateAction}");
 
         // If the stack is empty and no action is registered, we return false to let the OS exit the app.
         if (navService.StackCount == 0 && !navService.HasBeforeNavigateAction)
         {
-            Debug.WriteLine("[MainPage] OnBackButtonPressed: Stack empty and no action, letting OS handle back (exit app)");
+            TripFundLogger.Debug("[MainPage] OnBackButtonPressed: Stack empty and no action, letting OS handle back (exit app)");
             return false;
         }
 
@@ -38,7 +39,7 @@ public partial class MainPage : ContentPage
             }
             catch (Exception ex)
             {
-                Debug.WriteLine($"[MainPage] Error in GoBackAsync: {ex.Message}");
+                TripFundLogger.Error("[MainPage] Error in GoBackAsync", ex);
             }
         });
 

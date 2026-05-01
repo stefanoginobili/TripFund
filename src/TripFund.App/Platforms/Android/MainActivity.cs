@@ -8,6 +8,7 @@ using AndroidX.Core.OS;
 
 using AndroidX.Activity;
 using Microsoft.Extensions.DependencyInjection;
+using TripFund.App.Utilities;
 
 namespace TripFund.App;
 
@@ -40,7 +41,7 @@ public class MainActivity : MauiAppCompatActivity
 
         base.OnCreate(savedInstanceState);
 
-        System.Diagnostics.Debug.WriteLine("[MainActivity] OnCreate");
+        TripFundLogger.Debug("[MainActivity] OnCreate");
 
         // Ensure configuration is updated for current resources
 #pragma warning disable CA1422
@@ -92,7 +93,7 @@ public class MainActivity : MauiAppCompatActivity
                 {
                     if (e.Action == Android.Views.KeyEventActions.Up)
                     {
-                        System.Diagnostics.Debug.WriteLine($"[MainActivity] DispatchKeyEvent: Intercepted back for internal navigation. StackCount={navService.StackCount}");
+                        TripFundLogger.Debug($"[MainActivity] DispatchKeyEvent: Intercepted back for internal navigation. StackCount={navService.StackCount}");
                         MainThread.BeginInvokeOnMainThread(async () =>
                         {
                             try
@@ -101,7 +102,7 @@ public class MainActivity : MauiAppCompatActivity
                             }
                             catch (Exception ex)
                             {
-                                System.Diagnostics.Debug.WriteLine($"[MainActivity] Error in GoBackAsync: {ex.Message}");
+                                TripFundLogger.Error("[MainActivity] Error in GoBackAsync", ex);
                             }
                         });
                     }
@@ -114,7 +115,7 @@ public class MainActivity : MauiAppCompatActivity
                     // bypassing any focus-based interception by the WebView.
                     if (e.Action == Android.Views.KeyEventActions.Up)
                     {
-                        System.Diagnostics.Debug.WriteLine("[MainActivity] DispatchKeyEvent: Stack empty, triggering OS back (exit)");
+                        TripFundLogger.Debug("[MainActivity] DispatchKeyEvent: Stack empty, triggering OS back (exit)");
                         OnBackPressedDispatcher.OnBackPressed();
                     }
                     return true;

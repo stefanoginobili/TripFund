@@ -1,5 +1,6 @@
 @using TripFund.App.Services
 @using TripFund.App.Models
+@using TripFund.App.Utilities
 @inject LocalStorageService Storage
 @inject IRemoteStorageService RemoteStorage
 @implements IDisposable
@@ -199,7 +200,7 @@
         catch (Exception ex)
         {
             syncError = ex.Message;
-            Console.WriteLine($"Sync failed: {ex.Message}");
+            TripFundLogger.Error("Sync failed", ex);
             await InvokeAsync(StateHasChanged);
         }
     }
@@ -227,8 +228,13 @@
     {
         if (!syncTime.HasValue) return "Mai sincronizzato";
         
-        string relative;
         var diff = DateTime.UtcNow - syncTime.Value;
+        if (diff.TotalHours > 72)
+        {
+            return "Sincronizzato molto tempo fa";
+        }
+
+        string relative;
         if (diff.TotalMinutes < 60)
         {
             int minutes = (int)diff.TotalMinutes;
