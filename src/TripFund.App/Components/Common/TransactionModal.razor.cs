@@ -1,5 +1,4 @@
 using Microsoft.AspNetCore.Components;
-using Microsoft.JSInterop;
 using TripFund.App.Models;
 using TripFund.App.Services;
 using TripFund.App.Utilities;
@@ -9,7 +8,6 @@ namespace TripFund.App.Components.Common
     public partial class TransactionModal
     {
         [Inject] private LocalStorageService Storage { get; set; } = default!;
-        [Inject] private IJSRuntime JSRuntime { get; set; } = default!;
         [Inject] private IThumbnailService Thumbnails { get; set; } = default!;
 
         [Parameter] public bool IsVisible { get; set; }

@@ -1,7 +1,5 @@
 using Microsoft.AspNetCore.Components;
-using Microsoft.JSInterop;
 using Microsoft.Maui.ApplicationModel;
-using Microsoft.Maui.Storage;
 using TripFund.App.Models;
 using TripFund.App.Services;
 using TripFund.App.Utilities;
@@ -12,8 +10,6 @@ namespace TripFund.App.Components.Pages
     public partial class TripDashboard
     {
         [Inject] private LocalStorageService Storage { get; set; } = default!;
-        [Inject] private IJSRuntime JSRuntime { get; set; } = default!;
-        [Inject] private IRemoteStorageService RemoteStorage { get; set; } = default!;
         [Inject] private PdfReportService PdfService { get; set; } = default!;
 
         [Parameter] public string tripSlug { get; set; } = "";

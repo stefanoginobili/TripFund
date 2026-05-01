@@ -258,7 +258,7 @@ html, body, #app {
 }
 
 .amount-tile .currency-symbol {
-    font-size: 2.75rem;
+    font-size: 1.75rem;
     font-weight: 700;
 }
 
@@ -269,7 +269,7 @@ html, body, #app {
     border: 1px solid rgba(0, 0, 0, 0.15);
     border-radius: 12px;
     background: none;
-    font-size: 3rem;
+    font-size: 2.5rem;
     font-weight: 700;
     width: 100%;
     max-width: 300px;

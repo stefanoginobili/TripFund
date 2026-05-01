@@ -1,5 +1,4 @@
 using Microsoft.AspNetCore.Components;
-using Microsoft.JSInterop;
 using TripFund.App.Models;
 using TripFund.App.Services;
 using TripFund.App.Utilities;
@@ -12,7 +11,6 @@ namespace TripFund.App.Components.Pages
         [Inject] private LocalStorageService Storage { get; set; } = default!;
         [Inject] private IEmailService EmailService { get; set; } = default!;
         [Inject] private IAlertService AlertService { get; set; } = default!;
-        [Inject] private IJSRuntime JSRuntime { get; set; } = default!;
 
         [Parameter] public string tripSlug { get; set; } = "";
         [Parameter] public string memberSlug { get; set; } = "";

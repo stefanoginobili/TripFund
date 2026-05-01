@@ -3,14 +3,11 @@ using Microsoft.AspNetCore.Components;
 using Microsoft.JSInterop;
 using TripFund.App.Models;
 using TripFund.App.Services;
-using TripFund.App.Constants;
 
 namespace TripFund.App.Components.Common
 {
     public partial class RemoteStorageSelector : IDisposable
     {
-        [Inject] private IMicrosoftAuthConfiguration MicrosoftConfig { get; set; } = default!;
-        [Inject] private IRemoteStorageService RemoteStorageService { get; set; } = default!;
         [Inject] private IAlertService AlertService { get; set; } = default!;
         [Inject] private OneDriveRemoteStorageService OneDriveService { get; set; } = default!;
         [Inject] private IJSRuntime JS { get; set; } = default!;

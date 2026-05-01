@@ -1,5 +1,4 @@
 using Microsoft.AspNetCore.Components;
-using Microsoft.JSInterop;
 using TripFund.App.Models;
 using TripFund.App.Services;
 using TripFund.App.Utilities;
@@ -9,7 +8,6 @@ namespace TripFund.App.Components.Pages
     public partial class Settings
     {
         [Inject] private LocalStorageService Storage { get; set; } = default!;
-        [Inject] private IJSRuntime JSRuntime { get; set; } = default!;
 
         private string authorName = string.Empty;
         private string? deviceId = null;
