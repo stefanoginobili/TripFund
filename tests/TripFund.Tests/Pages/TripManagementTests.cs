@@ -285,6 +285,9 @@ public class TripManagementTests : BunitContext
         // Assert
         _alertMock.Verify(a => a.ConfirmAsync("Elimina Viaggio", It.IsAny<string>(), "Elimina", "Annulla", AlertType.Warning, It.IsAny<string>()), Times.Once);
         _storageMock.Verify(s => s.DeleteTripAsync(tripSlug), Times.Once);
+
+        navService.StackCount.Should().Be(0);
+        Services.GetRequiredService<NavigationManager>().Uri.Should().EndWith("/");
     }
 
     [Fact]

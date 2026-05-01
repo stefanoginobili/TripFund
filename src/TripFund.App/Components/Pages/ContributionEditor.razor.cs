@@ -41,9 +41,18 @@ namespace TripFund.App.Components.Pages
         protected override async Task OnInitializedAsync()
         {
             NavService.SetBeforeNavigateAction(ConfirmDiscardChanges);
-            config = await Storage.GetLocalTripStorage(tripSlug).GetTripConfigAsync();
-            allTransactions = await Storage.GetLocalTripStorage(tripSlug).GetTransactionsAsync() ?? new();
-            var settings = await Storage.GetAppSettingsAsync();
+
+            var tripStorage = Storage.GetLocalTripStorage(tripSlug);
+            var configTask = tripStorage.GetTripConfigAsync();
+            var transTask = tripStorage.GetTransactionsAsync();
+            var settingsTask = Storage.GetAppSettingsAsync();
+
+            await Task.WhenAll(configTask, transTask, settingsTask);
+
+            config = await configTask;
+            allTransactions = await transTask ?? new();
+            var settings = await settingsTask;
+
             deviceId = settings?.DeviceId ?? "unknown";
             authorName = settings?.AuthorName ?? "Unknown";
 

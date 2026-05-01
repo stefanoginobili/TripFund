@@ -8,6 +8,7 @@ public interface INavigationService
     void Register(NavigationManager navigationManager);
     Task NavigateAsync(string fromUrl, string toUrl);
     Task<bool> GoBackAsync();
+    Task ResetToRootAsync();
     void SetBeforeNavigateAction(Func<Task<bool>> action);
     void ClearBeforeNavigateAction();
     int StackCount { get; }
@@ -92,6 +93,15 @@ public class NavigationService : INavigationService
         
         GetNavigationManager().NavigateTo(targetUrl, replace: true);
         return true;
+    }
+
+    public async Task ResetToRootAsync()
+    {
+        Debug.WriteLine("[NavService] ResetToRootAsync: Clearing history and navigating to root");
+        _historyStack.Clear();
+        _beforeNavigateAction = null;
+        GetNavigationManager().NavigateTo("");
+        await Task.CompletedTask;
     }
 
     public void SetBeforeNavigateAction(Func<Task<bool>> action)

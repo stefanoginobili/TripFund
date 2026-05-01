@@ -400,7 +400,7 @@ namespace TripFund.App.Components.Pages
             {
                 await Storage.DeleteTripAsync(tripSlug);
                 isInternalNavigationAllowed = true;
-                await NavService.GoBackAsync();
+                await NavService.ResetToRootAsync();
             }
         }
 

@@ -126,11 +126,15 @@ public class LocalTripStorage
         var transactionsDir = Path.Combine(_globalStorage.TripsPath, TripSlug, AppConstants.Folders.Transactions);
         if (!Directory.Exists(transactionsDir)) return new List<Transaction>();
 
+        var settings = await _globalStorage.GetAppSettingsAsync();
+        var deviceId = settings?.DeviceId ?? "unknown";
+        var author = settings?.AuthorName ?? "Unknown";
+
         var result = new List<Transaction>();
         foreach (var transRoot in Directory.GetDirectories(transactionsDir))
         {
             var transactionId = Path.GetFileName(transRoot);
-            var transaction = await GetLatestTransactionVersionAsync(transactionId);
+            var transaction = await GetLatestTransactionVersionAsync(transactionId, deviceId, author);
             if (transaction != null)
             {
                 result.Add(transaction);
@@ -140,11 +144,21 @@ public class LocalTripStorage
         return result;
     }
 
-    public virtual async Task<TransactionVersionInfo?> GetLatestTransactionVersionWithDetailsAsync(string transactionId)
+    public virtual async Task<Transaction?> GetLatestTransactionVersionAsync(string transactionId, string? deviceId = null, string? author = null)
     {
-        var settings = await _globalStorage.GetAppSettingsAsync();
-        var deviceId = settings?.DeviceId ?? "unknown";
-        var author = settings?.AuthorName ?? "Unknown";
+        var info = await GetLatestTransactionVersionWithDetailsAsync(transactionId, deviceId, author);
+        if (info == null || info.IsDeleted) return null;
+        return info.Transaction;
+    }
+
+    public virtual async Task<TransactionVersionInfo?> GetLatestTransactionVersionWithDetailsAsync(string transactionId, string? deviceId = null, string? author = null)
+    {
+        if (string.IsNullOrEmpty(deviceId) || string.IsNullOrEmpty(author))
+        {
+            var settings = await _globalStorage.GetAppSettingsAsync();
+            deviceId ??= settings?.DeviceId ?? "unknown";
+            author ??= settings?.AuthorName ?? "Unknown";
+        }
 
         var detailsRoot = Path.Combine(_globalStorage.TripsPath, TripSlug, AppConstants.Folders.Transactions, transactionId, AppConstants.Folders.Details);
         if (!Directory.Exists(detailsRoot)) return null;
@@ -179,13 +193,6 @@ public class LocalTripStorage
         }
 
         return null;
-    }
-
-    public virtual async Task<Transaction?> GetLatestTransactionVersionAsync(string transactionId)
-    {
-        var info = await GetLatestTransactionVersionWithDetailsAsync(transactionId);
-        if (info == null || info.IsDeleted) return null;
-        return info.Transaction;
     }
 
     public virtual async Task<string?> GetAttachmentPath(string transactionId, string attachmentName)

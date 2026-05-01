@@ -30,6 +30,9 @@ public class LocalStorageService
     public virtual string AppDataPath => _rootPath;
     public virtual JsonSerializerOptions JsonOptions => _jsonOptions;
 
+    private AppSettings? _cachedAppSettings;
+    private LocalTripRegistry? _cachedTripRegistry;
+
     public LocalStorageService(string? rootPath = null)
     {
         _rootPath = rootPath ?? FileSystem.AppDataDirectory;
@@ -69,26 +72,33 @@ public class LocalStorageService
 
     public virtual async Task<AppSettings?> GetAppSettingsAsync()
     {
+        if (_cachedAppSettings != null) return _cachedAppSettings;
+
         var path = Path.Combine(_rootPath, AppConstants.Files.AppSettings);
         if (!File.Exists(path)) return null;
         var json = await File.ReadAllTextAsync(path);
-        return JsonSerializer.Deserialize<AppSettings>(json, _jsonOptions);
+        _cachedAppSettings = JsonSerializer.Deserialize<AppSettings>(json, _jsonOptions);
+        return _cachedAppSettings;
     }
     public virtual Task SaveAppSettingsAsync(AppSettings settings)
     {
+        _cachedAppSettings = settings;
         var path = Path.Combine(_rootPath, AppConstants.Files.AppSettings);
         return SaveJsonAtomicAsync(path, settings);
     }
 
     public virtual async Task<LocalTripRegistry> GetTripRegistryAsync()
     {
+        if (_cachedTripRegistry != null) return _cachedTripRegistry;
+
         var path = Path.Combine(_rootPath, AppConstants.Files.KnownTrips);
         if (!File.Exists(path)) return new LocalTripRegistry();
         
         try
         {
             var json = await File.ReadAllTextAsync(path);
-            return JsonSerializer.Deserialize<LocalTripRegistry>(json, _jsonOptions) ?? new LocalTripRegistry();
+            _cachedTripRegistry = JsonSerializer.Deserialize<LocalTripRegistry>(json, _jsonOptions) ?? new LocalTripRegistry();
+            return _cachedTripRegistry;
         }
         catch (JsonException)
         {
@@ -99,6 +109,7 @@ public class LocalStorageService
 
     public virtual Task SaveTripRegistryAsync(LocalTripRegistry registry)
     {
+        _cachedTripRegistry = registry;
         var path = Path.Combine(_rootPath, AppConstants.Files.KnownTrips);
         return SaveJsonAtomicAsync(path, registry);
     }

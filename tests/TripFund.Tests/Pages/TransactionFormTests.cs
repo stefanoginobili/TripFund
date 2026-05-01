@@ -754,7 +754,7 @@ public class TransactionFormTests : BunitContext
         var transaction = new Transaction { Id = transactionId, Type = "expense", Amount = 100, Currency = "EUR", Description = "Test" };
 
         _tripStorageMock.Setup(s => s.GetTripConfigAsync()).ReturnsAsync(config);
-        _tripStorageMock.Setup(s => s.GetLatestTransactionVersionWithDetailsAsync(transactionId))
+        _tripStorageMock.Setup(s => s.GetLatestTransactionVersionWithDetailsAsync(transactionId, It.IsAny<string>(), It.IsAny<string>()))
             .ReturnsAsync(new LocalTripStorage.TransactionVersionInfo { Transaction = transaction });
         _alertMock.Setup(a => a.ConfirmAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<AlertType>(), It.IsAny<string>()))
             .ReturnsAsync(true);

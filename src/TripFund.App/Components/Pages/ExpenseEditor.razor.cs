@@ -44,8 +44,15 @@ namespace TripFund.App.Components.Pages
         {
             NavService.SetBeforeNavigateAction(ConfirmDiscardChanges);
             var tripStorage = Storage.GetLocalTripStorage(tripSlug);
-            config = await tripStorage.GetTripConfigAsync();
-            var settings = await Storage.GetAppSettingsAsync();
+            
+            var configTask = tripStorage.GetTripConfigAsync();
+            var settingsTask = Storage.GetAppSettingsAsync();
+
+            await Task.WhenAll(configTask, settingsTask);
+
+            config = await configTask;
+            var settings = await settingsTask;
+
             deviceId = settings?.DeviceId ?? "unknown";
             authorName = settings?.AuthorName ?? "Unknown";
 

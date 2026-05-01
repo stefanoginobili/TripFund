@@ -18,10 +18,7 @@ namespace TripFund.App.Components.Common
 
         protected override void OnInitialized()
         {
-            _timeZones = TimeZoneInfo.GetSystemTimeZones()
-                .Where(tz => TimeZoneMapper.IsSupported(tz.Id))
-                .OrderBy(tz => tz.BaseUtcOffset)
-                .ToList();
+            _timeZones = TimeZoneMapper.GetSupportedTimeZones();
                 
             if (string.IsNullOrEmpty(Value))
             {

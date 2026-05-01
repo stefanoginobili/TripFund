@@ -39,7 +39,14 @@ namespace TripFund.App.Components.Pages
 
         protected override async Task OnInitializedAsync()
         {
-            config = await Storage.GetLocalTripStorage(tripSlug).GetTripConfigAsync();
+            var tripStorage = Storage.GetLocalTripStorage(tripSlug);
+            var configTask = tripStorage.GetTripConfigAsync();
+            var transTask = tripStorage.GetTransactionsAsync();
+
+            await Task.WhenAll(configTask, transTask);
+
+            config = await configTask;
+            transactions = await transTask ?? new List<Transaction>();
             
             if (config != null)
             {
@@ -51,16 +58,21 @@ namespace TripFund.App.Components.Pages
                 {
                     selectedCurrency = config.Currencies.Keys.First();
                 }
-                transactions = await Storage.GetLocalTripStorage(tripSlug).GetTransactionsAsync();
                 CalculateStats();
             }
         }
 
         private async Task OnSyncCompleted()
         {
-            config = await Storage.GetLocalTripStorage(tripSlug).GetTripConfigAsync();
-            
-            transactions = await Storage.GetLocalTripStorage(tripSlug).GetTransactionsAsync();
+            var tripStorage = Storage.GetLocalTripStorage(tripSlug);
+            var configTask = tripStorage.GetTripConfigAsync();
+            var transTask = tripStorage.GetTransactionsAsync();
+
+            await Task.WhenAll(configTask, transTask);
+
+            config = await configTask;
+            transactions = await transTask ?? new List<Transaction>();
+
             CalculateStats();
             StateHasChanged();
         }

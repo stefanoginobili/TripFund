@@ -133,6 +133,31 @@ namespace TripFund.App.Utilities
             return IanaToItalianCity.ContainsKey(ianaId);
         }
 
+        private static List<TimeZoneInfo>? _cachedSupportedTimeZones;
+
+        public static Task PreloadAsync()
+        {
+            return Task.Run(() =>
+            {
+                if (_cachedSupportedTimeZones == null)
+                {
+                    GetSupportedTimeZones();
+                }
+            });
+        }
+
+        public static List<TimeZoneInfo> GetSupportedTimeZones()
+        {
+            if (_cachedSupportedTimeZones != null) return _cachedSupportedTimeZones;
+
+            _cachedSupportedTimeZones = TimeZoneInfo.GetSystemTimeZones()
+                .Where(tz => IsSupported(tz.Id))
+                .OrderBy(tz => tz.BaseUtcOffset)
+                .ToList();
+
+            return _cachedSupportedTimeZones;
+        }
+
         public static IEnumerable<string> GetSupportedIanaIds()
         {
             return IanaToItalianCity.Keys;

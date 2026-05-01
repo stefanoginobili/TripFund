@@ -9,6 +9,9 @@ public partial class App : Application
 		InitializeComponent();
 		UserAppTheme = AppTheme.Light;
 		_services = services;
+
+		// Preload timezones in background
+		_ = Utilities.TimeZoneMapper.PreloadAsync();
 	}
 
 	protected override Window CreateWindow(IActivationState? activationState)
