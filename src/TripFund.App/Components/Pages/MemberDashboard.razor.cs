@@ -17,6 +17,7 @@ namespace TripFund.App.Components.Pages
         [Parameter] public string tripSlug { get; set; } = "";
         [Parameter] public string memberSlug { get; set; } = "";
         [SupplyParameterFromQuery] public string? currency { get; set; }
+        [SupplyParameterFromQuery(Name = "readonly")] public bool IsReadonlyFromQuery { get; set; }
         
         private TripConfig? config;
         private User? member;
@@ -41,12 +42,7 @@ namespace TripFund.App.Components.Pages
         protected override async Task OnInitializedAsync()
         {
             config = await Storage.GetLocalTripStorage(tripSlug).GetTripConfigAsync();
-            
-            var registry = await Storage.GetTripRegistryAsync();
-            if (registry != null && registry.Trips.TryGetValue(tripSlug, out var entry))
-            {
-                isReadonly = (entry.RemoteStorage?.Readonly ?? false) || await Storage.GetLocalTripStorage(tripSlug).HasConflictsAsync();
-            }
+            isReadonly = IsReadonlyFromQuery;
 
             if (config != null)
             {

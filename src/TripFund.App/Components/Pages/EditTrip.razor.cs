@@ -13,22 +13,6 @@ namespace TripFund.App.Components.Pages
         [Inject] private IAlertService Alerts { get; set; } = default!;
         [Inject] private IJSRuntime JSRuntime { get; set; } = default!;
 
-        [Parameter] public string tripSlug { get; set; } = "";
-
-        private TripConfig? config;
-        private string? originalConfigJson;
-        private string error = "";
-        private string deviceId = "";
-        private string authorName = "";
-
-        private string newMemberName = "";
-        private string newMemberSlug = "";
-        private string newMemberEmail = "";
-        private string newMemberAvatar = "👤";
-        private bool showEmojiPicker = false;
-        private bool isAddingMember = false;
-        private string? editingMemberSlug = null;
-        private bool shouldScrollMember = false;
         private string[] emojis = new[] { 
             // People & Faces
             "👤", "👨", "👩", "🧔", "👴", "👵", "👶", "👧", "👦", "👱", "👮", "👷", 
@@ -57,6 +41,23 @@ namespace TripFund.App.Components.Pages
             "🌈", "🌂", "☂️", "☔", "⛱️", "⚡", "❄️", "☃️", "⛄", "🎮", "🔥", "💧",
             "🌊", "🎒", "📸", "🍕", "🍔", "🍦", "🍩", "🍷", "🍺", "☕", "⚽", "🏀"
         };
+        [Parameter] public string tripSlug { get; set; } = "";
+        [SupplyParameterFromQuery(Name = "readonly")] public bool IsReadonlyFromQuery { get; set; }
+
+        private TripConfig? config;
+        private string? originalConfigJson;
+        private string error = "";
+        private string deviceId = "";
+        private string authorName = "";
+
+        private string newMemberName = "";
+        private string newMemberSlug = "";
+        private string newMemberEmail = "";
+        private string newMemberAvatar = "👤";
+        private bool showEmojiPicker = false;
+        private bool isAddingMember = false;
+        private string? editingMemberSlug = null;
+        private bool shouldScrollMember = false;
 
         private bool isReadonly = false;
         private bool isInternalNavigationAllowed = false;
@@ -70,11 +71,7 @@ namespace TripFund.App.Components.Pages
                 originalConfigJson = System.Text.Json.JsonSerializer.Serialize(config);
             }
             
-            var registry = await Storage.GetTripRegistryAsync();
-            if (registry != null && registry.Trips.TryGetValue(tripSlug, out var entry))
-            {
-                isReadonly = (entry.RemoteStorage?.Readonly ?? false) || await Storage.GetLocalTripStorage(tripSlug).HasConflictsAsync();
-            }
+            isReadonly = IsReadonlyFromQuery;
 
             var settings = await Storage.GetAppSettingsAsync();
             deviceId = settings?.DeviceId ?? "";

@@ -18,9 +18,9 @@ namespace TripFund.App.Components.Common
         [Parameter] public string TripSlug { get; set; } = "";
         [Parameter] public EventCallback OnClose { get; set; }
         [Parameter] public EventCallback<Transaction> OnEdit { get; set; }
+        [Parameter] public bool IsReadonly { get; set; }
 
         private bool canEdit = true;
-        private bool isReadonly = false;
         private List<AttachmentPreview> previews = new();
         private string? lastLoadedTxId;
 
@@ -47,15 +47,7 @@ namespace TripFund.App.Components.Common
                 }).ToList();
                 
                 // Start loading previews
-                var previewTask = LoadPreviews();
-
-                var registry = await Storage.GetTripRegistryAsync();
-                if (registry != null && registry.Trips.TryGetValue(TripSlug, out var entry))
-                {
-                    isReadonly = (entry.RemoteStorage?.Readonly ?? false) || await Storage.GetLocalTripStorage(TripSlug).HasConflictsAsync();
-                }
-                
-                await previewTask;
+                await LoadPreviews();
             }
             else if (!IsVisible)
             {

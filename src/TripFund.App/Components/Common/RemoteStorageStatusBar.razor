@@ -101,6 +101,7 @@
 @code {
     [Parameter] public string TripSlug { get; set; } = "";
     [Parameter] public EventCallback OnSyncCompleted { get; set; }
+    [Parameter] public EventCallback<bool> OnReadonlyStateChanged { get; set; }
 
     private string? remoteStorageProvider;
     private DateTime? lastSynchronized;
@@ -143,18 +144,25 @@
     private async Task LoadSyncStatus()
     {
         var registry = await Storage.GetTripRegistryAsync();
-        bool hasConflictsFlag = false;
+        bool remoteReadonly = false;
         if (registry?.Trips != null && registry.Trips.TryGetValue(TripSlug, out var entry))
         {
             remoteStorageProvider = entry.RemoteStorage?.Provider;
-            isReadonly = entry.RemoteStorage?.Readonly ?? false;
+            remoteReadonly = entry.RemoteStorage?.Readonly ?? false;
         }
 
         var tripStorage = Storage.GetLocalTripStorage(TripSlug);
         var syncState = await tripStorage.GetSyncStateAsync();
         lastSynchronized = syncState?.Sync?.LastSuccessAt;
         
-        hasConflictsFlag = await tripStorage.HasConflictsAsync();
+        var hasConflictsFlag = await tripStorage.HasConflictsAsync();
+        
+        bool combinedReadonly = remoteReadonly || hasConflictsFlag;
+        if (combinedReadonly != isReadonly)
+        {
+            isReadonly = combinedReadonly;
+            await OnReadonlyStateChanged.InvokeAsync(isReadonly);
+        }
 
         if (hasConflictsFlag)
         {

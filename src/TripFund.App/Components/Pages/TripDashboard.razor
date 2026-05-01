@@ -21,7 +21,7 @@
                     </button>
                 </Trigger>
                 <ChildContent>
-                    <button class="dropdown-item-vibe" @onclick='() => NavService.NavigateAsync($"/trip/{tripSlug}?currency={selectedCurrency}", $"/trip/{tripSlug}/edit")' disabled="@isReadonly">
+                    <button class="dropdown-item-vibe" @onclick='() => NavService.NavigateAsync($"/trip/{tripSlug}?currency={selectedCurrency}", $"/trip/{tripSlug}/edit?readonly={isReadonly.ToString().ToLower()}")'>
                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="me-2">
                             <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
                             <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
@@ -58,7 +58,7 @@
     else
     {
         <div class="content">
-            <RemoteStorageStatusBar TripSlug="@tripSlug" OnSyncCompleted="OnSyncCompleted" />
+            <RemoteStorageStatusBar TripSlug="@tripSlug" OnSyncCompleted="OnSyncCompleted" OnReadonlyStateChanged="HandleReadonlyStateChanged" />
 
             @if (config.Currencies.Count > 1)
             {
@@ -202,7 +202,8 @@
                   Config="@config" 
                   TripSlug="@tripSlug"
                   OnClose="CloseTransactionModal"
-                  OnEdit="EditTransaction" />
+                  OnEdit="EditTransaction"
+                  IsReadonly="@isReadonly" />
 
 <MembersModal IsVisible="@isMembersModalOpen" 
               MembersStats="@membersStats" 

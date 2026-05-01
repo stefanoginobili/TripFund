@@ -41,12 +41,6 @@ namespace TripFund.App.Components.Pages
         {
             config = await Storage.GetLocalTripStorage(tripSlug).GetTripConfigAsync();
             
-            var registry = await Storage.GetTripRegistryAsync();
-            if (registry != null && registry.Trips.TryGetValue(tripSlug, out var entry))
-            {
-                isReadonly = (entry.RemoteStorage?.Readonly ?? false) || await Storage.GetLocalTripStorage(tripSlug).HasConflictsAsync();
-            }
-
             if (config != null)
             {
                 if (!string.IsNullOrEmpty(currency) && config.Currencies.ContainsKey(currency))
@@ -66,14 +60,14 @@ namespace TripFund.App.Components.Pages
         {
             config = await Storage.GetLocalTripStorage(tripSlug).GetTripConfigAsync();
             
-            var registry = await Storage.GetTripRegistryAsync();
-            if (registry != null && registry.Trips.TryGetValue(tripSlug, out var entry))
-            {
-                isReadonly = (entry.RemoteStorage?.Readonly ?? false) || await Storage.GetLocalTripStorage(tripSlug).HasConflictsAsync();
-            }
-
             transactions = await Storage.GetLocalTripStorage(tripSlug).GetTransactionsAsync();
             CalculateStats();
+            StateHasChanged();
+        }
+
+        private void HandleReadonlyStateChanged(bool readonlyState)
+        {
+            isReadonly = readonlyState;
             StateHasChanged();
         }
 
@@ -97,7 +91,7 @@ namespace TripFund.App.Components.Pages
         private async Task OpenMemberDashboard(string slug)
         {
             isMembersModalOpen = false;
-            await NavService.NavigateAsync($"/trip/{tripSlug}?currency={selectedCurrency}", $"/trip/{tripSlug}/member/{slug}?currency={selectedCurrency}");
+            await NavService.NavigateAsync($"/trip/{tripSlug}?currency={selectedCurrency}", $"/trip/{tripSlug}/member/{slug}?currency={selectedCurrency}&readonly={isReadonly.ToString().ToLower()}");
         }
 
         private async Task GenerateReport()
