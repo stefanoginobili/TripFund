@@ -186,7 +186,7 @@
                                         </div>
                                     }
                                 </div>
-                                <button class="remove-bullet" @onclick="() => RemoveAttachment(att)">
+                                <button class="remove-bullet" @onclick="() => RemoveAttachment(att)" aria-label="Rimuovi allegato">
                                     <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="4" stroke-linecap="round" stroke-linejoin="round">
                                         <line x1="18" y1="6" x2="6" y2="18"></line>
                                         <line x1="6" y1="6" x2="18" y2="18"></line>
@@ -222,7 +222,7 @@
                                 <input type="text" class="form-control-vibe location-input" @bind="locationInfo.Name" @onblur="TrimLocation" />
                                 <div class="location-coords">@locationInfo.Latitude.ToString("F6"), @locationInfo.Longitude.ToString("F6")</div>
                             </div>
-                            <button class="remove-btn" @onclick="() => locationInfo = null">
+                            <button class="remove-btn" @onclick="() => locationInfo = null" aria-label="Rimuovi posizione">
                                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="4" stroke-linecap="round" stroke-linejoin="round">
                                     <line x1="18" y1="6" x2="6" y2="18"></line>
                                     <line x1="6" y1="6" x2="18" y2="18"></line>

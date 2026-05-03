@@ -76,3 +76,25 @@ This document outlines the standard rules and behaviors for UI components across
 ## 9. Global Styling & CSS
 - **Centralized Styles:** Whenever working with application-wide styles, and when it is possible to match the feature requirements, styles must be defined in a centralized way (e.g., in global CSS files like `app.css` or through shared component abstractions).
 - **UI Coherence:** Avoid redundant local CSS overrides or inline styles that duplicate common patterns. Centralized styling ensures that the UI remains visually coherent and maintainable across all application pages.
+
+## 10. Remove Bullets (Quick Actions)
+These small, circular red buttons provide a fast way to remove auxiliary items (like attachments or location data) from a form without requiring a full context menu or a separate confirmation step.
+
+- **Visual Specifications:**
+  - **Background:** Red (`#DC3545`).
+  - **Border:** 2px solid White (`#FFFFFF`).
+  - **Shape:** Perfectly circular (`border-radius: 50%`).
+  - **Dimensions:** 22px x 22px.
+  - **Icon:** A centered white "X" (SVG with `stroke-width: 4`, `stroke-linecap: round`, and `stroke-linejoin: round`).
+  - **Shadow:** A subtle box shadow (`0 2px 4px rgba(0,0,0,0.1)`) to ensure visibility against varied backgrounds.
+
+- **Positioning & Layout:**
+  - **Type:** Absolute positioning.
+  - **Placement:** Top-right corner of the element it targets (e.g., an attachment preview square or a location card).
+  - **Offsets:** Typically `-6px` to `-8px` from both `top` and `right` to "float" over the corner.
+  - **Z-Index:** Must be higher than the target element (e.g., `z-index: 10`) to remain clickable and visible.
+
+- **Interaction & Behavior:**
+  - **Immediate Action:** Unlike destructive actions in context menus, Remove Bullets trigger immediate removal. This is permitted because the action is localized and easily reversible (e.g., re-attaching the file or re-acquiring the location).
+  - **Feedback:** On `:active`, the button must scale down slightly (`transform: scale(0.9)`) to provide tactile feedback.
+  - **Accessibility:** Since they lack visible text, they must include an appropriate `aria-label` (e.g., "Rimuovi allegato" or "Rimuovi posizione") in Italian.
