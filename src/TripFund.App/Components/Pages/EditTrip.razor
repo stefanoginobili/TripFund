@@ -62,124 +62,101 @@
                 <h3 class="section-header-vibe">PARTECIPANTI</h3>
 
                 <div class="members-list">
-                    @foreach (var member in config.Members)
-                    {
-                        @if (editingMemberSlug == member.Key)
-                        {
-                            <div id="edit-member-form" class="member-edit-container">
-                                <div class="new-member-form">
+                    <SortableList TItem="KeyValuePair<string, User>" 
+                                  Items="config.Members" 
+                                  KeySelector="i => i.Key"
+                                  IsReadonly="isReadonly" 
+                                  OnReorder="HandleMemberReorder">
+                        <ItemTemplate Context="member">
+                            @if (editingMemberSlug == member.Key)
+                            {
+                                <div id="edit-member-form" class="member-edit-container w-100">
+                                    <div class="new-member-form">
 
-                                    <div class="new-member-header">
-                                        <span class="header-icon">
-                                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                                <path d="M12 20h9"></path>
-                                                <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
-                                            </svg>
-                                        </span>
-                                        <span class="new-member-title">Modifica Partecipante</span>
-                                    </div>
-
-                                    <div class="member-form-row">
-                                        <div class="avatar-col">
-                                            <VibeMenu>
-                                                <Trigger>
-                                                    <div class="avatar-input-box" @onclick="ToggleEmojiPicker">
-                                                        <span>@newMemberAvatar</span>
-                                                    </div>
-                                                </Trigger>
-                                                <ChildContent>
-                                                    <div class="emoji-picker-container">
-                                                        <div class="emoji-grid">
-                                                            @foreach (var emoji in emojis)
-                                                            {
-                                                                <button class="emoji-btn @(newMemberAvatar == emoji ? "selected" : "")" @onclick="() => SelectEmoji(emoji)">
-                                                                    @emoji
-                                                                </button>
-                                                            }
-                                                        </div>
-                                                    </div>
-                                                </ChildContent>
-                                            </VibeMenu>
-                                        </div>
-                                        <div class="name-col">
-                                            <label>NOME</label>
-                                            <input type="text" class="form-control-vibe" @bind="newMemberName" @onblur="TrimMemberName" />
-                                        </div>
-                                    </div>
-
-                                    <div class="member-form-full-row">
-                                        <label>EMAIL</label>
-                                        <input type="email" class="form-control-vibe" @bind="newMemberEmail" @onblur="TrimMemberEmail" />
-                                    </div>
-
-                                    <div class="member-form-footer">
-                                        <div class="slug-col">
-                                            <label>SLUG</label>
-                                            <input type="text" value="@newMemberSlug" readonly class="form-control-vibe readonly-input" />
-                                        </div>
-                                        <div class="action-buttons">
-                                            <button class="confirm-btn" @onclick="AddMember">
-                                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
-                                                    <polyline points="20 6 9 17 4 12"></polyline>
-                                                </svg>
-                                            </button>
-                                            <button class="cancel-btn" @onclick="CancelMemberEdit">
+                                        <div class="new-member-header">
+                                            <span class="header-icon">
                                                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                                    <line x1="18" y1="6" x2="6" y2="18"></line>
-                                                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                                                    <path d="M12 20h9"></path>
+                                                    <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
                                                 </svg>
-                                            </button>
+                                            </span>
+                                            <span class="new-member-title">Modifica Partecipante</span>
+                                        </div>
+
+                                        <div class="member-form-row">
+                                            <div class="avatar-col">
+                                                <VibeMenu>
+                                                    <Trigger>
+                                                        <div class="avatar-input-box" @onclick="ToggleEmojiPicker">
+                                                            <span>@newMemberAvatar</span>
+                                                        </div>
+                                                    </Trigger>
+                                                    <ChildContent>
+                                                        <div class="emoji-picker-container">
+                                                            <div class="emoji-grid">
+                                                                @foreach (var emoji in emojis)
+                                                                {
+                                                                    <button class="emoji-btn @(newMemberAvatar == emoji ? "selected" : "")" @onclick="() => SelectEmoji(emoji)">
+                                                                        @emoji
+                                                                    </button>
+                                                                }
+                                                            </div>
+                                                        </div>
+                                                    </ChildContent>
+                                                </VibeMenu>
+                                            </div>
+                                            <div class="name-col">
+                                                <label>NOME</label>
+                                                <input type="text" class="form-control-vibe" @bind="newMemberName" @onblur="TrimMemberName" />
+                                            </div>
+                                        </div>
+
+                                        <div class="member-form-full-row">
+                                            <label>EMAIL</label>
+                                            <input type="email" class="form-control-vibe" @bind="newMemberEmail" @onblur="TrimMemberEmail" />
+                                        </div>
+
+                                        <div class="member-form-footer">
+                                            <div class="slug-col">
+                                                <label>SLUG</label>
+                                                <input type="text" value="@newMemberSlug" readonly class="form-control-vibe readonly-input" />
+                                            </div>
+                                            <div class="action-buttons">
+                                                <button class="confirm-btn" @onclick="AddMember">
+                                                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+                                                        <polyline points="20 6 9 17 4 12"></polyline>
+                                                    </svg>
+                                                </button>
+                                                <button class="cancel-btn" @onclick="CancelMemberEdit">
+                                                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                                                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                                                    </svg>
+                                                </button>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
-                            </div>
-                        }
-                        else
-                        {
-                            <div class="member-item">
-                                <div class="member-avatar-display">@member.Value.Avatar</div>
-                                <div class="member-details">
-                                    <span class="member-name-text">@member.Value.Name</span>
-                                </div>
-                                @if (!isReadonly)
-                                {
-                                    <div class="more-actions-container">
-                                        <VibeMenu>
-                                            <Trigger>
-                                                <div class="action-trigger">
-                                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                                        <circle cx="12" cy="5" r="1"></circle>
-                                                        <circle cx="12" cy="12" r="1"></circle>
-                                                        <circle cx="12" cy="19" r="1"></circle>
-                                                    </svg>
-                                                </div>
-                                            </Trigger>
-                                            <ChildContent>
-                                                @{
-                                                    var keys = config.Members.Keys.ToList();
-                                                    int index = keys.IndexOf(member.Key);
-                                                    bool isFirst = index == 0;
-                                                    bool isLast = index == keys.Count - 1;
-                                                }
-                                                <button class="dropdown-item-vibe" @onclick="async () => { await StartEditMember(member.Key, member.Value); }">
-                                                    Modifica
-                                                </button>
-                                                <button class="dropdown-item-vibe @(isFirst ? "disabled" : "")" @onclick="() => { if(!isFirst) { MoveMemberUp(member.Key); } }">
-                                                    Sposta su
-                                                </button>
-                                                <button class="dropdown-item-vibe @(isLast ? "disabled" : "")" @onclick="() => { if(!isLast) { MoveMemberDown(member.Key); } }">
-                                                    Sposta giù
-                                                </button>
-                                                <button class="dropdown-item-vibe text-danger" @onclick="async () => { await ConfirmDeleteMember(member.Key); }">
-                                                    Elimina
-                                                </button>
-                                            </ChildContent>
-                                        </VibeMenu>
+                            }
+                            else
+                            {
+                                <div class="member-item-content">
+                                    <div class="member-avatar-display">@member.Value.Avatar</div>
+                                    <div class="member-details">
+                                        <span class="member-name-text">@member.Value.Name</span>
                                     </div>
-                                }
-                            </div>
-                        }
-                    }
+                                </div>
+                            }
+                        </ItemTemplate>
+                        <MenuTemplate Context="member">
+                            <button class="dropdown-item-vibe" @onclick="async () => { await StartEditMember(member.Key, member.Value); }">
+                                Modifica
+                            </button>
+                            <button class="dropdown-item-vibe text-danger" @onclick="async () => { await ConfirmDeleteMember(member.Key); }">
+                                Elimina
+                            </button>
+                        </MenuTemplate>
+                    </SortableList>
                 </div>
 
                 @if (!isReadonly)
@@ -293,40 +270,6 @@
         flex-direction: column;
         gap: 0.75rem;
         margin-bottom: 1.5rem;
-    }
-
-    .member-item {
-        background-color: #FFFFFF;
-        padding: 1rem 1.25rem;
-        border-radius: 20px;
-        display: flex;
-        align-items: center;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.02);
-        gap: 1rem;
-    }
-
-    .member-avatar-display {
-        width: 40px;
-        height: 40px;
-        background-color: #F1F3F5;
-        border-radius: 50%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 1.4rem;
-        margin-right: 0;
-    }
-
-    .member-details {
-        flex: 1;
-        display: flex;
-        flex-direction: column;
-    }
-
-    .member-name-text {
-        font-weight: 700;
-        color: #1A3C2F;
-        font-size: 1rem;
     }
 
     .member-edit-container {

@@ -115,6 +115,38 @@ window.appLogic = {
         menuElement.style.left = `${left}px`;
         menuElement.style.position = 'fixed';
         menuElement.style.visibility = 'visible';
+    },
+    initSortable: function (el, dotNetRef, handle) {
+        if (!el || typeof Sortable === 'undefined') return;
+        el._sortable = new Sortable(el, {
+            handle: handle || '.drag-handle',
+            draggable: '.sortable-item', // explicitly define what is draggable
+            animation: 150,
+            ghostClass: 'sortable-ghost',
+            chosenClass: 'sortable-chosen',
+            dragClass: 'sortable-drag',
+            fallbackClass: 'sortable-fallback',
+            forceFallback: true, // often more reliable for complex mobile interactions
+            fallbackOnBody: true,
+            swapThreshold: 0.65,
+            delay: 100,
+            delayOnTouchOnly: true,
+            touchStartThreshold: 5,
+            onUpdate: (event) => {
+                // Revert the DOM to Blazor's original state
+                event.item.remove();
+                event.to.insertBefore(event.item, event.to.childNodes[event.oldIndex]);
+
+                // Notify Blazor to update its model and re-render
+                dotNetRef.invokeMethodAsync('OnReorderInternal', event.oldIndex, event.newIndex);
+            }
+        });
+    },
+    destroySortable: function (el) {
+        if (el && el._sortable) {
+            el._sortable.destroy();
+            delete el._sortable;
+        }
     }
 };
 

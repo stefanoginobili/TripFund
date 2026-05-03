@@ -26,6 +26,8 @@ public class CategoriesFormTests : BunitContext
 
         JSInterop.SetupVoid("appLogic.positionMenu", _ => true);
         JSInterop.SetupVoid("appLogic.scrollIntoView", _ => true);
+        JSInterop.SetupVoid("appLogic.initSortable", _ => true);
+        JSInterop.SetupVoid("appLogic.destroySortable", _ => true);
         JSInterop.SetupVoid("appLogic.lockScroll");
         JSInterop.SetupVoid("appLogic.unlockScroll");
     }
@@ -106,5 +108,32 @@ public class CategoriesFormTests : BunitContext
         _alertMock.Verify(a => a.ConfirmAsync("Elimina Categoria", It.IsAny<string>(), "Elimina", "Annulla", AlertType.Warning, "center"), Times.Once);
         categories.Should().ContainKey("food");
         categoriesChangedCalled.Should().BeFalse();
+    }
+
+    [Fact]
+    public async Task ReorderCategories_ShouldUpdateOrder()
+    {
+        // Arrange
+        var categories = new Dictionary<string, ExpenseCategory>
+        {
+            { "food", new ExpenseCategory { Name = "Cibo", Icon = "🍕", Color = "#FF0000" } },
+            { "transport", new ExpenseCategory { Name = "Trasporto", Icon = "🚌", Color = "#0000FF" } }
+        };
+
+        var cut = Render<CategoriesForm>(parameters => parameters
+            .Add(p => p.Categories, categories)
+            .Add(p => p.CategoriesChanged, EventCallback.Factory.Create<Dictionary<string, ExpenseCategory>>(this, (dict) => {
+                categories = dict;
+            }))
+        );
+
+        // Act
+        var sortableList = cut.FindComponent<SortableList<KeyValuePair<string, ExpenseCategory>>>();
+        await cut.InvokeAsync(() => sortableList.Instance.OnReorder.InvokeAsync((0, 1)));
+
+        // Assert
+        var orderedKeys = categories.Keys.ToList();
+        orderedKeys[0].Should().Be("transport");
+        orderedKeys[1].Should().Be("food");
     }
 }

@@ -32,6 +32,8 @@ namespace TripFund.Tests.Components
             JSInterop.SetupVoid("appLogic.lockScroll");
             JSInterop.SetupVoid("appLogic.unlockScroll");
             JSInterop.SetupVoid("appLogic.positionMenu", _ => true);
+            JSInterop.SetupVoid("appLogic.initSortable", _ => true);
+            JSInterop.SetupVoid("appLogic.destroySortable", _ => true);
         }
 
         [Fact]
@@ -138,6 +140,33 @@ namespace TripFund.Tests.Components
 
             // Assert
             cut.FindAll(".suggestions-dropdown").Should().BeEmpty();
+        }
+
+        [Fact]
+        public async Task ReorderCurrencies_ShouldUpdateOrder()
+        {
+            // Arrange
+            var currencies = new Dictionary<string, Currency>
+            {
+                { "EUR", new Currency { Symbol = "€", Name = "Euro", Decimals = 2 } },
+                { "USD", new Currency { Symbol = "$", Name = "Dollar", Decimals = 2 } }
+            };
+
+            var cut = Render<CurrenciesForm>(parameters => parameters
+                .Add(p => p.Currencies, currencies)
+                .Add(p => p.CurrenciesChanged, EventCallback.Factory.Create<Dictionary<string, Currency>>(this, (dict) => {
+                    currencies = dict;
+                }))
+            );
+
+            // Act
+            var sortableList = cut.FindComponent<SortableList<KeyValuePair<string, Currency>>>();
+            await cut.InvokeAsync(() => sortableList.Instance.OnReorder.InvokeAsync((0, 1)));
+
+            // Assert
+            var orderedKeys = currencies.Keys.ToList();
+            orderedKeys[0].Should().Be("USD");
+            orderedKeys[1].Should().Be("EUR");
         }
     }
 }

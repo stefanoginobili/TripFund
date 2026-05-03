@@ -162,41 +162,23 @@ public partial class CategoriesForm
         }
     }
 
-    private async Task MoveUp(string slug)
+    private async Task HandleReorder((int oldIndex, int newIndex) indices)
     {
-        var keys = Categories.Keys.ToList();
-        int index = keys.IndexOf(slug);
-        if (index > 0)
-        {
-            var prevKey = keys[index - 1];
-            var newDict = new Dictionary<string, ExpenseCategory>();
-            foreach (var key in keys)
-            {
-                if (key == prevKey) newDict[slug] = Categories[slug];
-                else if (key == slug) newDict[prevKey] = Categories[prevKey];
-                else newDict[key] = Categories[key];
-            }
-            Categories = newDict;
-            await CategoriesChanged.InvokeAsync(Categories);
-        }
-    }
+        var items = Categories.ToList();
+        var itemToMove = items[indices.oldIndex];
+        items.RemoveAt(indices.oldIndex);
 
-    private async Task MoveDown(string slug)
-    {
-        var keys = Categories.Keys.ToList();
-        int index = keys.IndexOf(slug);
-        if (index < keys.Count - 1)
+        if (indices.newIndex < items.Count)
         {
-            var nextKey = keys[index + 1];
-            var newDict = new Dictionary<string, ExpenseCategory>();
-            foreach (var key in keys)
-            {
-                if (key == slug) newDict[nextKey] = Categories[nextKey];
-                else if (key == nextKey) newDict[slug] = Categories[slug];
-                else newDict[key] = Categories[key];
-            }
-            Categories = newDict;
-            await CategoriesChanged.InvokeAsync(Categories);
+            items.Insert(indices.newIndex, itemToMove);
         }
+        else
+        {
+            items.Add(itemToMove);
+        }
+
+        Categories = items.ToDictionary(k => k.Key, v => v.Value);
+        await CategoriesChanged.InvokeAsync(Categories);
+        StateHasChanged();
     }
 }

@@ -1,0 +1,146 @@
+.sortable-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.sortable-item {
+    display: flex;
+    align-items: center;
+    background-color: #FFFFFF;
+    padding: 1rem;
+    border-radius: 16px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.02);
+    border: 1px solid #F0F0F0;
+    
+    /* Disable text selection and callouts on mobile to allow drag */
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+    -webkit-touch-callout: none;
+}
+
+.sortable-item-content {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    min-width: 0;
+    user-select: none;
+}
+
+/* Use ::deep to reach content passed via RenderFragment */
+
+::deep .member-item-content, 
+::deep .category-item-content {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    flex: 1;
+    width: 100%;
+    user-select: none;
+}
+
+::deep .currency-card-content {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex: 1;
+    width: 100%;
+    user-select: none;
+}
+
+::deep .currency-code {
+    font-weight: 700;
+    color: #1A3C2F;
+    font-size: 1rem;
+}
+
+::deep .currency-value-container {
+    text-align: right;
+}
+
+::deep .currency-quota-value {
+    font-weight: 700;
+    color: #1A3C2F;
+}
+
+::deep .member-avatar-display, 
+::deep .category-avatar {
+    width: 44px;
+    height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 12px;
+    font-size: 1.4rem;
+    background-color: #f1f5f9;
+    flex-shrink: 0;
+    border: 1px solid rgba(0,0,0,0.05);
+}
+
+::deep .member-name-text, 
+::deep .category-name-text {
+    font-weight: 700;
+    color: #1A3C2F;
+    font-size: 1rem;
+}
+
+::deep .member-details, 
+::deep .category-details {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+.sortable-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-left: 0.75rem;
+}
+
+.action-trigger, .drag-handle {
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #94a3b8;
+    cursor: pointer;
+    border-radius: 8px;
+    transition: background-color 0.2s;
+    user-select: none;
+    -webkit-user-select: none;
+    -webkit-touch-callout: none;
+}
+
+.action-trigger:active, .drag-handle:active {
+    background-color: #f1f5f9;
+}
+
+.drag-handle {
+    cursor: grab;
+}
+
+.drag-handle:active {
+    cursor: grabbing;
+}
+
+.sortable-ghost {
+    opacity: 0.3;
+    background-color: #f8fafc !important;
+    border: 2px dashed #cbd5e1 !important;
+}
+
+.sortable-chosen {
+    background-color: #ffffff;
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+}
+
+.sortable-drag, .sortable-fallback {
+    opacity: 0.95;
+    transform: scale(1.02);
+    cursor: grabbing;
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+}

@@ -229,47 +229,24 @@ namespace TripFund.App.Components.Common
             newCurrQuotaString = newCurrQuota.ToString("F" + newCurrDecimals);
         }
 
-        private async Task MoveCurrencyUp(string code)
+        private async Task HandleReorder((int oldIndex, int newIndex) indices)
         {
-            var keys = Currencies.Keys.ToList();
-            int index = keys.IndexOf(code);
-            if (index <= 0) return;
+            var items = Currencies.ToList();
+            var itemToMove = items[indices.oldIndex];
+            items.RemoveAt(indices.oldIndex);
 
-            var prevKey = keys[index - 1];
-            var currentVal = Currencies[code];
-            var prevVal = Currencies[prevKey];
-
-            var newDict = new Dictionary<string, Currency>();
-            foreach (var key in keys)
+            if (indices.newIndex < items.Count)
             {
-                if (key == prevKey) newDict[code] = currentVal;
-                else if (key == code) newDict[prevKey] = prevVal;
-                else newDict[key] = Currencies[key];
+                items.Insert(indices.newIndex, itemToMove);
             }
-            Currencies = newDict;
-            await CurrenciesChanged.InvokeAsync(Currencies);
-        }
-
-        private async Task MoveCurrencyDown(string code)
-        {
-            var keys = Currencies.Keys.ToList();
-            int index = keys.IndexOf(code);
-            if (index < 0 || index >= keys.Count - 1) return;
-
-            var nextKey = keys[index + 1];
-            var currentVal = Currencies[code];
-            var nextVal = Currencies[nextKey];
-
-            var newDict = new Dictionary<string, Currency>();
-            foreach (var key in keys)
+            else
             {
-                if (key == code) newDict[nextKey] = nextVal;
-                else if (key == nextKey) newDict[code] = currentVal;
-                else newDict[key] = Currencies[key];
+                items.Add(itemToMove);
             }
 
-            Currencies = newDict;
+            Currencies = items.ToDictionary(k => k.Key, v => v.Value);
             await CurrenciesChanged.InvokeAsync(Currencies);
+            StateHasChanged();
         }
 
         private async Task ConfirmDeleteCurrency(string code)

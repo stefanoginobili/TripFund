@@ -6,13 +6,15 @@
     <h3 class="section-header-vibe">CATEGORIE DI SPESA</h3>
 
     <div class="categories-list">
-        @if (Categories != null && Categories.Any())
-        {
-            @foreach (var cat in Categories)
-            {
+        <SortableList TItem="KeyValuePair<string, ExpenseCategory>" 
+                      Items="Categories" 
+                      KeySelector="i => i.Key"
+                      IsReadonly="IsReadonly" 
+                      OnReorder="HandleReorder">
+            <ItemTemplate Context="cat">
                 @if (editingSlug == cat.Key)
                 {
-                    <div id="edit-category-form" class="category-edit-container">
+                    <div id="edit-category-form" class="category-edit-container w-100">
                         <div class="edit-category-form">
 
                             <div class="new-category-header">
@@ -106,51 +108,23 @@
                 }
                 else
                 {
-                    <div class="category-item">
+                    <div class="category-item-content">
                         <div class="category-avatar category-theme-translucent" style="--cat-color: @cat.Value.Color">@cat.Value.Icon</div>
                         <div class="category-details">
                             <span class="category-name-text">@cat.Value.Name</span>
                         </div>
-                        @if (!IsReadonly)
-                        {
-                            <div class="more-actions-container">
-                                <VibeMenu>
-                                    <Trigger>
-                                        <div class="action-trigger">
-                                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                                <circle cx="12" cy="5" r="1"></circle>
-                                                <circle cx="12" cy="12" r="1"></circle>
-                                                <circle cx="12" cy="19" r="1"></circle>
-                                            </svg>
-                                        </div>
-                                    </Trigger>
-                                    <ChildContent>
-                                        @{
-                                            var keys = Categories.Keys.ToList();
-                                            int index = keys.IndexOf(cat.Key);
-                                            bool isFirst = index == 0;
-                                            bool isLast = index == keys.Count - 1;
-                                        }
-                                        <button class="dropdown-item-vibe" @onclick="async () => await StartEdit(cat.Key, cat.Value)">
-                                            Modifica
-                                        </button>
-                                        <button class="dropdown-item-vibe @(isFirst ? "disabled" : "")" @onclick="async () => { if(!isFirst) await MoveUp(cat.Key); }">
-                                            Sposta su
-                                        </button>
-                                        <button class="dropdown-item-vibe @(isLast ? "disabled" : "")" @onclick="async () => { if(!isLast) await MoveDown(cat.Key); }">
-                                            Sposta giù
-                                        </button>
-                                        <button class="dropdown-item-vibe text-danger" @onclick="async () => await DeleteCategory(cat.Key)">
-                                            Elimina
-                                        </button>
-                                    </ChildContent>
-                                </VibeMenu>
-                            </div>
-                        }
                     </div>
                 }
-            }
-        }
+            </ItemTemplate>
+            <MenuTemplate Context="cat">
+                <button class="dropdown-item-vibe" @onclick="async () => await StartEdit(cat.Key, cat.Value)">
+                    Modifica
+                </button>
+                <button class="dropdown-item-vibe text-danger" @onclick="async () => await DeleteCategory(cat.Key)">
+                    Elimina
+                </button>
+            </MenuTemplate>
+        </SortableList>
     </div>
 
     @if (!IsReadonly)
@@ -277,40 +251,6 @@
         flex-direction: column;
         gap: 0.75rem;
         margin-bottom: 1rem;
-    }
-
-    .category-item {
-        background-color: #FFFFFF;
-        padding: 1rem 1.25rem;
-        border-radius: 20px;
-        display: flex;
-        align-items: center;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.02);
-        gap: 1rem;
-    }
-
-    .category-avatar {
-        width: 48px;
-        height: 48px;
-        border-radius: 12px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 1.6rem;
-        color: black;
-        border: 2px solid var(--cat-color);
-    }
-
-    .category-details {
-        flex: 1;
-        display: flex;
-        flex-direction: column;
-    }
-
-    .category-name-text {
-        font-weight: 700;
-        color: #1A3C2F;
-        font-size: 1rem;
     }
 
     .more-actions-container {

@@ -290,46 +290,25 @@ namespace TripFund.App.Components.Pages
             newMemberAvatar = "👤";
         }
 
-        private void MoveMemberUp(string slug)
+        private async Task HandleMemberReorder((int oldIndex, int newIndex) indices)
         {
             if (config == null) return;
-            var keys = config.Members.Keys.ToList();
-            int index = keys.IndexOf(slug);
-            if (index <= 0) return;
-
-            var prevKey = keys[index - 1];
-            var currentVal = config.Members[slug];
-            var prevVal = config.Members[prevKey];
-
-            var newDict = new Dictionary<string, User>();
-            foreach (var key in keys)
+            
+            var items = config.Members.ToList();
+            var itemToMove = items[indices.oldIndex];
+            items.RemoveAt(indices.oldIndex);
+            
+            if (indices.newIndex < items.Count)
             {
-                if (key == prevKey) newDict[slug] = currentVal;
-                else if (key == slug) newDict[prevKey] = prevVal;
-                else newDict[key] = config.Members[key];
+                items.Insert(indices.newIndex, itemToMove);
             }
-            config.Members = newDict;
-        }
-
-        private void MoveMemberDown(string slug)
-        {
-            if (config == null) return;
-            var keys = config.Members.Keys.ToList();
-            int index = keys.IndexOf(slug);
-            if (index < 0 || index >= keys.Count - 1) return;
-
-            var nextKey = keys[index + 1];
-            var currentVal = config.Members[slug];
-            var nextVal = config.Members[nextKey];
-
-            var newDict = new Dictionary<string, User>();
-            foreach (var key in keys)
+            else
             {
-                if (key == slug) newDict[nextKey] = nextVal;
-                else if (key == nextKey) newDict[slug] = currentVal;
-                else newDict[key] = config.Members[key];
+                items.Add(itemToMove);
             }
-            config.Members = newDict;
+            
+            config.Members = items.ToDictionary(k => k.Key, v => v.Value);
+            StateHasChanged();
         }
 
         private async Task ConfirmDeleteMember(string slug)

@@ -1,0 +1,50 @@
+@typeparam TItem
+@inject IJSRuntime JSRuntime
+
+<div @ref="listElement" class="sortable-list">
+    @if (Items != null)
+    {
+        @foreach (var item in Items)
+        {
+            <div @key="KeySelector(item)" class="sortable-item" data-id="@KeySelector(item).ToString()">
+                <div class="sortable-item-content">
+                    @ItemTemplate(item)
+                </div>
+
+                @if (!IsReadonly)
+                {
+                    <div class="sortable-actions">
+                        @if (MenuTemplate != null)
+                        {
+                            <VibeMenu>
+                                <Trigger>
+                                    <div class="action-trigger">
+                                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                            <circle cx="12" cy="5" r="1"></circle>
+                                            <circle cx="12" cy="12" r="1"></circle>
+                                            <circle cx="12" cy="19" r="1"></circle>
+                                        </svg>
+                                    </div>
+                                </Trigger>
+                                <ChildContent>
+                                    @MenuTemplate(item)
+                                </ChildContent>
+                            </VibeMenu>
+                        }
+
+                        <div class="drag-handle">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <circle cx="9" cy="5" r="1"></circle>
+                                <circle cx="9" cy="12" r="1"></circle>
+                                <circle cx="9" cy="19" r="1"></circle>
+                                <circle cx="15" cy="5" r="1"></circle>
+                                <circle cx="15" cy="12" r="1"></circle>
+                                <circle cx="15" cy="19" r="1"></circle>
+                            </svg>
+                        </div>
+                    </div>
+                }
+            </div>
+        }
+    }
+</div>

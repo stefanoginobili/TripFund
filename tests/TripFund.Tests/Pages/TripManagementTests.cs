@@ -2,6 +2,7 @@ using Bunit;
 using Microsoft.Extensions.DependencyInjection;
 using Moq;
 using TripFund.App.Components.Pages;
+using TripFund.App.Components.Common;
 using TripFund.App.Models;
 using TripFund.App.Services;
 using FluentAssertions;
@@ -48,6 +49,8 @@ public class TripManagementTests : BunitContext
         JSInterop.SetupVoid("appLogic.unlockScroll");
         JSInterop.SetupVoid("appLogic.positionMenu", _ => true);
         JSInterop.SetupVoid("appLogic.scrollIntoView", _ => true);
+        JSInterop.SetupVoid("appLogic.initSortable", _ => true);
+        JSInterop.SetupVoid("appLogic.destroySortable", _ => true);
     }
 
     [Fact]
@@ -322,5 +325,39 @@ public class TripManagementTests : BunitContext
         
         // Assert: Save button should be disabled again
         saveBtn.HasAttribute("disabled").Should().BeTrue();
+    }
+
+    [Fact]
+    public async Task EditTrip_ReorderMembers_ShouldUpdateOrder()
+    {
+        // Arrange
+        var tripSlug = "test-trip";
+        var config = new TripConfig 
+        { 
+            Id = "guid-1", 
+            Name = "Original Name", 
+            Members = new Dictionary<string, User> 
+            { 
+                { "mario", new User { Name = "Mario", Avatar = "👨" } },
+                { "luigi", new User { Name = "Luigi", Avatar = "🧔" } }
+            },
+            Currencies = new Dictionary<string, Currency> { { "EUR", new Currency { Symbol = "€", ExpectedQuotaPerMember = 100 } } }
+        };
+        _tripStorageMock.Setup(s => s.GetTripConfigAsync()).ReturnsAsync(config);
+        _storageMock.Setup(s => s.GetAppSettingsAsync()).ReturnsAsync(new AppSettings { AuthorName = "Mario", DeviceId = "mario" });
+
+        var cut = Render<EditTrip>(parameters => parameters.Add(p => p.tripSlug, tripSlug));
+
+        // Act
+        var sortableList = cut.FindComponent<SortableList<KeyValuePair<string, User>>>();
+        await cut.InvokeAsync(() => sortableList.Instance.OnReorder.InvokeAsync((0, 1)));
+
+        // Assert
+        var orderedKeys = config.Members.Keys.ToList();
+        orderedKeys[0].Should().Be("luigi");
+        orderedKeys[1].Should().Be("mario");
+        
+        // Save button should be enabled after reordering
+        cut.Find(".btn-primary-vibe").HasAttribute("disabled").Should().BeFalse();
     }
 }
