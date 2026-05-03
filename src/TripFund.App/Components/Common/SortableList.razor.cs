@@ -10,6 +10,7 @@ public partial class SortableList<TItem> : ComponentBase, IAsyncDisposable
     [Parameter] public RenderFragment<TItem> MenuTemplate { get; set; } = default!;
     [Parameter] public Func<TItem, object> KeySelector { get; set; } = i => i!;
     [Parameter] public bool IsReadonly { get; set; }
+    [Parameter] public Func<TItem, bool> IsEditing { get; set; } = _ => false;
     [Parameter] public EventCallback<(int oldIndex, int newIndex)> OnReorder { get; set; }
 
     private ElementReference listElement;

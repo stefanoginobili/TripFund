@@ -66,6 +66,7 @@
                                   Items="config.Members" 
                                   KeySelector="i => i.Key"
                                   IsReadonly="isReadonly" 
+                                  IsEditing="member => editingMemberSlug == member.Key"
                                   OnReorder="HandleMemberReorder">
                         <ItemTemplate Context="member">
                             @if (editingMemberSlug == member.Key)

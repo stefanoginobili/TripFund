@@ -5,6 +5,7 @@
                       Items="Currencies" 
                       KeySelector="i => i.Key"
                       IsReadonly="IsReadonly" 
+                      IsEditing="curr => editingCurrencyCode == curr.Key"
                       OnReorder="HandleReorder">
             <ItemTemplate Context="curr">
                 @if (editingCurrencyCode == curr.Key)

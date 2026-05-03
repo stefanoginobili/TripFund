@@ -10,6 +10,7 @@
                       Items="Categories" 
                       KeySelector="i => i.Key"
                       IsReadonly="IsReadonly" 
+                      IsEditing="cat => editingSlug == cat.Key"
                       OnReorder="HandleReorder">
             <ItemTemplate Context="cat">
                 @if (editingSlug == cat.Key)

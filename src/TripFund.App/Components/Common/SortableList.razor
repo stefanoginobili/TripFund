@@ -6,12 +6,13 @@
     {
         @foreach (var item in Items)
         {
-            <div @key="KeySelector(item)" class="sortable-item" data-id="@KeySelector(item).ToString()">
+            var isEditing = IsEditing(item);
+            <div @key="KeySelector(item)" class="sortable-item @(isEditing ? "is-editing" : "")" data-id="@KeySelector(item).ToString()">
                 <div class="sortable-item-content">
                     @ItemTemplate(item)
                 </div>
 
-                @if (!IsReadonly)
+                @if (!IsReadonly && !isEditing)
                 {
                     <div class="sortable-actions">
                         @if (MenuTemplate != null)
