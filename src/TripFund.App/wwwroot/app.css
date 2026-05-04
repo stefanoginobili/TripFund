@@ -178,6 +178,12 @@ html, body, #app {
     border-color: #D1D9E0;
 }
 
+.add-item-dashed.disabled {
+    opacity: 0.5;
+    pointer-events: none;
+    cursor: default;
+}
+
 .dashed-btn-content {
     display: flex;
     align-items: center;

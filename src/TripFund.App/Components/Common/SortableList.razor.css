@@ -107,6 +107,11 @@
     margin-left: 0.75rem;
 }
 
+.sortable-actions.disabled {
+    opacity: 0.5;
+    pointer-events: none;
+}
+
 .action-trigger, .drag-handle {
     width: 36px;
     height: 36px;

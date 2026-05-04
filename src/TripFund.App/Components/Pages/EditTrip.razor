@@ -67,6 +67,7 @@
                                   KeySelector="i => i.Key"
                                   IsReadonly="isReadonly" 
                                   IsEditing="member => editingMemberSlug == member.Key"
+                                  DisableActions="editingMemberSlug != null || isAddingMember"
                                   OnReorder="HandleMemberReorder">
                         <ItemTemplate Context="member">
                             @if (editingMemberSlug == member.Key)
@@ -162,7 +163,7 @@
 
                 @if (!isReadonly)
                 {
-                    <div class="add-item-dashed @(isAddingMember ? "expanded" : "")" @onclick="() => { if(!isAddingMember) { CancelMemberEdit(); isAddingMember = true; shouldScrollMember = true; } }">
+                    <div class="add-item-dashed @(isAddingMember ? "expanded" : "") @(editingMemberSlug != null ? "disabled" : "")" @onclick="() => { if(!isAddingMember && editingMemberSlug == null) { CancelMemberEdit(); isAddingMember = true; shouldScrollMember = true; } }">
                         @if (!isAddingMember)
                         {
                             <div class="dashed-btn-content">

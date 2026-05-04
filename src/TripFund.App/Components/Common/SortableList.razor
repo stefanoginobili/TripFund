@@ -14,7 +14,7 @@
 
                 @if (!IsReadonly && !isEditing)
                 {
-                    <div class="sortable-actions">
+                    <div class="sortable-actions @(DisableActions ? "disabled" : "")">
                         @if (MenuTemplate != null)
                         {
                             <VibeMenu>

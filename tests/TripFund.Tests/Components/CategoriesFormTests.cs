@@ -136,4 +136,50 @@ public class CategoriesFormTests : BunitContext
         orderedKeys[0].Should().Be("transport");
         orderedKeys[1].Should().Be("food");
     }
+
+    [Fact]
+    public void SortableList_ShouldDisableActions_WhenAddingOrEditing()
+    {
+        // Arrange
+        var categories = new Dictionary<string, ExpenseCategory>
+        {
+            { "food", new ExpenseCategory { Name = "Cibo", Icon = "🍕", Color = "#FF0000" } }
+        };
+
+        var cut = Render<CategoriesForm>(parameters => parameters
+            .Add(p => p.Categories, categories)
+        );
+
+        // Assert - Initial state (not adding, not editing)
+        var sortableList = cut.FindComponent<SortableList<KeyValuePair<string, ExpenseCategory>>>();
+        sortableList.Instance.DisableActions.Should().BeFalse();
+
+        // Act - Start Adding
+        cut.Find(".add-item-dashed").Click();
+        
+        // Assert - Adding state
+        sortableList = cut.FindComponent<SortableList<KeyValuePair<string, ExpenseCategory>>>();
+        sortableList.Instance.DisableActions.Should().BeTrue();
+
+        // Act - Cancel adding
+        cut.Find(".cancel-btn").Click();
+        
+        // Assert - Back to normal
+        sortableList.Instance.DisableActions.Should().BeFalse();
+
+        // Act - Start Editing
+        cut.Find(".action-trigger").Click();
+        var editBtn = cut.FindAll(".dropdown-item-vibe").First(b => b.TextContent.Contains("Modifica"));
+        editBtn.Click();
+
+        // Assert - Editing state
+        sortableList.Instance.DisableActions.Should().BeTrue();
+        cut.Find(".add-item-dashed").ClassList.Should().Contain("disabled");
+
+        // Act - Cancel editing
+        cut.Find(".cancel-btn").Click();
+        
+        // Assert - Back to normal
+        sortableList.Instance.DisableActions.Should().BeFalse();
+    }
 }

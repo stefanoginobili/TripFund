@@ -1,13 +1,13 @@
 <section class="info-section">
     <h3 class="section-header-vibe">CASSE DEL VIAGGIO</h3>
     <div class="currencies-list">
-        <SortableList TItem="KeyValuePair<string, Currency>" 
-                      Items="Currencies" 
+        <SortableList TItem="KeyValuePair<string, Currency>"
+                      Items="Currencies"
                       KeySelector="i => i.Key"
-                      IsReadonly="IsReadonly" 
+                      IsReadonly="IsReadonly"
                       IsEditing="curr => editingCurrencyCode == curr.Key"
-                      OnReorder="HandleReorder">
-            <ItemTemplate Context="curr">
+                      DisableActions="editingCurrencyCode != null || isAddingCurrency"
+                      OnReorder="HandleReorder">            <ItemTemplate Context="curr">
                 @if (editingCurrencyCode == curr.Key)
                 {
                     <div id="edit-currency-form" class="currency-edit-container w-100">
@@ -82,7 +82,7 @@
 
     @if (!IsReadonly)
     {
-        <div class="add-item-dashed @(isAddingCurrency ? "expanded" : "")" @onclick="() => { if(!isAddingCurrency) StartAddCurrency(); }">
+        <div class="add-item-dashed @(isAddingCurrency ? "expanded" : "") @(editingCurrencyCode != null ? "disabled" : "")" @onclick="() => { if(!isAddingCurrency && editingCurrencyCode == null) StartAddCurrency(); }">
             @if (!isAddingCurrency)
             {
                 <div class="dashed-btn-content">

@@ -11,6 +11,7 @@
                       KeySelector="i => i.Key"
                       IsReadonly="IsReadonly" 
                       IsEditing="cat => editingSlug == cat.Key"
+                      DisableActions="editingSlug != null || isAdding"
                       OnReorder="HandleReorder">
             <ItemTemplate Context="cat">
                 @if (editingSlug == cat.Key)
@@ -130,7 +131,7 @@
 
     @if (!IsReadonly)
     {
-        <div class="add-item-dashed @(isAdding ? "expanded" : "")" @onclick="() => { if(!isAdding) StartAdd(); }">
+        <div class="add-item-dashed @(isAdding ? "expanded" : "") @(editingSlug != null ? "disabled" : "")" @onclick="() => { if(!isAdding && editingSlug == null) StartAdd(); }">
             @if (!isAdding)
             {
                 <div class="dashed-btn-content">
