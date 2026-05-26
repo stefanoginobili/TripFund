@@ -857,4 +857,66 @@ public class TransactionFormTests : BunitContext
         // Assert: Save button should be enabled
         saveBtn.HasAttribute("disabled").Should().BeFalse();
     }
+
+    [Fact]
+    public void AmountInput_ShouldFormatToTwoDecimalsOnBlur()
+    {
+        // Arrange
+        var tripSlug = "test-trip";
+        var config = new TripConfig
+        {
+            Id = "123",
+            Currencies = new Dictionary<string, Currency> { { "EUR", new Currency { Symbol = "€", Decimals = 2 } } },
+            Members = new Dictionary<string, User> { { "mario", new User { Name = "Mario" } } }
+        };
+        _tripStorageMock.Setup(s => s.GetTripConfigAsync()).ReturnsAsync(config);
+
+        var cut = Render<ExpenseEditor>(parameters => parameters.Add(p => p.tripSlug, tripSlug));
+        var amountInput = cut.Find(".amount-input");
+
+        // Act 1: Set to "1"
+        amountInput.Change("1");
+
+        // Assert 1: Should be "1,00"
+        amountInput = cut.Find(".amount-input"); // Re-find because of @key re-render
+        amountInput.GetAttribute("value").Should().Be("1,00");
+
+        // Act 2: Set to "1,0" (this is the bug scenario where value doesn't change from 1.00m)
+        amountInput.Change("1,0");
+
+        // Assert 2: Should be "1,00" again
+        amountInput = cut.Find(".amount-input"); // Re-find because of @key re-render
+        amountInput.GetAttribute("value").Should().Be("1,00");
+    }
+
+    [Fact]
+    public void ContributionAmountInput_ShouldFormatToTwoDecimalsOnBlur()
+    {
+        // Arrange
+        var tripSlug = "test-trip";
+        var config = new TripConfig
+        {
+            Id = "123",
+            Currencies = new Dictionary<string, Currency> { { "EUR", new Currency { Symbol = "€", Decimals = 2 } } },
+            Members = new Dictionary<string, User> { { "mario", new User { Name = "Mario" } } }
+        };
+        _tripStorageMock.Setup(s => s.GetTripConfigAsync()).ReturnsAsync(config);
+
+        var cut = Render<ContributionEditor>(parameters => parameters.Add(p => p.tripSlug, tripSlug));
+        var amountInput = cut.Find(".amount-input");
+
+        // Act 1: Set to "1"
+        amountInput.Change("1");
+
+        // Assert 1: Should be "1,00"
+        amountInput = cut.Find(".amount-input"); // Re-find because of @key re-render
+        amountInput.GetAttribute("value").Should().Be("1,00");
+
+        // Act 2: Set to "1,0"
+        amountInput.Change("1,0");
+
+        // Assert 2: Should be "1,00" again
+        amountInput = cut.Find(".amount-input"); // Re-find because of @key re-render
+        amountInput.GetAttribute("value").Should().Be("1,00");
+    }
 }

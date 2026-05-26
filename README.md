@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="docs/logo.png" alt="TripFund Logo" width="180">
+  <img src="docs/images/logo.png" alt="TripFund Logo" width="180">
 </p>
 
 # 🌍 TripFund 

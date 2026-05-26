@@ -34,6 +34,7 @@ namespace TripFund.App.Components.Pages
         private string errorMessage = "";
         private string deviceId = "";
         private string authorName = "";
+        private int _amountRenderKey = 0;
         private bool isSubmitting = false;
         private bool shouldScroll = false;
         private bool isInternalNavigationAllowed = false;
@@ -127,9 +128,11 @@ namespace TripFund.App.Components.Pages
         {
             if (editingTransaction == null) 
             {
-                // For new contribution, check if amount or description changed from defaults
-                // We use isAmountDirty to know if the amount was touched
-                return isAmountDirty || description != "Versamento in cassa";
+                // For a new transaction, it's "changed" if a member is selected (ready to save)
+                // or if the user has touched the amount or description.
+                return !string.IsNullOrEmpty(selectedMemberSlug) || 
+                       isAmountDirty || 
+                       description != "Versamento in cassa";
             }
             if (originalTxJson == null) return true;
 
@@ -279,6 +282,7 @@ namespace TripFund.App.Components.Pages
 
         private void OnAmountChanged(ChangeEventArgs e)
         {
+            _amountRenderKey++;
             isAmountDirty = true;
             var input = e.Value?.ToString()?.Trim().Replace(".", ",");
             if (decimal.TryParse(input, out decimal val))

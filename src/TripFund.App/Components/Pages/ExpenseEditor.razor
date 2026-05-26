@@ -55,8 +55,8 @@
                     </div>
                     <label class="tile-label">IMPORTO SPESA</label>
                     <div class="amount-section">
-                        <span class="currency-symbol">@selectedCurrency</span>
-                        <input type="text" inputmode="@(GetDecimals() > 0 ? "decimal" : "numeric")" class="amount-input" value="@totalAmount.ToString("F" + GetDecimals())" @onchange="OnAmountChanged" onfocus="appLogic.selectText(this)" />
+                        <span class="amount-symbol">@GetCurrencySymbol()</span>
+                        <input @key="@($"total-amount-{_amountRenderKey}")" type="text" inputmode="@(GetDecimals() > 0 ? "decimal" : "numeric")" class="amount-input" value="@totalAmount.ToString("F" + GetDecimals())" @onchange="OnAmountChanged" onfocus="appLogic.selectText(this)" />
                     </div>
                 </div>
 
@@ -151,13 +151,12 @@
                                         <div class="split-mode-toggle" @onclick="() => ToggleAuto(member)">
                                             @(member.IsAuto ? "Auto" : "Manuale")
                                         </div>
-                                        <input type="text" inputmode="@(GetDecimals() > 0 ? "decimal" : "numeric")" class="form-control-vibe split-amount-input @(member.IsAuto ? "readonly-input" : "")" 
+                                        <input @key="@($"split-{member.Slug}-{_amountRenderKey}")" type="text" inputmode="@(GetDecimals() > 0 ? "decimal" : "numeric")" class="form-control-vibe split-amount-input @(member.IsAuto ? "readonly-input" : "")"
                                                value="@((member.IsAuto ? member.CalculatedAmount : member.ManualAmount).ToString("F" + GetDecimals()))"
                                                @onchange="(e) => OnManualAmountChanged(member, e)"
                                                onfocus="appLogic.selectText(this)"
                                                readonly="@member.IsAuto" />
-                                    </div>
-                                }
+                                    </div>                                }
                             </div>
                         }
                     </div>
@@ -371,3 +370,14 @@
     .mt-2 { margin-top: 0.5rem; }
     .mb-4 { margin-bottom: 2rem; }
 </style>
+
+@code {
+    private string GetCurrencySymbol()
+    {
+        if (config != null && config.Currencies.TryGetValue(selectedCurrency, out var c))
+        {
+            return c.Symbol;
+        }
+        return "";
+    }
+}

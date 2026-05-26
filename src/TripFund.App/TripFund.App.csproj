@@ -34,15 +34,15 @@
     </PropertyGroup>
 
     <PropertyGroup Condition="'$(Configuration)' == 'Debug'">
-        <ApplicationVersion>1</ApplicationVersion>
-        <ApplicationDisplayVersion>1.0-dev</ApplicationDisplayVersion>
+        <ApplicationVersion>2</ApplicationVersion>
+        <ApplicationDisplayVersion>1.0.1-dev</ApplicationDisplayVersion>
         <ApplicationTitle>TripFund (Dev)</ApplicationTitle>
         <ApplicationId>com.stefanoginobili.tripfund.app.dev</ApplicationId>
     </PropertyGroup>
 
     <PropertyGroup Condition="'$(Configuration)' == 'Release'">
-        <ApplicationVersion>1</ApplicationVersion>
-        <ApplicationDisplayVersion>1.0</ApplicationDisplayVersion>
+        <ApplicationVersion>2</ApplicationVersion>
+        <ApplicationDisplayVersion>1.0.1</ApplicationDisplayVersion>
         <ApplicationTitle>TripFund</ApplicationTitle>
         <ApplicationId>com.stefanoginobili.tripfund.app</ApplicationId>
     </PropertyGroup>
@@ -81,5 +81,9 @@
         <Copy SourceFiles="Platforms\iOS\Info.dev.plist" DestinationFiles="Platforms\iOS\Info.plist" Condition="'$(Configuration)' == 'Debug'" OverwriteReadOnlyFiles="true" />
         <Copy SourceFiles="Platforms\iOS\Info.prod.plist" DestinationFiles="Platforms\iOS\Info.plist" Condition="'$(Configuration)' == 'Release'" OverwriteReadOnlyFiles="true" />
     </Target>
+
+    <PropertyGroup Condition="$(TargetFramework.Contains('-android'))">
+        <AndroidAapt2LinkExtraArgs>-c it,en</AndroidAapt2LinkExtraArgs>
+    </PropertyGroup>
 
 </Project>

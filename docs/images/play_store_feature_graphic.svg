@@ -1,0 +1,72 @@
+<svg width="1024" height="500" viewBox="0 0 1024 500" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background Gradient -->
+  <defs>
+    <linearGradient id="bgGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#1A3C2F;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#2C9984;stop-opacity:1" />
+    </linearGradient>
+    
+    <!-- Pattern for texture -->
+    <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
+      <path d="M 40 0 L 0 0 0 40" fill="none" stroke="white" stroke-opacity="0.05" stroke-width="1"/>
+    </pattern>
+
+    <!-- Shadow filter -->
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur in="SourceAlpha" stdDeviation="10" />
+      <feOffset dx="5" dy="5" result="offsetblur" />
+      <feComponentTransfer>
+        <feFuncA type="linear" slope="0.3" />
+      </feComponentTransfer>
+      <feMerge>
+        <feMergeNode />
+        <feMergeNode in="SourceGraphic" />
+      </feMerge>
+    </filter>
+  </defs>
+
+  <!-- Rects -->
+  <rect width="1024" height="500" fill="url(#bgGradient)" />
+  <rect width="1024" height="500" fill="url(#grid)" />
+
+  <!-- Decorative Travel Icons (Subtle) -->
+  <g fill="white" fill-opacity="0.1">
+    <!-- Plane -->
+    <path d="M900,100 L930,120 L925,125 L900,115 L880,135 L885,150 L875,155 L865,135 L840,130 L845,120 L870,125 L890,105 L900,100 Z" transform="rotate(-15, 900, 100)" />
+    <!-- Globe -->
+    <circle cx="100" cy="400" r="60" stroke="white" stroke-width="2" fill="none" stroke-opacity="0.1" />
+    <ellipse cx="100" cy="400" rx="30" ry="60" stroke="white" stroke-width="2" fill="none" stroke-opacity="0.1" />
+    <line x1="40" y1="400" x2="160" y2="400" stroke="white" stroke-width="2" stroke-opacity="0.1" />
+  </g>
+
+  <!-- Logo Section (Left) -->
+  <g transform="translate(150, 250) scale(0.7) translate(-256, -256)" filter="url(#shadow)">
+    <!-- Re-creating the logo from logo.svg -->
+    <circle fill="#90DFAA" cx="256" cy="256" r="256"/>
+    <path fill="#2C9984" d="M509.705,290.299L301.684,82.275L198.537,283.007l-56.217,92.66l135.447,135.401 C397.577,500.979,493.892,408.388,509.705,290.299z"/>
+    <path fill="#324A5E" d="M118.088,308.748c0-76.167,61.745-172.391,137.912-172.391s137.912,96.223,137.912,172.391 S332.167,412.182,256,412.182S118.088,384.915,118.088,308.748z"/>
+    <path fill="#2B3B4E" d="M256,136.359c-0.191,0-0.383,0.01-0.574,0.012v275.808c0.193,0,0.381,0.007,0.574,0.007 c76.167,0,137.912-27.267,137.912-103.434C393.912,232.582,332.167,136.359,256,136.359z"/>
+    <path fill="#324A5E" d="M301.684,82.275c0,30.036-20.452,54.386-45.684,54.386s-45.684-24.35-45.684-54.386H301.684z"/>
+    <path fill="#2B3B4E" d="M255.426,82.275v54.369c0.191,0.003,0.381,0.017,0.574,0.017c25.231,0,45.684-24.348,45.684-54.386 H255.426z"/>
+    <circle fill="#FFD15D" cx="256" cy="288.185" r="43.882"/>
+    <g>
+        <path fill="#F9B54C" d="M256,244.305c-0.193,0-0.383,0.012-0.574,0.014v87.733c0.191,0.002,0.381,0.014,0.574,0.014 c24.235,0,43.882-19.646,43.882-43.882C299.882,263.947,280.235,244.305,256,244.305z"/>
+        <path fill="#F9B54C" d="M256,342.411c-29.899,0-54.224-24.324-54.224-54.225S226.101,233.96,256,233.96 s54.224,24.324,54.224,54.225S285.899,342.411,256,342.411z M256,254.647c-18.492,0-33.537,15.046-33.537,33.539 s15.046,33.539,33.537,33.539s33.537-15.046,33.537-33.539S274.492,254.647,256,254.647z"/>
+    </g>
+    <path fill="#F4A200" d="M256,233.96c-0.193,0-0.383,0.012-0.574,0.014v20.701c0.193-0.003,0.381-0.029,0.574-0.029 c18.492,0,33.537,15.046,33.537,33.539S274.491,321.722,256,321.722c-0.193,0-0.381-0.026-0.574-0.029v20.701 c0.191,0.002,0.381,0.014,0.574,0.014c29.899,0,54.224-24.324,54.224-54.225C310.224,258.281,285.899,233.96,256,233.96z"/>
+    <rect x="221.522" y="121.535" fill="#F9B54C" width="68.956" height="20.687"/>
+    <rect x="255.431" y="121.535" fill="#F4A200" width="35.052" height="20.687"/>
+  </g>
+
+  <!-- Text Section (Right) -->
+  <text x="450" y="240" font-family="Arial, sans-serif" font-weight="bold" font-size="90" fill="white" filter="url(#shadow)">TripFund</text>
+  <text x="450" y="300" font-family="Arial, sans-serif" font-size="34" fill="#90DFAA">La cassa comune per i tuoi viaggi</text>
+
+  <!-- Money/Coins (Bottom Right) -->
+  <g transform="translate(850, 400) scale(0.5)" filter="url(#shadow)">
+     <circle cx="0" cy="0" r="40" fill="#FFD15D" stroke="#F4A200" stroke-width="4" />
+     <text x="-12" y="15" font-family="Arial" font-size="40" fill="#F4A200" font-weight="bold">€</text>
+     <circle cx="60" cy="-20" r="40" fill="#FFD15D" stroke="#F4A200" stroke-width="4" />
+     <text x="48" y="-5" font-family="Arial" font-size="40" fill="#F4A200" font-weight="bold">$</text>
+  </g>
+</svg>

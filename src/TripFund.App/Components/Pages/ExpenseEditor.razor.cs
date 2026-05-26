@@ -37,6 +37,7 @@ namespace TripFund.App.Components.Pages
         private bool isLocating = false;
         private string deviceId = "";
         private string authorName = "";
+        private int _amountRenderKey = 0;
         private bool _shouldScrollCategory = false;
         private bool isInternalNavigationAllowed = false;
 
@@ -373,6 +374,7 @@ namespace TripFund.App.Components.Pages
 
         private void OnAmountChanged(ChangeEventArgs e)
         {
+            _amountRenderKey++;
             var input = e.Value?.ToString()?.Trim().Replace(".", ",");
             if (decimal.TryParse(input, out decimal val))
             {
@@ -434,6 +436,7 @@ namespace TripFund.App.Components.Pages
 
         private void OnManualAmountChanged(MemberSplitInfo member, ChangeEventArgs e)
         {
+            _amountRenderKey++;
             var input = e.Value?.ToString()?.Trim().Replace(".", ",");
             if (decimal.TryParse(input, out decimal val))
             {
