@@ -128,11 +128,7 @@ namespace TripFund.App.Components.Pages
         {
             if (editingTransaction == null) 
             {
-                // For a new transaction, it's "changed" if a member is selected (ready to save)
-                // or if the user has touched the amount or description.
-                return !string.IsNullOrEmpty(selectedMemberSlug) || 
-                       isAmountDirty || 
-                       description != "Versamento in cassa";
+                return true;
             }
             if (originalTxJson == null) return true;
 
@@ -156,6 +152,11 @@ namespace TripFund.App.Components.Pages
             if (currentMember != originalMember) return true;
 
             return false;
+        }
+
+        private void OnAmountBlur()
+        {
+            _amountRenderKey++;
         }
 
         public void Dispose()

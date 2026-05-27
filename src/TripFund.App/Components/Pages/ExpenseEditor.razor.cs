@@ -172,11 +172,7 @@ namespace TripFund.App.Components.Pages
         {
             if (editingInfo == null) 
             {
-                return totalAmount != 0 || 
-                       !string.IsNullOrWhiteSpace(description) || 
-                       attachments.Any(a => !a.IsExisting) || 
-                       locationInfo != null || 
-                       selectedCategorySlug != null;
+                return true;
             }
             if (originalTxJson == null) return true;
 
@@ -197,6 +193,7 @@ namespace TripFund.App.Components.Pages
             if (currentTx.Amount != original.Amount) return true;
             if (currentTx.Description != original.Description) return true;
             if (currentTx.Currency != original.Currency) return true;
+            if (currentTx.Category != original.Category) return true;
             if (currentTx.Timezone != original.Timezone) return true;
             
             // Compare dates with a small tolerance or by formatted string to avoid precision issues
@@ -228,6 +225,11 @@ namespace TripFund.App.Components.Pages
             if (!currentAttNames.SequenceEqual(originalAttNames)) return true;
 
             return false;
+        }
+
+        private void OnAmountBlur()
+        {
+            _amountRenderKey++;
         }
 
         public void Dispose()

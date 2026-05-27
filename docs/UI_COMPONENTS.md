@@ -98,3 +98,22 @@ These small, circular red buttons provide a fast way to remove auxiliary items (
   - **Immediate Action:** Unlike destructive actions in context menus, Remove Bullets trigger immediate removal. This is permitted because the action is localized and easily reversible (e.g., re-attaching the file or re-acquiring the location).
   - **Feedback:** On `:active`, the button must scale down slightly (`transform: scale(0.9)`) to provide tactile feedback.
   - **Accessibility:** Since they lack visible text, they must include an appropriate `aria-label` (e.g., "Rimuovi allegato" or "Rimuovi posizione") in Italian.
+
+## 11. Form Submission & Save Behavior
+
+This section defines the interaction rules for the primary action button (usually "Salva" or "Crea") within editor forms.
+
+### Creation Mode (New Entities)
+- **Button State:** The primary action button (e.g., "Salva" or "Crea") must **always be enabled** when creating a new entity (transaction, trip configuration, etc.).
+- **Validation:** If the user clicks the button while the form contains invalid or missing values, a red error message must be displayed immediately above the button. The button remains enabled to allow the user to correct the errors and retry.
+
+### Edit Mode (Existing Entities)
+- **Button State:** The primary action button (e.g., "Salva") must be **disabled by default** upon entering the editor.
+- **Change Detection:** The button must enable as soon as any field in the form (textbox, date, time, dropdown, toggle, etc.) is modified to a value that differs from the original saved state.
+- **Restoration Behavior:** If the user manually restores all modified fields to their original saved values, the button must be **automatically disabled** again.
+- **Goal:** This prevents unnecessary commits of entities that have not provided a new state.
+
+### Amount Inputs & Formatting
+- **Decimal Enforcement:** Amount input controls must strictly apply their decimal formatting (based on the currency configuration) every time the focus is lost (blur event), even if the underlying numeric value hasn't changed.
+- **Example:** If a currency requires 4 decimals and the current value is `2,0000`, if the user edits it to `2,0` and tabs away, the input must automatically reformat back to `2,0000`.
+- **Implementation Note:** In Blazor, this is achieved by incrementing a dedicated render key variable (bound to the input's `@key`) during the `@onblur` event, forcing the UI to re-sync with the formatted value from the component's state.
