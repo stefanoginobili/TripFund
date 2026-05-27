@@ -1,5 +1,5 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk.Razor">
-
+    
     <PropertyGroup>
         <TargetFrameworks>net9.0;net9.0-android;net9.0-ios</TargetFrameworks>
 
@@ -33,18 +33,17 @@
         <ValidateXcodeVersion>false</ValidateXcodeVersion>
     </PropertyGroup>
 
-    <PropertyGroup Condition="'$(Configuration)' == 'Debug'">
-        <ApplicationVersion>2</ApplicationVersion>
-        <ApplicationDisplayVersion>1.0.1-dev</ApplicationDisplayVersion>
-        <ApplicationTitle>TripFund (Dev)</ApplicationTitle>
-        <ApplicationId>com.stefanoginobili.tripfund.app.dev</ApplicationId>
+    <PropertyGroup>
+        <ApplicationId>com.stefanoginobili.tripfund.app</ApplicationId>
+        <ApplicationTitle>TripFund</ApplicationTitle>
+        <ApplicationVersion>3</ApplicationVersion>
+        <ApplicationDisplayVersion>1.0.2</ApplicationDisplayVersion>
     </PropertyGroup>
 
-    <PropertyGroup Condition="'$(Configuration)' == 'Release'">
-        <ApplicationVersion>2</ApplicationVersion>
-        <ApplicationDisplayVersion>1.0.1</ApplicationDisplayVersion>
-        <ApplicationTitle>TripFund</ApplicationTitle>
-        <ApplicationId>com.stefanoginobili.tripfund.app</ApplicationId>
+    <PropertyGroup Condition="'$(Configuration)' == 'Debug'">
+        <ApplicationDisplayVersion>$(ApplicationDisplayVersion)-dev</ApplicationDisplayVersion>
+        <ApplicationTitle>$(ApplicationTitle) (Dev)</ApplicationTitle>
+        <ApplicationId>$(ApplicationId).dev</ApplicationId>
     </PropertyGroup>
 
     <ItemGroup>
