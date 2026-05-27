@@ -1,0 +1,91 @@
+name: Build and Sign TripFund Android App Bundles
+
+on:
+  workflow_dispatch:
+    inputs:
+      app_display_version:
+        description: 'Next ApplicationDisplayVersion (e.g. 1.0.4)'
+        required: true
+
+jobs:
+  build:
+    name: Build Android App Bundle
+    runs-on: macos-latest
+    permissions:
+      contents: write
+
+    steps:
+    - name: Checkout Repository
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+
+    - name: Setup .NET 9
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: '9.0.x'
+
+    - name: Install MAUI Workload
+      run: dotnet workload install maui-android maui-ios
+
+    - name: Update Version and Commit
+      run: |
+        PROJECT_FILE="src/TripFund.App/TripFund.App.csproj"
+        DISPLAY_VERSION="${{ github.event.inputs.app_display_version }}"
+        
+        # Extract current ApplicationVersion
+        CURRENT_VERSION=$(grep -oE '<ApplicationVersion>[0-9]+</ApplicationVersion>' "$PROJECT_FILE" | sed -E 's/<ApplicationVersion>([0-9]+)<\/ApplicationVersion>/\1/')
+        
+        # Increment ApplicationVersion by 1
+        NEW_VERSION=$((CURRENT_VERSION + 1))
+        
+        echo "Updating ApplicationVersion from $CURRENT_VERSION to $NEW_VERSION"
+        echo "Updating ApplicationDisplayVersion to $DISPLAY_VERSION"
+
+        # Update ApplicationVersion in file
+        sed -i '' "s|<ApplicationVersion>.*</ApplicationVersion>|<ApplicationVersion>$NEW_VERSION</ApplicationVersion>|" "$PROJECT_FILE"
+        
+        # Update ApplicationDisplayVersion in file
+        sed -i '' "s|<ApplicationDisplayVersion>.*</ApplicationDisplayVersion>|<ApplicationDisplayVersion>$DISPLAY_VERSION</ApplicationDisplayVersion>|" "$PROJECT_FILE"
+        
+        # Commit and Push
+        git config user.name "github-actions[bot]"
+        git config user.email "github-actions[bot]@users.noreply.github.com"
+        git add "$PROJECT_FILE"
+        git commit -m "pipeline: version bump to $DISPLAY_VERSION ($NEW_VERSION)"
+        git push origin main
+
+    - name: Decode Keystore File
+      run: echo "${{ secrets.KEYSTORE_FILE_BASE64 }}" | base64 --decode > tripfund.keystore
+
+    - name: Publish and Sign AAB
+      run: |
+        dotnet publish src/TripFund.App/TripFund.App.csproj \
+          -f net9.0-android \
+          -c Release \
+          /p:AndroidPackageFormat=aab \
+          /p:AndroidKeyStore=true \
+          /p:AndroidSigningKeyAlias="${{ secrets.KEY_ALIAS }}" \
+          /p:AndroidSigningStorePass="${{ secrets.KEYSTORE_PASSWORD }}" \
+          /p:AndroidSigningKeyPass="${{ secrets.KEY_PASSWORD }}" \
+          /p:AndroidSigningKeyStore="$GITHUB_WORKSPACE/tripfund.keystore"
+
+    - name: Publish and Sign APK
+      run: |
+        dotnet publish src/TripFund.App/TripFund.App.csproj \
+          -f net9.0-android \
+          -c Release \
+          /p:AndroidPackageFormat=apk \
+          /p:AndroidKeyStore=true \
+          /p:AndroidSigningKeyAlias="${{ secrets.KEY_ALIAS }}" \
+          /p:AndroidSigningStorePass="${{ secrets.KEYSTORE_PASSWORD }}" \
+          /p:AndroidSigningKeyPass="${{ secrets.KEY_PASSWORD }}" \
+          /p:AndroidSigningKeyStore="$GITHUB_WORKSPACE/tripfund.keystore"
+
+    - name: Upload Signed Artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: TripFund-Signed-Android
+        path: |
+          src/TripFund.App/bin/Release/net9.0-android/*-Signed.aab
+          src/TripFund.App/bin/Release/net9.0-android/*-Signed.apk
