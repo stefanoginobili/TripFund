@@ -55,7 +55,7 @@
                     </div>
                     <label class="tile-label">Importo Versamento</label>
                     <div class="amount-section">
-                        <span class="amount-symbol">@GetCurrencySymbol()</span>
+                        <span class="currency-symbol">@selectedCurrency</span>
                         <input @key="@($"amount-{_amountRenderKey}")" type="text" inputmode="@(GetDecimals() > 0 ? "decimal" : "numeric")" class="amount-input" value="@amount.ToString("F" + GetDecimals())" @onchange="OnAmountChanged" @onblur="OnAmountBlur" onfocus="appLogic.selectText(this)" />
                     </div>
                     </div>

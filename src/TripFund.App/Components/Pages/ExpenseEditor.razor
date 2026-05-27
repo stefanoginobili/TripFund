@@ -55,8 +55,8 @@
                     </div>
                     <label class="tile-label">IMPORTO SPESA</label>
                     <div class="amount-section">
-                        <span class="amount-symbol">@GetCurrencySymbol()</span>
-                        <input @key="@($"total-amount-{_amountRenderKey}")" type="text" inputmode="@(GetDecimals() > 0 ? "decimal" : "numeric")" class="amount-input" value="@totalAmount.ToString("F" + GetDecimals())" @onchange="OnAmountChanged" @onblur="OnAmountBlur" onfocus="appLogic.selectText(this)" />
+                        <span class="currency-symbol">@selectedCurrency</span>
+                        <input @key="@($"total-amount-{_amountRenderKey}")" type="text" inputmode="@(GetDecimals() > 0 ? "decimal" : "numeric")" class="amount-input" value="@totalAmount.ToString("F" + GetDecimals())" @onchange="OnAmountChanged" @onblur="OnAmountBlur" onfocus="appLogic.selectText(this)"/>
                     </div>
                 </div>
 
@@ -378,14 +378,3 @@
     .mt-2 { margin-top: 0.5rem; }
     .mb-4 { margin-bottom: 2rem; }
 </style>
-
-@code {
-    private string GetCurrencySymbol()
-    {
-        if (config != null && config.Currencies.TryGetValue(selectedCurrency, out var c))
-        {
-            return c.Symbol;
-        }
-        return "";
-    }
-}
