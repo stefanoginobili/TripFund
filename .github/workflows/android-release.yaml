@@ -1,0 +1,42 @@
+name: Build and Sign TripFund Android Release
+
+on:
+  push:
+    branches: [ "main" ]
+  workflow_dispatch: # Allows you to trigger the build manually from the GitHub UI
+
+jobs:
+  build:
+    runs-on: macos-latest
+
+    steps:
+    - name: Checkout Repository
+      uses: actions/checkout@v4
+
+    - name: Setup .NET 9
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: '9.0.x'
+
+    - name: Install MAUI Workload
+      run: dotnet workload install maui-android maui-ios
+
+    - name: Decode Keystore File
+      run: echo "${{ secrets.KEYSTORE_FILE_BASE64 }}" | base64 --decode > tripfund.keystore
+
+    - name: Publish and Sign App
+      run: |
+        dotnet publish src/TripFund.App/TripFund.App.csproj \
+          -f net9.0-android \
+          -c Release \
+          /p:AndroidKeyStore=true \
+          /p:AndroidSigningKeyAlias="${{ secrets.KEY_ALIAS }}" \
+          /p:AndroidSigningStorePass="${{ secrets.KEYSTORE_PASSWORD }}" \
+          /p:AndroidSigningKeyPass="${{ secrets.KEY_PASSWORD }}" \
+          /p:AndroidSigningKeyStore="$GITHUB_WORKSPACE/tripfund.keystore"
+
+    - name: Upload Signed Artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: TripFund-Signed-AAB
+        path: 'src/TripFund.App/bin/Release/net9.0-android/com.stefanoginobili.tripfund.app-Signed.aab'
