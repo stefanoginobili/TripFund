@@ -234,6 +234,7 @@ public class CurrencySelectorVisibilityTests : BunitContext
             Members = new Dictionary<string, User> { { memberSlug, new User { Name = "Mario" } } }
         };
         _tripStorageMock.Setup(ts => ts.GetTripConfigAsync()).ReturnsAsync(config);
+        _alertMock.Setup(a => a.ConfirmAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<AlertType>(), It.IsAny<string>())).ReturnsAsync(true);
         
         var nav = Services.GetRequiredService<NavigationManager>();
         var navService = Services.GetRequiredService<INavigationService>();

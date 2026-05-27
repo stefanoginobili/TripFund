@@ -790,6 +790,7 @@ public class TransactionFormTests : BunitContext
             Members = new Dictionary<string, User> { { memberSlug, new User { Name = "Mario" } } }
         };
         _tripStorageMock.Setup(s => s.GetTripConfigAsync()).ReturnsAsync(config);
+        _alertMock.Setup(a => a.ConfirmAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<AlertType>(), It.IsAny<string>())).ReturnsAsync(true);
         
         var nav = Services.GetRequiredService<NavigationManager>();
         var navService = Services.GetRequiredService<INavigationService>();
@@ -820,9 +821,9 @@ public class TransactionFormTests : BunitContext
 
         var cut = Render<ExpenseEditor>(parameters => parameters.Add(p => p.tripSlug, tripSlug));
 
-        // Initial state: Save button should be disabled (refined HasChanges logic)
+        // Initial state: Save button should be enabled (HasChanges returns true for new items)
         var saveBtn = cut.Find(".btn-primary-vibe");
-        saveBtn.HasAttribute("disabled").Should().BeTrue();
+        saveBtn.HasAttribute("disabled").Should().BeFalse();
 
         // Act: Enter amount
         cut.Find(".amount-input").Change("10,00");
@@ -847,9 +848,9 @@ public class TransactionFormTests : BunitContext
 
         var cut = Render<ContributionEditor>(parameters => parameters.Add(p => p.tripSlug, tripSlug));
 
-        // Initial state: Save button should be disabled (refined HasChanges logic)
+        // Initial state: Save button should be enabled (HasChanges returns true for new items)
         var saveBtn = cut.Find(".btn-primary-vibe");
-        saveBtn.HasAttribute("disabled").Should().BeTrue();
+        saveBtn.HasAttribute("disabled").Should().BeFalse();
 
         // Act: Change amount
         cut.Find(".amount-input").Change("50,00");

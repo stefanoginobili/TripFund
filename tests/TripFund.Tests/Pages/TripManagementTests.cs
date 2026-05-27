@@ -257,9 +257,9 @@ public class TripManagementTests : BunitContext
         // Act 2: Click "Aggiungi Partecipante"
         await cut.FindAll(".add-item-dashed").First(e => e.TextContent.Contains("Partecipante")).ClickAsync();
 
-        // Assert: Mario edit form is closed, New Member form is open
-        cut.FindAll(".member-edit-container").Should().BeEmpty();
-        cut.FindAll(".new-member-form").Should().NotBeEmpty();
+        // Assert: Mario edit form is STILL open, New Member form is NOT open
+        cut.FindAll(".member-edit-container").Should().NotBeEmpty();
+        cut.FindAll("#new-member-form").Should().BeEmpty();
     }
 
     [Fact]
