@@ -9,6 +9,8 @@ jobs:
   test:
     name: Run Unit Tests
     runs-on: macos-latest
+    permissions:
+      checks: write
     # Skip runs where the commit message starts with 'wip:' (case-insensitive)
     if: ${{ !startsWith(github.event.head_commit.message, 'wip:') }}
 
@@ -28,4 +30,12 @@ jobs:
         run: dotnet restore tests/TripFund.Tests/TripFund.Tests.csproj
 
       - name: Run tests
-        run: dotnet test tests/TripFund.Tests/TripFund.Tests.csproj --no-restore --verbosity normal
+        run: dotnet test tests/TripFund.Tests/TripFund.Tests.csproj --no-restore --verbosity normal --logger "trx;LogFileName=test-results.trx"
+
+      - name: Test Report
+        uses: dorny/test-reporter@v1
+        if: success() || failure()
+        with:
+          name: .NET Tests Report
+          path: '**/test-results.trx'
+          reporter: dotnet-trx
