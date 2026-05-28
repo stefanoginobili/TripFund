@@ -33,23 +33,20 @@
         <ValidateXcodeVersion>false</ValidateXcodeVersion>
     </PropertyGroup>
 
-    <PropertyGroup>
-        <TripFundSequentialVersion>4</TripFundSequentialVersion>
-        <TripFundDisplayVersion>1.0.3</TripFundDisplayVersion>
-    </PropertyGroup>
+    <Import Project="Version.props" />
 
     <PropertyGroup Condition="'$(Configuration)' == 'Debug'">
         <ApplicationId>com.stefanoginobili.tripfund.app.dev</ApplicationId>
         <ApplicationTitle>TripFund (Dev)</ApplicationTitle>
         <ApplicationVersion>0</ApplicationVersion>
-        <ApplicationDisplayVersion>$(TripFundDisplayVersion)-dev</ApplicationDisplayVersion>
+        <ApplicationDisplayVersion>$(TripFundDisplayVersion).$(TripFundSequentialVersion)-dev</ApplicationDisplayVersion>
     </PropertyGroup>
 
     <PropertyGroup Condition="'$(Configuration)' == 'Release'">
         <ApplicationId>com.stefanoginobili.tripfund.app</ApplicationId>
         <ApplicationTitle>TripFund</ApplicationTitle>
         <ApplicationVersion>$(TripFundSequentialVersion)</ApplicationVersion>
-        <ApplicationDisplayVersion>$(TripFundDisplayVersion)</ApplicationDisplayVersion>
+        <ApplicationDisplayVersion>$(TripFundDisplayVersion).$(TripFundSequentialVersion)</ApplicationDisplayVersion>
     </PropertyGroup>
 
     <ItemGroup>

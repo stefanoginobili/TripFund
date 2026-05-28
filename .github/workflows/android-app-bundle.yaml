@@ -4,8 +4,8 @@ on:
   workflow_dispatch:
     inputs:
       app_display_version:
-        description: 'Next display version (e.g. 1.0.4)'
-        required: true
+        description: 'Next display version'
+        required: false
 
 jobs:
   build:
@@ -16,12 +16,12 @@ jobs:
 
     steps:
     - name: Checkout Repository
-      uses: actions/checkout@v4
+      uses: actions/checkout@v6
       with:
         fetch-depth: 0
 
     - name: Setup .NET 9
-      uses: actions/setup-dotnet@v4
+      uses: actions/setup-dotnet@v5
       with:
         dotnet-version: '9.0.x'
 
@@ -30,7 +30,7 @@ jobs:
 
     - name: Update Version and Commit
       run: |
-        PROJECT_FILE="src/TripFund.App/TripFund.App.csproj"
+        PROJECT_FILE="src/TripFund.App/Version.props"
         DISPLAY_VERSION="${{ github.event.inputs.app_display_version }}"
         
         # Extract current TripFundSequentialVersion
@@ -40,20 +40,27 @@ jobs:
         NEW_VERSION=$((CURRENT_VERSION + 1))
         
         echo "Updating TripFundSequentialVersion from $CURRENT_VERSION to $NEW_VERSION"
-        echo "Updating TripFundDisplayVersion to $DISPLAY_VERSION"
 
         # Update TripFundSequentialVersion in file
-        sed -i '' "s|<TripFundSequentialVersion>[0-9]+</TripFundSequentialVersion>|<TripFundSequentialVersion>$NEW_VERSION</TripFundSequentialVersion>|" "$PROJECT_FILE"
+        sed -i '' -E "s|<TripFundSequentialVersion>[0-9]+</TripFundSequentialVersion>|<TripFundSequentialVersion>$NEW_VERSION</TripFundSequentialVersion>|" "$PROJECT_FILE"
         
-        # Update TripFundDisplayVersion in file
-        sed -i '' "s|<TripFundDisplayVersion>.*</TripFundDisplayVersion>|<TripFundDisplayVersion>$DISPLAY_VERSION</TripFundDisplayVersion>|" "$PROJECT_FILE"
+        COMMIT_MSG="pipeline: version bump to $NEW_VERSION"
+
+        # Update TripFundDisplayVersion in file ONLY if provided
+        if [ -n "$DISPLAY_VERSION" ]; then
+          echo "Updating TripFundDisplayVersion to $DISPLAY_VERSION"
+          sed -i '' -E "s|<TripFundDisplayVersion>.*</TripFundDisplayVersion>|<TripFundDisplayVersion>$DISPLAY_VERSION</TripFundDisplayVersion>|" "$PROJECT_FILE"
+          COMMIT_MSG="pipeline: version bump to $DISPLAY_VERSION ($NEW_VERSION)"
+        else
+          echo "Skipping TripFundDisplayVersion update (not provided)"
+        fi
         
         # Commit and Push
         git config user.name "github-actions[bot]"
         git config user.email "github-actions[bot]@users.noreply.github.com"
         git add "$PROJECT_FILE"
-        git commit -m "pipeline: version bump to $DISPLAY_VERSION ($NEW_VERSION)"
-        git push origin main
+        git commit -m "$COMMIT_MSG"
+        git push origin HEAD:${{ github.ref_name }}
 
     - name: Decode Keystore File
       run: echo "${{ secrets.KEYSTORE_FILE_BASE64 }}" | base64 --decode > tripfund.keystore
@@ -83,7 +90,7 @@ jobs:
           /p:AndroidSigningKeyStore="$GITHUB_WORKSPACE/tripfund.keystore"
 
     - name: Upload Signed Artifacts
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v6
       with:
         name: TripFund-Signed-Android
         path: |
