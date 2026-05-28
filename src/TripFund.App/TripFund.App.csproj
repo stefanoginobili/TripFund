@@ -34,16 +34,22 @@
     </PropertyGroup>
 
     <PropertyGroup>
-        <ApplicationId>com.stefanoginobili.tripfund.app</ApplicationId>
-        <ApplicationTitle>TripFund</ApplicationTitle>
-        <ApplicationVersion>4</ApplicationVersion>
-        <ApplicationDisplayVersion>1.0.3</ApplicationDisplayVersion>
+        <TripFundSequentialVersion>4</TripFundSequentialVersion>
+        <TripFundDisplayVersion>1.0.3</TripFundDisplayVersion>
     </PropertyGroup>
 
     <PropertyGroup Condition="'$(Configuration)' == 'Debug'">
-        <ApplicationDisplayVersion>$(ApplicationDisplayVersion)-dev</ApplicationDisplayVersion>
-        <ApplicationTitle>$(ApplicationTitle) (Dev)</ApplicationTitle>
-        <ApplicationId>$(ApplicationId).dev</ApplicationId>
+        <ApplicationId>com.stefanoginobili.tripfund.app.dev</ApplicationId>
+        <ApplicationTitle>TripFund (Dev)</ApplicationTitle>
+        <ApplicationVersion>0</ApplicationVersion>
+        <ApplicationDisplayVersion>$(TripFundDisplayVersion)-dev</ApplicationDisplayVersion>
+    </PropertyGroup>
+
+    <PropertyGroup Condition="'$(Configuration)' == 'Release'">
+        <ApplicationId>com.stefanoginobili.tripfund.app</ApplicationId>
+        <ApplicationTitle>TripFund</ApplicationTitle>
+        <ApplicationVersion>$(TripFundSequentialVersion)</ApplicationVersion>
+        <ApplicationDisplayVersion>$(TripFundDisplayVersion)</ApplicationDisplayVersion>
     </PropertyGroup>
 
     <ItemGroup>
