@@ -264,7 +264,7 @@
                     </div>
                 }
 
-                <button class="btn-vibe btn-primary-vibe mt-2 mb-4" @onclick="HandleSubmit" disabled="@(isSubmitting || isLocating || !HasChanges())">
+                <button class="btn-vibe btn-primary-vibe mt-2 mb-4" @onclick="HandleSubmit" disabled="@(isSubmitting || isLocating || (!HasChanges() && editingInfo != null))">
                     @(isSubmitting ? "Salvataggio..." : "Salva")
                 </button>
             </div>

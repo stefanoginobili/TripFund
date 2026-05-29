@@ -164,17 +164,15 @@ namespace TripFund.App.Components.Pages
                     // Default all to included/auto if new
                     foreach (var m in memberSplits) m.IsIncluded = true;
                     RecalculateSplit();
+                    
+                    originalTxJson = System.Text.Json.JsonSerializer.Serialize(BuildTransaction());
                 }
             }
         }
 
         private bool HasChanges()
         {
-            if (editingInfo == null) 
-            {
-                return true;
-            }
-            if (originalTxJson == null) return true;
+            if (originalTxJson == null) return false;
 
             var currentTx = BuildTransaction();
             

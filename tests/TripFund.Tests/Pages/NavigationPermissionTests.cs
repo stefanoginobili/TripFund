@@ -131,4 +131,72 @@ public class NavigationPermissionTests : BunitContext
         navManager.Uri.Should().Be("http://localhost/");
         navService.StackCount.Should().Be(0);
     }
+
+    [Fact]
+    public async Task ExpenseEditor_Back_ShouldNOTBeGated_IfNoChanges()
+    {
+        // Arrange
+        var tripSlug = "test-trip";
+        var config = new TripConfig
+        {
+            Id = "123",
+            Name = "Test Trip",
+            Currencies = new Dictionary<string, Currency> { { "EUR", new Currency { Symbol = "€" } } },
+            Members = new Dictionary<string, User> { { "mario", new User { Name = "Mario" } } }
+        };
+        _tripStorageMock.Setup(s => s.GetTripConfigAsync()).ReturnsAsync(config);
+        _tripStorageMock.Setup(s => s.GetTransactionsAsync()).ReturnsAsync(new List<Transaction>());
+        _storageMock.Setup(s => s.GetAppSettingsAsync()).ReturnsAsync(new AppSettings());
+
+        var navService = Services.GetRequiredService<INavigationService>();
+        var navManager = Services.GetRequiredService<NavigationManager>();
+
+        // Set up stack
+        await navService.NavigateAsync("/", $"/trip/{tripSlug}/expense");
+
+        var cut = Render<ExpenseEditor>(parameters => parameters.Add(p => p.tripSlug, tripSlug));
+
+        // Act - Trigger Back WITHOUT changes
+        var handled = await navService.GoBackAsync();
+
+        // Assert
+        handled.Should().BeTrue();
+        navManager.Uri.Should().Be("http://localhost/");
+        navService.StackCount.Should().Be(0);
+        _alertMock.Verify(a => a.ConfirmAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<AlertType>(), It.IsAny<string>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task ContributionEditor_Back_ShouldNOTBeGated_IfNoChanges()
+    {
+        // Arrange
+        var tripSlug = "test-trip";
+        var config = new TripConfig
+        {
+            Id = "123",
+            Name = "Test Trip",
+            Currencies = new Dictionary<string, Currency> { { "EUR", new Currency { Symbol = "€" } } },
+            Members = new Dictionary<string, User> { { "mario", new User { Name = "Mario" } } }
+        };
+        _tripStorageMock.Setup(s => s.GetTripConfigAsync()).ReturnsAsync(config);
+        _tripStorageMock.Setup(s => s.GetTransactionsAsync()).ReturnsAsync(new List<Transaction>());
+        _storageMock.Setup(s => s.GetAppSettingsAsync()).ReturnsAsync(new AppSettings());
+
+        var navService = Services.GetRequiredService<INavigationService>();
+        var navManager = Services.GetRequiredService<NavigationManager>();
+
+        // Set up stack
+        await navService.NavigateAsync("/", $"/trip/{tripSlug}/contribution");
+
+        var cut = Render<ContributionEditor>(parameters => parameters.Add(p => p.tripSlug, tripSlug));
+
+        // Act - Trigger Back WITHOUT changes
+        var handled = await navService.GoBackAsync();
+
+        // Assert
+        handled.Should().BeTrue();
+        navManager.Uri.Should().Be("http://localhost/");
+        navService.StackCount.Should().Be(0);
+        _alertMock.Verify(a => a.ConfirmAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<AlertType>(), It.IsAny<string>()), Times.Never);
+    }
 }

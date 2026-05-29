@@ -806,7 +806,7 @@ public class TransactionFormTests : BunitContext
     }
 
     [Fact]
-    public void ExpenseEditor_New_ShouldInitiallyHaveSaveButtonDisabled()
+    public void ExpenseEditor_New_ShouldInitiallyHaveSaveButtonEnabled()
     {
         // Arrange
         var tripSlug = "test-trip";
@@ -833,7 +833,7 @@ public class TransactionFormTests : BunitContext
     }
 
     [Fact]
-    public void ContributionEditor_New_ShouldInitiallyHaveSaveButtonDisabled()
+    public void ContributionEditor_New_ShouldInitiallyHaveSaveButtonEnabled()
     {
         // Arrange
         var tripSlug = "test-trip";

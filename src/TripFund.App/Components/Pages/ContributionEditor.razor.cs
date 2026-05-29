@@ -102,6 +102,7 @@ namespace TripFund.App.Components.Pages
                     }
 
                     SetDefaultAmount();
+                    originalTxJson = System.Text.Json.JsonSerializer.Serialize(BuildTransaction());
                 }
             }
         }
@@ -126,11 +127,7 @@ namespace TripFund.App.Components.Pages
 
         private bool HasChanges()
         {
-            if (editingTransaction == null) 
-            {
-                return true;
-            }
-            if (originalTxJson == null) return true;
+            if (originalTxJson == null) return false;
 
             var currentTx = BuildTransaction();
             currentTx.Description = currentTx.Description?.Trim() ?? "";
