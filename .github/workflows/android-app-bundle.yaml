@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       app_display_version:
-        description: 'Next display version'
+        description: 'Next display version in M.m.p format or keywords major, minor, patch'
         required: false
 
 jobs:
@@ -30,27 +30,56 @@ jobs:
 
     - name: Update Version and Commit
       run: |
-        PROJECT_FILE="src/TripFund.App/Version.props"
+        VERSION_FILE="src/TripFund.App/Version.props"
         DISPLAY_VERSION="${{ github.event.inputs.app_display_version }}"
         
         # Extract current TripFundSequentialVersion
-        CURRENT_VERSION=$(grep -oE '<TripFundSequentialVersion>[0-9]+</TripFundSequentialVersion>' "$PROJECT_FILE" | sed -E 's/<TripFundSequentialVersion>([0-9]+)<\/TripFundSequentialVersion>/\1/')
+        CURRENT_SEQ_VERSION=$(grep -oE '<TripFundSequentialVersion>[0-9]+</TripFundSequentialVersion>' "$VERSION_FILE" | sed -E 's/<TripFundSequentialVersion>([0-9]+)<\/TripFundSequentialVersion>/\1/')
         
         # Increment TripFundSequentialVersion by 1
-        NEW_VERSION=$((CURRENT_VERSION + 1))
+        NEW_SEQ_VERSION=$((CURRENT_SEQ_VERSION + 1))
         
-        echo "Updating TripFundSequentialVersion from $CURRENT_VERSION to $NEW_VERSION"
+        echo "Updating TripFundSequentialVersion from $CURRENT_SEQ_VERSION to $NEW_SEQ_VERSION"
 
         # Update TripFundSequentialVersion in file
-        sed -i '' -E "s|<TripFundSequentialVersion>[0-9]+</TripFundSequentialVersion>|<TripFundSequentialVersion>$NEW_VERSION</TripFundSequentialVersion>|" "$PROJECT_FILE"
+        sed -i '' -E "s|<TripFundSequentialVersion>[0-9]+</TripFundSequentialVersion>|<TripFundSequentialVersion>$NEW_SEQ_VERSION</TripFundSequentialVersion>|" "$VERSION_FILE"
         
-        COMMIT_MSG="pipeline: version bump to $NEW_VERSION"
+        COMMIT_MSG="pipeline: version bump to $NEW_SEQ_VERSION"
 
-        # Update TripFundDisplayVersion in file ONLY if provided
+        # Handle TripFundDisplayVersion
         if [ -n "$DISPLAY_VERSION" ]; then
+          # Extract current TripFundDisplayVersion
+          CURRENT_DISPLAY_VERSION=$(grep -oE '<TripFundDisplayVersion>.*</TripFundDisplayVersion>' "$VERSION_FILE" | sed -E 's/<TripFundDisplayVersion>(.*)<\/TripFundDisplayVersion>/\1/')
+
+          if [[ "$DISPLAY_VERSION" == "major" || "$DISPLAY_VERSION" == "minor" || "$DISPLAY_VERSION" == "patch" ]]; then
+            echo "Processing keyword: $DISPLAY_VERSION"
+            if [[ ! "$CURRENT_DISPLAY_VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+              echo "Error: Current version '$CURRENT_DISPLAY_VERSION' is not in 'a.b.c' format. Cannot apply keyword '$DISPLAY_VERSION'."
+              exit 1
+            fi
+
+            IFS='.' read -r MAJOR MINOR PATCH <<< "$CURRENT_DISPLAY_VERSION"
+            
+            case "$DISPLAY_VERSION" in
+              major)
+                MAJOR=$((MAJOR + 1))
+                MINOR=0
+                PATCH=0
+                ;;
+              minor)
+                MINOR=$((MINOR + 1))
+                PATCH=0
+                ;;
+              patch)
+                PATCH=$((PATCH + 1))
+                ;;
+            esac
+            DISPLAY_VERSION="$MAJOR.$MINOR.$PATCH"
+          fi
+
           echo "Updating TripFundDisplayVersion to $DISPLAY_VERSION"
-          sed -i '' -E "s|<TripFundDisplayVersion>.*</TripFundDisplayVersion>|<TripFundDisplayVersion>$DISPLAY_VERSION</TripFundDisplayVersion>|" "$PROJECT_FILE"
-          COMMIT_MSG="pipeline: version bump to $DISPLAY_VERSION ($NEW_VERSION)"
+          sed -i '' -E "s|<TripFundDisplayVersion>.*</TripFundDisplayVersion>|<TripFundDisplayVersion>$DISPLAY_VERSION</TripFundDisplayVersion>|" "$VERSION_FILE"
+          COMMIT_MSG="pipeline: version bump to $DISPLAY_VERSION ($NEW_SEQ_VERSION)"
         else
           echo "Skipping TripFundDisplayVersion update (not provided)"
         fi
@@ -58,7 +87,7 @@ jobs:
         # Commit and Push
         git config user.name "github-actions[bot]"
         git config user.email "github-actions[bot]@users.noreply.github.com"
-        git add "$PROJECT_FILE"
+        git add "$VERSION_FILE"
         git commit -m "$COMMIT_MSG"
         git push origin HEAD:${{ github.ref_name }}
 
