@@ -1,10 +1,10 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk.Razor">
     
     <PropertyGroup>
-        <TargetFrameworks>net9.0;net9.0-android;net9.0-ios</TargetFrameworks>
+        <TargetFrameworks>net10.0;net10.0-android;net10.0-ios</TargetFrameworks>
 
-        <OutputType Condition="'$(TargetFramework)' != 'net9.0'">Exe</OutputType>
-        <OutputType Condition="'$(TargetFramework)' == 'net9.0'">Library</OutputType>
+        <OutputType Condition="'$(TargetFramework)' != 'net10.0'">Exe</OutputType>
+        <OutputType Condition="'$(TargetFramework)' == 'net10.0'">Library</OutputType>
         <RootNamespace>TripFund.App</RootNamespace>
         <UseMaui>true</UseMaui>
         <SingleProject>true</SingleProject>
@@ -71,15 +71,15 @@
 
     <ItemGroup>
         <PackageReference Include="Microsoft.Extensions.Http" Version="10.0.5" />
-        <PackageReference Include="Microsoft.Extensions.Http.Resilience" Version="9.0.0" />
+        <PackageReference Include="Microsoft.Extensions.Http.Resilience" Version="10.0.0" />
         <PackageReference Include="Microsoft.Maui.Controls" Version="$(MauiVersion)" />
         <PackageReference Include="Microsoft.AspNetCore.Components.WebView.Maui" Version="$(MauiVersion)" />
         <PackageReference Include="Microsoft.Extensions.Logging.Debug" Version="10.0.0" />
-        <PackageReference Include="Microsoft.AspNetCore.WebUtilities" Version="9.0.0" />
+        <PackageReference Include="Microsoft.AspNetCore.WebUtilities" Version="10.0.0" />
         <PackageReference Include="PDFsharp" Version="6.2.4" />
     </ItemGroup>
 
-    <Target Name="SwitchInfoPlist" BeforeTargets="BeforeBuild" Condition="'$(TargetFramework)' == 'net9.0-ios'">
+    <Target Name="SwitchInfoPlist" BeforeTargets="BeforeBuild" Condition="'$(TargetFramework)' == 'net10.0-ios'">
         <Copy SourceFiles="Platforms\iOS\Info.dev.plist" DestinationFiles="Platforms\iOS\Info.plist" Condition="'$(Configuration)' == 'Debug'" OverwriteReadOnlyFiles="true" />
         <Copy SourceFiles="Platforms\iOS\Info.prod.plist" DestinationFiles="Platforms\iOS\Info.plist" Condition="'$(Configuration)' == 'Release'" OverwriteReadOnlyFiles="true" />
     </Target>

@@ -7,7 +7,7 @@ To build the app for the Google Play Store use the following command setting the
 ```sh
 dotnet publish src/TripFund.App/TripFund.App.csproj \
     -c Release \
-    -f net9.0-android \
+    -f net10.0-android \
     /p:AndroidKeyStore=true \
     /p:AndroidSigningKeyStore=$KEYSTORE_PATH \
     /p:AndroidSigningStorePass=$KEYSTORE_PASSWORD \
@@ -24,5 +24,5 @@ keytool -list -v -keystore $KEYSTORE_PATH -alias
 Package will be published at path
 
 ```
-src/TripFund.App/bin/Release/net9.0-android/publish/com.stefanoginobili.tripfund.app-Signed.aab
+src/TripFund.App/bin/Release/net10.0-android/publish/com.stefanoginobili.tripfund.app-Signed.aab
 ```

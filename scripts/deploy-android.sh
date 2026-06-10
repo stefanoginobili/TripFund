@@ -117,7 +117,7 @@ fi
 printf "\n${BLUE}Building and deploying to $SELECTED_SERIAL...${NC}\n"
 dotnet build "$PROJECT_PATH" \
     -t:Install \
-    -f net9.0-android \
+    -f net10.0-android \
     -p:AndroidDeviceSerial="$SELECTED_SERIAL"
 
 if [ $? -eq 0 ]; then

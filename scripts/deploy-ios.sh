@@ -114,11 +114,11 @@ printf "\n${BLUE}Building for $SELECTED_TYPE $SELECTED_ID...${NC}\n"
 if [ "$SELECTED_TYPE" == "Simulator" ]; then
     RID="iossimulator-arm64"
     # Build only
-    dotnet build "$PROJECT_PATH" -f net9.0-ios -p:RuntimeIdentifier="$RID"
+    dotnet build "$PROJECT_PATH" -f net10.0-ios -p:RuntimeIdentifier="$RID"
     
     if [ $? -eq 0 ]; then
         printf "${YELLOW}Installing and launching...${NC}\n"
-        APP_PATH="src/TripFund.App/bin/Debug/net9.0-ios/$RID/TripFund.App.app"
+        APP_PATH="src/TripFund.App/bin/Debug/net10.0-ios/$RID/TripFund.App.app"
         xcrun simctl install "$SELECTED_ID" "$APP_PATH"
         xcrun simctl launch "$SELECTED_ID" "$PACKAGE_NAME"
         printf "${GREEN}SUCCESS: App launched!${NC}\n"
@@ -129,7 +129,7 @@ if [ "$SELECTED_TYPE" == "Simulator" ]; then
 else
     RID="ios-arm64"
     # For physical devices, -t:Run is necessary but we'll try to let it finish
-    dotnet build "$PROJECT_PATH" -t:Run -f net9.0-ios -p:RuntimeIdentifier="$RID" -p:_DeviceName=:v2:udid="$SELECTED_ID"
+    dotnet build "$PROJECT_PATH" -t:Run -f net10.0-ios -p:RuntimeIdentifier="$RID" -p:_DeviceName=:v2:udid="$SELECTED_ID"
     
     if [ $? -eq 0 ]; then
         printf "\n${GREEN}SUCCESS: App launched!${NC}\n"
