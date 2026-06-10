@@ -9,7 +9,7 @@ on:
 
 jobs:
   build-android-release:
-    name: Build Android App Bundle
+    name: Build Android Release
     runs-on: macos-latest
     environment: 
       name: Google-Play-Release

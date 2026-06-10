@@ -17,7 +17,7 @@ public class MainActivity : MauiAppCompatActivity
 {
     protected override void AttachBaseContext(Context? @base)
     {
-        var locale = new Java.Util.Locale("it", "IT");
+        var locale = Java.Util.Locale.ForLanguageTag("it-IT");
         Java.Util.Locale.Default = locale;
 
         var config = new Android.Content.Res.Configuration(@base?.Resources?.Configuration);
@@ -30,7 +30,7 @@ public class MainActivity : MauiAppCompatActivity
     protected override void OnCreate(Bundle? savedInstanceState)
     {
         // Force it-IT locale for system pickers and WebView native controls
-        var locale = new Java.Util.Locale("it", "IT");
+        var locale = Java.Util.Locale.ForLanguageTag("it-IT");
         Java.Util.Locale.Default = locale;
 
         var appLocale = LocaleListCompat.ForLanguageTags("it-IT");

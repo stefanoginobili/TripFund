@@ -13,7 +13,7 @@ public class MainApplication : MauiApplication
 
 	public override void OnCreate()
 	{
-		var locale = new Java.Util.Locale("it", "IT");
+		var locale = Java.Util.Locale.ForLanguageTag("it-IT");
 		Java.Util.Locale.Default = locale;
 
 		var config = new Android.Content.Res.Configuration();
