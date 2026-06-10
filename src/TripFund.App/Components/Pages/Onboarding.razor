@@ -20,6 +20,7 @@
                 <label for="authorName" class="form-label-vibe">Nome Autore</label>
                 <input type="text" id="authorName" class="form-control-vibe" 
                        @bind="authorName" @bind:event="oninput" @onblur="TrimAuthorName" />
+                <p class="help-text">Verrà utilizzato nella "risoluzione dei conflitti" per aiutare a identificare chi ha creato una versione conflittuale di una transazione o configurazione quando i dati del viaggio sono sincronizzati su più dispositivi.</p>
             </div>
 
             <div class="form-group-vibe mb-2">
@@ -35,7 +36,7 @@
                     </span>
                 </div>
             </div>
-            <p class="help-text">Identificativo univoco del dispositivo per il versionamento.</p>
+            <p class="help-text">Identificatore di sistema utilizzato per individuare possibili conflitti durante la sincronizzazione dei dati tra dispositivi.</p>
             
         </div>
         

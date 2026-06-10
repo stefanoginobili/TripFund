@@ -9,17 +9,23 @@ using Microsoft.AspNetCore.Components;
 
 namespace TripFund.Tests.Pages;
 
-public class OnboardingTests : BunitContext
+public class SettingsTests : BunitContext
 {
     private readonly Mock<LocalStorageService> _storageMock;
 
-    public OnboardingTests()
+    public SettingsTests()
     {
         var itCulture = new System.Globalization.CultureInfo("it-IT");
         System.Globalization.CultureInfo.DefaultThreadCurrentCulture = itCulture;
         System.Globalization.CultureInfo.DefaultThreadCurrentUICulture = itCulture;
 
         _storageMock = new Mock<LocalStorageService>("dummy_path");
+        _storageMock.Setup(s => s.GetAppSettingsAsync()).ReturnsAsync(new AppSettings 
+        { 
+            AuthorName = "Test Author", 
+            DeviceId = "test-device-id" 
+        });
+
         Services.AddSingleton(_storageMock.Object);
         Services.AddSingleton<INavigationService>(sp => 
         {
@@ -30,15 +36,14 @@ public class OnboardingTests : BunitContext
     }
 
     [Fact]
-    public void Onboarding_ShouldRenderCorrectly()
+    public void Settings_ShouldRenderCorrectlyWithDescriptions()
     {
         // Act
-        var cut = Render<Onboarding>();
+        var cut = Render<Settings>();
 
         // Assert
-        cut.Find("h1").TextContent.Should().Be("TripFund");
-        cut.Find("h2").TextContent.Should().Be("Welcome on board");
-
+        cut.Find(".header-title").TextContent.Should().Be("Impostazioni");
+        
         var helpTexts = cut.FindAll(".help-text");
         helpTexts.Count.Should().Be(2);
 
@@ -47,19 +52,17 @@ public class OnboardingTests : BunitContext
     }
 
     [Fact]
-    public async Task Onboarding_Save_ShouldStoreSettingsAndNavigate()
+    public async Task Settings_Save_ShouldStoreSettings()
     {
         // Arrange
-        var nav = Services.GetRequiredService<NavigationManager>();
-        var cut = Render<Onboarding>();
-        var input = cut.Find("#authorName");
+        var cut = Render<Settings>();
+        var input = cut.Find("input[type='text']");
 
         // Act
-        input.Input("Mario Rossi");
-        cut.Find("button").Click();
+        input.Input("New Author Name");
+        cut.Find("button.btn-primary-vibe").Click();
 
         // Assert
-        _storageMock.Verify(s => s.SaveAppSettingsAsync(It.Is<AppSettings>(a => a.AuthorName == "Mario Rossi" && a.DeviceId.StartsWith("mario-rossi"))), Times.Once);
-        nav.Uri.Should().EndWith("/");
+        _storageMock.Verify(s => s.SaveAppSettingsAsync(It.Is<AppSettings>(a => a.AuthorName == "New Author Name" && a.DeviceId == "test-device-id")), Times.Once);
     }
 }
