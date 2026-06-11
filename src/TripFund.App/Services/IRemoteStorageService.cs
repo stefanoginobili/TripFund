@@ -10,6 +10,7 @@ public interface IRemoteStorageService
     Task<bool> IsRemoteLocationEmptyAsync(string provider, Dictionary<string, string> parameters);
     Task SynchronizeAsync(string tripSlug);
     string? GetRemoteUniqueId(string provider, Dictionary<string, string> parameters);
+    string? GetSuggestedTripName(string provider, Dictionary<string, string> parameters);
     bool IsSyncing(string tripSlug);
 }
 

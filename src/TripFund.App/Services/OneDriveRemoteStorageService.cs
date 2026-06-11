@@ -143,6 +143,12 @@ public class OneDriveRemoteStorageService : IRemoteStorageService, IRemoteFileSy
         return parameters.TryGetValue("folderId", out var folderId) ? folderId : null;
     }
 
+    public string? GetSuggestedTripName(string provider, Dictionary<string, string> parameters)
+    {
+        if (provider != "onedrive") return null;
+        return parameters.TryGetValue("folderName", out var name) ? name : null;
+    }
+
     public bool IsSyncing(string tripSlug) => false;
 
     public virtual async Task SynchronizeAsync(string tripSlug)

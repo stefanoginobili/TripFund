@@ -68,6 +68,16 @@ public class CompositeRemoteStorageService : IRemoteStorageService
         return null;
     }
 
+    public string? GetSuggestedTripName(string provider, Dictionary<string, string> parameters)
+    {
+        if (provider == "onedrive")
+        {
+            return _onedrive.GetSuggestedTripName(provider, parameters);
+        }
+
+        return null;
+    }
+
     public async Task SynchronizeAsync(string tripSlug)
     {
         lock (_syncingTrips)

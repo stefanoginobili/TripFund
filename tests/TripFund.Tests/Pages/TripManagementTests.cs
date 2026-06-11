@@ -117,6 +117,26 @@ public class TripManagementTests : BunitContext
     }
 
     [Fact]
+    public void CreateTrip_ShouldPreFillNameAndSlug_WhenNameIsSuggested()
+    {
+        // Arrange
+        _remoteStorageMock.Setup(r => r.GetRemoteUniqueId("onedrive", It.IsAny<Dictionary<string, string>>())).Returns("abc12345");
+        _remoteStorageMock.Setup(r => r.GetSuggestedTripName("onedrive", It.IsAny<Dictionary<string, string>>())).Returns("Suggested Trip Name");
+
+        var nav = Services.GetRequiredService<NavigationManager>();
+        nav.NavigateTo("/create-trip?provider=onedrive&folderId=abc12345&folderName=Suggested%20Trip%20Name");
+
+        var cut = Render<CreateTrip>();
+
+        // Assert
+        var nameInput = cut.Find(".form-group-vibe:nth-of-type(1) input.form-control-vibe");
+        nameInput.GetAttribute("value").Should().Be("Suggested Trip Name");
+
+        var slugInput = cut.FindAll("input").First(i => i.HasAttribute("readonly") && i.ParentElement!.ClassList.Contains("read-only"));
+        slugInput.GetAttribute("value").Should().Be("suggested-trip-name_abc12345");
+    }
+
+    [Fact]
     public async Task EditTrip_ShouldUpdateConfig()
     {
         // Arrange

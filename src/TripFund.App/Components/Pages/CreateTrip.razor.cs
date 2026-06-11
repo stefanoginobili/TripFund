@@ -63,6 +63,12 @@ namespace TripFund.App.Components.Pages
             if (!string.IsNullOrEmpty(Provider))
             {
                 remoteUniqueId = RemoteStorage.GetRemoteUniqueId(Provider, remoteStorageParameters) ?? "";
+                var suggestedName = RemoteStorage.GetSuggestedTripName(Provider, remoteStorageParameters);
+                if (!string.IsNullOrEmpty(suggestedName))
+                {
+                    tripName = suggestedName;
+                    tripSlug = SlugUtility.GenerateSlug(tripName);
+                }
             }
 
             originalConfigJson = System.Text.Json.JsonSerializer.Serialize(BuildTripConfig());
