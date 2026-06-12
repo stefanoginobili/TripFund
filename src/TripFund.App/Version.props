@@ -1,6 +1,6 @@
 <Project>
     <PropertyGroup>
-        <TripFundSequentialVersion>8</TripFundSequentialVersion>
-        <TripFundDisplayVersion>1.1.0</TripFundDisplayVersion>
+        <TripFundSequentialVersion>9</TripFundSequentialVersion>
+        <TripFundDisplayVersion>1.2.0</TripFundDisplayVersion>
     </PropertyGroup>
 </Project>
