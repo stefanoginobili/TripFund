@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="docs/images/logo.png" alt="TripFund Logo" width="180">
+  <img src="images/logo.png" alt="TripFund Logo" width="180">
 </p>
 
 # 🌍 TripFund 
@@ -43,7 +43,7 @@ Instead of a traditional database, TripFund relies on an **Append-Only File Syst
 * **Metadata & Immutability:** Each leaf folder contains a `.tripfund` file with author, device, and timestamp information, ensuring auditability.
 * **ZIP-Based Sync:** When online, the app bundles local changes into differential ZIP packages and syncs them with Microsoft OneDrive, ensuring atomicity across devices.
 
-Check out the [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) for a deep dive into this unique system.
+Check out the [`.context/ARCHITECTURE.md`](.context/ARCHITECTURE.md) for a deep dive into this unique system.
 
 
 ## 🚀 Getting Started
@@ -59,7 +59,7 @@ Check out the [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) for a deep dive int
    git clone https://github.com/stefanoginobili/TripFund.git
    ```
 2. Open the solution in your IDE.
-3. Configure your Microsoft Auth credentials (see [`docs/INTEGRATIONS.md`](docs/INTEGRATIONS.md)).
+3. Configure your Microsoft Auth credentials (see [`.context/INTEGRATIONS.md`](.context/INTEGRATIONS.md)).
 4. Build and deploy to your Android emulator or iOS simulator!
 
 
@@ -67,7 +67,7 @@ Check out the [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) for a deep dive int
 
 This project is an experiment in **AI-Assisted Vibe Coding**. The architecture, requirements, and coding constraints were carefully designed and fed to an LLM (Large Language Model) to generate the core components through iterative, highly-scoped prompts.
 
-Want to see how the AI was instructed? Check out the [`GEMINI.md`](GEMINI.md) master plan and the [`docs/`](docs/) folder!
+Want to see how the AI was instructed? Check out the [`GEMINI.md`](GEMINI.md) master plan and the [`.context/`](.context/) folder!
 
 ---
 
