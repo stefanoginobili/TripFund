@@ -1,6 +1,7 @@
 using System.Globalization;
 using PdfSharp.Drawing;
 using PdfSharp.Pdf;
+using PdfSharp.Pdf.Annotations;
 using Microsoft.Maui.Storage;
 using TripFund.App.Models;
 using TripFund.App.Utilities;
@@ -125,23 +126,28 @@ public class PdfReportService
         var bodyFont = new XFont("Monospace", 9, XFontStyleEx.Regular);
         var bodySmallFont = new XFont("Monospace", 7, XFontStyleEx.Regular);
 
-        double[] colWidths = { 100, 300, 115 };
-        string[] headers = { "Data/Ora", "Spesa", "Importo" };
+        double[] colWidths = { 30, 90, 280, 115 };
+        string[] headers = { "#", "Data/Ora", "Spesa", "Importo" };
 
         // Draw Table Header
         gfx.DrawRectangle(XBrushes.LightGray, Margin, yPos, PageWidth - 2 * Margin, 20);
         gfx.DrawString(headers[0], headerFont, XBrushes.Black, new XRect(Margin, yPos, colWidths[0], 20), XStringFormats.Center);
-        gfx.DrawString(headers[1], headerFont, XBrushes.Black, new XRect(Margin + colWidths[0] + 8, yPos, colWidths[1] - 8, 20), XStringFormats.CenterLeft);
-        gfx.DrawString(headers[2], headerFont, XBrushes.Black, new XRect(Margin + colWidths[0] + colWidths[1], yPos, colWidths[2] - 8, 20), XStringFormats.CenterRight);
+        gfx.DrawString(headers[1], headerFont, XBrushes.Black, new XRect(Margin + colWidths[0], yPos, colWidths[1], 20), XStringFormats.Center);
+        gfx.DrawString(headers[2], headerFont, XBrushes.Black, new XRect(Margin + colWidths[0] + colWidths[1] + 8, yPos, colWidths[2] - 8, 20), XStringFormats.CenterLeft);
+        gfx.DrawString(headers[3], headerFont, XBrushes.Black, new XRect(Margin + colWidths[0] + colWidths[1] + colWidths[2], yPos, colWidths[3] - 8, 20), XStringFormats.CenterRight);
 
         yPos += 20;
 
+        int rowIndex = 1;
         foreach (var ex in expenses)
         {
             if (yPos > PageHeight - Margin - 60)
             {
                 // Simple multi-page logic would go here if needed
             }
+
+            // # Counter
+            gfx.DrawString(rowIndex.ToString("000"), bodyFont, XBrushes.Black, new XRect(Margin, yPos, colWidths[0], 12), XStringFormats.Center);
 
             // Data/Ora
             var tz = string.IsNullOrEmpty(ex.Timezone) ? TimeZoneInfo.Local : (TimeZoneInfo.TryFindSystemTimeZoneById(ex.Timezone, out var t) ? t : TimeZoneInfo.Local);
@@ -150,22 +156,37 @@ public class PdfReportService
             var sign = offset >= TimeSpan.Zero ? "+" : "-";
             var offsetStr = $"UTC{sign}{Math.Abs(offset.Hours):D2}:{Math.Abs(offset.Minutes):D2}";
 
-            gfx.DrawString(localDate.ToString("dd/MM/yyyy", ItCulture), bodyFont, XBrushes.Black, new XRect(Margin, yPos, colWidths[0], 12), XStringFormats.Center);
-            gfx.DrawString($"{localDate.ToString("HH:mm", ItCulture)} {offsetStr}", bodySmallFont, XBrushes.Gray, new XRect(Margin, yPos + 12, colWidths[0], 10), XStringFormats.Center);
+            gfx.DrawString(localDate.ToString("dd/MM/yyyy", ItCulture), bodyFont, XBrushes.Black, new XRect(Margin + colWidths[0], yPos, colWidths[1], 12), XStringFormats.Center);
+            gfx.DrawString($"{localDate.ToString("HH:mm", ItCulture)} {offsetStr}", bodySmallFont, XBrushes.Gray, new XRect(Margin + colWidths[0], yPos + 12, colWidths[1], 10), XStringFormats.Center);
 
             // Spesa
-            gfx.DrawString(ex.Description ?? string.Empty, bodyFont, XBrushes.Black, new XRect(Margin + colWidths[0] + 8, yPos, colWidths[1] - 16, 12), XStringFormats.CenterLeft);
+            gfx.DrawString(ex.Description ?? string.Empty, bodyFont, XBrushes.Black, new XRect(Margin + colWidths[0] + colWidths[1] + 8, yPos, colWidths[2] - 16, 12), XStringFormats.CenterLeft);
+            
+            double spesaYOffset = 12;
+
             if (ex.Location != null && !string.IsNullOrEmpty(ex.Location.Name))
             {
-                gfx.DrawString(ex.Location.Name ?? string.Empty, bodySmallFont, XBrushes.Gray, new XRect(Margin + colWidths[0] + 8, yPos + 12, colWidths[1] - 16, 10), XStringFormats.CenterLeft);
+                var locName = ex.Location.Name ?? string.Empty;
+                var rect = new XRect(Margin + colWidths[0] + colWidths[1] + 8, yPos + spesaYOffset, colWidths[2] - 16, 10);
+                gfx.DrawString(locName, bodySmallFont, XBrushes.RoyalBlue, rect, XStringFormats.CenterLeft);
+
+                // Add Hyperlink
+                var textSize = gfx.MeasureString(locName, bodySmallFont);
+                var linkRect = new XRect(rect.X, rect.Y, textSize.Width, textSize.Height);
+                var url = $"https://maps.google.com/maps?q={ex.Location.Latitude.ToString(CultureInfo.InvariantCulture)},{ex.Location.Longitude.ToString(CultureInfo.InvariantCulture)}+({Uri.EscapeDataString(locName)})";
+                page.AddWebLink(new PdfRectangle(gfx.Transformer.WorldToDefaultPage(linkRect)), url);
+                
+                spesaYOffset += 10;
             }
 
             // Importo
             string amountStr = FormatCurrency(ex.Amount, ex.Currency ?? string.Empty, config);
-            gfx.DrawString(amountStr, bodyFont, XBrushes.Black, new XRect(Margin + colWidths[0] + colWidths[1], yPos, colWidths[2] - 8, 22), XStringFormats.CenterRight);
+            gfx.DrawString(amountStr, bodyFont, XBrushes.Black, new XRect(Margin + colWidths[0] + colWidths[1] + colWidths[2], yPos, colWidths[3] - 8, 22), XStringFormats.CenterRight);
 
-            gfx.DrawLine(XPens.LightGray, Margin, yPos + 25, PageWidth - Margin, yPos + 25);
-            yPos += 30;
+            double rowHeight = Math.Max(30, spesaYOffset + 5);
+            gfx.DrawLine(XPens.LightGray, Margin, yPos + rowHeight - 5, PageWidth - Margin, yPos + rowHeight - 5);
+            yPos += rowHeight;
+            rowIndex++;
         }
 
         return yPos;
