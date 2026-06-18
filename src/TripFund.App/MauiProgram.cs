@@ -38,6 +38,7 @@ public static class MauiProgram
 		builder.Services.AddSingleton<Services.INavigationService, Services.NavigationService>();
 		builder.Services.AddSingleton<Services.IEmailService, Services.EmailService>();
 		builder.Services.AddSingleton<Services.PdfReportService>();
+		builder.Services.AddSingleton<Services.IExportService, Services.ExportService>();
 
 #if ANDROID
 		builder.Services.AddSingleton<Services.INativeDatePickerService, Platforms.Android.NativeDatePickerService>();

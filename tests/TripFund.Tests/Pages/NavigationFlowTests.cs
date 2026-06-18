@@ -31,10 +31,11 @@ public class NavigationFlowTests : BunitContext
         _storageMock.Setup(s => s.GetTripRegistryAsync()).ReturnsAsync(new LocalTripRegistry());
 
         Services.AddSingleton(_storageMock.Object);
-        Services.AddSingleton(_alertMock.Object);
         Services.AddSingleton(new Mock<IEmailService>().Object);
+        Services.AddSingleton(new Mock<IAlertService>().Object);
         Services.AddSingleton(new Mock<IThumbnailService>().Object);
         Services.AddSingleton(new Mock<IRemoteStorageService>().Object);
+        Services.AddSingleton(new Mock<IExportService>().Object);
         Services.AddSingleton(new PdfReportService());
         Services.AddSingleton<INavigationService>(sp => 
         {

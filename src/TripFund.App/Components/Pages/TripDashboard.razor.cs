@@ -11,6 +11,7 @@ namespace TripFund.App.Components.Pages
     {
         [Inject] private LocalStorageService Storage { get; set; } = default!;
         [Inject] private PdfReportService PdfService { get; set; } = default!;
+        [Inject] private IExportService ExportService { get; set; } = default!;
 
         [Parameter] public string tripSlug { get; set; } = "";
         [SupplyParameterFromQuery] public string? currency { get; set; }
@@ -118,6 +119,25 @@ namespace TripFund.App.Components.Pages
             {
                 TripFundLogger.Error("Error generating report", ex);
                 // In a real app, show an alert to the user.
+            }
+        }
+
+        private async Task ExportExpenses()
+        {
+            if (config == null) return;
+            
+            try
+            {
+                var zipPath = await ExportService.GenerateExportZipAsync(tripSlug, config, transactions);
+                await Share.Default.RequestAsync(new ShareFileRequest
+                {
+                    Title = "Esporta Spese",
+                    File = new ShareFile(zipPath)
+                });
+            }
+            catch (Exception ex)
+            {
+                TripFundLogger.Error("Error exporting expenses", ex);
             }
         }
 

@@ -38,6 +38,7 @@ public class CurrencySelectorVisibilityTests : BunitContext
         Services.AddSingleton(_datePickerMock.Object);
         Services.AddSingleton(_thumbnailMock.Object);
         Services.AddSingleton(new Mock<IRemoteStorageService>().Object);
+        Services.AddSingleton(new Mock<IExportService>().Object);
         Services.AddSingleton(new PdfReportService());
         Services.AddSingleton<INavigationService>(sp => 
         {

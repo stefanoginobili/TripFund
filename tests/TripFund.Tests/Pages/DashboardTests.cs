@@ -20,6 +20,7 @@ public class DashboardTests : BunitContext
     private readonly Mock<IEmailService> _emailMock;
     private readonly Mock<IAlertService> _alertMock;
     private readonly Mock<IThumbnailService> _thumbnailMock;
+    private readonly Mock<IExportService> _exportMock;
 
     public DashboardTests()
     {
@@ -33,6 +34,7 @@ public class DashboardTests : BunitContext
         _emailMock = new Mock<IEmailService>();
         _alertMock = new Mock<IAlertService>();
         _thumbnailMock = new Mock<IThumbnailService>();
+        _exportMock = new Mock<IExportService>();
 
         _storageMock.Setup(s => s.GetTripRegistryAsync()).ReturnsAsync(new LocalTripRegistry());
         _storageMock.Setup(s => s.GetLocalTripStorage(It.IsAny<string>())).Returns(_tripStorageMock.Object);
@@ -42,6 +44,7 @@ public class DashboardTests : BunitContext
         Services.AddSingleton(_alertMock.Object);
         Services.AddSingleton(_thumbnailMock.Object);
         Services.AddSingleton(_remoteStorageMock.Object);
+        Services.AddSingleton(_exportMock.Object);
         Services.AddSingleton(new PdfReportService());
         Services.AddSingleton<INavigationService>(sp => 
         {
@@ -472,6 +475,40 @@ public class DashboardTests : BunitContext
         AngleSharp.Dom.IElement? editBtn = dropdown.QuerySelector(".dropdown-item-vibe");
         editBtn.Should().NotBeNull();
         editBtn!.TextContent.Should().Contain("Modifica");
+    }
+
+    [Fact]
+    public void TripDashboard_ShouldShowThreeDotMenuWithExportAction()
+    {
+        // Arrange
+        var tripSlug = "test-trip";
+        var config = new TripConfig
+        {
+            Id = "123",
+            Name = "Test Trip",
+            Currencies = new Dictionary<string, Currency> { { "EUR", new Currency { Symbol = "€" } } },
+            Members = new Dictionary<string, User> { { "mario", new User { Name = "Mario" } } }
+        };
+
+        _tripStorageMock.Setup(ts => ts.GetTripConfigAsync()).ReturnsAsync(config);
+        _tripStorageMock.Setup(ts => ts.GetTransactionsAsync()).ReturnsAsync(new List<Transaction>());
+
+        // Act
+        var cut = Render<TripDashboard>(parameters => parameters.Add(p => p.tripSlug, tripSlug));
+        var menuBtn = cut.Find(".header-actions .icon-btn");
+        menuBtn.Click();
+
+        // Assert
+        var dropdown = cut.Find(".dropdown-menu-vibe");
+        var buttons = dropdown.QuerySelectorAll(".dropdown-item-vibe");
+        
+        var exportBtn = buttons.FirstOrDefault(b => b.TextContent.Contains("Esporta Spese"));
+        exportBtn.Should().NotBeNull();
+        
+        // Click export
+        exportBtn!.Click();
+        
+        _exportMock.Verify(x => x.GenerateExportZipAsync(tripSlug, config, It.IsAny<List<Transaction>>()), Times.Once);
     }
 
     [Fact]
