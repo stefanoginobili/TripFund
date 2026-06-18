@@ -16,6 +16,7 @@ public class NavigationPermissionTests : BunitContext
     private readonly Mock<LocalStorageService> _storageMock;
     private readonly Mock<LocalTripStorage> _tripStorageMock;
     private readonly Mock<IAlertService> _alertMock;
+    private readonly Mock<IImageCompressorService> _imageCompressorMock;
 
     public NavigationPermissionTests()
     {
@@ -26,6 +27,7 @@ public class NavigationPermissionTests : BunitContext
         _storageMock = new Mock<LocalStorageService>("dummy_path");
         _tripStorageMock = new Mock<LocalTripStorage>(_storageMock.Object, "test-trip");
         _alertMock = new Mock<IAlertService>();
+        _imageCompressorMock = new Mock<IImageCompressorService>();
         
         _storageMock.Setup(s => s.GetLocalTripStorage(It.IsAny<string>())).Returns(_tripStorageMock.Object);
         _storageMock.Setup(s => s.GetTripRegistryAsync()).ReturnsAsync(new LocalTripRegistry());
@@ -34,6 +36,15 @@ public class NavigationPermissionTests : BunitContext
         Services.AddSingleton(_alertMock.Object);
         Services.AddSingleton(new Mock<IEmailService>().Object);
         Services.AddSingleton(new Mock<IThumbnailService>().Object);
+        Services.AddSingleton(_imageCompressorMock.Object);
+        _imageCompressorMock.Setup(s => s.CompressImageAsync(It.IsAny<Stream>(), It.IsAny<string>()))
+                           .ReturnsAsync((Stream stream, string fileName) => 
+                           {
+                               var ms = new MemoryStream();
+                               stream.CopyTo(ms);
+                               ms.Position = 0;
+                               return ms;
+                           });
         Services.AddSingleton(new Mock<IRemoteStorageService>().Object);
         Services.AddSingleton(new PdfReportService());
         Services.AddSingleton(new Mock<INativeDatePickerService>().Object);

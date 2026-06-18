@@ -14,6 +14,7 @@ namespace TripFund.App.Components.Pages
         [Inject] private IJSRuntime JSRuntime { get; set; } = default!;
         [Inject] private IAlertService Alerts { get; set; } = default!;
         [Inject] private IThumbnailService Thumbnails { get; set; } = default!;
+        [Inject] private IImageCompressorService ImageCompressor { get; set; } = default!;
 
         [Parameter] public string tripSlug { get; set; } = "";
         [SupplyParameterFromQuery] public string? member { get; set; }
@@ -501,13 +502,16 @@ namespace TripFund.App.Components.Pages
                 var photo = await MediaPicker.Default.CapturePhotoAsync();
                 if (photo != null)
                 {
-                    var info = new AttachmentInfo 
-                    { 
-                        FileName = photo.FileName, 
-                        OriginalName = photo.FileName, 
-                        CreatedAt = DateTime.UtcNow, 
-                        Stream = await photo.OpenReadAsync(), 
-                        Extension = Path.GetExtension(photo.FileName) 
+                    using var originalStream = await photo.OpenReadAsync();
+                    var compressedStream = await ImageCompressor.CompressImageAsync(originalStream, photo.FileName);
+
+                    var info = new AttachmentInfo
+                    {
+                        FileName = Path.ChangeExtension(photo.FileName, ".jpg"), // Ensure JPEG extension
+                        OriginalName = photo.FileName,
+                        CreatedAt = DateTime.UtcNow,
+                        Stream = compressedStream,
+                        Extension = ".jpg"
                     };
                     await GeneratePreviewAsync(info);
                     attachments.Add(info);

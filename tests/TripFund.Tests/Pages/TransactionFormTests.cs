@@ -21,6 +21,7 @@ public class TransactionFormTests : BunitContext
     private readonly Mock<IEmailService> _emailMock;
     private readonly Mock<INativeDatePickerService> _datePickerMock;
     private readonly Mock<IThumbnailService> _thumbnailMock;
+    private readonly Mock<IImageCompressorService> _imageCompressorMock;
 
     public TransactionFormTests()
     {
@@ -34,6 +35,7 @@ public class TransactionFormTests : BunitContext
         _emailMock = new Mock<IEmailService>();
         _datePickerMock = new Mock<INativeDatePickerService>();
         _thumbnailMock = new Mock<IThumbnailService>();
+        _imageCompressorMock = new Mock<IImageCompressorService>();
         
         _storageMock.Setup(s => s.GetLocalTripStorage(It.IsAny<string>())).Returns(_tripStorageMock.Object);
 
@@ -42,6 +44,16 @@ public class TransactionFormTests : BunitContext
         Services.AddSingleton(_emailMock.Object);
         Services.AddSingleton(_datePickerMock.Object);
         Services.AddSingleton(_thumbnailMock.Object);
+        Services.AddSingleton(_imageCompressorMock.Object);
+        _imageCompressorMock.Setup(s => s.CompressImageAsync(It.IsAny<Stream>(), It.IsAny<string>()))
+                            .ReturnsAsync((Stream stream, string fileName) => 
+                            {
+                                var ms = new MemoryStream();
+                                stream.CopyTo(ms);
+                                ms.Position = 0;
+                                return ms;
+                            });
+
         Services.AddSingleton(new Mock<IRemoteStorageService>().Object);
         Services.AddSingleton<INavigationService>(sp => 
         {
