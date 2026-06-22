@@ -85,20 +85,20 @@ public static class AppConstants
     {
         public const string DefaultName = "Spesa Generica";
         public const string DefaultIcon = "💰";
-        public const string DefaultColor = "#DC3545"; // Expense theme red
+        public const string DefaultColor = "#DC143C"; // Crimson (selectable palette color)
         public const string UnknownIcon = "﹖";
 
         public static readonly Dictionary<string, (string Name, string Icon, string Color)> DefaultTripCategories = new()
         {
-            { "pasti", ("Pasti", "🍕", "#FF4500") }, // OrangeRed: A warm, high-energy color that stimulates appetite.
-            { "trasporti", ("Trasporti", "🚌", "#8A2BE2") }, // BlueViolet: Distinct and modern, often used for logistics and movement.
-            { "alloggi", ("Alloggi", "⛺", "#4169E1") }, // RoyalBlue: Represents rest, stability, and the night sky.
-            { "biglietti", ("Biglietti", "🎟️", "#E91E63") }, // Pink: Frequent for museums, transit, etc.
-            { "cambusa", ("Cambusa", "🛒", "#20B2AA") }, // LightSeaGreen: A practical, utility-focused green for grocery shopping.
-            { "escursioni", ("Escursioni", "📸", "#32CD32") }, // LimeGreen: Vibrant and energetic, perfect for outdoor activities.
-            { "guide", ("Guide", "💁", "#DA70D6") }, // Orchid: For tour guides or hiking support.
-            { "referenti", ("Referenti", "🤝", "#A52A2A") }, // Brown: For local people or organizers.
-            { "mance", ("Mance", "🪙", "#FFD700") } // Gold: The universal color for coins, value, and gratitude.
+            { "pasti", ("Pasti", "🍕", "#FF0000") }, // Red
+            { "trasporti", ("Trasporti", "🚌", "#FFA500") }, // Orange
+            { "alloggi", ("Alloggi", "⛺", "#0000FF") }, // Blue
+            { "biglietti", ("Biglietti", "🎟️", "#FF1493") }, // DeepPink
+            { "cambusa", ("Cambusa", "🛒", "#008080") }, // Teal
+            { "escursioni", ("Escursioni", "📸", "#008000") }, // Green
+            { "guide", ("Guide", "💁", "#800080") }, // Purple
+            { "referenti", ("Referenti", "🤝", "#D2691E") }, // Chocolate
+            { "mance", ("Mance", "🪙", "#FFD700") } // Gold
         };
     }
 }
