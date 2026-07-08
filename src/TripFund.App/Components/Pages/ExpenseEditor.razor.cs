@@ -52,7 +52,7 @@ namespace TripFund.App.Components.Pages
         
         private bool createRefundNext = false;
         private bool CanShowRefundSwitch => 
-            selectedCategorySlug != "rimborso" && 
+            selectedCategorySlug != "rimborsi" && 
             memberSplits.Any(m => !m.IsIncluded);
 
         private void UpdateRefundSwitchVisibility()
@@ -855,7 +855,7 @@ namespace TripFund.App.Components.Pages
                     var newDesc = $"{description} (Rimborso)";
                     var unixTime = finalDate.ToUnixTimeSeconds();
                     
-                    var uri = $"/trip/{tripSlug}/expense?currency={Uri.EscapeDataString(selectedCurrency)}&initCategory=rimborso&initSlugs={Uri.EscapeDataString(absentSlugs)}&initAmount={refundAmt.ToString(System.Globalization.CultureInfo.InvariantCulture)}&initDesc={Uri.EscapeDataString(newDesc)}&initTz={Uri.EscapeDataString(timezoneId)}&initDateUnix={unixTime}&initModified=true";
+                    var uri = $"/trip/{tripSlug}/expense?currency={Uri.EscapeDataString(selectedCurrency)}&initCategory=rimborsi&initSlugs={Uri.EscapeDataString(absentSlugs)}&initAmount={refundAmt.ToString(System.Globalization.CultureInfo.InvariantCulture)}&initDesc={Uri.EscapeDataString(newDesc)}&initTz={Uri.EscapeDataString(timezoneId)}&initDateUnix={unixTime}&initModified=true";
                     await NavService.NavigateAsync(string.Empty, uri);
                 }
                 else

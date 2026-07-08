@@ -189,7 +189,7 @@ public class CategoriesFormTests : BunitContext
         // Arrange
         var categories = new Dictionary<string, ExpenseCategory>
         {
-            { "rimborso", new ExpenseCategory { Name = "Rimborso", Icon = "🔄", Color = "#000000" } }
+            { "rimborsi", new ExpenseCategory { Name = "Rimborsi", Icon = "🔄", Color = "#000000" } }
         };
 
         var cut = Render<CategoriesForm>(parameters => parameters

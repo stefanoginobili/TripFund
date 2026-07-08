@@ -981,7 +981,7 @@ public class TransactionFormTests : BunitContext
         _tripStorageMock.Setup(s => s.GetTripConfigAsync()).ReturnsAsync(config);
         
         var nav = Services.GetRequiredService<NavigationManager>();
-        nav.NavigateTo($"/trip/{tripSlug}/expense?initCategory=rimborso&initAmount=15&initDesc={Uri.EscapeDataString("Cena (Rimborso)")}&initSlugs=luigi&initModified=true");
+        nav.NavigateTo($"/trip/{tripSlug}/expense?initCategory=rimborsi&initAmount=15&initDesc={Uri.EscapeDataString("Cena (Rimborso)")}&initSlugs=luigi&initModified=true");
 
         var cut = Render<ExpenseEditor>(parameters => parameters
             .Add(p => p.tripSlug, tripSlug)
@@ -1002,11 +1002,11 @@ public class TransactionFormTests : BunitContext
         
         // Assert category is refund
         var catName = cut.Find(".category-display-name");
-        catName.TextContent.Should().Be("Rimborso");
+        catName.TextContent.Should().Be("Rimborsi");
         
         // Ensure config was saved
         _tripStorageMock.Verify(s => s.SaveTripConfigAsync(It.IsAny<TripConfig>(), It.IsAny<string>()), Times.Once);
-        config.Categories.Expenses.Should().ContainKey("rimborso");
+        config.Categories.Expenses.Should().ContainKey("rimborsi");
     }
 
     [Fact]
@@ -1044,7 +1044,7 @@ public class TransactionFormTests : BunitContext
         await cut.Find(".btn-primary-vibe").ClickAsync();
         
         // Assert it navigated to the new expense page with query params
-        nav.Uri.Should().Contain("initCategory=rimborso");
+        nav.Uri.Should().Contain("initCategory=rimborsi");
         nav.Uri.Should().Contain("initSlugs=mario");
         nav.Uri.Should().Contain("initAmount=45");
         nav.Uri.Should().Contain("initModified=true");

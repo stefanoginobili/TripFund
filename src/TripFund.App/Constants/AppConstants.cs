@@ -88,7 +88,7 @@ public static class AppConstants
         public const string DefaultColor = "#DC143C"; // Crimson (selectable palette color)
         public const string UnknownIcon = "﹖";
 
-        public static readonly string[] SystemCategories = ["rimborso"];
+        public static readonly string[] SystemCategories = ["rimborsi"];
 
         public static readonly Dictionary<string, (string Name, string Icon, string Color)> DefaultTripCategories = new()
         {
@@ -101,7 +101,7 @@ public static class AppConstants
             { "guide", ("Guide", "💁", "#800080") }, // Purple
             { "referenti", ("Referenti", "🤝", "#D2691E") }, // Chocolate
             { "mance", ("Mance", "🪙", "#FFD700") }, // Gold
-            { "rimborso", ("Rimborso", "💸", "#000000") } // Black (placeholder from available colors)
+            { "rimborsi", ("Rimborsi", "💸", "#000000") } // Black (placeholder from available colors)
         };
     }
 }
