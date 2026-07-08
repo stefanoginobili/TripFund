@@ -148,6 +148,8 @@ public partial class CategoriesForm
 
     private async Task DeleteCategory(string slug)
     {
+        if (TripFund.App.Constants.AppConstants.Categories.SystemCategories.Contains(slug)) return;
+
         bool confirm = await Alerts.ConfirmAsync(
             "Elimina Categoria",
             $"Sei sicuro di voler eliminare <b>{Categories[slug].Name}</b>?",

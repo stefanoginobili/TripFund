@@ -925,11 +925,130 @@ public class TransactionFormTests : BunitContext
         amountInput = cut.Find(".amount-input"); // Re-find because of @key re-render
         amountInput.GetAttribute("value").Should().Be("1,00");
 
-        // Act 2: Set to "1,0"
-        amountInput.Change("1,0");
-
         // Assert 2: Should be "1,00" again
         amountInput = cut.Find(".amount-input"); // Re-find because of @key re-render
         amountInput.GetAttribute("value").Should().Be("1,00");
     }
+
+    [Fact]
+    public void ExpenseEditor_RefundSwitch_ShouldBeVisible_WhenMembersExcluded()
+    {
+        // Arrange
+        var tripSlug = "test-trip";
+        var config = new TripConfig
+        {
+            Id = "123",
+            Name = "Test Trip",
+            Currencies = new Dictionary<string, Currency> { { "EUR", new Currency { Symbol = "€" } } },
+            Members = new Dictionary<string, User>
+            {
+                { "mario", new User { Name = "Mario", Avatar = "M" } },
+                { "luigi", new User { Name = "Luigi", Avatar = "L" } }
+            }
+        };
+        _tripStorageMock.Setup(s => s.GetTripConfigAsync()).ReturnsAsync(config);
+
+        var cut = Render<ExpenseEditor>(parameters => parameters.Add(p => p.tripSlug, tripSlug));
+
+        // Initial state: all members included, switch hidden
+        cut.FindAll(".refund-switch-container").Should().BeEmpty();
+
+        // Act: exclude Mario
+        var marioRow = cut.FindAll(".member-split-row").First(r => r.InnerHtml.Contains("Mario"));
+        marioRow.QuerySelector(".switch")!.Click();
+
+        // Assert: switch is visible
+        cut.FindAll(".refund-switch-container").Should().NotBeEmpty();
+    }
+
+    [Fact]
+    public async Task ExpenseEditor_InitRefund_ShouldPreFillData_AndEnsureCategory()
+    {
+        // Arrange
+        var tripSlug = "test-trip";
+        var config = new TripConfig
+        {
+            Id = "123",
+            Name = "Test Trip",
+            Currencies = new Dictionary<string, Currency> { { "EUR", new Currency { Symbol = "€" } } },
+            Members = new Dictionary<string, User>
+            {
+                { "mario", new User { Name = "Mario", Avatar = "M" } },
+                { "luigi", new User { Name = "Luigi", Avatar = "L" } }
+            },
+            Categories = new TripCategories { Expenses = new Dictionary<string, ExpenseCategory>() }
+        };
+        _tripStorageMock.Setup(s => s.GetTripConfigAsync()).ReturnsAsync(config);
+        
+        var nav = Services.GetRequiredService<NavigationManager>();
+        nav.NavigateTo($"/trip/{tripSlug}/expense?initCategory=rimborso&initAmount=15&initDesc={Uri.EscapeDataString("Cena (Rimborso)")}&initSlugs=luigi&initModified=true");
+
+        var cut = Render<ExpenseEditor>(parameters => parameters
+            .Add(p => p.tripSlug, tripSlug)
+        );
+
+        // Assert amount is 15
+        cut.Find(".amount-input").GetAttribute("value").Should().Be("15,00");
+        
+        // Assert description is pre-filled
+        cut.Find(".form-group-vibe input.form-control-vibe").GetAttribute("value").Should().Be("Cena (Rimborso)");
+        
+        // Assert Mario is excluded, Luigi is included
+        var marioRow = cut.FindAll(".member-split-row").First(r => r.InnerHtml.Contains("Mario"));
+        marioRow.QuerySelector(".switch.off").Should().NotBeNull();
+        
+        var luigiRow = cut.FindAll(".member-split-row").First(r => r.InnerHtml.Contains("Luigi"));
+        luigiRow.QuerySelector(".switch.on").Should().NotBeNull();
+        
+        // Assert category is refund
+        var catName = cut.Find(".category-display-name");
+        catName.TextContent.Should().Be("Rimborso");
+        
+        // Ensure config was saved
+        _tripStorageMock.Verify(s => s.SaveTripConfigAsync(It.IsAny<TripConfig>(), It.IsAny<string>()), Times.Once);
+        config.Categories.Expenses.Should().ContainKey("rimborso");
+    }
+
+    [Fact]
+    public async Task ExpenseEditor_SubmitWithRefundOn_ShouldNavigateToRefundInit()
+    {
+        // Arrange
+        var tripSlug = "test-trip";
+        var config = new TripConfig
+        {
+            Id = "123",
+            Currencies = new Dictionary<string, Currency> { { "EUR", new Currency { Symbol = "€", Decimals = 2 } } },
+            Members = new Dictionary<string, User>
+            {
+                { "mario", new User { Name = "Mario", Avatar = "M" } },
+                { "luigi", new User { Name = "Luigi", Avatar = "L" } },
+                { "carlo", new User { Name = "Carlo", Avatar = "C" } }
+            }
+        };
+        _tripStorageMock.Setup(s => s.GetTripConfigAsync()).ReturnsAsync(config);
+        var nav = Services.GetRequiredService<NavigationManager>();
+        
+        var cut = Render<ExpenseEditor>(parameters => parameters.Add(p => p.tripSlug, tripSlug));
+        
+        cut.Find(".amount-input").Change("90");
+        cut.Find(".form-group-vibe input.form-control-vibe").Change("Test Refund");
+        
+        // Exclude Mario
+        var marioRow = cut.FindAll(".member-split-row").First(r => r.InnerHtml.Contains("Mario"));
+        marioRow.QuerySelector(".switch")!.Click();
+        
+        // Toggle refund switch ON
+        cut.Find(".refund-switch-container .switch").Click();
+        
+        // Submit
+        await cut.Find(".btn-primary-vibe").ClickAsync();
+        
+        // Assert it navigated to the new expense page with query params
+        nav.Uri.Should().Contain("initCategory=rimborso");
+        nav.Uri.Should().Contain("initSlugs=mario");
+        nav.Uri.Should().Contain("initAmount=45");
+        nav.Uri.Should().Contain("initModified=true");
+        nav.Uri.Should().Contain(Uri.EscapeDataString("Test Refund (Rimborso)"));
+    }
 }
+

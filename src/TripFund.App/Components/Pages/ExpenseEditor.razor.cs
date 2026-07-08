@@ -21,6 +21,14 @@ namespace TripFund.App.Components.Pages
         [SupplyParameterFromQuery] public string? currency { get; set; }
         [SupplyParameterFromQuery] public string? edit { get; set; }
 
+        [SupplyParameterFromQuery] public string? initCategory { get; set; }
+        [SupplyParameterFromQuery] public string? initSlugs { get; set; }
+        [SupplyParameterFromQuery] public decimal? initAmount { get; set; }
+        [SupplyParameterFromQuery] public string? initDesc { get; set; }
+        [SupplyParameterFromQuery] public string? initTz { get; set; }
+        [SupplyParameterFromQuery] public long? initDateUnix { get; set; }
+        [SupplyParameterFromQuery] public bool initModified { get; set; }
+
         private TripConfig? config;
         private LocalTripStorage.TransactionVersionInfo? editingInfo;
         private string? originalTxJson;
@@ -41,9 +49,57 @@ namespace TripFund.App.Components.Pages
         private int _amountRenderKey = 0;
         private bool _shouldScrollCategory = false;
         private bool isInternalNavigationAllowed = false;
+        
+        private bool createRefundNext = false;
+        private bool CanShowRefundSwitch => 
+            selectedCategorySlug != "rimborso" && 
+            memberSplits.Any(m => !m.IsIncluded);
 
-        protected override async Task OnInitializedAsync()
+        private void UpdateRefundSwitchVisibility()
         {
+            if (!CanShowRefundSwitch)
+            {
+                createRefundNext = false;
+            }
+        }
+
+        private async Task EnsureSystemCategoryExists(string categorySlug)
+        {
+            if (config != null && !config.Categories.Expenses.ContainsKey(categorySlug))
+            {
+                if (AppConstants.Categories.DefaultTripCategories.TryGetValue(categorySlug, out var defaultCategory))
+                {
+                    config.Categories.Expenses[categorySlug] = new ExpenseCategory 
+                    { 
+                        Name = defaultCategory.Name, 
+                        Icon = defaultCategory.Icon, 
+                        Color = defaultCategory.Color 
+                    };
+                    await Storage.GetLocalTripStorage(tripSlug).SaveTripConfigAsync(config, deviceId);
+                }
+            }
+        }
+
+        protected override async Task OnParametersSetAsync()
+        {
+            // Reset state for same-page navigation
+            editingInfo = null;
+            originalTxJson = null;
+            selectedCurrency = "";
+            totalAmount = 0;
+            description = "";
+            transactionDate = DateTime.Now;
+            timezoneId = TimeZoneInfo.Local.Id;
+            selectedCategorySlug = null;
+            memberSplits = new();
+            attachments = new();
+            locationInfo = null;
+            errorMessage = "";
+            isSubmitting = false;
+            isLocating = false;
+            createRefundNext = false;
+            isInternalNavigationAllowed = false;
+
             NavService.SetBeforeNavigateAction(ConfirmDiscardChanges);
             var tripStorage = Storage.GetLocalTripStorage(tripSlug);
             
@@ -162,8 +218,43 @@ namespace TripFund.App.Components.Pages
                         selectedCurrency = config.Currencies.Keys.First();
                     }
                     
-                    // Default all to included/auto if new
-                    foreach (var m in memberSplits) m.IsIncluded = true;
+                    if (!string.IsNullOrEmpty(initCategory))
+                    {
+                        if (AppConstants.Categories.SystemCategories.Contains(initCategory))
+                        {
+                            await EnsureSystemCategoryExists(initCategory);
+                        }
+                        selectedCategorySlug = initCategory;
+                    }
+                    
+                    if (initAmount.HasValue) totalAmount = initAmount.Value;
+                    if (initDesc != null) description = initDesc;
+                    if (initTz != null) timezoneId = initTz;
+                    if (initDateUnix.HasValue)
+                    {
+                        try {
+                           var tz = TimeZoneInfo.FindSystemTimeZoneById(timezoneId);
+                           var utcDate = DateTimeOffset.FromUnixTimeSeconds(initDateUnix.Value).UtcDateTime;
+                           transactionDate = TimeZoneInfo.ConvertTimeFromUtc(utcDate, tz);
+                        } catch {
+                           transactionDate = DateTimeOffset.FromUnixTimeSeconds(initDateUnix.Value).LocalDateTime;
+                        }
+                    }
+                    
+                    if (initSlugs != null)
+                    {
+                        var slugs = initSlugs.Split(',');
+                        foreach (var m in memberSplits)
+                        {
+                            m.IsIncluded = slugs.Contains(m.Slug);
+                            m.IsAuto = true;
+                        }
+                    }
+                    else
+                    {
+                        // Default all to included/auto if new
+                        foreach (var m in memberSplits) m.IsIncluded = true;
+                    }
                     RecalculateSplit();
                     
                     originalTxJson = System.Text.Json.JsonSerializer.Serialize(BuildTransaction());
@@ -173,6 +264,7 @@ namespace TripFund.App.Components.Pages
 
         private bool HasChanges()
         {
+            if (initModified) return true;
             if (originalTxJson == null) return false;
 
             var currentTx = BuildTransaction();
@@ -420,11 +512,13 @@ namespace TripFund.App.Components.Pages
         private void SelectCategory(string? slug)
         {
             selectedCategorySlug = slug;
+            UpdateRefundSwitchVisibility();
         }
 
         private void ToggleMember(MemberSplitInfo member)
         {
             member.IsIncluded = !member.IsIncluded;
+            UpdateRefundSwitchVisibility();
             RecalculateSplit();
         }
 
@@ -746,7 +840,28 @@ namespace TripFund.App.Components.Pages
             {
                 await Storage.GetLocalTripStorage(tripSlug).SaveTransactionAsync(transaction, deviceId, attachments: attachmentsDict);
                 isInternalNavigationAllowed = true;
-                await GoBack();
+                
+                if (createRefundNext)
+                {
+                    var includedForCalc = memberSplits.Where(m => m.IsIncluded).ToList();
+                    var absentForCalc = memberSplits.Where(m => !m.IsIncluded).ToList();
+                    decimal refundAmt = 0;
+                    if (includedForCalc.Count > 0 && absentForCalc.Count > 0)
+                    {
+                        var amtPerSelected = totalAmount / includedForCalc.Count;
+                        refundAmt = Math.Round(amtPerSelected * absentForCalc.Count, GetDecimals(), MidpointRounding.ToZero);
+                    }
+                    var absentSlugs = string.Join(",", absentForCalc.Select(m => m.Slug));
+                    var newDesc = $"{description} (Rimborso)";
+                    var unixTime = finalDate.ToUnixTimeSeconds();
+                    
+                    var uri = $"/trip/{tripSlug}/expense?currency={Uri.EscapeDataString(selectedCurrency)}&initCategory=rimborso&initSlugs={Uri.EscapeDataString(absentSlugs)}&initAmount={refundAmt.ToString(System.Globalization.CultureInfo.InvariantCulture)}&initDesc={Uri.EscapeDataString(newDesc)}&initTz={Uri.EscapeDataString(timezoneId)}&initDateUnix={unixTime}&initModified=true";
+                    await NavService.NavigateAsync(string.Empty, uri);
+                }
+                else
+                {
+                    await GoBack();
+                }
             }
             catch (Exception ex)
             {

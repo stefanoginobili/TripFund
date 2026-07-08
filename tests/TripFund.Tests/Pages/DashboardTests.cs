@@ -771,7 +771,7 @@ public class DashboardTests : BunitContext
         var dropdown = cut.Find(".dropdown-menu-vibe");
         var summaryBtn = dropdown.QuerySelector(".dropdown-item-vibe");
         summaryBtn.Should().NotBeNull();
-        summaryBtn!.TextContent.Should().Contain("Riepilogo Versamenti");
+        summaryBtn!.TextContent.Should().Contain("Invia Email Versamenti");
         summaryBtn.HasAttribute("disabled").Should().BeFalse();
 
         // Act - Click summary button

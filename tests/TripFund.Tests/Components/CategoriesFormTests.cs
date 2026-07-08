@@ -182,4 +182,31 @@ public class CategoriesFormTests : BunitContext
         // Assert - Back to normal
         sortableList.Instance.DisableActions.Should().BeFalse();
     }
+
+    [Fact]
+    public async Task DeleteCategory_ShouldNotWorkForSystemCategories()
+    {
+        // Arrange
+        var categories = new Dictionary<string, ExpenseCategory>
+        {
+            { "rimborso", new ExpenseCategory { Name = "Rimborso", Icon = "🔄", Color = "#000000" } }
+        };
+
+        var cut = Render<CategoriesForm>(parameters => parameters
+            .Add(p => p.Categories, categories)
+        );
+
+        // Act
+        await cut.Find(".action-trigger").ClickAsync();
+        
+        // Assert
+        var deleteBtn = cut.FindAll(".dropdown-item-vibe.text-danger").FirstOrDefault(b => b.TextContent.Contains("Elimina"));
+        deleteBtn.Should().NotBeNull();
+        deleteBtn!.ClassList.Should().Contain("disabled");
+        
+        // Click should not trigger alert
+        await deleteBtn.ClickAsync();
+        _alertMock.Verify(a => a.ConfirmAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<AlertType>(), It.IsAny<string>()), Times.Never);
+    }
 }
+

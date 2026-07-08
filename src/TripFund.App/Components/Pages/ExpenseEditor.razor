@@ -252,6 +252,21 @@
                     }
                 </div>
 
+                @if (CanShowRefundSwitch)
+                {
+                    <div class="refund-switch-container">
+                        <div class="refund-switch-header">
+                            <span class="refund-switch-title">Crea Rimborso?</span>
+                            <div class="switch @(createRefundNext ? "on" : "off")" @onclick="() => createRefundNext = !createRefundNext">
+                                <div class="switch-handle"></div>
+                            </div>
+                        </div>
+                        <div class="refund-switch-desc">
+                            Verrà creata automaticamente una seconda spesa per rimborsare chi non ha partecipato
+                        </div>
+                    </div>
+                }
+
                 @if (!string.IsNullOrEmpty(errorMessage))
                 {
                     <div class="validation-message-vibe">
@@ -377,4 +392,28 @@
     .me-2 { margin-right: 0.5rem; }
     .mt-2 { margin-top: 0.5rem; }
     .mb-4 { margin-bottom: 2rem; }
+
+    .refund-switch-container {
+        background-color: #F8FBF9;
+        border-radius: 12px;
+        padding: 1rem;
+        margin-top: 1rem;
+        margin-bottom: 0.5rem;
+        border: 1px solid #D6EDE2;
+    }
+    .refund-switch-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 0.25rem;
+    }
+    .refund-switch-title {
+        font-weight: 700;
+        color: #1A3C2F;
+    }
+    .refund-switch-desc {
+        font-size: 0.75rem;
+        color: #6C757D;
+        line-height: 1.3;
+    }
 </style>
