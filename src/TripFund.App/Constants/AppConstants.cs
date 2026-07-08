@@ -84,8 +84,8 @@ public static class AppConstants
     public static class Categories
     {
         public const string DefaultName = "Spesa Generica";
-        public const string DefaultIcon = "💰";
-        public const string DefaultColor = "#DC143C"; // Crimson (selectable palette color)
+        public const string DefaultIcon = "🔻";
+        public const string DefaultColor = "#E53935"; // Material Red (not in selectable palette)
         public const string UnknownIcon = "﹖";
 
         public static readonly string[] SystemCategories = ["rimborsi"];
