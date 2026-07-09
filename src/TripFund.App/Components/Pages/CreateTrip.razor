@@ -27,17 +27,7 @@
 
         <CategoriesForm @bind-Categories="categories" />
 
-        @if (!string.IsNullOrEmpty(error))
-        {
-            <div class="validation-message-vibe mt-3">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                    <circle cx="12" cy="12" r="10"></circle>
-                    <line x1="12" y1="8" x2="12" y2="12"></line>
-                    <line x1="12" y1="16" x2="12.01" y2="16"></line>
-                </svg>
-                <span>@error</span>
-            </div>
-        }
+
 
         <button class="btn-vibe btn-primary-vibe mt-4 mb-4" @onclick="HandleCreate">Crea</button>
     </div>

@@ -18,9 +18,10 @@ namespace TripFund.App.Components.Common
         [Parameter] public bool OpenNewCurrencyOnOpen { get; set; } = false;
         [Parameter] public bool IsReadonly { get; set; } = false;
 
+        [Inject] private IToastService ToastService { get; set; } = default!;
         [Inject] private IJSRuntime JSRuntime { get; set; } = default!;
 
-        private string error = "";
+
         private string newCurrCode = "";
         private string newCurrSymbol = "";
         private string newCurrQuotaString = "0";
@@ -44,18 +45,24 @@ namespace TripFund.App.Components.Common
 
         private async Task AddOrUpdateCurrency()
         {
+            if (!isAddingCurrency && editingCurrencyCode == null) return;
+
             newCurrCode = newCurrCode?.Trim() ?? "";
             newCurrSymbol = newCurrSymbol?.Trim() ?? "";
 
             // Ensure the quota is parsed from the current input string
             ParseQuota(newCurrQuotaString);
 
-            if (string.IsNullOrWhiteSpace(newCurrCode)) return;
+            if (string.IsNullOrWhiteSpace(newCurrCode))
+            {
+                ToastService.ShowError("Il codice valuta è obbligatorio.");
+                return;
+            }
             string code = newCurrCode.ToUpperInvariant();
 
             if (editingCurrencyCode == null && Currencies.ContainsKey(code))
             {
-                error = "Valuta già presente.";
+                ToastService.ShowError("Valuta già presente.");
                 return;
             }
 
@@ -72,7 +79,6 @@ namespace TripFund.App.Components.Common
             newCurrQuota = 0;
             newCurrDecimals = 2;
             newCurrQuotaString = newCurrQuota.ToString("F" + newCurrDecimals);
-            error = "";
             isAddingCurrency = false;
             editingCurrencyCode = null;
             showSuggestions = false;

@@ -758,20 +758,27 @@ h1:focus {
 /* TOAST COMPONENT */
 .toast-container-vibe {
     position: fixed;
-    bottom: 30px;
+    top: 80px;
     left: 50%;
     transform: translateX(-50%);
     z-index: 9999;
-    padding: 14px 24px;
-    border-radius: var(--border-radius-pill);
-    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+    padding: 16px 24px;
+    border-radius: 16px;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15), 0 1px 3px rgba(0, 0, 0, 0.1);
     display: flex;
     align-items: center;
     justify-content: center;
-    animation: toast-slide-up 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+    animation: toast-slide-down 0.5s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
     max-width: 90vw;
     width: max-content;
     text-align: center;
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.toast-closing {
+    animation: toast-fade-out 0.5s forwards;
 }
 
 .toast-content-vibe {
@@ -784,6 +791,7 @@ h1:focus {
     font-weight: 600;
     font-size: 0.95rem;
     color: white;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.25);
 }
 
 .toast-icon {
@@ -792,24 +800,35 @@ h1:focus {
 }
 
 .toast-success {
-    background-color: var(--success-color, #10b981);
+    background-color: rgba(16, 185, 129, 0.95);
 }
 
 .toast-error {
-    background-color: var(--danger-color, #ef4444);
+    background-color: rgba(239, 68, 68, 0.95);
 }
 
 .toast-info {
-    background-color: var(--primary-color, #007bff);
+    background-color: rgba(0, 123, 255, 0.95);
 }
 
-@keyframes toast-slide-up {
+@keyframes toast-slide-down {
     0% {
         opacity: 0;
-        transform: translate(-50%, 30px) scale(0.9);
+        transform: translate(-50%, -80px) scale(0.9);
     }
     100% {
         opacity: 1;
+        transform: translate(-50%, 0) scale(1);
+    }
+}
+
+@keyframes toast-fade-out {
+    0% {
+        opacity: 1;
+        transform: translate(-50%, 0) scale(1);
+    }
+    100% {
+        opacity: 0;
         transform: translate(-50%, 0) scale(1);
     }
 }

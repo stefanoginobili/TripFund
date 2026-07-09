@@ -1054,7 +1054,7 @@ public class TransactionFormTests : BunitContext
         nav.Uri.Should().Contain(Uri.EscapeDataString("Test Refund (Rimborso)"));
         
         // Assert toast was shown
-        _toastMock.Verify(t => t.ShowSuccess("Transazione salvata. Il rimborso è stato precompilato e può essere confermato o annullato.", 5000), Times.Once);
+        _toastMock.Verify(t => t.ShowSuccess("Spesa salvata.<br/>Rivedi e conferma il rimborso.", 5000), Times.Once);
     }
 }
 

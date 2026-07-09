@@ -7,6 +7,7 @@ namespace TripFund.App.Components.Common
 {
     public partial class GeneralInfoForm
     {
+        [Inject] private IToastService ToastService { get; set; } = default!;
         [Parameter] public string Name { get; set; } = "";
         [Parameter] public EventCallback<string> NameChanged { get; set; }
         
@@ -29,7 +30,7 @@ namespace TripFund.App.Components.Common
 
         private string FullSlug => SlugUtility.GenerateSlug(Slug + (string.IsNullOrEmpty(Suffix) ? "" : "_" + Suffix));
 
-        private string dateError = "";
+
         private TimeSpan _currentDuration;
 
         protected override void OnParametersSet()
@@ -62,10 +63,9 @@ namespace TripFund.App.Components.Common
             val = DateTime.SpecifyKind(val, DateTimeKind.Unspecified);
             if (val < StartDate)
             {
-                dateError = "La data di fine deve essere successiva a quella di inizio.";
+                ToastService.ShowError("La data di fine deve essere successiva a quella di inizio.");
                 return;
             }
-            dateError = "";
             EndDate = val;
             
             // Update the baseline duration as the user is manually changing it

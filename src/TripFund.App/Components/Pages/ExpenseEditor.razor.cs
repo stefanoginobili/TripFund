@@ -42,7 +42,7 @@ namespace TripFund.App.Components.Pages
         private List<MemberSplitInfo> memberSplits = new();
         private List<AttachmentInfo> attachments = new();
         private LocationInfo? locationInfo;
-        private string errorMessage = "";
+
         private bool isSubmitting = false;
         private bool isLocating = false;
         private string deviceId = "";
@@ -95,7 +95,6 @@ namespace TripFund.App.Components.Pages
             memberSplits = new();
             attachments = new();
             locationInfo = null;
-            errorMessage = "";
             isSubmitting = false;
             isLocating = false;
             createRefundNext = false;
@@ -415,7 +414,7 @@ namespace TripFund.App.Components.Pages
             }
             catch (Exception ex)
             {
-                errorMessage = "Errore durante l'eliminazione: " + ex.Message;
+                ToastService.ShowError("Errore durante l'eliminazione: " + ex.Message);
             }
         }
 
@@ -590,7 +589,7 @@ namespace TripFund.App.Components.Pages
 
                 if (status != PermissionStatus.Granted)
                 {
-                    errorMessage = "Permesso fotocamera non concesso.";
+                    ToastService.ShowError("Permesso fotocamera non concesso.");
                     return;
                 }
 
@@ -614,7 +613,7 @@ namespace TripFund.App.Components.Pages
             }
             catch (Exception ex)
             {
-                errorMessage = "Errore durante lo scatto della foto: " + ex.Message;
+                ToastService.ShowError("Errore durante lo scatto della foto: " + ex.Message);
             }
         }
 
@@ -639,7 +638,7 @@ namespace TripFund.App.Components.Pages
             }
             catch (Exception ex)
             {
-                errorMessage = "Errore durante la selezione del file: " + ex.Message;
+                ToastService.ShowError("Errore durante la selezione del file: " + ex.Message);
             }
         }
 
@@ -681,7 +680,6 @@ namespace TripFund.App.Components.Pages
             try
             {
                 isLocating = true;
-                errorMessage = "";
                 var status = await Permissions.CheckStatusAsync<Permissions.LocationWhenInUse>();
                 if (status != PermissionStatus.Granted)
                 {
@@ -690,7 +688,7 @@ namespace TripFund.App.Components.Pages
 
                 if (status != PermissionStatus.Granted)
                 {
-                    errorMessage = "Permesso posizione non concesso.";
+                    ToastService.ShowError("Permesso posizione non concesso.");
                     return;
                 }
 
@@ -724,7 +722,7 @@ namespace TripFund.App.Components.Pages
             }
             catch (Exception ex)
             {
-                errorMessage = "Impossibile acquisire la posizione: " + ex.Message;
+                ToastService.ShowError("Impossibile acquisire la posizione: " + ex.Message);
             }
             finally
             {
@@ -734,16 +732,14 @@ namespace TripFund.App.Components.Pages
 
         private async Task HandleSubmit()
         {
-            errorMessage = "";
-            
             description = description?.Trim() ?? "";
             if (locationInfo != null) locationInfo.Name = locationInfo.Name?.Trim() ?? "";
 
-            if (totalAmount <= 0) { errorMessage = "Importo non valido."; return; }
-            if (string.IsNullOrWhiteSpace(description)) { errorMessage = "Inserire una descrizione."; return; }
+            if (totalAmount <= 0) { ToastService.ShowError("Importo non valido."); return; }
+            if (string.IsNullOrWhiteSpace(description)) { ToastService.ShowError("Inserire una descrizione."); return; }
             
             var included = memberSplits.Where(m => m.IsIncluded).ToList();
-            if (!included.Any()) { errorMessage = "Selezionare almeno un partecipante."; return; }
+            if (!included.Any()) { ToastService.ShowError("Selezionare almeno un partecipante."); return; }
 
             isSubmitting = true;
 
@@ -760,7 +756,7 @@ namespace TripFund.App.Components.Pages
             // Verify split sum
             if (splitDict.Values.Sum(s => s.Amount) != totalAmount)
             {
-                errorMessage = "La somma delle quote non corrisponde al totale.";
+                ToastService.ShowError("La somma delle quote non corrisponde al totale.");
                 isSubmitting = false;
                 return;
             }
@@ -773,7 +769,7 @@ namespace TripFund.App.Components.Pages
                 var newName = GetAttachmentDisplayName(info);
                 if (processedNewAttachments.Any(p => p.newName == newName))
                 {
-                    errorMessage = "Due allegati non possono avere lo stesso timestamp (millisecondo).";
+                    ToastService.ShowError("Due allegati non possono avere lo stesso timestamp (millisecondo).");
                     isSubmitting = false;
                     return;
                 }
@@ -857,18 +853,18 @@ namespace TripFund.App.Components.Pages
                     var unixTime = finalDate.ToUnixTimeSeconds();
                     
                     var uri = $"/trip/{tripSlug}/expense?currency={Uri.EscapeDataString(selectedCurrency)}&initCategory=rimborsi&initSlugs={Uri.EscapeDataString(absentSlugs)}&initAmount={refundAmt.ToString(System.Globalization.CultureInfo.InvariantCulture)}&initDesc={Uri.EscapeDataString(newDesc)}&initTz={Uri.EscapeDataString(timezoneId)}&initDateUnix={unixTime}&initModified=true";
-                    ToastService.ShowSuccess("Transazione salvata. Il rimborso è stato precompilato e può essere confermato o annullato.");
+                    ToastService.ShowSuccess("Spesa salvata.<br/>Rivedi e conferma il rimborso.");
                     await NavService.NavigateAsync(string.Empty, uri);
                 }
                 else
                 {
-                    ToastService.ShowSuccess("Transazione salvata con successo.");
+                    ToastService.ShowSuccess("Spesa salvata con successo.");
                     await GoBack();
                 }
             }
             catch (Exception ex)
             {
-                errorMessage = "Errore durante il salvataggio: " + ex.Message;
+                ToastService.ShowError("Errore durante il salvataggio: " + ex.Message);
                 isSubmitting = false;
             }
         }

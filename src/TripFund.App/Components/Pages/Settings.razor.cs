@@ -8,6 +8,7 @@ namespace TripFund.App.Components.Pages
     public partial class Settings
     {
         [Inject] private LocalStorageService Storage { get; set; } = default!;
+        [Inject] private IToastService ToastService { get; set; } = default!;
 
         private string authorName = string.Empty;
         private string? deviceId = null;
@@ -32,7 +33,11 @@ namespace TripFund.App.Components.Pages
         private async Task SaveSettings()
         {
             authorName = authorName?.Trim() ?? string.Empty;
-            if (string.IsNullOrWhiteSpace(authorName)) return;
+            if (string.IsNullOrWhiteSpace(authorName)) 
+            {
+                ToastService.ShowError("Il nome autore è obbligatorio.");
+                return;
+            }
 
             // If for some reason it's missing (should not happen after onboarding),
             // we generate a fallback but we never overwrite an existing one.

@@ -11,6 +11,7 @@ namespace TripFund.App.Components.Pages
     {
         [Inject] private LocalStorageService Storage { get; set; } = default!;
         [Inject] private IAlertService Alerts { get; set; } = default!;
+        [Inject] private IToastService ToastService { get; set; } = default!;
         [Inject] private IJSRuntime JSRuntime { get; set; } = default!;
 
         private string[] emojis = new[] { 
@@ -46,7 +47,7 @@ namespace TripFund.App.Components.Pages
 
         private TripConfig? config;
         private string? originalConfigJson;
-        private string error = "";
+
         private string deviceId = "";
         private string authorName = "";
 
@@ -215,13 +216,13 @@ namespace TripFund.App.Components.Pages
             var trimmedEmail = newMemberEmail.Trim();
             var trimmedSlug = newMemberSlug.Trim();
             
-            if (string.IsNullOrWhiteSpace(trimmedName)) { error = "Il nome è obbligatorio."; return; }
-            if (string.IsNullOrWhiteSpace(trimmedSlug)) { error = "Lo slug è obbligatorio."; return; }
+            if (string.IsNullOrWhiteSpace(trimmedName)) { ToastService.ShowError("Il nome è obbligatorio."); return; }
+            if (string.IsNullOrWhiteSpace(trimmedSlug)) { ToastService.ShowError("Lo slug è obbligatorio."); return; }
             
             // If not editing, check for duplicates
             if (editingMemberSlug == null && config.Members.ContainsKey(trimmedSlug))
             {
-                error = "Partecipante già presente.";
+                ToastService.ShowError("Partecipante già presente.");
                 return;
             }
 
@@ -242,7 +243,7 @@ namespace TripFund.App.Components.Pages
             newMemberSlug = "";
             newMemberEmail = "";
             newMemberAvatar = "👤";
-            error = "";
+
             isAddingMember = false;
             editingMemberSlug = null;
         }
@@ -357,8 +358,8 @@ namespace TripFund.App.Components.Pages
                 cat.Name = cat.Name?.Trim() ?? "";
             }
 
-            if (string.IsNullOrWhiteSpace(config.Name)) { error = "Il nome è obbligatorio."; return; }
-            if (config.Currencies.Count == 0) { error = "Aggiungi almeno una valuta."; return; }
+            if (string.IsNullOrWhiteSpace(config.Name)) { ToastService.ShowError("Il nome è obbligatorio."); return; }
+            if (config.Currencies.Count == 0) { ToastService.ShowError("Aggiungi almeno una valuta."); return; }
 
             var settings = await Storage.GetAppSettingsAsync();
             await Storage.GetLocalTripStorage(tripSlug).SaveTripConfigAsync(config, settings?.DeviceId ?? "unknown");

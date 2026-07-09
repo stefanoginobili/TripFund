@@ -8,6 +8,7 @@ public partial class VibeToast : ComponentBase, IDisposable
     private string message = string.Empty;
     private ToastType type = ToastType.Info;
     private bool isVisible = false;
+    private bool isClosing = false;
     private CancellationTokenSource? cts;
 
     protected override void OnInitialized()
@@ -20,6 +21,7 @@ public partial class VibeToast : ComponentBase, IDisposable
         message = msg;
         type = t;
         isVisible = true;
+        isClosing = false;
         await InvokeAsync(StateHasChanged);
 
         cts?.Cancel();
@@ -28,6 +30,9 @@ public partial class VibeToast : ComponentBase, IDisposable
         try
         {
             await Task.Delay(duration, cts.Token);
+            isClosing = true;
+            await InvokeAsync(StateHasChanged);
+            await Task.Delay(500, cts.Token);
             isVisible = false;
             await InvokeAsync(StateHasChanged);
         }

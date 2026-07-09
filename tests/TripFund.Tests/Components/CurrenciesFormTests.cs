@@ -15,11 +15,14 @@ namespace TripFund.Tests.Components
     public class CurrenciesFormTests : BunitContext
     {
         private readonly Mock<IAlertService> _alertMock;
+        private readonly Mock<IToastService> _toastMock;
 
         public CurrenciesFormTests()
         {
             _alertMock = new Mock<IAlertService>();
+            _toastMock = new Mock<IToastService>();
             Services.AddSingleton(_alertMock.Object);
+            Services.AddSingleton(_toastMock.Object);
             Services.AddSingleton<INavigationService>(sp => 
             {
                 var navService = new NavigationService();

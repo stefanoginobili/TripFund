@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Components;
 using Microsoft.JSInterop;
 using TripFund.App.Models;
 using TripFund.App.Utilities;
+using TripFund.App.Services;
 
 namespace TripFund.App.Components.Common;
 
@@ -12,7 +13,8 @@ public partial class CategoriesForm
     [Parameter] public bool IsReadonly { get; set; }
 
     [Inject] private IJSRuntime JSRuntime { get; set; } = default!;
-    [Inject] private Services.IAlertService Alerts { get; set; } = default!;
+    [Inject] private IToastService ToastService { get; set; } = default!;
+    [Inject] private IAlertService Alerts { get; set; } = default!;
 
     private bool isAdding = false;
     private string? editingSlug = null;
@@ -21,7 +23,6 @@ public partial class CategoriesForm
     private string newCategorySlug = "";
     private string newCategoryIcon = "👛";
     private string newCategoryColor = "#FF0000";
-    private string error = "";
 
     private readonly string[] expenseEmojis = {
         "👛", "🫙", "💸", "🪙", "🧾", "💳", "✈️", "🚂", "🚌", "🚗",
@@ -95,7 +96,7 @@ public partial class CategoriesForm
         newCategorySlug = "";
         newCategoryIcon = expenseEmojis.FirstOrDefault() ?? "👛";
         newCategoryColor = palette.FirstOrDefault() ?? "#FF0000";
-        error = "";
+
     }
 
     private void TrimName()
@@ -113,14 +114,14 @@ public partial class CategoriesForm
         newCategoryName = newCategoryName.Trim();
         newCategorySlug = newCategorySlug.Trim();
 
-        if (string.IsNullOrWhiteSpace(newCategoryName)) { error = "Il nome è obbligatorio."; return; }
+        if (string.IsNullOrWhiteSpace(newCategoryName)) { ToastService.ShowError("Il nome è obbligatorio."); return; }
         
         string slugToUse = editingSlug ?? newCategorySlug;
-        if (string.IsNullOrWhiteSpace(slugToUse)) { error = "Lo slug è obbligatorio."; return; }
+        if (string.IsNullOrWhiteSpace(slugToUse)) { ToastService.ShowError("Lo slug è obbligatorio."); return; }
 
         if (editingSlug == null && Categories.ContainsKey(slugToUse))
         {
-            error = "Questa categoria esiste già.";
+            ToastService.ShowError("Questa categoria esiste già.");
             return;
         }
 

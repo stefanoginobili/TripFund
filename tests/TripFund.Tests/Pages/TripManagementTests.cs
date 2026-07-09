@@ -17,6 +17,7 @@ public class TripManagementTests : BunitContext
     private readonly Mock<IRemoteStorageService> _remoteStorageMock;
     private readonly Mock<IAlertService> _alertMock;
     private readonly Mock<INativeDatePickerService> _datePickerMock;
+    private readonly Mock<IToastService> _toastMock;
 
     public TripManagementTests()
     {
@@ -32,11 +33,13 @@ public class TripManagementTests : BunitContext
         _remoteStorageMock = new Mock<IRemoteStorageService>();
         _alertMock = new Mock<IAlertService>();
         _datePickerMock = new Mock<INativeDatePickerService>();
+        _toastMock = new Mock<IToastService>();
 
         Services.AddSingleton(_storageMock.Object);
         Services.AddSingleton(_remoteStorageMock.Object);
         Services.AddSingleton(_alertMock.Object);
         Services.AddSingleton(_datePickerMock.Object);
+        Services.AddSingleton(_toastMock.Object);
         Services.AddSingleton<INavigationService>(sp => 
         {
             var navService = new NavigationService();

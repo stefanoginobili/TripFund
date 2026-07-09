@@ -6,7 +6,7 @@
 {
     var typeClass = type.ToString().ToLower();
     
-    <div class="toast-container-vibe toast-@typeClass">
+    <div class="toast-container-vibe toast-@typeClass @(isClosing ? "toast-closing" : "")">
         <div class="toast-content-vibe">
             @if (type == ToastType.Success)
             {
@@ -31,7 +31,7 @@
                     <line x1="12" y1="8" x2="12.01" y2="8"></line>
                 </svg>
             }
-            <span class="toast-message-vibe">@message</span>
+            <span class="toast-message-vibe">@((MarkupString)message)</span>
         </div>
     </div>
 }

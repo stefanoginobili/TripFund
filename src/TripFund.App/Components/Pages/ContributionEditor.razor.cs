@@ -13,6 +13,7 @@ namespace TripFund.App.Components.Pages
         [Inject] private IEmailService EmailService { get; set; } = default!;
         [Inject] private IAlertService AlertService { get; set; } = default!;
         [Inject] private IJSRuntime JSRuntime { get; set; } = default!;
+        [Inject] private IToastService ToastService { get; set; } = default!;
 
         [Parameter] public string tripSlug { get; set; } = "";
         
@@ -31,7 +32,7 @@ namespace TripFund.App.Components.Pages
         private string description = "Versamento in cassa";
         private DateTime transactionDate = DateTime.Now;
         private string timezoneId = TimeZoneInfo.Local.Id;
-        private string errorMessage = "";
+
         private string deviceId = "";
         private string authorName = "";
         private int _amountRenderKey = 0;
@@ -259,7 +260,7 @@ namespace TripFund.App.Components.Pages
             }
             catch (Exception ex)
             {
-                errorMessage = "Errore durante l'eliminazione: " + ex.Message;
+                ToastService.ShowError("Errore durante l'eliminazione: " + ex.Message);
             }
         }
 
@@ -321,27 +322,25 @@ namespace TripFund.App.Components.Pages
 
         private async Task HandleSubmit()
         {
-            errorMessage = "";
-
             if (config == null) return;
 
             description = description?.Trim() ?? "";
 
             if (amount <= 0)
             {
-                errorMessage = "Inserire un importo valido.";
+                ToastService.ShowError("Inserire un importo valido.");
                 return;
             }
 
             if (string.IsNullOrWhiteSpace(description))
             {
-                errorMessage = "Inserire una descrizione.";
+                ToastService.ShowError("Inserire una descrizione.");
                 return;
             }
 
             if (string.IsNullOrEmpty(selectedMemberSlug))
             {
-                errorMessage = "Selezionare un partecipante.";
+                ToastService.ShowError("Selezionare un partecipante.");
                 return;
             }
 
@@ -397,11 +396,12 @@ namespace TripFund.App.Components.Pages
                     }
                 }
 
+                ToastService.ShowSuccess("Versamento salvato con successo.");
                 await GoBack();
             }
             catch (Exception ex)
             {
-                errorMessage = "Errore durante il salvataggio: " + ex.Message;
+                ToastService.ShowError("Errore durante il salvataggio: " + ex.Message);
                 isSubmitting = false;
             }
         }

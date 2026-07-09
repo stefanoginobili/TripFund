@@ -24,7 +24,7 @@ namespace TripFund.App.Components.Pages
         private string remoteUniqueId = "";
         private DateTime startDate;
         private DateTime endDate;
-        private string error = "";
+        [Inject] private IToastService ToastService { get; set; } = default!;
         private string? originalConfigJson;
         private bool isInternalNavigationAllowed = false;
 
@@ -90,9 +90,9 @@ namespace TripFund.App.Components.Pages
             tripSlug = tripSlug?.Trim() ?? "";
             description = description?.Trim() ?? "";
 
-            if (string.IsNullOrWhiteSpace(tripName)) { error = "Il nome è obbligatorio."; return; }
-            if (string.IsNullOrWhiteSpace(tripSlug)) { error = "Lo slug è obbligatorio."; return; }
-            if (currencies.Count == 0) { error = "Aggiungi almeno una valuta."; return; }
+            if (string.IsNullOrWhiteSpace(tripName)) { ToastService.ShowError("Il nome è obbligatorio."); return; }
+            if (string.IsNullOrWhiteSpace(tripSlug)) { ToastService.ShowError("Lo slug è obbligatorio."); return; }
+            if (currencies.Count == 0) { ToastService.ShowError("Aggiungi almeno una valuta."); return; }
 
             string finalSlug = string.IsNullOrEmpty(remoteUniqueId) 
                 ? tripSlug 
@@ -101,7 +101,7 @@ namespace TripFund.App.Components.Pages
             var registry = await Storage.GetTripRegistryAsync();
             if (registry.Trips.ContainsKey(finalSlug))
             {
-                error = "Esiste già un viaggio con questo slug locale.";
+                ToastService.ShowError("Esiste già un viaggio con questo slug locale.");
                 return;
             }
 
@@ -109,7 +109,7 @@ namespace TripFund.App.Components.Pages
             var tripDir = Path.Combine(Storage.TripsPath, finalSlug);
             if (Directory.Exists(tripDir))
             {
-                error = "Questo viaggio è già stato importato localmente.";
+                ToastService.ShowError("Questo viaggio è già stato importato localmente.");
                 return;
             }
 

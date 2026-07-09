@@ -39,6 +39,7 @@ public class EmailReceiptTests : BunitContext
         Services.AddSingleton(_alertMock.Object);
         Services.AddSingleton(new Mock<INativeDatePickerService>().Object);
         Services.AddSingleton(new Mock<IRemoteStorageService>().Object);
+        Services.AddSingleton(new Mock<IToastService>().Object);
         Services.AddSingleton<INavigationService>(sp => 
         {
             var navService = new NavigationService();
