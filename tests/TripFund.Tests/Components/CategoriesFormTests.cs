@@ -204,12 +204,7 @@ public class CategoriesFormTests : BunitContext
         
         // Assert
         var deleteBtn = cut.FindAll(".dropdown-item-vibe.text-danger").FirstOrDefault(b => b.TextContent.Contains("Elimina"));
-        deleteBtn.Should().NotBeNull();
-        deleteBtn!.ClassList.Should().Contain("disabled");
-        
-        // Click should not trigger alert
-        await deleteBtn.ClickAsync();
-        _alertMock.Verify(a => a.ConfirmAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<AlertType>(), It.IsAny<string>()), Times.Never);
+        deleteBtn.Should().BeNull();
     }
 }
 
