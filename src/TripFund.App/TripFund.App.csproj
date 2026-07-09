@@ -39,14 +39,14 @@
         <ApplicationId>com.stefanoginobili.tripfund.app.dev</ApplicationId>
         <ApplicationTitle>TripFund (Dev)</ApplicationTitle>
         <ApplicationVersion>$(TripFundSequentialVersion)</ApplicationVersion>
-        <ApplicationDisplayVersion>$(TripFundDisplayVersion).$(TripFundSequentialVersion)-dev</ApplicationDisplayVersion>
+        <ApplicationDisplayVersion>$(TripFundDisplayVersion)-$(TripFundSequentialVersion)-dev</ApplicationDisplayVersion>
     </PropertyGroup>
 
     <PropertyGroup Condition="'$(Configuration)' == 'Release'">
         <ApplicationId>com.stefanoginobili.tripfund.app</ApplicationId>
         <ApplicationTitle>TripFund</ApplicationTitle>
         <ApplicationVersion>$(TripFundSequentialVersion)</ApplicationVersion>
-        <ApplicationDisplayVersion>$(TripFundDisplayVersion).$(TripFundSequentialVersion)</ApplicationDisplayVersion>
+        <ApplicationDisplayVersion>$(TripFundDisplayVersion)-$(TripFundSequentialVersion)</ApplicationDisplayVersion>
     </PropertyGroup>
 
     <ItemGroup>
