@@ -122,9 +122,12 @@
                 <button class="dropdown-item-vibe" @onclick="async () => await StartEdit(cat.Key, cat.Value)">
                     Modifica
                 </button>
-                <button class="dropdown-item-vibe text-danger @(TripFund.App.Constants.AppConstants.Categories.SystemCategories.Contains(cat.Key) ? "disabled" : "")" @onclick="async () => await DeleteCategory(cat.Key)">
-                    Elimina
-                </button>
+                @if (!TripFund.App.Constants.AppConstants.Categories.SystemCategories.Contains(cat.Key))
+                {
+                    <button class="dropdown-item-vibe text-danger" @onclick="async () => await DeleteCategory(cat.Key)">
+                        Elimina
+                    </button>
+                }
             </MenuTemplate>
         </SortableList>
     </div>
