@@ -22,6 +22,7 @@ public class TransactionFormTests : BunitContext
     private readonly Mock<INativeDatePickerService> _datePickerMock;
     private readonly Mock<IThumbnailService> _thumbnailMock;
     private readonly Mock<IImageCompressorService> _imageCompressorMock;
+    private readonly Mock<IToastService> _toastMock;
 
     public TransactionFormTests()
     {
@@ -36,6 +37,7 @@ public class TransactionFormTests : BunitContext
         _datePickerMock = new Mock<INativeDatePickerService>();
         _thumbnailMock = new Mock<IThumbnailService>();
         _imageCompressorMock = new Mock<IImageCompressorService>();
+        _toastMock = new Mock<IToastService>();
         
         _storageMock.Setup(s => s.GetLocalTripStorage(It.IsAny<string>())).Returns(_tripStorageMock.Object);
 
@@ -45,6 +47,7 @@ public class TransactionFormTests : BunitContext
         Services.AddSingleton(_datePickerMock.Object);
         Services.AddSingleton(_thumbnailMock.Object);
         Services.AddSingleton(_imageCompressorMock.Object);
+        Services.AddSingleton(_toastMock.Object);
         _imageCompressorMock.Setup(s => s.CompressImageAsync(It.IsAny<Stream>(), It.IsAny<string>()))
                             .ReturnsAsync((Stream stream, string fileName) => 
                             {
@@ -1049,6 +1052,9 @@ public class TransactionFormTests : BunitContext
         nav.Uri.Should().Contain("initAmount=45");
         nav.Uri.Should().Contain("initModified=true");
         nav.Uri.Should().Contain(Uri.EscapeDataString("Test Refund (Rimborso)"));
+        
+        // Assert toast was shown
+        _toastMock.Verify(t => t.ShowSuccess("Transazione salvata. Il rimborso è stato precompilato e può essere confermato o annullato.", 5000), Times.Once);
     }
 }
 

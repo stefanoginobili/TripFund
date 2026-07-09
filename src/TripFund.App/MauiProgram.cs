@@ -1,4 +1,4 @@
-﻿using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging;
 using Microsoft.AspNetCore.Components.WebView.Maui;
 
 namespace TripFund.App;
@@ -34,6 +34,7 @@ public static class MauiProgram
 		builder.Services.AddSingleton<Services.IWebAuthenticator, Services.MauiWebAuthenticator>();
 		builder.Services.AddSingleton<Services.IRemoteStorageService, Services.CompositeRemoteStorageService>();
 		builder.Services.AddSingleton<Services.IAlertService, Services.VibeAlertService>();
+		builder.Services.AddSingleton<Services.IToastService, Services.VibeToastService>();
 		builder.Services.AddSingleton<Services.IThumbnailService, Services.ThumbnailService>();
 		builder.Services.AddSingleton<Services.IImageCompressorService, Services.ImageCompressorService>();
 		builder.Services.AddSingleton<Services.INavigationService, Services.NavigationService>();

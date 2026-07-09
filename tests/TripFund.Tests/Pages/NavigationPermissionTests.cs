@@ -34,6 +34,7 @@ public class NavigationPermissionTests : BunitContext
 
         Services.AddSingleton(_storageMock.Object);
         Services.AddSingleton(_alertMock.Object);
+        Services.AddSingleton(new Mock<IToastService>().Object);
         Services.AddSingleton(new Mock<IEmailService>().Object);
         Services.AddSingleton(new Mock<IThumbnailService>().Object);
         Services.AddSingleton(_imageCompressorMock.Object);

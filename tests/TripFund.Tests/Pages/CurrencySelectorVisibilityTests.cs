@@ -50,6 +50,7 @@ public class CurrencySelectorVisibilityTests : BunitContext
                             });
         Services.AddSingleton(new Mock<IRemoteStorageService>().Object);
         Services.AddSingleton(new Mock<IExportService>().Object);
+        Services.AddSingleton(new Mock<IToastService>().Object);
         Services.AddSingleton(new PdfReportService());
         Services.AddSingleton<INavigationService>(sp => 
         {

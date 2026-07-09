@@ -754,3 +754,62 @@ h1:focus {
     0% { background-position: 200% 0; }
     100% { background-position: -200% 0; }
 }
+
+/* TOAST COMPONENT */
+.toast-container-vibe {
+    position: fixed;
+    bottom: 30px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 9999;
+    padding: 14px 24px;
+    border-radius: var(--border-radius-pill);
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    animation: toast-slide-up 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+    max-width: 90vw;
+    width: max-content;
+    text-align: center;
+}
+
+.toast-content-vibe {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.toast-message-vibe {
+    font-weight: 600;
+    font-size: 0.95rem;
+    color: white;
+}
+
+.toast-icon {
+    color: white;
+    flex-shrink: 0;
+}
+
+.toast-success {
+    background-color: var(--success-color, #10b981);
+}
+
+.toast-error {
+    background-color: var(--danger-color, #ef4444);
+}
+
+.toast-info {
+    background-color: var(--primary-color, #007bff);
+}
+
+@keyframes toast-slide-up {
+    0% {
+        opacity: 0;
+        transform: translate(-50%, 30px) scale(0.9);
+    }
+    100% {
+        opacity: 1;
+        transform: translate(-50%, 0) scale(1);
+    }
+}

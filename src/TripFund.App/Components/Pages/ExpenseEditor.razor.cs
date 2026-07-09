@@ -15,6 +15,7 @@ namespace TripFund.App.Components.Pages
         [Inject] private IAlertService Alerts { get; set; } = default!;
         [Inject] private IThumbnailService Thumbnails { get; set; } = default!;
         [Inject] private IImageCompressorService ImageCompressor { get; set; } = default!;
+        [Inject] private IToastService ToastService { get; set; } = default!;
 
         [Parameter] public string tripSlug { get; set; } = "";
         [SupplyParameterFromQuery] public string? member { get; set; }
@@ -856,10 +857,12 @@ namespace TripFund.App.Components.Pages
                     var unixTime = finalDate.ToUnixTimeSeconds();
                     
                     var uri = $"/trip/{tripSlug}/expense?currency={Uri.EscapeDataString(selectedCurrency)}&initCategory=rimborsi&initSlugs={Uri.EscapeDataString(absentSlugs)}&initAmount={refundAmt.ToString(System.Globalization.CultureInfo.InvariantCulture)}&initDesc={Uri.EscapeDataString(newDesc)}&initTz={Uri.EscapeDataString(timezoneId)}&initDateUnix={unixTime}&initModified=true";
+                    ToastService.ShowSuccess("Transazione salvata. Il rimborso è stato precompilato e può essere confermato o annullato.");
                     await NavService.NavigateAsync(string.Empty, uri);
                 }
                 else
                 {
+                    ToastService.ShowSuccess("Transazione salvata con successo.");
                     await GoBack();
                 }
             }
