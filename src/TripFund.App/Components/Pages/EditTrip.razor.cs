@@ -359,7 +359,7 @@ namespace TripFund.App.Components.Pages
             }
 
             if (string.IsNullOrWhiteSpace(config.Name)) { ToastService.ShowError("Il nome è obbligatorio."); return; }
-            if (config.Currencies.Count == 0) { ToastService.ShowError("Aggiungi almeno una valuta."); return; }
+            if (config.Currencies.Count == 0) { ToastService.ShowError("Aggiungi almeno una cassa viaggio."); return; }
 
             var settings = await Storage.GetAppSettingsAsync();
             await Storage.GetLocalTripStorage(tripSlug).SaveTripConfigAsync(config, settings?.DeviceId ?? "unknown");

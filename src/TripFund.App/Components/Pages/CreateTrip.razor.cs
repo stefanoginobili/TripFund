@@ -92,7 +92,7 @@ namespace TripFund.App.Components.Pages
 
             if (string.IsNullOrWhiteSpace(tripName)) { ToastService.ShowError("Il nome è obbligatorio."); return; }
             if (string.IsNullOrWhiteSpace(tripSlug)) { ToastService.ShowError("Lo slug è obbligatorio."); return; }
-            if (currencies.Count == 0) { ToastService.ShowError("Aggiungi almeno una valuta."); return; }
+            if (currencies.Count == 0) { ToastService.ShowError("Aggiungi almeno una cassa viaggio."); return; }
 
             string finalSlug = string.IsNullOrEmpty(remoteUniqueId) 
                 ? tripSlug 
